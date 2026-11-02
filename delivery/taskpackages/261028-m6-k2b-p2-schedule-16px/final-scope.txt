@@ -1,0 +1,6 @@
+# final 相位影响面圈定清单（261028-m6-k2b-p2-schedule-16px）
+# 来源 = taskpackage impactedTestsSeed + 新冻结件（changeManifest 测试面）；integrator test-scope.md 的机器可执行子集。
+# server 面（test_schedule_p2.acceptance.py 为回归注记件、本包零 producer diff）不在圈定内——server 全量基线已在 scoped 轮实测 395 passed。
+firmware/main/test/schedule_grid_16px.acceptance.c
+firmware/main/test/schedule_grid.acceptance.c
+firmware/main/test/schedule_grid_restore.acceptance.c

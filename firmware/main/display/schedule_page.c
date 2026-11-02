@@ -23,6 +23,10 @@
 
 #include "lvgl.h"
 
+/* P0 [K4] 统一字体句柄（TaskPackage 261028-m6-k1-font-assets-runtime-loading）。
+ * 课表正文 16px 字面源唯一消费口——本文件不另造资产加载/降级分支（F-1 / [F2]）。 */
+#include "kidpal_font.h"
+
 /* -------------------------------------------------------------------------- *
  * 共用小工具
  * ------------------------------------------------------------------------ */
@@ -654,37 +658,32 @@ int kidpal_schedule_grid_parse(const char *data_json,
 #define KSG_COLOR_SEP  0x000000u
 #define KSG_FB_W       400
 #define KSG_FB_H       300
-#define KSG_ROW_PITCH  16 /* 格内课程名行 pitch >= KSG_FONT_MIN_PX(14) + 2px 余量 */
+#define KSG_ROW_PITCH  19 /* 16px 版式格内课程名行 pitch（F-3/P2S-E1；>= KSG_FONT_MIN_PX(14) 下限） */
 
-/* 表头带 y[0..29]; 槽位行带 slot0 y[30..103] / slot1 y[104..177] / slot2 y[178..254]
- * （冻结验收文件头版式区钉, 勿偏移; slot2 下缘 2026-09-26 真机对齐轮 251→254 随
- * 网格底线重钉）; y>=255 网格外带零墨。 */
-static const int ksg_slot_ys[3][2] = { { 30, 103 }, { 104, 177 }, { 178, 254 } };
+/* 表头带 y[0..29]; 槽位行带 slot0 y[30..117] / slot1 y[118..205] / slot2 y[206..254]
+ * （带高 88/88/49；2026-11-02 真机轮 human 看屏裁决版式修订：原 30..107/108..185/
+ * 186..254 下 slot0 第 4 行墨底压带底线被截，带下移；冻结验收文件头版式区钉同步）;
+ * slot2 下缘贴 KSG_GRID_BOTTOM=254; y>=255 网格外带零墨。 */
+static const int ksg_slot_ys[3][2] = { { 30, 117 }, { 118, 205 }, { 206, 254 } };
 
-/* CJK 文本字体：host = LVGL 内置 Source Han Sans SC 14 子集（CONFIG_LV_FONT_
- * SOURCE_HAN_SANS_SC_14_CJK, host_app/sdkconfig.defaults）; 设备 = 全量 14px 普惠体
- * （keybar/char_page 同源 BUILTIN_TEXT_FONT, NFR-READ-1 14px 同档）。缺省平台返回
- * NULL（继承 LVGL 默认字体, 渲染面不崩）。 */
-#if LV_FONT_SOURCE_HAN_SANS_SC_14_CJK
-LV_FONT_DECLARE(lv_font_source_han_sans_sc_14_cjk);
-#elif defined(ESP_PLATFORM)
-LV_FONT_DECLARE(font_puhui_14_1);
-#endif
+/* 渲染层按槽位可画上限（2026-11-02 真机轮 human 裁决：上午 4 / 下午 4 / 晚上 2；
+ * 新带高下 slot2 第 3 行墨底越 KSG_GRID_BOTTOM）。超限静默截断（不滚动、不画
+ * 超限行、不新增提示）——缓存/解析 cap 仍是 KSG_COURSE_CAP=84，本表只约束
+ * "每一格画几门"，绝不参与解析或缓存容量（F-8 铁律）。 */
+static const int ksg_slot_caps[3] = { 4, 4, 2 };
 
+/* CJK 文本字体 = P0 统一句柄 [K4]：挂载过 assets 时为 16px body；缺 assets 时
+ * kidpal_font.cc [K2]/[K3] 内部落 font_puhui_14_1 14px 兜底（恒非 NULL——此处
+ * 不新增 NULL 回落分支, P0 FAS-A4/A7 语义）。 */
 static const lv_font_t *ksg_text_font(void)
 {
-#if LV_FONT_SOURCE_HAN_SANS_SC_14_CJK
-    return &lv_font_source_han_sans_sc_14_cjk;
-#elif defined(ESP_PLATFORM)
-    return &font_puhui_14_1;
-#else
-    return NULL;
-#endif
+    return kidpal_font_body();
 }
 
-/* host 子集字体可能缺 ※(U+203B)/★(U+2605) 字形——先查字形表，缺则走程序化兜底
- * 画法（纪律同 home_p1 描边兜底）。「标记可见」本身即验收面（M3K2-A3），兜底画法
- * 与真字形在真帧上都落在课程名所在格带内。 */
+/* ★ 星标（flags bit1，0x2605）字形探测——host 字体可能缺该字形，缺则走程序化
+ * 兜底画法（纪律同 home_p1 描边兜底）。「标记可见」本身即验收面（M3K2-A3），兜底
+ * 画法与真字形在真帧上都落在课程名所在格带内。临时课标记（bit0）已改课名下 2px
+ * 程序化下划线，不经字形探测、无字体依赖。 */
 static int ksg_glyph_available(uint32_t cp)
 {
     const lv_font_t *f = ksg_text_font();
@@ -719,17 +718,6 @@ static lv_obj_t *ksg_label(lv_obj_t *parent, const char *txt, int x, int y)
     return l;
 }
 
-/* 程序化 ※ 兜底（十字 + 四角点, 10x10）——与 ★ 兜底（实心菱形）真帧可区分。 */
-static void ksg_marker_temp_proc(lv_obj_t *scr, int x, int y)
-{
-    ksg_rect_obj(scr, x + 4, y, 2, 10, KSG_COLOR_TEXT);      /* 竖笔 */
-    ksg_rect_obj(scr, x, y + 4, 10, 2, KSG_COLOR_TEXT);      /* 横笔 */
-    ksg_rect_obj(scr, x + 1, y + 1, 2, 2, KSG_COLOR_TEXT);   /* 四角点 */
-    ksg_rect_obj(scr, x + 7, y + 1, 2, 2, KSG_COLOR_TEXT);
-    ksg_rect_obj(scr, x + 1, y + 7, 2, 2, KSG_COLOR_TEXT);
-    ksg_rect_obj(scr, x + 7, y + 7, 2, 2, KSG_COLOR_TEXT);
-}
-
 /* 程序化 ★ 兜底（实心菱形, 10x10）。 */
 static void ksg_marker_star_proc(lv_obj_t *scr, int x, int y)
 {
@@ -757,17 +745,129 @@ static void ksg_draw_marker(lv_obj_t *scr, int x, int y, uint32_t cp,
     }
 }
 
-/* (day,slot) 格内一行：[※?][★?] 课程名（标记 10px + 2px 间隙; 名按格宽截断,
- * 不做格内滚动——格内溢出走截断降级, spec S-F1.2 补充规则口径）。 */
+/* UTF-8 解一码点（畸形返回 0 表示停止；name 由解析面保证合法 UTF-8）。 */
+static uint32_t ksg_utf8_next(const char **pp)
+{
+    const unsigned char *p = (const unsigned char *)*pp;
+    uint32_t cp;
+    int seq, i;
+
+    if (p[0] == 0) {
+        return 0;
+    }
+    if (p[0] < 0x80u) {
+        *pp += 1;
+        return p[0];
+    }
+    if ((p[0] & 0xE0u) == 0xC0u) {
+        cp = (uint32_t)(p[0] & 0x1Fu);
+        seq = 2;
+    } else if ((p[0] & 0xF0u) == 0xE0u) {
+        cp = (uint32_t)(p[0] & 0x0Fu);
+        seq = 3;
+    } else if ((p[0] & 0xF8u) == 0xF0u) {
+        cp = (uint32_t)(p[0] & 0x07u);
+        seq = 4;
+    } else {
+        *pp += 1;
+        return 0;
+    }
+    for (i = 1; i < seq; i++) {
+        if ((p[i] & 0xC0u) != 0x80u) {
+            *pp += 1;
+            return 0;
+        }
+        cp = (cp << 6) | (uint32_t)(p[i] & 0x3Fu);
+    }
+    *pp += seq;
+    return cp;
+}
+
+/* [F2-M] 临时课标记（flags bit0）= 课名下 2px 程序化横线。
+ *
+ * 几何取自 LVGL 字形落位公式（lv_draw_label.c lv_draw_unit_draw_letter 同源）：
+ *   ink_top(row) = row_y + (line_height - base_line) - box_h - ofs_y
+ *   ink_bottom(row) = ink_top + box_h - 1
+ * 逐字形取名字墨 x 跨度（含端点）与墨底缘最大值 → 在墨底缘下方相邻行起画 2px
+ * 横线（宽 = 名墨 x 跨度），clip 进行带（band_y0..band_y1）与格带（cell_x0..cell_x1）。
+ * 名不扣任何前缀宽（※ 已退役, 名从格左缘起笔）。无字体字形依赖、无随机性。 */
+static void ksg_draw_temp_underline(lv_obj_t *scr, const char *name,
+                                    int name_x, int row_y,
+                                    int cell_x0, int cell_x1,
+                                    int band_y0, int band_y1)
+{
+    const lv_font_t *f = ksg_text_font();
+    const char *p = name;
+    int pen_x = name_x;
+    int ink_left = -1;
+    int ink_right = -1;
+    int ink_bottom = -1;
+    int ux0, ux1, uy0, uy1;
+
+    if (f == NULL || name == NULL) {
+        return;
+    }
+    for (;;) {
+        uint32_t cp = ksg_utf8_next(&p);
+        lv_font_glyph_dsc_t g;
+
+        if (cp == 0) {
+            break;
+        }
+        if (!lv_font_get_glyph_dsc(f, &g, cp, 0) || g.box_w == 0 || g.box_h == 0) {
+            continue;
+        }
+        if (ink_left < 0 || pen_x + (int)g.ofs_x < ink_left) {
+            ink_left = pen_x + (int)g.ofs_x;
+        }
+        if (pen_x + (int)g.ofs_x + (int)g.box_w - 1 > ink_right) {
+            ink_right = pen_x + (int)g.ofs_x + (int)g.box_w - 1;
+        }
+        {
+            int bottom = (int)f->line_height - (int)f->base_line - (int)g.ofs_y - 1;
+
+            if (bottom > ink_bottom) {
+                ink_bottom = bottom;
+            }
+        }
+        pen_x += (int)g.adv_w;
+    }
+    if (ink_left < 0 || ink_right < ink_left || ink_bottom < 0) {
+        return;
+    }
+
+    ux0 = ink_left;
+    ux1 = ink_right;
+    uy0 = row_y + ink_bottom + 1; /* 名墨底缘下方相邻行起 */
+    uy1 = uy0 + 1;                /* 2px */
+
+    if (ux0 < cell_x0) {
+        ux0 = cell_x0;
+    }
+    if (ux1 > cell_x1) {
+        ux1 = cell_x1;
+    }
+    if (uy0 < band_y0) {
+        uy0 = band_y0;
+    }
+    if (uy1 > band_y1) {
+        uy1 = band_y1;
+    }
+    if (ux1 < ux0 || uy1 < uy0) {
+        return;
+    }
+    (void)ksg_rect_obj(scr, ux0, uy0, ux1 - ux0 + 1, uy1 - uy0 + 1, KSG_COLOR_TEXT);
+}
+
+/* (day,slot) 格内一行：[★?] 课程名（★ 10px + 2px 间隙; 名按格宽截断, 不做格内
+ * 滚动——格内溢出走截断降级, spec S-F1.2 补充规则口径）。临时课（flags bit0）
+ * 在课名下方画 2px 下划线（[F2-M]），※ 前缀形态已退役。 */
 static void ksg_cell_row(lv_obj_t *scr, const kidpal_schedule_course_t *co,
-                         int cell_x0, int cell_x1, int row_y)
+                         int cell_x0, int cell_x1, int row_y,
+                         int band_y0, int band_y1)
 {
     int x = cell_x0 + 2;
 
-    if (co->flags & KSG_FLAG_TEMP) {
-        ksg_draw_marker(scr, x, row_y, 0x203Bu, ksg_marker_temp_proc);
-        x += 12;
-    }
     if (co->flags & KSG_FLAG_STAR) {
         ksg_draw_marker(scr, x, row_y, 0x2605u, ksg_marker_star_proc);
         x += 12;
@@ -778,6 +878,11 @@ static void ksg_cell_row(lv_obj_t *scr, const kidpal_schedule_course_t *co,
         lv_obj_set_width(nm, (lv_coord_t)(cell_x1 - 1 - x));
         lv_obj_set_height(nm, KSG_ROW_PITCH);
         lv_label_set_long_mode(nm, LV_LABEL_LONG_CLIP);
+
+        if (co->flags & KSG_FLAG_TEMP) {
+            ksg_draw_temp_underline(scr, co->name, x, row_y,
+                                    cell_x0, cell_x1, band_y0, band_y1);
+        }
     }
 }
 
@@ -819,21 +924,28 @@ int kidpal_schedule_grid_render(const kidpal_schedule_course_t *courses, int n,
     ksg_rect_obj(scr, 0, 0, 398, 1, KSG_COLOR_SEP);
     ksg_rect_obj(scr, 0, 0, 1, KSG_GRID_BOTTOM + 1, KSG_COLOR_SEP);
     ksg_rect_obj(scr, 0, 29, 398, 1, KSG_COLOR_SEP);
-    ksg_rect_obj(scr, 0, 103, 398, 1, KSG_COLOR_SEP);
-    ksg_rect_obj(scr, 0, 177, 398, 1, KSG_COLOR_SEP);
+    ksg_rect_obj(scr, 0, ksg_slot_ys[0][1], 398, 1, KSG_COLOR_SEP);
+    ksg_rect_obj(scr, 0, ksg_slot_ys[1][1], 398, 1, KSG_COLOR_SEP);
     ksg_rect_obj(scr, 0, KSG_GRID_BOTTOM, 398, 1, KSG_COLOR_SEP);
 
     {
         static const char days[7][7] = { "周一", "周二", "周三", "周四",
                                          "周五", "周六", "周日" };
         static const char slots[3][7] = { "上午", "下午", "晚上" };
+        int line_h = (ksg_text_font() != NULL) ? (int)ksg_text_font()->line_height : 20;
 
         for (int d = 0; d < 7; d++) {
             (void)ksg_label(scr, days[d], 40 + 51 * d + 4, 6);
         }
-        /* 行标签垂直居中: 槽位行带高 74px, 14px 字形行高 ~18px -> y 偏移 (74-18)/2=28。 */
+        /* 行标签垂直居中（带高 88/88/49；行高随 16px 句柄实测, 观感面不钉）。 */
         for (int s = 0; s < 3; s++) {
-            (void)ksg_label(scr, slots[s], 4, ksg_slot_ys[s][0] + 28);
+            int band_h = ksg_slot_ys[s][1] - ksg_slot_ys[s][0] + 1;
+            int off = (band_h - line_h) / 2;
+
+            if (off < 0) {
+                off = 0;
+            }
+            (void)ksg_label(scr, slots[s], 4, ksg_slot_ys[s][0] + off);
         }
     }
 
@@ -853,18 +965,20 @@ int kidpal_schedule_grid_render(const kidpal_schedule_course_t *courses, int n,
     }
 
     /* 课程逐门竖排：同 (day,slot) 格内自上而下堆叠（同格多条目保持 producer
-     * 下发序）; 行 pitch KSG_ROW_PITCH >= KSG_FONT_MIN_PX（NFR-READ-1）。 */
+     * 下发序）; 行 pitch KSG_ROW_PITCH（16px 版式）= 19; 每格按槽位上限 4/4/2
+     * 静默截断（超限不画、不滚动、不提示, F-3/OQ4）。 */
     for (int i = 0; i < n; i++) {
         int d = courses[i].day;
         int s = courses[i].slot;
         int r = rows[d][s];
 
-        if (r >= 4) {
-            continue; /* 防御：KSG_COURSE_CAP 定容 7 天×3 格×每格 4 门, 越格不画 */
+        if (r >= ksg_slot_caps[s]) {
+            continue; /* 静默截断：本槽位超限行不画（缓存/解析 cap 84 不受影响） */
         }
         rows[d][s]++;
         ksg_cell_row(scr, &courses[i], 40 + 51 * d, 90 + 51 * d,
-                     ksg_slot_ys[s][0] + 2 + r * KSG_ROW_PITCH);
+                     ksg_slot_ys[s][0] + 2 + r * KSG_ROW_PITCH,
+                     ksg_slot_ys[s][0], ksg_slot_ys[s][1]);
     }
 
     return n;
