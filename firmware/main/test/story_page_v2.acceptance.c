@@ -1827,13 +1827,34 @@ TEST_CASE("story_page_v2: 渲染面结构齿——字体/文案/无标题/反白
 
     KSPV2_REQUIRE_ROOT();
 
-    /* tooth 1: 全 label 显式接线 font_puhui_14_1, >= 5 处（lcd_display.cc 五处先例;
-     * 不赌继承）。RED today: 零命中（CJK 真机空白根因）。 */
+    /* tooth 1 (2026-11-02 收紧型重基线, REVISION LOG revision 5): 16px/20px 排版
+     * seam 锚（TaskPackage 261028-m6-k3-p3-story-typography P3T-E2）——列表/阅读
+     * 正文切 P0 [K4] kidpal_font_body()、阅读标题切 kidpal_font_title()（字面源
+     * 单点）。旧「font_puhui_14_1 >= 5 全 label 显式接线」锚随 16px/20px 消费退役
+     * （旧锚钉的是「全 label 14px 接线」形状, 与列表/阅读切 16px/20px 后的形状
+     * 矛盾——收紧型 supersede 非弱化: 新锚集 = 两个新句柄正锚 + 14px 兜底面 >= 3
+     * （LV_FONT_DECLARE + 共用 helper/未变更页态接线面在世, F-1「未变更面不跟随
+     * 放大」机制半; 行为半 = story_typography.acceptance.c STY-A6 四带 14px 守卫
+     * ——新冻结件承接）。
+     * RED(设计态): story_page.c 未切 P0 句柄（kidpal_font_body/title 零命中）。 */
     TEST_ASSERT_TRUE_MESSAGE(
-        kspv2_count_in_file("firmware/main/display/story_page.c", "font_puhui_14_1") >= 5,
-        kspv2_fm("SPV2-B2 RED: story_page.c font_puhui_14_1 仅 %d 处（期望 >= 5）——"
-                 "CJK 字体未显式接线, P3 全部中文面真机空白（默认 montserrat_14 纯拉丁）",
-                 kspv2_count_in_file("firmware/main/display/story_page.c", "font_puhui_14_1")));
+        kspv2_count_in_file("firmware/main/display/story_page.c",
+                            "kidpal_font_body") >= 1,
+        "SPV2-B2 RED: story_page.c 零 kidpal_font_body——列表/阅读正文未切 P0 16px "
+        "统一句柄（261028-m6-k3-p3-story-typography [T1]/[T2], 设计态红）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        kspv2_count_in_file("firmware/main/display/story_page.c",
+                            "kidpal_font_title") >= 1,
+        "SPV2-B2 RED: story_page.c 零 kidpal_font_title——阅读标题未切 P0 20px 统一"
+        "句柄（261028-m6-k3-p3-story-typography [T5], 设计态红）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        kspv2_count_in_file("firmware/main/display/story_page.c",
+                            "font_puhui_14_1") >= 3,
+        kspv2_fm("SPV2-B2 RED: story_page.c font_puhui_14_1 仅 %d 处（期望 >= 3: "
+                 "LV_FONT_DECLARE + 共用 helper/未变更页态 14px 接线面）——14px 兜底"
+                 "面被全局替换（F-1 未变更页态不跟随放大纪律破; 行为半 = STY-A6）",
+                 kspv2_count_in_file("firmware/main/display/story_page.c",
+                                     "font_puhui_14_1")));
 
     /* tooth 2: 盖章文案逐字——「星星徽章」在世、「故事徽章」退役。 */
     TEST_ASSERT_TRUE_MESSAGE(
@@ -2694,6 +2715,36 @@ TEST_CASE("story_page_v2: AC5 两入口颜色统一 KSY_COLOR_INK 单源 (SLP-TB
  *        设计态绿守卫（净 HEAD 无诊断残留, 变异敏感）; TB-A1/TB-A3 红基线 = 设计态
  *        红（新增结构齿对净 HEAD 断言缺失行为）。TB-A4 = live-manual structural 豁免
  *        （SLP-SLA5 真机轮先例同口径, 不计入 runner 通过面）。
+ *   2026-11-02  revision 5 (收紧型 supersede 重基线, TaskPackage
+ *               261028-m6-k3-p3-story-typography; 授权链 = 本包 exitCriteria
+ *               P3T-E2 逐字「story_page_v2 的 13.5px/1.72 与 font_puhui_14_1 旧锚
+ *               由 acceptance-author 收紧型留痕重基线」+ requirements v1.69
+ *               S-F2.3 补充规则排版句（2026-10-28 批改写: 标题 20px 居中单行省略/
+ *               正文 16px）+ FROZEN PROPOSAL 261028-font-typography-scaleup §3.1
+ *               F-1/F-4/F-6):
+ *     R9 SPV2-B2 tooth 1 重基线——旧断言: 「story_page.c 内 font_puhui_14_1 计数
+ *        >= 5（全 label 显式 14px 接线, 不赌继承）」; 新断言: 三个子锚——①
+ *        kidpal_font_body >= 1（列表/阅读正文 16px 统一句柄字面源）②
+ *        kidpal_font_title >= 1（阅读标题 20px 统一句柄字面源）③ font_puhui_14_1
+ *        >= 3（LV_FONT_DECLARE + 共用 helper/未变更页态 14px 兜底面在世）。旧锚钉
+ *        「全 label 14px 接线」形状, 与本批列表/阅读切 16px/20px 后的授权形状直接
+ *        矛盾 = 对任何合法实现不可满足, 故属收紧型 supersede 非放宽: 新增两个
+ *        P0 句柄正锚 + 14px 兜底面数值下界 5→3（下界调整理由 = 新锚①②承载的字面
+ *        消费点自原 14px 直连转为句柄调用, 旧计数分母缩小; F-1 未变更面纪律由 ③ +
+ *        新冻结件 STY-A6 四带 14px 行为守卫 + FAS 键 story_c_puhui14_kept 三面共同
+ *        承载, 承载面净增）。
+ *     R10 文件头 13.5px/1.72 旧排版锚退役: 头注强度申报「S-F2.3 排版 13.5px/行高
+ *        1.72 -> SPV2-B2 仅钉 KSTORY_READER_LINES_PER_SCREEN 单源在世（值 = builder
+ *        按 NFR-READ-1 实测重冻, 本文件不锁数值）」段的排版依据随 requirements
+ *        v1.69 排版句（正文 16px / 标题 20px）退役; 本文件对该常量仍只钉单源在世
+ *        （SPV2-B2 tooth 9 零触碰）, 数值 3 的新锚 = story_typography.acceptance.c
+ *        [T3]（include 直读 == 3 + open_reader/reader_slice 行为配对）+ FAS 键
+ *        story_h_reader_lines3/lines_not4。本文件原 13.5px/1.72 文字保留作历史
+ *        留痕（注释非证据, 现役权威 = 本条 + story_typography.acceptance.c）。
+ *     既有断言集对照: TEST 1-20 除 SPV2-B2 tooth 1 外零触碰（git diff -U0 既有
+ *        hunk 仅 tooth 1 一处替换 + 本条 REVISION LOG; 输入表/计数/分屏/云端形状
+ *        断言零撤——impactedTestsSeed 纪律）。SPV2-B2 红基线转为设计态红（builder
+ *        落 story_page.c 句柄消费后转绿）; 其余既有齿红基线零变化。
  * --------------------------------------------------------------------------- */
 
 

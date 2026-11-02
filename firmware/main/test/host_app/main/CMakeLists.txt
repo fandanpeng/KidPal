@@ -342,6 +342,14 @@ set(HOST_ACCEPTANCE_SRCS
     # **必须置于 host smoke acceptance 之前**（smoke 末位 = 最先执行）。
     "../../schedule_grid_16px.acceptance.c"
 
+    # 包 261028-m6-k3-p3-story-typography（故事列表/阅读 16px/20px 排版：列表行/
+    # 阅读正文直连 P0 [K4] kidpal_font_body + 阅读标题 kidpal_font_title 20px 居中
+    # 单行省略 + 长标题省略不压日期列 + 自然行 4→3 + 未变更页态 14px 负半——
+    # F-1/F-4/F-6 + 目的2/4 故事半）冻结验收。行为齿强符号源 = display/story_page.c
+    # + display/kidpal_font.cc（均已在册）；story_page.h 常量直读（include 绑定）。
+    # **必须置于 host smoke acceptance 之前**（smoke 末位 = 最先执行）。
+    "../../story_typography.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )
@@ -399,6 +407,8 @@ set(FAS_HOME_P1_H   "${FAS_DISPLAY}/home_p1.h")
 set(FAS_P1FONT_H    "${FAS_DISPLAY}/kidpal_p1_font.h")
 set(FAS_HOST_SEAM   "${CMAKE_CURRENT_SOURCE_DIR}/host_infra_seam.c")
 set(FAS_SCHEDULE_C  "${FAS_DISPLAY}/schedule_page.c")
+set(FAS_STORY_C     "${FAS_DISPLAY}/story_page.c")
+set(FAS_MCP_CC      "${FAS_FIRMWARE_MAIN}/mcp_server.cc")
 
 function(fas_fact_exists VAR PATH)
     if(EXISTS "${PATH}")
@@ -497,6 +507,11 @@ string(FIND "${FAS_SRCS_JOINED}" "schedule_grid_16px.acceptance.c" _fas_p)
 if(_fas_p GREATER -1)
     set(FAS_SRCS_SCHED_GRID_16PX 1)
 endif()
+set(FAS_SRCS_STORY_TYPO 0)
+string(FIND "${FAS_SRCS_JOINED}" "story_typography.acceptance.c" _fas_p)
+if(_fas_p GREATER -1)
+    set(FAS_SRCS_STORY_TYPO 1)
+endif()
 
 foreach(_sz IN ITEMS 10 12 14 16 18 20 24 28 32)
     fas_fact_exists(FAS_FT_${_sz}_E "${FAS_DISPLAY}/font_test_${_sz}.c")
@@ -512,7 +527,6 @@ fas_fact_contains(FAS_P1CJK_S1 "${FAS_P1CJK}" "int kidpal_p1_font_glyph(uint32_t
 fas_fact_contains(FAS_KSG_CAP "${FAS_SCHEDULE_H}" "#define KSG_COURSE_CAP 84")
 fas_fact_contains(FAS_KSG_MINPX "${FAS_SCHEDULE_H}" "#define KSG_FONT_MIN_PX 14")
 fas_fact_contains(FAS_KSTORY_ROWS "${FAS_STORY_H}" "#define KSTORY_LIST_ROWS_PER_SCREEN 4")
-fas_fact_contains(FAS_KSTORY_LINES "${FAS_STORY_H}" "#define KSTORY_READER_LINES_PER_SCREEN 4")
 fas_fact_contains(FAS_P1FONT_H_S7  "${FAS_P1FONT_H}" "kidpal_p1_font_face")
 fas_fact_contains(FAS_RN_S7        "${FAS_RENDER_NODE}" "kidpal_p1_font_face")
 fas_fact_contains(FAS_SEAM_S7      "${FAS_HOST_SEAM}" "kidpal_p1_font_face")
@@ -556,11 +570,42 @@ else()
     set(FAS_SCHED_H_BANDS 0)
 endif()
 
+# 261028-m6-k3-p3-story-typography：story 排版 16px/20px/自然行 3（键语义见
+# story_typography.acceptance.c 头注 [M] 节；旧 story_reader_lines4 键退役换锚
+# = font_assets_runtime FAS-A8 tooth 3 REVISION LOG revision 3）。
+fas_fact_contains(FAS_STORY_C_BODY_SEAM  "${FAS_STORY_C}" "kidpal_font_body")
+fas_fact_contains(FAS_STORY_C_TITLE_SEAM "${FAS_STORY_C}" "kidpal_font_title")
+fas_fact_contains(FAS_STORY_C_PUHUI14    "${FAS_STORY_C}" "font_puhui_14_1")
+fas_fact_contains(FAS_STORY_H_LINES3     "${FAS_STORY_H}" "#define KSTORY_READER_LINES_PER_SCREEN 3")
+fas_fact_contains(FAS_STORY_H_LINES4_A   "${FAS_STORY_H}" "KSTORY_READER_LINES_PER_SCREEN 4")
+fas_fact_contains(FAS_STORY_H_LINES4_B   "${FAS_STORY_H}" "KSTORY_READER_LINES_PER_SCREEN  4")
+file(READ "${FAS_STORY_C}" _fas_story_c_buf)
+string(REGEX MATCHALL "LV_LABEL_LONG_DOT" _fas_story_dot "${_fas_story_c_buf}")
+list(LENGTH _fas_story_dot FAS_STORY_C_DOT_N)
+file(READ "${FAS_MCP_CC}" _fas_mcp_buf)
+string(REGEX MATCHALL "KSTORY_READER_LINES_PER_SCREEN" _fas_mcp_lines "${_fas_mcp_buf}")
+list(LENGTH _fas_mcp_lines FAS_MCP_LINES_N)
+if(FAS_STORY_H_LINES4_A EQUAL 0 AND FAS_STORY_H_LINES4_B EQUAL 0)
+    set(FAS_STORY_H_LINES_NOT4 1)
+else()
+    set(FAS_STORY_H_LINES_NOT4 0)
+endif()
+if(FAS_STORY_C_DOT_N GREATER_EQUAL 3)
+    set(FAS_STORY_C_DOT_GE3 1)
+else()
+    set(FAS_STORY_C_DOT_GE3 0)
+endif()
+if(FAS_MCP_LINES_N GREATER_EQUAL 2)
+    set(FAS_MCP_LINES_SYNC 1)
+else()
+    set(FAS_MCP_LINES_SYNC 0)
+endif()
+
 set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     "${FAS_GEN_FONTS}" "${FAS_DEV_CMAKE}" "${FAS_KIDPAL_FONT_H}" "${FAS_KIDPAL_FONT_CC}"
     "${FAS_SIZE_PAGE}" "${FAS_RENDER_NODE}" "${FAS_SCHEDULE_H}" "${FAS_STORY_H}" "${FAS_P1CJK}"
     "${FAS_HOME_P1_C}" "${FAS_HOME_P1_H}" "${FAS_P1FONT_H}" "${FAS_HOST_SEAM}"
-    "${FAS_SCHEDULE_C}")
+    "${FAS_SCHEDULE_C}" "${FAS_STORY_C}" "${FAS_MCP_CC}")
 foreach(_sz IN ITEMS 10 12 14 16 18 20 24 28 32)
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY
         CMAKE_CONFIGURE_DEPENDS "${FAS_DISPLAY}/font_test_${_sz}.c")
@@ -601,7 +646,6 @@ string(APPEND FAS_OUT "\np1cjk_s1_signature=${FAS_P1CJK_S1}")
 string(APPEND FAS_OUT "\nschedule_ksg_course_cap=${FAS_KSG_CAP}")
 string(APPEND FAS_OUT "\nschedule_ksg_font_min_px=${FAS_KSG_MINPX}")
 string(APPEND FAS_OUT "\nstory_list_rows4=${FAS_KSTORY_ROWS}")
-string(APPEND FAS_OUT "\nstory_reader_lines4=${FAS_KSTORY_LINES}")
 string(APPEND FAS_OUT "\nhost_srcs_p1_home_16px=${FAS_SRCS_P1_HOME_16PX}")
 string(APPEND FAS_OUT "\np1_kidpalfont_h_s7_decl=${FAS_P1FONT_H_S7}")
 string(APPEND FAS_OUT "\np1_rn_s1_face_seam=${FAS_RN_S7}")
@@ -617,4 +661,19 @@ string(APPEND FAS_OUT "\nsched_c_no_temp_cp=${FAS_SCHED_NO_TEMP_CP}")
 string(APPEND FAS_OUT "\nsched_c_no_temp_fallback=${FAS_SCHED_NO_TEMP_FB}")
 string(APPEND FAS_OUT "\nsched_c_star_kept=${FAS_SCHED_STAR}")
 string(APPEND FAS_OUT "\nsched_h_band_anchors=${FAS_SCHED_H_BANDS}")
+string(APPEND FAS_OUT "\nhost_srcs_story_typography=${FAS_SRCS_STORY_TYPO}")
+string(APPEND FAS_OUT "\nstory_c_font_body_seam=${FAS_STORY_C_BODY_SEAM}")
+string(APPEND FAS_OUT "\nstory_c_font_title_seam=${FAS_STORY_C_TITLE_SEAM}")
+string(APPEND FAS_OUT "\nstory_c_puhui14_kept=${FAS_STORY_C_PUHUI14}")
+string(APPEND FAS_OUT "\nstory_c_dot_ge3=${FAS_STORY_C_DOT_GE3}")
+string(APPEND FAS_OUT "\nstory_h_reader_lines3=${FAS_STORY_H_LINES3}")
+# 别名键（builder step-0 偏差申报）：font_assets_runtime.acceptance.c REVISION LOG
+# revision 3（FAS-A8 tooth 3）读的键名是 story_reader_lines3（无 _h_），与
+# story_typography.acceptance.c [M]/[T7] 读的 story_h_reader_lines3 不一致——
+# acceptance-wiring-patch.md 增量 6b 只发后者。为同时满足两件冻结验收，此处
+# 增发同值别名 story_reader_lines3（同事实、两键名）。根因 = 接线补丁与 FAS-A8
+# 修订键名漂移，待 acceptance-author/planner 收敛（本块只读事实、两键同源）。
+string(APPEND FAS_OUT "\nstory_reader_lines3=${FAS_STORY_H_LINES3}")
+string(APPEND FAS_OUT "\nstory_h_reader_lines_not4=${FAS_STORY_H_LINES_NOT4}")
+string(APPEND FAS_OUT "\nstory_mcp_lines_sync=${FAS_MCP_LINES_SYNC}")
 file(WRITE "${CMAKE_BINARY_DIR}/fas_structure_manifest.txt" "${FAS_OUT}\n")

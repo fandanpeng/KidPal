@@ -27,6 +27,14 @@
 
 #include "lvgl.h"
 
+/* P0 [K1]-[K4] 统一 kidpal_font 句柄 seam（TaskPackage 261028-m6-k1-font-assets-runtime-loading）:
+ * 列表行标题 / 阅读正文消费 kidpal_font_body()（16px 运行时句柄），阅读标题消费
+ * kidpal_font_title()（20px，缺字经 fallback 链回退 16px）；缺 assets 时 kidpal_font.cc
+ * [K2]/[K3] 内部落 font_puhui_14_1 14px 兜底（恒非 NULL——此处不新增 NULL 回落分支）。
+ * 未变更页态（DELETE/BODY_UNAVAILABLE/STAMP/RECORDING/ORGANIZING + 计数/页脚/分屏
+ * 指示/空态话术）字号零触碰，仍直连 font_puhui_14_1（F-1 负半）。 */
+#include "kidpal_font.h"
+
 /* K3R D2 真机轮「一次定死」诊断（2026-10-01）: 纯日志, 零渲染行为改动。host 与设备
  * 两侧 log 组件均在场（host linux target comps 含 log）。 */
 #include <esp_log.h>
@@ -1027,16 +1035,25 @@ static void ksy_box(lv_obj_t *scr, int x, int y, int w, int h, uint32_t color)
     lv_obj_clear_flag(o, LV_OBJ_FLAG_SCROLLABLE);
 }
 
-static lv_obj_t *ksy_label(lv_obj_t *scr, const char *text, int x, int y, uint32_t color)
+static lv_obj_t *ksy_label_font(lv_obj_t *scr, const char *text, int x, int y,
+                                uint32_t color, const lv_font_t *font)
 {
     lv_obj_t *l = lv_label_create(scr);
     lv_label_set_text(l, text);
     lv_obj_set_pos(l, x, y);
     lv_obj_set_style_text_color(l, lv_color_hex(color), 0);
     /* CJK 字体显式接线（seam [K9]: 不赌继承——默认 montserrat_14 纯拉丁, P3 中文
-     * 面真机空白; lcd_display.cc 五处先例同款）。 */
-    lv_obj_set_style_text_font(l, &font_puhui_14_1, 0);
+     * 面真机空白; lcd_display.cc 五处先例同款）。font == NULL（防御）回落 14px。 */
+    lv_obj_set_style_text_font(l, font != NULL ? font : &font_puhui_14_1, 0);
     return l;
+}
+
+/* 14px 直连 helper（未变更页态 + 计数/页脚/分屏指示/空态话术 + 列表星标/日期列;
+ * F-1 负半——不跟随 16px/20px 放大）。列表行标题 / 阅读正文/标题另走
+ * ksy_label_font + P0 句柄。 */
+static lv_obj_t *ksy_label(lv_obj_t *scr, const char *text, int x, int y, uint32_t color)
+{
+    return ksy_label_font(scr, text, x, y, color, &font_puhui_14_1);
 }
 
 /* D3 v7 三帧气泡（261019 fixer; 位式权威 = docs/ui/kidpal-ui-design-v7.html P3 规格
@@ -1290,9 +1307,19 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
                     lv_obj_set_style_border_opa(sel, LV_OPA_COVER, 0);
                     lv_obj_clear_flag(sel, LV_OBJ_FLAG_SCROLLABLE);
                 }
-                /* 每行 星星图标 + 标题 + 日期。 */
+                /* 每行 星星图标 + 标题 + 日期。标题 16px（P0 [K4] kidpal_font_body）+
+                 * 定宽单行尾部省略（LV_LABEL_LONG_DOT）: 右缘止于 x=316（日期列 x=320
+                 * 左 4px 分离带 [316..319] 零墨），长标题不压日期列（S-F2.1 AC1 /
+                 * 目的4）；日期列仍 14px 完整可见。 */
                 ksy_label(scr, "★", 16, y, KSY_COLOR_INK);
-                ksy_label(scr, list->items[idx].title, 40, y, KSY_COLOR_TEXT);
+                {
+                    const lv_font_t *row_font = kidpal_font_body();
+                    lv_obj_t *tl = ksy_label_font(scr, list->items[idx].title, 40, y,
+                                                  KSY_COLOR_TEXT, row_font);
+                    lv_obj_set_width(tl, 276); /* 40 + 276 = 316（分离带左缘） */
+                    lv_obj_set_height(tl, row_font->line_height); /* 单视觉行 */
+                    lv_label_set_long_mode(tl, LV_LABEL_LONG_DOT);
+                }
                 ksy_label(scr, list->items[idx].date, 320, y, KSY_COLOR_INK);
             }
             /* 常驻语音入口双指令（S-F2.1 AC3 + intro 对账③: 「我要讲故事」+
@@ -1387,9 +1414,21 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
         case KSTORY_PAGE_READER: {
             char label[64];
             int s, total_screens = v->screens < 1 ? 1 : v->screens;
-            /* 标题（S-F2.3 AC1: 标题 + 正文分页）。 */
-            ksy_label(scr, story->title[0] != '\0' ? story->title : "故事", 12, 8,
-                      KSY_COLOR_TEXT);
+            /* 标题（S-F2.3 AC1: 标题 + 正文分页）。20px（P0 [K4] kidpal_font_title，
+             * 缺字经 fallback 链回退 16px body）水平居中、单行、超宽尾部省略
+             * （LV_LABEL_LONG_DOT）——定宽 400 + 定高一视觉行（title line_height）+
+             * TEXT_ALIGN_CENTER；版式锚 y8（标题墨 max_y<=42）与正文 y44 分离、不压
+             * 正文（目的2 / S-F2.3 补充规则 / F-6）。 */
+            {
+                const lv_font_t *ttl_font = kidpal_font_title();
+                lv_obj_t *ttl = ksy_label_font(
+                    scr, story->title[0] != '\0' ? story->title : "故事", 0, 8,
+                    KSY_COLOR_TEXT, ttl_font);
+                lv_obj_set_width(ttl, LV_HOR_RES);
+                lv_obj_set_height(ttl, ttl_font->line_height); /* 单视觉行 */
+                lv_obj_set_style_text_align(ttl, LV_TEXT_ALIGN_CENTER, 0);
+                lv_label_set_long_mode(ttl, LV_LABEL_LONG_DOT);
+            }
             /* 当前屏正文: 经单源切片助手 kidpal_story_reader_slice 取 st->text 内部
              * 当前屏切片 (指针/偏移, 不复制), 堆上临时 NUL 化后经 lv_label_set_text
              * 上屏 (LVGL 内部拷贝, 随即释放); 只画当前屏、非全文直画。段落设宽度 +
@@ -1414,7 +1453,9 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
                 lv_label_set_long_mode(body, LV_LABEL_LONG_WRAP);
                 lv_obj_set_pos(body, 16, 44);
                 lv_obj_set_style_text_color(body, lv_color_hex(KSY_COLOR_TEXT), 0);
-                lv_obj_set_style_text_font(body, &font_puhui_14_1, 0);
+                /* 正文 16px（P0 [K4] kidpal_font_body，缺 assets 落 14px 兜底）；
+                 * 定宽 + WRAP 消横向裁切（长自然行折行不越屏, F-4）。 */
+                lv_obj_set_style_text_font(body, kidpal_font_body(), 0);
                 if (tmp != NULL) {
                     lv_free(tmp);
                 }
@@ -2131,10 +2172,15 @@ const char *kidpal_story_reader_slice(const kidpal_story_text_t *st, int screen,
     if (start == NULL) {
         return NULL;
     }
-    /* 本屏内容边界 = 下一屏首行行首; 无下一屏 -> 串尾。 */
+    /* 本屏内容边界 = 下一屏首行行首; 无下一屏 -> 串尾。存在下一屏时，末自然行
+     * 末尾的分隔 '\n' 属屏间边界、不并入本屏切片——本屏恰含 lines_per_screen 个
+     * 自然行（lines_per_screen-1 个内部换行）。切片粒度锚 = story_typography.
+     * acceptance.c STY-A3 tooth 3 / [T3]（第 0 屏 3 自然行 -> 恰 2 个 '\n'）。 */
     end = ksy_line_start(st->text, target + lines_per_screen);
     if (end == NULL) {
         end = st->text + strlen(st->text);
+    } else if (end > start && end[-1] == '\n') {
+        end--; /* 去掉屏间分隔符（不并入本屏） */
     }
     if (end < start) {
         return NULL;

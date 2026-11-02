@@ -34,10 +34,22 @@
     "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-4",
     "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§5"
   ],
-  "acceptance": [],
-  "acceptanceTestsFile": [],
-  "redBaselineCommand": "",
-  "redBaselineResult": "",
+  "acceptance": [
+    "STY-A1: 故事列表 16px 消费与日期列保护——mount fonts_root 后经真实渲染路径量列表标题墨高 ∈ [13..16]（16px 证据域，host 实测校准）+ 14px 判别负控严格不等式 + 分离带 x[316..319] 零墨（长标题省略不压日期列）+ 日期带在墨 + 单行 ≤18 + 省略触发填充 ≥240（22 字长标题）+ mount gate/复位。授权 = S-F2.1-AC1 + PROPOSAL 目的4 + P3T-E1。设计态红：现役 14px 全 label 接线",
+    "STY-A2: 阅读正文 16px——正文墨高 ∈ [13..16] + 14px 判别负控严格不等式。授权 = S-F2.3 补充规则 + P3T-E2。设计态红",
+    "STY-A3: 自然行 4→3——include 直读 KSTORY_READER_LINES_PER_SCREEN==3（且 ≠4）+ KSTORY_LIST_ROWS_PER_SCREEN==4 零偏移 + open_reader 7 自然行→3 屏 + kidpal_story_reader_slice 恰 3 自然行（2 换行）+ 末屏/越界守卫。授权 = PROPOSAL F-4 + P3T-E2/E3。设计态红（常量 4）",
+    "STY-A4: 长自然行折行不越屏——30 字长自然行折行发生（垂直墨跨 ≥26）且墨不越 x[12..396]。授权 = F-4 + P3T-E2",
+    "STY-A5: 阅读标题 20px 居中单行省略不压正文——标题墨高 ∈ [16..20] + 居中 |墨心-200|≤24 + 单行 ≤26 + 22 字长标题填充（min_x≤80 且 max_x≥300）+ 标题 max_y≤42 / 正文 min_y≥43 分离 + title()->fallback==body() 消费点守卫（F-6 缺字回退）。授权 = PROPOSAL F-1/F-6 + 目的2 + P3T-E2。设计态红（无 20px 标题、左对齐）",
+    "STY-A6: 未变更页态 14px 负半——DELETE 提问 / BODY_UNAVAILABLE 大字 / STAMP 文案 / RECORDING 气泡四带墨高守 [10..13]（mount 态判别）。授权 = plan 铁律 + F-1 负半。绿（现状即 14px）",
+    "STY-A7: FAS 结构清单八新键（host_srcs_story_typography / story_c_font_body_seam / story_c_font_title_seam / story_c_puhui14_kept / story_c_dot_ge3 / story_h_reader_lines3 / story_h_reader_lines_not4 / story_mcp_lines_sync）+ 复用 story_list_rows4 + 清单自检。授权 = P3T-E3（mcp_server.cc 两消费点 :691/:1885 随 4→3 同步守卫）。接线相 infra 红 → 常量落地转绿"
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/story_typography.acceptance.c",
+    "firmware/main/test/story_page_v2.acceptance.c",
+    "firmware/main/test/font_assets_runtime.acceptance.c"
+  ],
+  "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && wsl -d Ubuntu-24.04 -- ./firmware/main/test/host_app/build/host_infra_test.elf",
+  "redBaselineResult": "acceptance-author 冻结实跑（2026-11-02）+ planner 复核复跑一致：通道② 三件 C 类实编 rc=0 error=0 warning=0（-Wall -Wextra 全旗标）；通道① host runner = 258 Tests / 5 Failures / 0 Ignored（ELF 零段错误）。红名单逐条（判读按名单不按总数——P2 retro F4 延续）：①存量族 3 条 = p1_auxbar AB-A1/AB-A2/AB-A4（launch-card 基线锚在册、与本包无关）；②本包设计态红 2 条 = story_page_v2 SPV2-B2（story_page.c 零 kidpal_font_body——revision 5 新锚，builder 落 16px/20px 句柄后转绿）+ font_assets_runtime FAS-A8（结构清单键 story_reader_lines3 缺失——接线相 infra 红，wiring patch 落线后转设计态红、常量 3 落地转绿）。story_typography.acceptance.c 七 TEST 待 builder step-0 接线后编入，届时义务红名单 = 冻结件头注预申报（TEST 1 tooth 1/3、TEST 2 tooth 1、TEST 3 tooth 1/2/3 前半、TEST 5 tooth 2、TEST 7 五键）+ auxbar×3，除义务红零其它新增红。supersede 修订对照：story_page_v2 revision 5（R9/R10：SPV2-B2 tooth 1 三锚换新、13.5px/1.72 旧锚退役移交 [T3]+FAS 键）+ font_assets_runtime revision 3（R11：FAS-A8 tooth 3 story_reader_lines4 退役换 story_reader_lines3，旧 canary「F-4 归 P3」注记到期）——修订 diff 已核零意外撤改。",
   "exitCriteria": [
     "P3T-E1: 故事列表切 P0 的 16px 运行时字体；长标题尾部省略且不压日期列，日期完整可见，列表分屏、计数、边框选中与空态语义不变。",
     "P3T-E2: 阅读正文 16px、每屏自然行 4→3，长自然行折行不越屏；标题 20px 水平居中、单行、超宽尾部省略且不压正文，20px 缺字回退 16px；story_page_v2 的 13.5px/1.72 与 font_puhui_14_1 旧锚由 acceptance-author 收紧型留痕重基线。",
@@ -77,7 +89,64 @@
   ],
   "mutationRequired": true,
   "mutationEvidence": {
-    "perAcceptance": []
+    "perAcceptance": [
+      {
+        "acceptanceId": "STY-A1",
+        "acceptance": "STY-A1: 故事列表 16px 消费与日期列保护——mount fonts_root 后经真实渲染路径量列表标题墨高 ∈ [13..16]（16px 证据域，host 实测校准）+ 14px 判别负控严格不等式 + 分离带 x[316..319] 零墨（长标题省略不压日期列）+ 日期带在墨 + 单行 ≤18 + 省略触发填充 ≥240（22 字长标题）+ mount gate/复位。授权 = S-F2.1-AC1 + PROPOSAL 目的4 + P3T-E1。设计态红：现役 14px 全 label 接线",
+        "mutation": "M-STY1 列表行标题回 font_puhui_14_1 直连 + 摘定宽 276/LONG_DOT（16px 消费点摘除）",
+        "affectedTest": "story_typography.acceptance.c TEST 1 (STY-A1)",
+        "turnedRed": true,
+        "result": "turned red：STY-A1 FAIL——16px 态墨高 13 不大于 14px 态 13，两态不可判别（严格不等式判别负控咬住）。已还原（md5 一致，工作树零变异残留）。取证轮 = builder r1。"
+      },
+      {
+        "acceptanceId": "STY-A2",
+        "acceptance": "STY-A2: 阅读正文 16px——正文墨高 ∈ [13..16] + 14px 判别负控严格不等式。授权 = S-F2.3 补充规则 + P3T-E2。设计态红",
+        "mutation": "M-STY2 阅读正文 body 字体换 &font_puhui_14_1（16px 消费点摘除）",
+        "affectedTest": "story_typography.acceptance.c TEST 2 (STY-A2)",
+        "turnedRed": true,
+        "result": "首测 MASKED（当时 STY-A2 夹具多行带几何红自遮，P2 F3 同型）→ acceptance-author revision 6 R12 修夹具后复测 turned red：STY-A2 FAIL——正文墨高 12 越 16px 域 [13..16]（14px 字面现形）。已还原（md5 4ca0d0a47ffb40355d2f7ee12fc0ba92 = 实现好态）。复测轮 = builder r2。"
+      },
+      {
+        "acceptanceId": "STY-A3",
+        "acceptance": "STY-A3: 自然行 4→3——include 直读 KSTORY_READER_LINES_PER_SCREEN==3（且 ≠4）+ KSTORY_LIST_ROWS_PER_SCREEN==4 零偏移 + open_reader 7 自然行→3 屏 + kidpal_story_reader_slice 恰 3 自然行（2 换行）+ 末屏/越界守卫。授权 = PROPOSAL F-4 + P3T-E2/E3。设计态红（常量 4）",
+        "mutation": "M-STY3 KSTORY_READER_LINES_PER_SCREEN 3→4（常量回退）",
+        "affectedTest": "story_typography.acceptance.c TEST 3 (STY-A3) + TEST 7 [M] 键",
+        "turnedRed": true,
+        "result": "turned red：STY-A3 FAIL（include 直读常量=4）+ STY-A7 FAIL（[M] lines3/lines_not4 键=0）。已还原（md5 一致）。取证轮 = builder r1。"
+      },
+      {
+        "acceptanceId": "STY-A4",
+        "acceptance": "STY-A4: 长自然行折行不越屏——30 字长自然行折行发生（垂直墨跨 ≥26）且墨不越 x[12..396]。授权 = F-4 + P3T-E2",
+        "mutation": "M-STY4 阅读正文 LV_LABEL_LONG_WRAP→CLIP（摘折行）",
+        "affectedTest": "story_typography.acceptance.c TEST 4 (STY-A4)",
+        "turnedRed": true,
+        "result": "turned red：STY-A4 FAIL——30 字长自然行折行未发生，垂直墨跨 16<26。已还原（md5 一致）。取证轮 = builder r1。"
+      },
+      {
+        "acceptanceId": "STY-A5",
+        "acceptance": "STY-A5: 阅读标题 20px 居中单行省略不压正文——标题墨高 ∈ [16..20] + 居中 |墨心-200|≤24 + 单行 ≤26 + 22 字长标题填充（min_x≤80 且 max_x≥300）+ 标题 max_y≤42 / 正文 min_y≥43 分离 + title()->fallback==body() 消费点守卫（F-6 缺字回退）。授权 = PROPOSAL F-1/F-6 + 目的2 + P3T-E2。设计态红（无 20px 标题、左对齐）",
+        "mutation": "M-STY5 阅读标题回 14px 左对齐、摘居中与 LONG_DOT（20px 标题消费点摘除）",
+        "affectedTest": "story_typography.acceptance.c TEST 5 (STY-A5)",
+        "turnedRed": true,
+        "result": "turned red：STY-A5 FAIL——标题墨高 12<16 域（20px 判别咬住）。已还原（md5 一致）。取证轮 = builder r1。"
+      },
+      {
+        "acceptanceId": "STY-A6",
+        "acceptance": "STY-A6: 未变更页态 14px 负半——DELETE 提问 / BODY_UNAVAILABLE 大字 / STAMP 文案 / RECORDING 气泡四带墨高守 [10..13]（mount 态判别）。授权 = plan 铁律 + F-1 负半。绿（现状即 14px）",
+        "mutation": "M-STY6 未变更页态代表处（DELETE 提问 label）误切 kidpal_font_body()",
+        "affectedTest": "story_typography.acceptance.c TEST 6 (STY-A6)",
+        "turnedRed": true,
+        "result": "首测 MASKED（当时 STY-A6 STAMP 带与印章圈相切红自遮）→ acceptance-author revision 6 R13 修带顶 y0 150→152 后复测 turned red：STY-A6 FAIL——DELETE 提问墨高 15 越 14px 域 [10..13]（F-1 未变更页态被放大）。已还原（md5 一致）。复测轮 = builder r2。"
+      },
+      {
+        "acceptanceId": "STY-A7",
+        "acceptance": "STY-A7: FAS 结构清单八新键（host_srcs_story_typography / story_c_font_body_seam / story_c_font_title_seam / story_c_puhui14_kept / story_c_dot_ge3 / story_h_reader_lines3 / story_h_reader_lines_not4 / story_mcp_lines_sync）+ 复用 story_list_rows4 + 清单自检。授权 = P3T-E3（mcp_server.cc 两消费点 :691/:1885 随 4→3 同步守卫）。接线相 infra 红 → 常量落地转绿",
+        "mutation": "M-STY7 mcp_server.cc 两消费点回退字面 3（符号引用摘除）",
+        "affectedTest": "story_typography.acceptance.c TEST 7 [M] + FAS story_mcp_lines_sync",
+        "turnedRed": true,
+        "result": "turned red：story_mcp_lines_sync=0 + STY-A7 FAIL（符号引用<2）。已还原（md5 一致）。取证轮 = builder r1。mcp_server.cc 本包零 diff（常量改 story_page.h 后两消费点自动同步，守卫 must-stay-green）"
+      }
+    ]
   },
   "crossEnd": {
     "counterparts": [
@@ -161,55 +230,73 @@
     {
       "decision": "F-1 · 故事列表/阅读正文 16px，阅读标题 20px",
       "summary": "故事两态消费 P0 字号句柄，录音/盖章/查字等未变更面不跟随放大。",
-      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-1"],
+      "sourceRefs": [
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-1"
+      ],
       "landsIn": "exitCriteria:P3T-E2"
     },
     {
       "decision": "业务目的 4 · 列表长标题省略且不压日期列",
       "summary": "列表标题超宽尾部省略，日期完整可见。",
-      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§1-目的4"],
+      "sourceRefs": [
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§1-目的4"
+      ],
       "landsIn": "exitCriteria:P3T-E1"
     },
     {
       "decision": "F-4 · 阅读正文自然行 4→3，翻页手感真机终判",
       "summary": "自然行数随字号收敛，长行折行不得越屏，疏密与翻页成本由真机轮定夺。",
-      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-4"],
+      "sourceRefs": [
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-4"
+      ],
       "landsIn": "exitCriteria:P3T-E2"
     },
     {
       "decision": "F-6 · 20px 全量 CJK 标题缺字回退 16px",
       "summary": "全量资产由 P0 生产，本包在真实标题消费点验证回退与单行居中省略。",
-      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-6"],
+      "sourceRefs": [
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-6"
+      ],
       "landsIn": "exitCriteria:P3T-E2"
     },
     {
       "decision": "OQ2 · 母版 v8 只重出四页之故事两帧",
       "summary": "只消费 V8 列表与阅读帧，录音/盖章等沿用既有版本。",
-      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.2-OQ2"],
+      "sourceRefs": [
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.2-OQ2"
+      ],
       "landsIn": "exitCriteria:P3T-E4"
     },
     {
       "decision": "§5 · workstream 真机收口标准",
       "summary": "P4 不独立成包；四页并集、缺资产降级、长标题/超限与翻页手感统一归本包终端轮。",
-      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§5"],
+      "sourceRefs": [
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§5"
+      ],
       "landsIn": "exitCriteria:P3T-E4"
     },
     {
       "decision": "F-5/F-7 · 运行时资产与 host 同源底座",
       "summary": "资产与统一句柄归 P0，本包只消费。",
-      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-5"],
+      "sourceRefs": [
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-5"
+      ],
       "landsIn": "package:261028-m6-k1-font-assets-runtime-loading"
     },
     {
       "decision": "F-2/F-9 · 首页排版与临时事件下划线",
       "summary": "首页实现归 P1，本包终端轮只复证，不抢占其文件面。",
-      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-2"],
+      "sourceRefs": [
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-2"
+      ],
       "landsIn": "package:261028-m6-k2a-p1-home-16px"
     },
     {
       "decision": "F-3/F-8/F-9 · 课表版式、容量与下划线",
       "summary": "课表实现归 P2，本包终端轮只复证，不抢占其文件面。",
-      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-3"],
+      "sourceRefs": [
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-3"
+      ],
       "landsIn": "package:261028-m6-k2b-p2-schedule-16px"
     }
   ],
