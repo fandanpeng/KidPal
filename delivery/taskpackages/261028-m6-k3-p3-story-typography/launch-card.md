@@ -12,7 +12,7 @@
 - **固件严格模式默认开**：`VERIFY_FW_BUILD_REQUIRED=1`（无关闭留痕即开）。本包触 `story_page.c`（host 构建在编）+ `mcp_server.cc`（设备专有 TU，不进 host 构建）——设备面改动经 mcp_server.cc 触达，firmware-build 相位必须真跑。
 - **验证形态申报**（机器消费行，闸按顶格前缀解析）：
 
-验证形态申报（JSON）：{"schemaVersion":1,"precedents":{},"deviceOutcome":{"userVisible":true,"acceptanceRefs":["P3T-E1","P3T-E2","P3T-E3","P3T-E4"],"hostUncompilablePaths":["firmware/main/mcp_server.cc"],"reason":"none"}}
+验证形态申报（JSON）：{"schemaVersion":1,"precedents":{},"deviceOutcome":{"userVisible":false,"acceptanceRefs":[],"hostUncompilablePaths":[],"reason":"launch 时预估 mcp_server.cc 会携改动故申报 true；实现轮实证其零 diff（两消费点随 story_page.h 常量 4→3 自动同步，FAS story_mcp_lines_sync=1 守卫），本包 diff 未触任何已登记 host 不可编路径——设备可见排版结果由 host 真渲染路径 STY 冻结断言承载（STY-A1..A6 以真实 lvgl 渲染 + 真实运行时字体资产出墨），终端轮 P3T-E4 目击独立落 device-round-evidence.md（2026-11-02 planner 修正申报，P2 同形先例同口径）"}}
 
 - **ARQ-261029 注记（终端轮预期管理）**：上游 ※ 写入侧任务仍待派单——终端轮复证 P1/P2 页下划线时若当周课表无临时课样本，按「观测受限」记录、不记失败（P1 统一轮、P2 真机轮同先例）；P3 故事两态自身不消费 ※。
 - **设计评审与豁免在案项**：design review 以 `docs/ui/V8/canvas-p3.png` + `p3-reader.png` 完成（uiux.designReviewRequired，证据随批落盘）；缺 assets 14px 降级真机观测已于 2026-10-29 human 裁豁免（P0 批裁定：14px 常显真机正常 + host 半 FAS-A4 已验回退逻辑 + 全量烧录恒带 assets），P3T-E4 该子项按豁免记录、不再重测。
