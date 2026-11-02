@@ -1,6 +1,6 @@
 {
-  "changeId": "261028-m6-k2b-p2-schedule-16px",
-  "title": "课表网格 16px——pitch 19、带高 78/78/69、容量 4/4/3 与课名下划线",
+  "changeId": "261028-m6-k3-p3-story-typography",
+  "title": "故事列表/阅读排版与 M6 真机收口——16px 正文、20px 居中省略标题、自然行 3",
   "rigor": "full",
   "sourceType": "proposal",
   "origin": {
@@ -10,73 +10,74 @@
     "upstreamFrozen": "sha1:af2e3627a8a2f254",
     "workstream": "261028-font-typography-scaleup"
   },
-  "subsystem": "firmware/main/display 课表周网格渲染与冻结验收镜像",
-  "story": "S-F1.2 · 课表页看「一周总览」（AC1、AC3、AC4）+ 补充规则容量 4/4/3 与超限静默截断口径。",
-  "planRef": "delivery/taskpackages/261028-m6-k2b-p2-schedule-16px/plan.md",
+  "subsystem": "firmware/main/display 故事列表/阅读渲染 + mcp_server 阅读分页消费 + M6 四页真机收口",
+  "story": "S-F2.1 · 看「星星记录本」列表（AC1 标题省略）+ S-F2.3 · 回看记录（AC1、AC2 与补充规则 16px/20px 排版）。",
+  "planRef": "delivery/taskpackages/261028-m6-k3-p3-story-typography/plan.md",
   "sourceRefs": [
-    "S-F1.2-AC1",
-    "S-F1.2-AC3",
-    "S-F1.2-AC4",
-    "docs/requirements.md#S-F1.2-补充规则",
+    "S-F2.1-AC1",
+    "S-F2.3-AC1",
+    "S-F2.3-AC2",
+    "docs/requirements.md#S-F2.3-补充规则",
     "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-1",
-    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-3",
-    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-8",
-    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-9",
-    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.2-OQ4",
-    "delivery/workstreams/261028-font-typography-scaleup/task_plan.md#P2",
-    "firmware/main/display/schedule_page.c",
-    "firmware/main/display/schedule_page.h",
-    "firmware/main/test/schedule_grid.acceptance.c",
-    "firmware/main/test/schedule_grid_restore.acceptance.c"
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-4",
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-6",
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§5",
+    "delivery/workstreams/261028-font-typography-scaleup/task_plan.md#P3",
+    "firmware/main/display/story_page.c",
+    "firmware/main/display/story_page.h",
+    "firmware/main/mcp_server.cc",
+    "firmware/main/test/story_page_v2.acceptance.c"
   ],
   "acceptanceRefs": [
-    "docs/requirements.md#S-F1.2",
-    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-3",
-    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-8",
-    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-9"
+    "docs/requirements.md#S-F2.1",
+    "docs/requirements.md#S-F2.3",
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-4",
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§5"
   ],
   "acceptance": [
-    "SG16-A1: 16px 句柄消费度量合理域——mount fonts_root 后经真实渲染路径量课程名墨高 ∈ [13..16]（16px 证据域；修订轮以 builder 实测重基线：资产 line_height=23/base_line=5、「课」box 15x14、「口」box 12x13，CJK 墨高实际 14，P1 同资产同值；冻结时点预判窗 [15..18] 下界越证据域）+ P0 资产 gate（body() 非 14px、line_height [20..25]、「课」glyph 盒 [12..18]^2）+ 判别力负控（全缺 mount 态同一夹具墨高 [10..13] 且严格小于 16px 态——两窗在 13 搭接，基线判别力由严格不等式承载）+ mount(missing reader) 复位防跨文件泄漏。修订轮实测：16px 态墨高 14，兜底态 < 14（严格不等式通过）",
-    "SG16-A2: pitch 19 精确锚——同名双课（语文×2）同格堆叠 span 差 == 19（同名夹具消除两行字形墨高差，delta 恰等于 KSG_ROW_PITCH）。设计态红：pitch 16",
-    "SG16-A3: 槽位带 88/88/49（真机轮修订）——空网格新分隔线 y=117/205 全行墨 + 历史旧位置 y=103/107/177/185 除竖线家具列外全白负锚（两代旧位带移非加线）+ 表头 y=29 与网格底线 y=254 零偏移 + (day,slot) 格归属 diff 全落新带 + y>=255 网格外带零墨（越带负锚继承）。授权链 = P2S-E5 真机轮 human 原话（「…把晚上保留两行就行了」）+ REVISION LOG 真机轮条",
-    "SG16-A4: 容量 4/4/2（真机轮修订）+ 静默截断 + CAP=84——slot0/slot1 第 4 门真画（diff>0 落带）、第 5 门帧等价（diff==0 全帧 = 不滚动不提示不画第 5 行）；slot2 第 2 门真画、第 3 门帧等价（human 裁定「晚上保留两行」）；加门 diff containment 全落本格带；84 条全量载荷解析 == 84（F-8 缓存/解析 cap 不误缩）。截断态渲染返回值不钉（[F2-C] 申报，builder 保持返回 n 或改实画数皆不红）",
-    "SG16-A5: 临时课下划线 + ※ 退役 + ★ 不变 + 可见 2 字——temp/fixed/star/叠加四帧 diff 定位：diff 首行 > 名墨最大行（※ 前缀不占笔进不侵文字行）、离散 diff 行数 == 2、各行 diff ∈ [12..60]（2px 随名宽）、diff 全落格带、fixed 帧名墨之下零墨（固定不画线）、star 可见/两标记可区分/flags=3 叠加、无标记格 2 字墨宽 >= 28、flags=0 确定性；一律锚 flags bit0 不锚 name 前缀（ARQ-261029）。设计态红：下划线未实现（现状画 ※）",
-    "SG16-A6: 结构半 FAS 清单扩键——host_srcs_schedule_grid_16px / sched_c_font_seam（schedule_page.c 直连 kidpal_font_body）/ sched_c_pitch_macro / sched_c_pitch_not16（负向）/ sched_c_no_temp_cp（负向 0x203B+U+203B）/ sched_c_no_temp_fallback（负向 ksg_marker_temp_proc）/ sched_c_star_kept（0x2605）/ sched_h_band_anchors（y[30..107]+y[186..254]）+ 复用键 schedule_ksg_course_cap / schedule_ksg_font_min_px。设计态红：五结构键=0（旧字面在世/新字面缺位）"
+    "STY-A1: 故事列表 16px 消费与日期列保护——mount fonts_root 后经真实渲染路径量列表标题墨高 ∈ [13..16]（16px 证据域，host 实测校准）+ 14px 判别负控严格不等式 + 分离带 x[316..319] 零墨（长标题省略不压日期列）+ 日期带在墨 + 单行 ≤18 + 省略触发填充 ≥240（22 字长标题）+ mount gate/复位。授权 = S-F2.1-AC1 + PROPOSAL 目的4 + P3T-E1。设计态红：现役 14px 全 label 接线",
+    "STY-A2: 阅读正文 16px——正文墨高 ∈ [13..16] + 14px 判别负控严格不等式。授权 = S-F2.3 补充规则 + P3T-E2。设计态红",
+    "STY-A3: 自然行 4→3——include 直读 KSTORY_READER_LINES_PER_SCREEN==3（且 ≠4）+ KSTORY_LIST_ROWS_PER_SCREEN==4 零偏移 + open_reader 7 自然行→3 屏 + kidpal_story_reader_slice 恰 3 自然行（2 换行）+ 末屏/越界守卫。授权 = PROPOSAL F-4 + P3T-E2/E3。设计态红（常量 4）",
+    "STY-A4: 长自然行折行不越屏——30 字长自然行折行发生（垂直墨跨 ≥26）且墨不越 x[12..396]。授权 = F-4 + P3T-E2",
+    "STY-A5: 阅读标题 20px 居中单行省略不压正文——标题墨高 ∈ [16..20] + 居中 |墨心-200|≤24 + 单行 ≤26 + 22 字长标题填充（min_x≤80 且 max_x≥300）+ 标题 max_y≤42 / 正文 min_y≥43 分离 + title()->fallback==body() 消费点守卫（F-6 缺字回退）。授权 = PROPOSAL F-1/F-6 + 目的2 + P3T-E2。设计态红（无 20px 标题、左对齐）",
+    "STY-A6: 未变更页态 14px 负半——DELETE 提问 / BODY_UNAVAILABLE 大字 / STAMP 文案 / RECORDING 气泡四带墨高守 [10..13]（mount 态判别）。授权 = plan 铁律 + F-1 负半。绿（现状即 14px）",
+    "STY-A7: FAS 结构清单八新键（host_srcs_story_typography / story_c_font_body_seam / story_c_font_title_seam / story_c_puhui14_kept / story_c_dot_ge3 / story_h_reader_lines3 / story_h_reader_lines_not4 / story_mcp_lines_sync）+ 复用 story_list_rows4 + 清单自检。授权 = P3T-E3（mcp_server.cc 两消费点 :691/:1885 随 4→3 同步守卫）。接线相 infra 红 → 常量落地转绿"
   ],
   "acceptanceTestsFile": [
-    "firmware/main/test/schedule_grid_16px.acceptance.c",
-    "firmware/main/test/schedule_grid.acceptance.c",
-    "firmware/main/test/schedule_grid_restore.acceptance.c"
+    "firmware/main/test/story_typography.acceptance.c",
+    "firmware/main/test/story_page_v2.acceptance.c",
+    "firmware/main/test/font_assets_runtime.acceptance.c"
   ],
   "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && wsl -d Ubuntu-24.04 -- ./firmware/main/test/host_app/build/host_infra_test.elf",
-  "redBaselineResult": "acceptance-author 冻结实跑（2026-11-02）：通道① host runner（build 过 + host_infra_test.elf，ELF 零段错误）= 253 Tests / 6 Failures / 0 Ignored。红名单逐条（判读按名单不按总数——P1 retro F4）：①存量族 3 条 = p1_auxbar AB-A1（p1_draw_aux_batt 未取 ic_batt_15 消费点）/ AB-A2（ic_thermo_12 落位越出图标半区）/ AB-A4（ic_wifi_14 消费点缺席）——launch-card 基线锚在册、与本包无关；②收紧型 supersede 设计态红 3 条 = schedule_grid.acceptance.c TEST 8（M3K2-A1 render: course-diff pixels fall outside their (day,slot) cell bands——槽位带 74/74/77→78/78/69 重锚）/ TEST 9（M3K2-A1/NFR-READ-1 render: stacked second course line pitch < 19——pitch 16→19 收紧）/ TEST 11（M3K2-A3 render: flags bit0 (临时课) produced no visible in-cell ink diff——slot2 带移连带），builder 落 F-3/F-9 后三者转绿。其余 247 全绿（解析矩阵 / A2 注入缝 / A5 upcoming 族 / A6 回归靶 / 今天列 TEST 10 / restore 五 TEST 零偏移维持绿）。通道② C 类冻结验收实编（DEV-GOVERNANCE §4）：schedule_grid_16px.acceptance.c 以完整 host 工具链旗标集 -fsyntax-only 实编 rc=0 零 error 零 warning（过程见该文件头注 Run protocol）。通道③（接线落线后）= builder step-0 现跑 258 Tests / 7 Failures 与义务红名单吻合后，暴露冻结件 6 处逻辑上不可满足缺陷（builder 不入库诊断副本定位）→ acceptance-author 收紧型修订轮（2026-11-02，REVISION LOG 留痕于冻结件文件尾）：①A1 度量窗以证据重基线 [13..16]/[10..13]（16px 资产实测墨高 14——资产 line_height=23/base_line=5、「课」box 15x14、「口」box 12x13）；②旧位负锚改「除竖线家具列外全白」（日列竖线贯穿 y 0..254，原全行白不可满足）；③TEST 3 三处截断帧对修正（超限帧 f_c vs 满容量帧 f_b）；④tooth 6 slot2 containment x 带改 day2；⑤helper 家族双向内缩 + min/max 全局极值（sgx_max_ink_row 命中带底/x0 竖线、sgx_text_col_span min_x=首枚墨像素——「口」「语」不等高时只有较高字形入 min，实测 span 13 vs 帧证据 30）；⑥sgx_slot_caps 改 TEST 3 消费、-Wno-error=unused-const-variable 豁免可摘除。零负锚削弱（越带零墨/CAP=84/星标三齿/restore 镜像原样）。修订后通道①现跑 = 258 Tests / 3 Failures / 0 Ignored = 仅存量 p1_auxbar AB-A1/A2/A4，SG16-A1..A6 全绿、既有 247 齿零偏移、零段错误；2026-11-02 真机轮修订轮（P2S-E5 human 原话授权：「上午显示4行 最后一行，还是有一点被截断了，你可以看照片，如果是放不下的原因，我们可以把晚上保留两行就行了」）：槽位带 78/78/69 → 88/88/49（新分隔线 y=117/205 + 两代历史旧位 y=103/107/177/185 除竖线外全白负锚）、容量 4/4/3 → 4/4/2（slot2 第 2 门真画/第 3 门帧等价）——三冻结件 REVISION LOG 真机轮条留痕；修订后通道①现跑 = 258 Tests / 3 Failures / 0 Ignored = 仅存量 p1_auxbar AB-A1/A2/A4，SG16-A1..A6 全绿（新带/新容量）、既有 247 齿零偏移、零段错误；FAS 键 sched_h_band_anchors 判读字面已随批换 y[30..117]/y[206..254]；requirements v1.69 的 4/4/3 行回填归主线程 /requirement-change 后置补账（本修订引用 human 原话为授权，REVISION LOG 已注明）",
+  "redBaselineResult": "acceptance-author 冻结实跑（2026-11-02）+ planner 复核复跑一致：通道② 三件 C 类实编 rc=0 error=0 warning=0（-Wall -Wextra 全旗标）；通道① host runner = 258 Tests / 5 Failures / 0 Ignored（ELF 零段错误）。红名单逐条（判读按名单不按总数——P2 retro F4 延续）：①存量族 3 条 = p1_auxbar AB-A1/AB-A2/AB-A4（launch-card 基线锚在册、与本包无关）；②本包设计态红 2 条 = story_page_v2 SPV2-B2（story_page.c 零 kidpal_font_body——revision 5 新锚，builder 落 16px/20px 句柄后转绿）+ font_assets_runtime FAS-A8（结构清单键 story_reader_lines3 缺失——接线相 infra 红，wiring patch 落线后转设计态红、常量 3 落地转绿）。story_typography.acceptance.c 七 TEST 待 builder step-0 接线后编入，届时义务红名单 = 冻结件头注预申报（TEST 1 tooth 1/3、TEST 2 tooth 1、TEST 3 tooth 1/2/3 前半、TEST 5 tooth 2、TEST 7 五键）+ auxbar×3，除义务红零其它新增红。supersede 修订对照：story_page_v2 revision 5（R9/R10：SPV2-B2 tooth 1 三锚换新、13.5px/1.72 旧锚退役移交 [T3]+FAS 键）+ font_assets_runtime revision 3（R11：FAS-A8 tooth 3 story_reader_lines4 退役换 story_reader_lines3，旧 canary「F-4 归 P3」注记到期）——修订 diff 已核零意外撤改。",
   "exitCriteria": [
-    "P2S-E1: 课名切 P0 的 16px 运行时字体，格内 pitch=19、槽位带高=78/78/69；表头带、KSG_GRID_BOTTOM=254、今天列外框加粗与网格零越带不变，真机不叠行。",
-    "P2S-E2: 按槽位可画上限=上午 4/下午 4/晚上 3，KSG_COURSE_CAP=84 与云端全量下发不变；超限维持静默截断、不滚动、不新增提示，缓存/解析 cap 不得被误缩成渲染上限。",
-    "P2S-E3: flags bit0 的 wire 语义不变，课表临时课由 ※ 前缀改课名下 2px 下划线，※ 字形探测/程序化兜底退役，★ 星标不变；无标记格在 16px 下可见 2 字。schedule_grid 冻结头与 schedule_grid_restore 镜像由 acceptance-author 同步留痕修订，旧断言、新断言、授权与 REVISION LOG 齐全，撤改法必红。",
-    "P2S-E4: host 全量零新增红、device build 绿；冻结验收只做收紧型 supersede，不删除容量、越带、星标或 restore 负断言，注释不算证据。",
-    "P2S-E5: 以 docs/ui/V8/canvas-p2.png 完成 design review，并占一轮真机配额看 pitch 19 紧凑观感、4/4/3 容量、下划线/星标与长课截断；结果供 P3 workstream 终端收口复证。"
+    "P3T-E1: 故事列表切 P0 的 16px 运行时字体；长标题尾部省略且不压日期列，日期完整可见，列表分屏、计数、边框选中与空态语义不变。",
+    "P3T-E2: 阅读正文 16px、每屏自然行 4→3，长自然行折行不越屏；标题 20px 水平居中、单行、超宽尾部省略且不压正文，20px 缺字回退 16px；story_page_v2 的 13.5px/1.72 与 font_puhui_14_1 旧锚由 acceptance-author 收紧型留痕重基线。",
+    "P3T-E3: mcp_server.cc 两个 KSTORY_READER_LINES_PER_SCREEN 消费点随 4→3 同步并回归，页态/输入/云端载荷形状不变；host 全量零新增红、device build 绿。所有既有冻结件修订均记录旧断言、新断言、授权与 REVISION LOG，注释不算证据，撤改法或弱化断言必红。",
+    "P3T-E4: 以 docs/ui/V8/canvas-p3.png 与 p3-reader.png 完成 design review；P0/P1/P2 已 merged 后占终端真机轮，一次目击四页新字号、课表 pitch/容量/下划线、长标题与超限截断、阅读翻页手感及缺 assets 14px 降级开机，human 终判后才宣布 M6 收口。"
   ],
   "iterationBudget": 2,
   "fixBudget": 3,
   "supervisorBlockBudget": 2,
   "contractRefs": [
-    "docs/contracts/interface-contract.md#§1.3②"
+    "docs/contracts/interface-contract.md#§1.3③",
+    "docs/contracts/interface-contract.md#§1.3④"
   ],
   "docRefs": [
     "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md",
     "delivery/workstreams/261028-font-typography-scaleup/task_plan.md",
-    "delivery/taskpackages/261028-m6-k2b-p2-schedule-16px/plan.md",
+    "delivery/taskpackages/261028-m6-k3-p3-story-typography/plan.md",
     "docs/requirements.md",
     "docs/architecture.md",
     "docs/decisions/ADR.md",
     "docs/contracts/interface-contract.md",
     "docs/ui/kidpal-ui-design-v8.html",
     "docs/ui/UIUX-DESIGN-BRIEF.md",
-    "docs/ui/V8/canvas-p2.png"
+    "docs/ui/V8/canvas-p3.png",
+    "docs/ui/V8/p3-reader.png"
   ],
   "docsSyncRequired": false,
-  "docsSyncReason": "容量、下划线和 V8 已随 requirements v1.69 冻结，架构/契约零新增改动；本包只追实现与验收镜像。",
+  "docsSyncReason": "S-F2.1/S-F2.3 排版与 V8 已随 requirements v1.69 冻结，架构/ADR 已落地；本包只追实现与真机证据。",
   "docsOwner": "integrator",
   "securityReviewRequired": false,
   "adrRequired": false,
@@ -90,133 +91,119 @@
   "mutationEvidence": {
     "perAcceptance": [
       {
-        "acceptanceId": "SG16-A1",
-        "acceptance": "SG16-A1: 16px 句柄消费度量合理域——mount fonts_root 后经真实渲染路径量课程名墨高 ∈ [13..16]（16px 证据域；修订轮以 builder 实测重基线：资产 line_height=23/base_line=5、「课」box 15x14、「口」box 12x13，CJK 墨高实际 14，P1 同资产同值；冻结时点预判窗 [15..18] 下界越证据域）+ P0 资产 gate（body() 非 14px、line_height [20..25]、「课」glyph 盒 [12..18]^2）+ 判别力负控（全缺 mount 态同一夹具墨高 [10..13] 且严格小于 16px 态——两窗在 13 搭接，基线判别力由严格不等式承载）+ mount(missing reader) 复位防跨文件泄漏。修订轮实测：16px 态墨高 14，兜底态 < 14（严格不等式通过）",
-        "mutation": "M9 ksg_text_font 消费点由 kidpal_font_body() 换成 kidpal_font_title()（[K4] body 消费点摘除）",
-        "affectedTest": "schedule_grid_16px.acceptance.c TEST 5 sched_c_font_seam + schedule_grid.acceptance.c TEST 9",
+        "acceptanceId": "STY-A1",
+        "acceptance": "STY-A1: 故事列表 16px 消费与日期列保护——mount fonts_root 后经真实渲染路径量列表标题墨高 ∈ [13..16]（16px 证据域，host 实测校准）+ 14px 判别负控严格不等式 + 分离带 x[316..319] 零墨（长标题省略不压日期列）+ 日期带在墨 + 单行 ≤18 + 省略触发填充 ≥240（22 字长标题）+ mount gate/复位。授权 = S-F2.1-AC1 + PROPOSAL 目的4 + P3T-E1。设计态红：现役 14px 全 label 接线",
+        "mutation": "M-STY1 列表行标题回 font_puhui_14_1 直连 + 摘定宽 276/LONG_DOT（16px 消费点摘除）",
+        "affectedTest": "story_typography.acceptance.c TEST 1 (STY-A1)",
         "turnedRed": true,
-        "result": "turned red：SG16-A6（532 结构键 sched_c_font_seam=0）+ schedule_grid TEST 9（1703）红。A1 行为齿（834）在冻结件内为常红——实测 16px body 字形墨高 14px（课 box 15x14 / 口 12x13, line_height 23, base_line 5），越出冻结窗 [15..18]（frozen-test defect#1，见 note）"
+        "result": "turned red：STY-A1 FAIL——16px 态墨高 13 不大于 14px 态 13，两态不可判别（严格不等式判别负控咬住）。已还原（md5 一致，工作树零变异残留）。取证轮 = builder r1。"
       },
       {
-        "acceptanceId": "SG16-A2",
-        "acceptance": "SG16-A2: pitch 19 精确锚——同名双课（语文×2）同格堆叠 span 差 == 19（同名夹具消除两行字形墨高差，delta 恰等于 KSG_ROW_PITCH）。设计态红：pitch 16",
-        "mutation": "M1 KSG_ROW_PITCH 19 → 16（pitch 回退旧值）",
-        "affectedTest": "schedule_grid.acceptance.c TEST 9（pitch 19 锚）+ schedule_grid_16px.acceptance.c TEST 5 sched_c_pitch_not16",
+        "acceptanceId": "STY-A2",
+        "acceptance": "STY-A2: 阅读正文 16px——正文墨高 ∈ [13..16] + 14px 判别负控严格不等式。授权 = S-F2.3 补充规则 + P3T-E2。设计态红",
+        "mutation": "M-STY2 阅读正文 body 字体换 &font_puhui_14_1（16px 消费点摘除）",
+        "affectedTest": "story_typography.acceptance.c TEST 2 (STY-A2)",
         "turnedRed": true,
-        "result": "turned red：258/9（基线 258/7 +2）——schedule_grid TEST 9（1703）与 SG16-A6（532，sched_c_pitch_not16=0）双红；还原后回 258/7"
+        "result": "首测 MASKED（当时 STY-A2 夹具多行带几何红自遮，P2 F3 同型）→ acceptance-author revision 6 R12 修夹具后复测 turned red：STY-A2 FAIL——正文墨高 12 越 16px 域 [13..16]（14px 字面现形）。已还原（md5 4ca0d0a47ffb40355d2f7ee12fc0ba92 = 实现好态）。复测轮 = builder r2。"
       },
       {
-        "acceptanceId": "SG16-A3",
-        "acceptance": "SG16-A3: 槽位带 88/88/49（真机轮修订）——空网格新分隔线 y=117/205 全行墨 + 历史旧位置 y=103/107/177/185 除竖线家具列外全白负锚（两代旧位带移非加线）+ 表头 y=29 与网格底线 y=254 零偏移 + (day,slot) 格归属 diff 全落新带 + y>=255 网格外带零墨（越带负锚继承）。授权链 = P2S-E5 真机轮 human 原话（「…把晚上保留两行就行了」）+ REVISION LOG 真机轮条",
-        "mutation": "M2 ksg_slot_ys 回退旧带 {30,103}{104,177}{178,254}（带移回退）",
-        "affectedTest": "schedule_grid_16px.acceptance.c TEST 2 tooth2（新分隔线 y=107 全行墨）+ schedule_grid.acceptance.c TEST 11",
+        "acceptanceId": "STY-A3",
+        "acceptance": "STY-A3: 自然行 4→3——include 直读 KSTORY_READER_LINES_PER_SCREEN==3（且 ≠4）+ KSTORY_LIST_ROWS_PER_SCREEN==4 零偏移 + open_reader 7 自然行→3 屏 + kidpal_story_reader_slice 恰 3 自然行（2 换行）+ 末屏/越界守卫。授权 = PROPOSAL F-4 + P3T-E2/E3。设计态红（常量 4）",
+        "mutation": "M-STY3 KSTORY_READER_LINES_PER_SCREEN 3→4（常量回退）",
+        "affectedTest": "story_typography.acceptance.c TEST 3 (STY-A3) + TEST 7 [M] 键",
         "turnedRed": true,
-        "result": "turned red：258/9（+2）——SG16-A3 首条失败前移到 913（新 slot0 分隔线 y=107 非全行墨，先于冻结件缺陷齿 921）+ schedule_grid TEST 11（1814）连带；还原后回 258/7"
+        "result": "turned red：STY-A3 FAIL（include 直读常量=4）+ STY-A7 FAIL（[M] lines3/lines_not4 键=0）。已还原（md5 一致）。取证轮 = builder r1。"
       },
       {
-        "acceptanceId": "SG16-A4",
-        "acceptance": "SG16-A4: 容量 4/4/2（真机轮修订）+ 静默截断 + CAP=84——slot0/slot1 第 4 门真画（diff>0 落带）、第 5 门帧等价（diff==0 全帧 = 不滚动不提示不画第 5 行）；slot2 第 2 门真画、第 3 门帧等价（human 裁定「晚上保留两行」）；加门 diff containment 全落本格带；84 条全量载荷解析 == 84（F-8 缓存/解析 cap 不误缩）。截断态渲染返回值不钉（[F2-C] 申报，builder 保持返回 n 或改实画数皆不红）",
-        "mutation": "M4 解析入口把 cap 误缩为 48（渲染上限冒充解析/缓存 cap, F-8 违例）",
-        "affectedTest": "schedule_grid_16px.acceptance.c TEST 3 tooth1（84 条全量载荷解析）",
+        "acceptanceId": "STY-A4",
+        "acceptance": "STY-A4: 长自然行折行不越屏——30 字长自然行折行发生（垂直墨跨 ≥26）且墨不越 x[12..396]。授权 = F-4 + P3T-E2",
+        "mutation": "M-STY4 阅读正文 LV_LABEL_LONG_WRAP→CLIP（摘折行）",
+        "affectedTest": "story_typography.acceptance.c TEST 4 (STY-A4)",
         "turnedRed": true,
-        "result": "turned red：258/7 但失败点前移到 1017（84 条全量载荷解析 = -1）——证明 tooth1 判别力；还原后回 1036（冻结件缺陷齿）"
+        "result": "turned red：STY-A4 FAIL——30 字长自然行折行未发生，垂直墨跨 16<26。已还原（md5 一致）。取证轮 = builder r1。"
       },
       {
-        "acceptanceId": "SG16-A4",
-        "acceptance": "SG16-A4: 容量 4/4/3（slot2 上限收 3）——第 3 门真画 / 第 4 门帧等价静默截断",
-        "mutation": "M3 ksg_slot_caps {4,4,3} → {4,4,4}（slot2 上限回旧值）",
-        "affectedTest": "schedule_grid_16px.acceptance.c TEST 3 slot2 第 4 门帧等价齿",
+        "acceptanceId": "STY-A5",
+        "acceptance": "STY-A5: 阅读标题 20px 居中单行省略不压正文——标题墨高 ∈ [16..20] + 居中 |墨心-200|≤24 + 单行 ≤26 + 22 字长标题填充（min_x≤80 且 max_x≥300）+ 标题 max_y≤42 / 正文 min_y≥43 分离 + title()->fallback==body() 消费点守卫（F-6 缺字回退）。授权 = PROPOSAL F-1/F-6 + 目的2 + P3T-E2。设计态红（无 20px 标题、左对齐）",
+        "mutation": "M-STY5 阅读标题回 14px 左对齐、摘居中与 LONG_DOT（20px 标题消费点摘除）",
+        "affectedTest": "story_typography.acceptance.c TEST 5 (STY-A5)",
         "turnedRed": true,
-        "result": "修订后复测 turned red：258 Tests / 4 Failures（基线 3 存量 + 1 新增）——schedule_grid_16px.acceptance.c:1091「晚上第 4 门课改变了帧——slot2 上限未收到 3（现状上限 4 = 设计态红; F-3/OQ4: 第 4 门静默截断, 不滚动不提示）」；还原后回 258/3。（首测 MASKED：当时冻结件缺陷齿 1035/1036 先中断，修订轮修掉后重测转正）"
+        "result": "turned red：STY-A5 FAIL——标题墨高 12<16 域（20px 判别咬住）。已还原（md5 一致）。取证轮 = builder r1。"
       },
       {
-        "acceptanceId": "SG16-A5",
-        "acceptance": "SG16-A5: 临时课下划线 + ※ 退役 + ★ 不变 + 可见 2 字——temp/fixed/star/叠加四帧 diff 定位：diff 首行 > 名墨最大行（※ 前缀不占笔进不侵文字行）、离散 diff 行数 == 2、各行 diff ∈ [12..60]（2px 随名宽）、diff 全落格带、fixed 帧名墨之下零墨（固定不画线）、star 可见/两标记可区分/flags=3 叠加、无标记格 2 字墨宽 >= 28、flags=0 确定性；一律锚 flags bit0 不锚 name 前缀（ARQ-261029）。设计态红：下划线未实现（现状画 ※）",
-        "mutation": "M5 下划线摘除（bit0 不再画线）",
-        "affectedTest": "schedule_grid.acceptance.c TEST 11（bit0 可见帧差）+ schedule_grid_16px.acceptance.c TEST 4 tooth3 前半（diff>0）",
+        "acceptanceId": "STY-A6",
+        "acceptance": "STY-A6: 未变更页态 14px 负半——DELETE 提问 / BODY_UNAVAILABLE 大字 / STAMP 文案 / RECORDING 气泡四带墨高守 [10..13]（mount 态判别）。授权 = plan 铁律 + F-1 负半。绿（现状即 14px）",
+        "mutation": "M-STY6 未变更页态代表处（DELETE 提问 label）误切 kidpal_font_body()",
+        "affectedTest": "story_typography.acceptance.c TEST 6 (STY-A6)",
         "turnedRed": true,
-        "result": "turned red：258/8（+1）——schedule_grid TEST 11（1807：flags bit0 produced no visible in-cell ink diff）红，且 SG16-A5 失败点前移到 1147（临时课帧与固定课帧 diff 为零）；还原后回 258/7"
+        "result": "首测 MASKED（当时 STY-A6 STAMP 带与印章圈相切红自遮）→ acceptance-author revision 6 R13 修带顶 y0 150→152 后复测 turned red：STY-A6 FAIL——DELETE 提问墨高 15 越 14px 域 [10..13]（F-1 未变更页态被放大）。已还原（md5 一致）。复测轮 = builder r2。"
       },
       {
-        "acceptanceId": "SG16-A5",
-        "acceptance": "SG16-A5: 下划线 2px 高度（2px 随名宽, 各行 diff ∈ [12..60]）",
-        "mutation": "M6 下划线 2px → 3px（uy1 = uy0 + 1 改 +2）",
-        "affectedTest": "schedule_grid_16px.acceptance.c TEST 4 tooth4 离散 diff 行数 == 2",
+        "acceptanceId": "STY-A7",
+        "acceptance": "STY-A7: FAS 结构清单八新键（host_srcs_story_typography / story_c_font_body_seam / story_c_font_title_seam / story_c_puhui14_kept / story_c_dot_ge3 / story_h_reader_lines3 / story_h_reader_lines_not4 / story_mcp_lines_sync）+ 复用 story_list_rows4 + 清单自检。授权 = P3T-E3（mcp_server.cc 两消费点 :691/:1885 随 4→3 同步守卫）。接线相 infra 红 → 常量落地转绿",
+        "mutation": "M-STY7 mcp_server.cc 两消费点回退字面 3（符号引用摘除）",
+        "affectedTest": "story_typography.acceptance.c TEST 7 [M] + FAS story_mcp_lines_sync",
         "turnedRed": true,
-        "result": "修订后复测 turned red：258 Tests / 4 Failures（基线 3 存量 + 1 新增）——schedule_grid_16px.acceptance.c:1185「下划线离散 diff 行数 3 != 2——画线高度非 2px」；还原后回 258/3。（首测 MASKED：当时冻结件缺陷齿 1150 先中断，修订轮修掉后重测转正）"
-      },
-      {
-        "acceptanceId": "SG16-A6",
-        "acceptance": "SG16-A6: 结构半 FAS 清单扩键——host_srcs_schedule_grid_16px / sched_c_font_seam（schedule_page.c 直连 kidpal_font_body）/ sched_c_pitch_macro / sched_c_pitch_not16（负向）/ sched_c_no_temp_cp（负向 0x203B+U+203B）/ sched_c_no_temp_fallback（负向 ksg_marker_temp_proc）/ sched_c_star_kept（0x2605）/ sched_h_band_anchors（y[30..107]+y[186..254]）+ 复用键 schedule_ksg_course_cap / schedule_ksg_font_min_px。设计态红：五结构键=0（旧字面在世/新字面缺位）",
-        "mutation": "M7 画回 ※（0x203B / U+203B 码点字面与 ksg_marker_temp_proc 回写）",
-        "affectedTest": "schedule_grid_16px.acceptance.c TEST 5 sched_c_no_temp_cp / sched_c_no_temp_fallback",
-        "turnedRed": true,
-        "result": "turned red：258/8（+1）——SG16-A6（532）红（※ 码点/程序化兜底两个负向键 = 0）；还原后回 258/7"
-      },
-      {
-        "acceptanceId": "SG16-A6",
-        "acceptance": "SG16-A6: 结构键（★ 保留 0x2605 / [K4] body 直连 / 头注带锚）",
-        "mutation": "M8 星标行为摘除（保留 0x2605 字面使 A6 键仍绿）",
-        "affectedTest": "schedule_grid.acceptance.c TEST 11（★ 可见）",
-        "turnedRed": true,
-        "result": "turned red：258/8（+1）——schedule_grid TEST 11（1814：flags bit1 无可见带内 diff）红；SG16-A6 保持绿（字面键未被变异，证明两档并列互证）；还原后回 258/7"
-      },
-      {
-        "acceptanceId": "SG16-A6",
-        "acceptance": "SG16-A6: sched_c_font_seam（schedule_page.c 直连 kidpal_font_body）与 sched_h_band_anchors（头注 y[30..107]/y[186..254]）",
-        "mutation": "M9 同上（body 消费点换成 title）+ 头注带锚未变（对照：仅 body 字面消失）",
-        "affectedTest": "schedule_grid_16px.acceptance.c TEST 5 sched_c_font_seam",
-        "turnedRed": true,
-        "result": "turned red：sched_c_font_seam=0（532）+ schedule_grid TEST 9（1703）连带红"
+        "result": "turned red：story_mcp_lines_sync=0 + STY-A7 FAIL（符号引用<2）。已还原（md5 一致）。取证轮 = builder r1。mcp_server.cc 本包零 diff（常量改 story_page.h 后两消费点自动同步，守卫 must-stay-green）"
       }
-    ],
-    "note": "证据来源 = builder 变异轮（2026-11-02，每条变异→build→run→还原；FINAL 干净跑 258/7 = 存量 p1_auxbar AB-A1/A2/A4 三条 + 冻结件缺陷四条，见下）。变异不保留被测符号原字面为子串（KR-A3）。【FROZEN TEST DEFECTS（builder 实测，需 acceptance-author 收紧型修订，非实现缺陷）】① schedule_grid_16px.acceptance.c:834 TEST 1 tooth1 墨高窗 [15..18] 与 16px 资产实测不符——运行时 kidpal_font_body() 的 CJK 字形盒实测 课=15x14 / 口=12x13（line_height 23, base_line 5），渲染墨高恒 14；文件自身 REVISION LOG 已授权「以证据重基线窗口」；② :921/:924 TEST 2 tooth3 要求 y=103/177 全行白，但 7 条日列竖线（x=0/40..346/397）贯穿 y=0..254，旧分隔线位置必然残留竖线墨——需改为「除竖线列外全白」或等价判读；③ :1035/:1050/:1065 TEST 3 三处截断帧等价断言误比 sgx_f_a vs sgx_f_b（应为 sgx_f_c vs sgx_f_b），与紧邻的 total>0 断言同一帧对直接矛盾（逻辑不可满足）；④ :1083 TEST 3 tooth6 slot2 半用 day0 的 x 带判 day2 课程落带（courses 填在 day2），containment 必假；⑤ :1135/:1150 TEST 4 tooth3 m = sgx_max_ink_row 覆盖 slot2 带 y1=254，命中 y=254 网格底线（TEST 2 tooth1 要求其全行墨）→ m=254，而 min_row > 254 与 tooth5 containment（≤254）/TEST 2 tooth5（y>=255 零墨）互斥；同族 sgx_text_col_span 只在末行含最右墨时正确（现仅靠底线行空过），sgx_max_ink_row 亦需 x 内缩避开 x0 竖线。【验证】为证明实现满足冻结件意图，builder 用一份不入库的诊断副本（host_app/main/_sgx_oracle_tmp.c，跑完即删、git status 已确认干净）仅修上述五处缺陷（另把 A1 窗下界按证据放至 13），结果 = 263 Tests / 7 Failures（仅三条存量 auxbar + 冻结件四文件本体），SG16-A1..A6 全部转绿；冻结三件零改动（git status 仅 display/schedule_page.c、display/schedule_page.h、host_app/main/CMakeLists.txt）。"
+    ]
   },
   "crossEnd": {
     "counterparts": [
       {
-        "path": "server/gateway/schedule.py",
-        "symbol": "week_grid_payload"
+        "path": "server/gateway/story.py",
+        "symbol": "list_stories"
+      },
+      {
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "_relay_display_blocks_to_device"
       }
     ],
     "exempt": ""
   },
   "changeManifest": [
-    "firmware/main/display/schedule_page.c",
-    "firmware/main/display/schedule_page.h",
-    "firmware/main/test/schedule_grid.acceptance.c",
-    "firmware/main/test/schedule_grid_restore.acceptance.c",
-    "firmware/main/test/schedule_grid_16px.acceptance.c"
+    "firmware/main/display/story_page.c",
+    "firmware/main/display/story_page.h",
+    "firmware/main/mcp_server.cc",
+    "firmware/main/test/story_page_v2.acceptance.c",
+    "firmware/main/test/story_typography.acceptance.c"
   ],
   "impactedTestsSeed": [
     {
-      "path": "firmware/main/test/schedule_grid.acceptance.c",
+      "path": "firmware/main/test/story_page_v2.acceptance.c",
       "kind": "frozen-rebaseline",
-      "note": "冻结头钉旧槽位带与 ※ 真帧；F-3/F-9 要求经 acceptance-author 留痕 supersede，KSG_COURSE_CAP=84 和 restore/越带负锚保留。"
+      "note": "[K9] font_puhui_14_1/14px 与 13.5px/1.72 旧锚需留痕 supersede；输入表、计数、分屏和云端形状断言不撤。"
     },
     {
-      "path": "firmware/main/test/schedule_grid_restore.acceptance.c",
-      "kind": "mirror-rebaseline",
-      "note": "restore wire、前台语义不变；只同步共享版式/标记镜像，不重写 restore 行为。"
-    },
-    {
-      "path": "server/acceptance/test_schedule_p2.acceptance.py",
+      "path": "firmware/main/test/record_session_lifecycle.acceptance.c",
       "kind": "regression",
-      "note": "云端仍全量下发，flags bit0/bit1 与 B1 契约不变；server 零 diff。"
+      "note": "mcp_server 同文件改动后回归记录会话与故事页态，本包不碰会话生命周期。"
+    },
+    {
+      "path": "firmware/main/test/record_dialogue_guide.acceptance.c",
+      "kind": "regression",
+      "note": "P3 录音/整理态沿用 V7，本批不改其字号与交互。"
+    },
+    {
+      "path": "firmware/main/test/acceptance/archive/happy_flow_capture.test.c",
+      "kind": "archive-reference",
+      "note": "归档件只作旧调用参考，零修改、零重锚。"
     }
   ],
   "uiux": {
     "uiuxRequired": true,
     "uiuxLevel": 2,
     "designRefs": [
-      "docs/ui/V8/canvas-p2.png"
+      "docs/ui/V8/canvas-p3.png",
+      "docs/ui/V8/p3-reader.png"
     ],
     "sharedUiRefs": [
       "docs/ui/kidpal-ui-design-v8.html",
       "docs/ui/UIUX-DESIGN-BRIEF.md"
     ],
     "uiAcceptanceRefs": [
-      "canvas-p2"
+      "canvas-p3",
+      "p3-reader"
     ],
     "designReviewRequired": true,
     "designReviewEvidenceRequired": true,
@@ -233,79 +220,99 @@
     "test-quality",
     "device-round"
   ],
-  "mergeOrder": 62,
+  "mergeOrder": 63,
   "dependsOn": [
-    "261028-m6-k1-font-assets-runtime-loading"
+    "261028-m6-k1-font-assets-runtime-loading",
+    "261028-m6-k2a-p1-home-16px",
+    "261028-m6-k2b-p2-schedule-16px"
   ],
   "decisionCoverage": [
     {
-      "decision": "F-1 · 课表正文 16px",
-      "summary": "只切课名到 P0 的 16px 句柄，键帽条等 14px 域不动。",
-      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-1"],
-      "landsIn": "exitCriteria:P2S-E1"
+      "decision": "F-1 · 故事列表/阅读正文 16px，阅读标题 20px",
+      "summary": "故事两态消费 P0 字号句柄，录音/盖章/查字等未变更面不跟随放大。",
+      "sourceRefs": [
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-1"
+      ],
+      "landsIn": "exitCriteria:P3T-E2"
     },
     {
-      "decision": "F-3 · pitch 19 + 带高 78/78/69 + 容量 4/4/3 + 可见 2 字",
-      "summary": "版式与渲染容量按 human 已拍数值落地，网格底界与交互不变。",
-      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-3"],
-      "landsIn": "exitCriteria:P2S-E1"
+      "decision": "业务目的 4 · 列表长标题省略且不压日期列",
+      "summary": "列表标题超宽尾部省略，日期完整可见。",
+      "sourceRefs": [
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§1-目的4"
+      ],
+      "landsIn": "exitCriteria:P3T-E1"
     },
     {
-      "decision": "F-8 · KSG_COURSE_CAP=84 不动，只改按槽位可画上限",
-      "summary": "云端数据与板端缓存仍容纳全量，截断只发生在渲染层。",
-      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-8"],
-      "landsIn": "exitCriteria:P2S-E2"
+      "decision": "F-4 · 阅读正文自然行 4→3，翻页手感真机终判",
+      "summary": "自然行数随字号收敛，长行折行不得越屏，疏密与翻页成本由真机轮定夺。",
+      "sourceRefs": [
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-4"
+      ],
+      "landsIn": "exitCriteria:P3T-E2"
     },
     {
-      "decision": "F-9 · 课表一次性课程 ※→课名下划线，★ 不动",
-      "summary": "flags bit0 继续表示临时课，只替换板端标记形态并退役旧兜底。",
-      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-9"],
-      "landsIn": "exitCriteria:P2S-E3"
+      "decision": "F-6 · 20px 全量 CJK 标题缺字回退 16px",
+      "summary": "全量资产由 P0 生产，本包在真实标题消费点验证回退与单行居中省略。",
+      "sourceRefs": [
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-6"
+      ],
+      "landsIn": "exitCriteria:P3T-E2"
     },
     {
-      "decision": "OQ4 · 超限维持静默截断，不新增提示",
-      "summary": "晚上第 4 门及同类超限不滚动、不弹提示。",
-      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.2-OQ4"],
-      "landsIn": "exitCriteria:P2S-E2"
+      "decision": "OQ2 · 母版 v8 只重出四页之故事两帧",
+      "summary": "只消费 V8 列表与阅读帧，录音/盖章等沿用既有版本。",
+      "sourceRefs": [
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.2-OQ2"
+      ],
+      "landsIn": "exitCriteria:P3T-E4"
     },
     {
-      "decision": "OQ2 · 母版 v8 只重出四页之课表帧",
-      "summary": "消费 V8 canvas-p2 并做真机观感终判。",
-      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.2-OQ2"],
-      "landsIn": "exitCriteria:P2S-E5"
+      "decision": "§5 · workstream 真机收口标准",
+      "summary": "P4 不独立成包；四页并集、缺资产降级、长标题/超限与翻页手感统一归本包终端轮。",
+      "sourceRefs": [
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§5"
+      ],
+      "landsIn": "exitCriteria:P3T-E4"
     },
     {
       "decision": "F-5/F-7 · 运行时资产与 host 同源底座",
       "summary": "资产与统一句柄归 P0，本包只消费。",
-      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-5"],
+      "sourceRefs": [
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-5"
+      ],
       "landsIn": "package:261028-m6-k1-font-assets-runtime-loading"
     },
     {
-      "decision": "§5 · workstream 四页终端收口",
-      "summary": "P2 自有真机轮供证据，最终四页并集终判归 P3。",
-      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§5"],
-      "landsIn": "package:261028-m6-k3-p3-story-typography"
+      "decision": "F-2/F-9 · 首页排版与临时事件下划线",
+      "summary": "首页实现归 P1，本包终端轮只复证，不抢占其文件面。",
+      "sourceRefs": [
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-2"
+      ],
+      "landsIn": "package:261028-m6-k2a-p1-home-16px"
+    },
+    {
+      "decision": "F-3/F-8/F-9 · 课表版式、容量与下划线",
+      "summary": "课表实现归 P2，本包终端轮只复证，不抢占其文件面。",
+      "sourceRefs": [
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-3"
+      ],
+      "landsIn": "package:261028-m6-k2b-p2-schedule-16px"
     }
   ],
   "crossPackageBehaviors": [
     {
-      "topic": "kidpal_font 运行时句柄与 14px 降级不变式",
+      "topic": "kidpal_font 运行时句柄与标题缺字回退",
       "owner": "261028-m6-k1-font-assets-runtime-loading",
-      "carriedBy": "261028-m6-k2b-p2-schedule-16px",
-      "note": "P2 消费 P0 的 16px 句柄和统一降级，不在 schedule_page 内另造资产加载。"
+      "carriedBy": "261028-m6-k3-p3-story-typography",
+      "note": "P0 定义统一句柄和 20px→16px/缺资产→14px 语义；P3 在列表/阅读真实消费点验证，不另造字体加载分支。"
     },
     {
-      "topic": "全设备临时标记下划线（课表半）",
-      "owner": "261028-m6-k2b-p2-schedule-16px",
-      "carriedBy": "261028-m6-k2b-p2-schedule-16px",
-      "note": "P2 负责 S-F1.2 课名，P1 负责 WF-F1-01 首页事件名；flags bit0/wire 不变，★ 保留。"
-    },
-    {
-      "topic": "M6 四页真机收口轮",
+      "topic": "M6 四页真机收口轮（原可选 P4 并入）",
       "owner": "261028-m6-k3-p3-story-typography",
       "carriedBy": "261028-m6-k3-p3-story-typography",
-      "note": "P2 自有 pitch/容量真机轮先行，P3 终端轮复证四页并集；P3 前 P2 必须 merged。"
+      "note": "P0 探针证据与 P2 pitch 轮作为输入，P1 真机半并入；P3 必须等 P0/P1/P2 merged 后一次完成四页并集与 human 终判。"
     }
   ],
-  "notes": "workType 主型 = new-capability，整改半 = ※ 旧实现与冻结头重基线。影响面机械辅证：图索引确认 kidpal_schedule_grid_render/ksg_text_font 与 KSG_* 常量；trace_path 对该 C 函数 inbound=0 属图解析缺口，已用 Grep 补录 mcp_server 两个缓存/渲染消费面与 schedule_grid_restore 镜像，差集无未解释项。共享常量扫描：KSG_COURSE_CAP=84 与 KSG_GRID_BOTTOM=254 不动，KSG_ROW_PITCH 16→19 和旧槽位带/※ 是已批准重锚；无跨包互斥值。restore 只同步镜像，不改 wire/前台语义。"
+  "notes": "workType 主型 = new-capability，整改半 = 列表标题省略与旧排版冻结锚重基线。riskTier 依 workstream sign-off 归一为 high（底稿 medium-high 非合法枚举），rigor 恒 full。影响面机械辅证：图索引 trace kidpal_story_reader_slice 仅见 story_page 与 archive 两 caller，未解析 mcp_server 两个消费点；已以 Grep 交叉补录 :691/:1885，差集已解释。相邻冻结锚非零：story_page_v2 [K9] font_puhui_14_1、13.5px/1.72 与 KSTORY_READER_LINES_PER_SCREEN=4；处置 = acceptance-author 收紧型重基线，archive happy_flow 零改。P4 并入本包故 dependsOn 增加 P1/P2，这是相对 §4 预判的调度细化，不改变 spike-first 或 F-5/F-6/F-7。"
 }

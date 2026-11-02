@@ -101,6 +101,25 @@
  *               被 abort 屏蔽解析性必红; 修复后两 tooth 转绿。红基线留痕 =
  *               261028-m6-k2a-p1-home-16px acceptance-author 交付报告 §C（250
  *               Tests / 4 Failures 实测, 红名逐字在案）。
+ *   2026-11-02  revision 3 (收紧型 supersede 换锚, TaskPackage
+ *               261028-m6-k3-p3-story-typography; 授权链 = 该包 exitCriteria
+ *               P3T-E2 逐字「story_page_v2 的 13.5px/1.72 与 font_puhui_14_1 旧锚
+ *               由 acceptance-author 收紧型留痕重基线」（相邻冻结锚处置口径 =
+ *               该包 plan.md「acceptance-author 收紧型留痕重基线」）+ requirements
+ *               v1.69 + PROPOSAL F-4 自然行 4→3):
+ *     R11 FAS-A8 tooth 3 换锚——旧断言: story_reader_lines4 == 1（needle
+ *         "#define KSTORY_READER_LINES_PER_SCREEN 4" 零触 canary, 注记「F-4 归
+ *         P3」——P0 冻结时点已预告该锚随 P3 到期）; 新断言: story_list_rows4 == 1
+ *         保留（列表分屏 4 零偏移, 零触碰语义未变）+ story_reader_lines3 == 1
+ *         （阅读自然行新值 3 在世, 设计态红直至 P3 builder 落地）。旧键
+ *         story_reader_lines4 随 CMakeLists needle 同批退役
+ *         （acceptance-wiring-patch.md 增量 4/6）。红基线两相: 接线落线前 = 键缺
+ *         infra 红; 落线后常量仍 4 = 设计态红; builder 落 [T3] 后转绿。键名漂移
+ *         申报（2026-11-02 revision 6 追记, 权威 = story_typography.acceptance.c
+ *         REVISION LOG R14）: 本键 story_reader_lines3 = 接线补丁键
+ *         story_h_reader_lines3 的别名桥接（同事实恒同值, builder CMakeLists 两键
+ *         并发在世）, 两键并存为准、任一缺失或分叉 = 接线缺陷。
+ *     既有断言集对照: FAS-A1..A8 除 FAS-A8 tooth 3 第二断言外零触碰。
  * ---------------------------------------------------------------------------
  *
  * ===========================================================================
@@ -1178,11 +1197,18 @@ TEST_CASE("font assets: 相邻冻结锚canary-p1cjk[S1]+schedule/story常量 (FA
     fas_require_fact(fas_mfact("schedule_ksg_font_min_px"), "schedule_ksg_font_min_px",
                      "KSG_FONT_MIN_PX 漂移——schedule pitch 下限被触碰");
 
-    /* tooth 3: story 常量零触。 */
+    /* tooth 3: story 常量 canary（2026-11-02 收紧型重基线, REVISION LOG revision 3;
+     * KSTORY_LIST_ROWS_PER_SCREEN 4 零触锚保留——列表分屏不随排版改动; 阅读每屏
+     * 自然行旧「= 4 零触」锚随 261028-m6-k3-p3-story-typography（P3T-E2, F-4
+     * 自然行 4→3）收紧型 supersede 换锚为 = 3 新值在世（CMakeLists 键
+     * story_reader_lines4 同批退役换 story_reader_lines3, 见
+     * acceptance-wiring-patch.md）。本 canary 的 P0 原义「P0 不预触下游排版常量」
+     * 由 story_list_rows4 + P3 新件 [T3] 常量/行为配对接力）。 */
     fas_require_fact(fas_mfact("story_list_rows4"), "story_list_rows4",
-                     "KSTORY_LIST_ROWS_PER_SCREEN 4 漂移——story 排版常量被本包"
-                     "触碰（F-4 归 P3）");
-    fas_require_fact(fas_mfact("story_reader_lines4"), "story_reader_lines4",
-                     "KSTORY_READER_LINES_PER_SCREEN 4 漂移——story 排版常量被本包"
-                     "触碰（F-4 归 P3）");
+                     "KSTORY_LIST_ROWS_PER_SCREEN 4 漂移——story 列表分屏常量被"
+                     "触碰（列表分屏语义不变义务）");
+    fas_require_fact(fas_mfact("story_reader_lines3"), "story_reader_lines3",
+                     "KSTORY_READER_LINES_PER_SCREEN 3 不在世——自然行 4→3 未落"
+                     "（261028-m6-k3-p3-story-typography [T3], 设计态红; 授权链 = "
+                     "该包 exitCriteria P3T-E2 + requirements v1.69 + PROPOSAL F-4）");
 }

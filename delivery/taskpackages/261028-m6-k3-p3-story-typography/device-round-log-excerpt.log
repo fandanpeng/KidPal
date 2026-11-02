@@ -1,0 +1,729 @@
+[2026-11-02 17:06:43] I (12842442) SystemInfo: free sram: 43111 minimal sram: 26339
+[2026-11-02 17:07:01] I (12861092) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-12861092 rtc=17:07 date=11-02 wday=0
+[2026-11-02 17:07:43] I (12902442) SystemInfo: free sram: 42367 minimal sram: 26339
+[2026-11-02 17:08:01] I (12921092) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-12921092 rtc=17:08 date=11-02 wday=0
+[2026-11-02 17:08:43] I (12962442) SystemInfo: free sram: 42883 minimal sram: 26339
+[2026-11-02 17:09:01] I (12981092) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-12981092 rtc=17:09 date=11-02 wday=0
+[2026-11-02 17:09:43] I (13022442) SystemInfo: free sram: 42367 minimal sram: 26339
+[2026-11-02 17:10:01] I (13041092) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-13041092 rtc=17:10 date=11-02 wday=0
+[2026-11-02 17:10:43] I (13082442) SystemInfo: free sram: 42367 minimal sram: 26339
+[2026-11-02 17:11:01] I (13101092) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-13101092 rtc=17:11 date=11-02 wday=0
+[2026-11-02 17:11:43] I (13142442) SystemInfo: free sram: 42883 minimal sram: 26339
+[2026-11-02 17:12:01] I (13161092) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-13161092 rtc=17:12 date=11-02 wday=0
+[2026-11-02 17:12:43] I (13202442) SystemInfo: free sram: 42367 minimal sram: 26339
+[2026-11-02 17:12:59] I (13219092) MCP: display_dispatch view=home corr_id=kdp-13219092 upcoming_apply ok
+[2026-11-02 17:12:59] I (13219102) MCP: display_dispatch view=schedule corr_id=kdp-13219102 courses=37 degrade=false
+[2026-11-02 17:12:59] I (13219152) MCP: schedule_grid_restore corr_id=kdp-13219102 courses=37 cached=37
+[2026-11-02 17:13:01] I (13221092) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-13221092 rtc=17:13 date=11-02 wday=0
+[2026-11-02 17:13:43] I (13262442) SystemInfo: free sram: 42367 minimal sram: 26339
+[2026-11-02 17:14:01] I (13281092) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-13281092 rtc=17:14 date=11-02 wday=0
+[2026-11-02 17:14:43] I (13322442) SystemInfo: free sram: 42883 minimal sram: 26339
+[2026-11-02 17:15:01] I (13341092) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-13341092 rtc=17:15 date=11-02 wday=0
+[2026-11-02 17:15:43] I (13382442) SystemInfo: free sram: 42367 minimal sram: 26339
+[2026-11-02 17:16:01] I (13401092) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-13401092 rtc=17:16 date=11-02 wday=0
+[2026-11-02 17:16:43] I (13442442) SystemInfo: free sram: 42367 minimal sram: 26339
+[2026-11-02 17:17:01] I (13461092) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-13461092 rtc=17:17 date=11-02 wday=0
+[2026-11-02 17:17:43] I (13502442) SystemInfo: free sram: 42883 minimal sram: 26339
+[2026-11-02 17:18:01] I (13521092) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-13521092 rtc=17:18 date=11-02 wday=0
+[2026-11-02 17:18:43] I (13562442) SystemInfo: free sram: 42367 minimal sram: 26339
+[2026-11-02 17:19:01] I (13581092) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-13581092 rtc=17:19 date=11-02 wday=0
+[2026-11-02 17:19:43] I (13622442) SystemInfo: free sram: 42883 minimal sram: 26339
+[2026-11-02 17:20:01] I (13641092) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-13641092 rtc=17:20 date=11-02 wday=0
+[2026-11-02 17:20:43] I (13682442) SystemInfo: free sram: 42883 minimal sram: 26339
+[2026-11-02 17:21:01] I (13701092) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-13701092 rtc=17:21 date=11-02 wday=0
+[2026-11-02 17:21:43] I (13742442) SystemInfo: free sram: 42367 minimal sram: 26339
+[2026-11-02 17:22:01] I (13761092) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-13761092 rtc=17:22 date=11-02 wday=0
+[2026-11-02 17:22:43] I (13802442) SystemInfo: free sram: 42883 minimal sram: 26339
+[2026-11-02 17:23:01] I (13821092) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-13821092 rtc=17:23 date=11-02 wday=0
+[2026-11-02 17:23:43] I (13862442) SystemInfo: free sram: 42367 minimal sram: 26339
+[2026-11-02 17:24:01] I (13881092) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-13881092 rtc=17:24 date=11-02 wday=0
+I (232) Board: UUID=df23a9ab-0c77-481d-94ca-0c0258804df6 SKU=waveshare-s3-rlcd-4.2
+I (232) button: IoT Button Version: 4.1.7
+I (232) BoxAudioCodec: Duplex channels created
+I (242) ES8311: Work in Slave mode
+I (252) ES7210: Work in Slave mode
+I (252) ES7210: Enable ES7210_INPUT_MIC1
+I (262) ES7210: Enable ES7210_INPUT_MIC2
+I (262) ES7210: Enable ES7210_INPUT_MIC3
+I (262) ES7210: Enable ES7210_INPUT_MIC4
+I (262) ES7210: Enable TDM mode
+I (272) BoxAudioCodec: BoxAudioDevice initialized
+I (272) waveshare_rlcd_4_2: rtc_pcf85063 corr_id=kdp-272 ok rtc=17:25:00 date=11-02 wday=0 os=0
+I (292) waveshare_rlcd_4_2: shtc3 corr_id=kdp-272 ok temp_c=23.58 rh_pct=33.6
+I (292) adc_battery_estimation: Use external ADC handle
+I (292) MCP: Add tool: self.disp.network
+I (292) Display: Power management not supported
+I (292) CustomDisplay: Initialize SPI
+I (302) CustomDisplay: rlcd mirror ptr=0x3c3ba204 dma_capable=0 len=15000
+I (612) CustomDisplay: Initialize LVGL library
+I (612) LVGL: Starting LVGL task
+I (622) CustomDisplay: RLCD init
+I (1202) CustomDisplay: ui start
+I (1212) LcdDisplay: KEYBAR ovl=0 page=0 substate=-1 last_known=-1 left=说话 right=翻页
+I (1212) K3DIAG: bottom_bar h=0 text=''
+I (1252) waveshare_rlcd_4_2: art SPIFFS mounted at /art (partition "art")
+I (1252) waveshare_rlcd_4_2: art layer mounted at /art
+I (1292) waveshare_rlcd_4_2: SD card mounted at /sdcard (SDMMC 1-bit)
+I (1312) SdLog: diagnostic log attached at /sdcard/logs (KPLOG000..031, 512KB x 32)
+I (1322) waveshare_rlcd_4_2: SD ROUNDTRIP PASS path=/sdcard/SDTEST.TXT corr_id=kdp-1312 bytes=63 (write-read-compare-delete ok, 验后即删不驻留)
+I (1332) kidpal_rn: KidPal render node initialized (unified screen + layer stack)
+I (1332) waveshare_rlcd_4_2: battery_inject corr_id=kdp-1332 level=94 charging=0 vbat_ok=1
+I (1692) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=1177
+I (1692) LcdDisplay: KEYBAR ovl=0 page=0 substate=-1 last_known=-1 left=说话 right=翻页
+I (1692) LcdDisplay: chrome_mid_sync mid_mode=0 front=0 reminder=0 force_hide=0 voice_live=0
+I (1702) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+I (1702) kidpal_rn: chrome_front layer_top=2 force_hide=0 front=0
+I (1712) LcdDisplay: chrome_front_in front=0 mid_mode=0 force_hide=0
+I (1722) LcdDisplay: chrome_mid_sync mid_mode=0 front=0 reminder=0 force_hide=0 voice_live=0
+I (1722) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+I (1732) LcdDisplay: KEYBAR ovl=0 page=0 substate=-1 last_known=-1 left=说话 right=翻页
+I (2032) kidpal_rn: show_home: LOCAL_PAGE front (layer top=2)
+I (2032) StateMachine: State: unknown -> starting
+I (2032) I2S_IF: channel mode 2 bits:16/16 channel:4 mask:3
+I (2042) I2S_IF: TDM Mode 0 bits:16/16 channel:4 sample_rate:24000 mask:3
+I (2042) I2S_IF: channel mode 0 bits:16/16 channel:4 mask:3
+I (2332) I2S_IF: STD Mode 1 bits:32/32 channel:4 sample_rate:24000 mask:0
+I (2332) ES7210: Bits 16
+I (2342) ES7210: Enable ES7210_INPUT_MIC1
+I (2342) ES7210: Enable ES7210_INPUT_MIC2
+I (2352) ES7210: Enable ES7210_INPUT_MIC3
+I (2352) ES7210: Enable ES7210_INPUT_MIC4
+I (2352) ES7210: Enable TDM mode
+I (2362) ES7210: Unmuted
+I (2362) Adev_Codec: Open codec device OK
+I (2362) AudioCodec: Set input enable to true
+I (2362) I2S_IF: Mode 0 need extend bits 64 to 32
+I (2372) I2S_IF: channel mode 0 bits:16/32 channel:2 mask:1
+I (2372) I2S_IF: STD Mode 1 bits:16/32 channel:2 sample_rate:24000 mask:1
+I (2392) Adev_Codec: Open codec device OK
+I (2402) AudioCodec: Set output enable to true
+I (2402) AudioCodec: Audio codec started
+I (2402) OpusResampler: Resampler configured with input sample rate 24000 and output sample rate 16000
+I (2402) OpusResampler: Resampler configured with input sample rate 24000 and output sample rate 16000
+I (2412) MCP: Add tool: self.get_device_status
+I (2422) MCP: Add tool: self.audio_speaker.set_volume
+I (2422) MCP: Add tool: kidpal/display
+I (2432) MCP: Add tool: kidpal/alert
+I (2432) MCP: Add tool: self.screen.set_theme
+I (2432) MCP: Add tool: self.get_system_info [user]
+I (2442) MCP: Add tool: self.reboot [user]
+I (2442) MCP: Add tool: self.upgrade_firmware [user]
+I (2452) MCP: Add tool: self.screen.get_info [user]
+I (2452) MCP: Add tool: self.screen.snapshot [user]
+I (2462) MCP: Add tool: self.screen.preview_image [user]
+I (2462) Assets: The storage free size is 21376 KB
+I (2462) Assets: The partition size is 8192 KB
+I (2782) Assets: The checksum calculation time is 314 ms
+I (2792) MCP: Add tool: self.assets.set_download_url [user]
+I (2792) WifiManager: Initializing...
+I (2792) pp: pp rom version: e7ae62f
+I (2792) net80211: net80211 rom version: e7ae62f
+I (2812) wifi:wifi driver task: 3fce8d70, prio:23, stack:6144, core=0
+I (2812) wifi:wifi firmware version: 14da9b7
+I (2812) wifi:wifi certification version: v7.0
+I (2812) wifi:config NVS flash: disabled
+I (2812) wifi:config nano formatting: enabled
+I (2822) wifi:Init data frame dynamic rx buffer num: 6
+I (2822) wifi:Init dynamic rx mgmt buffer num: 5
+I (2832) wifi:Init management short buffer num: 32
+I (2832) wifi:Init dynamic tx buffer num: 32
+I (2832) wifi:Init static tx FG buffer num: 2
+I (2842) wifi:Init static rx buffer size: 1600
+I (2842) wifi:Init static rx buffer num: 3
+I (2852) wifi:Init dynamic rx buffer num: 6
+I (2852) wifi_init: rx ba win: 3
+I (2852) wifi_init: accept mbox: 6
+I (2862) wifi_init: tcpip mbox: 16
+I (2862) wifi_init: udp mbox: 6
+I (2862) wifi_init: tcp mbox: 6
+I (2872) wifi_init: tcp tx win: 5760
+I (2872) wifi_init: tcp rx win: 5760
+I (2872) wifi_init: tcp mss: 1440
+I (2882) WifiManager: Initialized
+I (2882) WifiBoard: Starting WiFi connection attempt
+I (2882) WifiManager: Starting station
+I (2892) phy_init: phy_version 701,f4f1da3a,Mar  3 2025,15:50:10
+I (2922) wifi:mode : sta (58:e6:c5:72:0c:bc)
+I (2922) wifi:enable tsf
+I (2932) WifiBoard: WiFi scanning
+I (3412) AudioService: esp_timer task stack HWM: 7256 words (stack 8192 bytes)
+[2026-11-02 09:24:43] I (5342) WifiStation: Found AP: 701, BSSID: a2:7b:52:84:30:ba, RSSI: -53, Channel: 11, Authmode: 3
+[2026-11-02 09:24:43] I (5342) WifiBoard: WiFi connecting to 701
+[2026-11-02 09:24:43] W (5902) wifi:[2026-11-02 09:24:43] Password length matches WPA2 standards, authmode threshold changes from OPEN to WPA2[2026-11-02 09:24:43] 
+[2026-11-02 09:24:45] I (7182) wifi:[2026-11-02 09:24:45] new:<11,0>, old:<1,0>, ap:<255,255>, sta:<11,0>, prof:1, snd_ch_cfg:0x0[2026-11-02 09:24:45] 
+[2026-11-02 09:24:45] I (7182) wifi:[2026-11-02 09:24:45] state: init -> auth (0xb0)[2026-11-02 09:24:45] 
+[2026-11-02 09:24:45] I (7192) wifi:[2026-11-02 09:24:45] state: auth -> assoc (0x0)[2026-11-02 09:24:45] 
+[2026-11-02 09:24:45] I (7202) wifi:[2026-11-02 09:24:45] state: assoc -> run (0x10)[2026-11-02 09:24:45] 
+[2026-11-02 09:24:45] I (7222) wifi:[2026-11-02 09:24:45] connected with 701, aid = 3, channel 11, BW20, bssid = a2:7b:52:84:30:ba[2026-11-02 09:24:45] 
+[2026-11-02 09:24:45] I (7222) wifi:[2026-11-02 09:24:45] security: WPA2-PSK, phy: bgn, rssi: -53[2026-11-02 09:24:45] 
+[2026-11-02 09:24:45] I (7222) wifi:[2026-11-02 09:24:45] pm start, type: 1
+[2026-11-02 09:24:45] 
+[2026-11-02 09:24:45] I (7232) wifi:[2026-11-02 09:24:45] dp: 1, bi: 102400, li: 10, scale listen interval from 1024000 us to 1024000 us[2026-11-02 09:24:45] 
+[2026-11-02 09:24:45] I (7242) wifi:[2026-11-02 09:24:45] set rx beacon pti, rx_bcn_pti: 0, bcn_timeout: 25000, mt_pti: 0, mt_time: 10000[2026-11-02 09:24:45] 
+[2026-11-02 09:24:45] I (7242) wifi:[2026-11-02 09:24:45] AP's beacon interval = 102400 us, DTIM period = 1[2026-11-02 09:24:45] 
+[2026-11-02 09:24:45] I (7272) wifi:[2026-11-02 09:24:45] <ba-add>idx:0 (ifx:0, a2:7b:52:84:30:ba), tid:0, ssn:0, winSize:64[2026-11-02 09:24:45] 
+[2026-11-02 09:24:46] I (8452) esp_netif_handlers: sta ip: 192.168.3.36, mask: 255.255.255.0, gw: 192.168.3.1
+[2026-11-02 09:24:46] I (8452) WifiStation: Got IP: 192.168.3.36
+[2026-11-02 09:24:46] I (8452) WifiBoard: Connected to WiFi: 701
+[2026-11-02 09:24:47] I (8902) Application: Network connected
+[2026-11-02 09:24:47] I (8902) Application: sntp_time_sync corr_id=kdp-8902 started servers=ntp.aliyun.com,ntp1.aliyun.com,pool.ntp.org tz=CST-8
+[2026-11-02 09:24:47] I (8902) StateMachine: State: starting -> activating
+[2026-11-02 09:24:47] I (8912) MODEL_LOADER: Successfully load srmodels
+[2026-11-02 09:24:47] I (8912) Assets: Refreshing display theme...
+[2026-11-02 09:24:47] I (8922) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+[2026-11-02 09:24:47] I (8932) Application: Activation done
+[2026-11-02 09:24:47] I (8942) SystemInfo: free sram: 73835 minimal sram: 73103
+[2026-11-02 09:24:47] I (8942) StateMachine: State: activating -> idle
+[2026-11-02 09:24:47] I (8952) AudioService: OpusHead: version=1, channels=1, sample_rate=16000
+[2026-11-02 09:24:47] I (8952) AudioService: decode queue <- packet #1: sr=16000 fd=60 payload=59 bytes
+[2026-11-02 09:24:47] I (8962) AudioService: Resampling audio from 16000 to 24000
+[2026-11-02 09:24:47] I (8962) OpusResampler: Resampler configured with input sample rate 16000 and output sample rate 24000
+[2026-11-02 09:24:47] I (8982) AudioService: decode frame #1: sr=16000 fd=60 decoded=960 -> out 1440 samples @24000Hz
+[2026-11-02 09:24:47] I (8992) AudioService: playback frame #1: 1440 samples -> codec (enabled=1)
+[2026-11-02 09:24:47] I (9002) AudioService: audio_output task stack HWM: 2092 words
+[2026-11-02 09:24:47] I (8982) AudioService: decode queue <- packet #2: sr=16000 fd=60 payload=146 bytes
+[2026-11-02 09:24:47] I (9002) AudioService: decode frame #2: sr=16000 fd=60 decoded=960 -> out 1440 samples @24000Hz
+[2026-11-02 09:24:47] I (9012) AudioService: decode queue <- packet #3: sr=16000 fd=60 payload=131 bytes
+[2026-11-02 09:24:47] I (9022) WifiStation: Setting WiFi power save level: LOW_POWER (MAX_MODEM)
+[2026-11-02 09:24:47] I (9022) wifi:[2026-11-02 09:24:47] I (9022) AudioService: decode frame #3: sr=16000 fd=60 decoded=960 -> out 1440 samples @24000Hz
+[2026-11-02 09:24:47] Set ps type: 2, coexist: 0
+[2026-11-02 09:24:47] 
+[2026-11-02 09:24:47] I (9042) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+[2026-11-02 09:24:47] I (9042) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+[2026-11-02 09:24:47] I (9052) AudioService: playback frame #2: 1440 samples -> codec (enabled=1)
+[2026-11-02 09:24:47] I (9062) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-02 09:24:47] I (9072) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-02 09:24:47] I (9082) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-02 09:24:47] I (9092) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-02 09:24:47] I (9092) AfeWakeWord: Model 0: wn9_nihaoxiaozhi_tts
+[2026-11-02 09:24:47] I (9102) AFE_CONFIG: Set WakeNet Model: wn9_nihaoxiaozhi_tts
+[2026-11-02 09:24:47] I (9112) AudioService: playback frame #3: 1440 samples -> codec (enabled=1)
+[2026-11-02 09:24:47] I (9192) AFE: AFE Version: (1MIC_V250121)
+[2026-11-02 09:24:47] I (9192) AFE: Input PCM Config: total 2 channels(1 microphone, 1 playback), sample rate:16000
+[2026-11-02 09:24:47] I (9202) AFE: AFE Pipeline: [input] -> |AEC(SR_HIGH_PERF)| ->  -> |VAD(WebRTC)| -> |WakeNet(wn9_nihaoxiaozhi_tts,)| -> [output]
+[2026-11-02 09:24:47] I (9212) AfeWakeWord: Audio detection task started, feed size: 512 fetch size: 512
+[2026-11-02 09:24:47] I (9222) Application: keybar_scene_reset corr_id=kdp-9222 src=session_end
+[2026-11-02 09:24:47] I (9222) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-02 09:24:47] I (9242) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-02 09:24:47] I (9242) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-02 09:24:47] I (9242) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-02 09:24:47] I (9252) Application: keybar_scene_reset corr_id=kdp-9252 src=session_end
+[2026-11-02 09:24:47] I (9922) Application: sntp_time_sync corr_id=kdp-9922 ok year=2026
+[2026-11-02 17:24:48] I (10952) esp-x509-crt-bundle: Certificate validated
+[2026-11-02 17:25:11] I (11872) WS: Session ID: 4d0a7c08-467d-41a7-9119-6525c9347284
+[2026-11-02 17:25:11] I (11872) Application: AutoConnect task exit, stack high water mark=4648
+[2026-11-02 17:25:12] I (12132) StorySdIo: story_sd_rebuild_index ok entries=16
+[2026-11-02 17:25:12] I (12132) MCP: story_prefetch_armed screen=0 missing=4
+[2026-11-02 17:25:12] I (12132) MCP: story_list_dispatch corr_id=kdp-12122 items=16 counter=19 degrade=false
+[2026-11-02 17:25:12] I (12142) MCP: story_list_gate defer_front page=0 voice_front=0 restore=1
+[2026-11-02 17:25:12] I (12162) MCP: display_dispatch view=schedule corr_id=kdp-12162 courses=37 degrade=false
+[2026-11-02 17:25:12] I (12162) WifiStation: Setting WiFi power save level: PERFORMANCE (NONE)
+[2026-11-02 17:25:12] I (12172) wifi:[2026-11-02 17:25:12] Set ps type: 0, coexist: 0
+[2026-11-02 17:25:12] 
+[2026-11-02 17:25:12] W (12172) Application: Server sample rate 16000 does not match device output sample rate 24000, resampling may cause distortion
+[2026-11-02 17:25:12] I (12182) MCP: display_dispatch view=home corr_id=kdp-12152 upcoming_apply ok
+[2026-11-02 17:25:12] I (12642) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=12024
+[2026-11-02 17:25:12] I (12642) LcdDisplay: KEYBAR ovl=0 page=0 substate=-1 last_known=-1 left=说话 right=翻页
+[2026-11-02 17:25:12] I (12652) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-02 17:25:12] I (12652) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-02 17:25:12] I (12662) kidpal_rn: chrome_front layer_top=2 force_hide=0 front=0
+[2026-11-02 17:25:12] I (12672) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-02 17:25:12] I (12682) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-02 17:25:12] I (12682) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-02 17:25:12] I (12692) LcdDisplay: KEYBAR ovl=0 page=0 substate=-1 last_known=-1 left=说话 right=翻页
+[2026-11-02 17:25:12] I (12702) MCP: story_prefetch_send id=2026-10-28-s6db51543 remaining=3
+[2026-11-02 17:25:12] I (12752) kidpal_rn: show_home: LOCAL_PAGE front (layer top=2)
+[2026-11-02 17:25:12] I (13452) MCP: schedule_grid_restore corr_id=kdp-12162 courses=37 cached=37
+[2026-11-02 17:25:14] I (13552) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-28-s6db51543.txt bytes=414
+[2026-11-02 17:25:14] I (13552) MCP: story_fetch_prefetch_cached corr_id=kdp-13532 id=2026-10-28-s6db51543
+[2026-11-02 17:25:18] I (17722) MCP: story_prefetch_send id=2026-10-27-s4195dc45 remaining=2
+[2026-11-02 17:25:18] I (17902) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-27-s4195dc45.txt bytes=260
+[2026-11-02 17:25:18] I (17902) MCP: story_fetch_prefetch_cached corr_id=kdp-17842 id=2026-10-27-s4195dc45
+[2026-11-02 17:25:23] I (22772) MCP: story_prefetch_send id=2026-10-24-sc16cfba5 remaining=1
+[2026-11-02 17:25:23] I (22902) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-24-sc16cfba5.txt bytes=371
+[2026-11-02 17:25:23] I (22902) MCP: story_fetch_prefetch_cached corr_id=kdp-22862 id=2026-10-24-sc16cfba5
+[2026-11-02 17:25:24] I (23792) waveshare_rlcd_4_2: rtc_writeback corr_id=kdp-23792 ok rtc=17:25:24 date=11-02
+[2026-11-02 17:25:24] I (23792) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-23792 rtc=17:25 date=11-02 wday=0
+[2026-11-02 17:25:25] I (25422) I2S_IF: Pending out channel for in channel running
+[2026-11-02 17:25:25] I (25422) AudioCodec: Set output enable to false
+[2026-11-02 17:25:28] I (27852) MCP: story_prefetch_send id=2026-10-24-s356ae674 remaining=0
+[2026-11-02 17:25:28] I (27892) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-24-s356ae674.txt bytes=168
+[2026-11-02 17:25:28] I (27892) MCP: story_fetch_prefetch_cached corr_id=kdp-27882 id=2026-10-24-s356ae674
+[2026-11-02 17:26:01] I (60422) SystemInfo: free sram: 56155 minimal sram: 32315
+[2026-11-02 17:26:01] I (61382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-61382 rtc=17:26 date=11-02 wday=0
+[2026-11-02 17:26:21] I (81602) waveshare_rlcd_4_2: key_edge corr_id=kdp-81602 key=1(boot) edge=down hold_ms=0
+[2026-11-02 17:26:22] I (81792) waveshare_rlcd_4_2: key_edge corr_id=kdp-81792 key=1(boot) edge=up hold_ms=190
+[2026-11-02 17:26:22] I (81972) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-81972 key=1(boot) gesture=click hold_ms=370 overlay=0
+[2026-11-02 17:26:22] I (81972) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-81972 action=3(page_next)
+[2026-11-02 17:26:22] I (82612) kidpal_rn: PAGE_SWITCH from=home to=schedule trigger=key local_from=0 local_to=1
+[2026-11-02 17:26:22] I (82612) kidpal_rn: PAGE_RENDER in=1 local=0 sview=0 ssess=0 active_ok=1
+[2026-11-02 17:26:22] I (82662) kidpal_rn: render page SCHEDULE (P2 grid) courses=37 wday=0
+[2026-11-02 17:26:22] I (82662) LcdDisplay: KEYBAR ovl=0 page=1 substate=-1 last_known=-1 left=问课程 right=翻页
+[2026-11-02 17:26:22] I (82672) kidpal_rn: PAGE_RENDER out=1 local=1 sview=0 ssess=0
+[2026-11-02 17:26:22] I (82672) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-02 17:26:22] I (82692) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-02 17:26:22] I (82692) kidpal_rn: chrome_front layer_top=2 force_hide=0 front=0
+[2026-11-02 17:26:22] I (82692) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-02 17:26:22] I (82702) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-02 17:26:22] I (82712) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-02 17:26:22] I (82722) LcdDisplay: KEYBAR ovl=0 page=1 substate=-1 last_known=-1 left=问课程 right=翻页
+[2026-11-02 17:26:24] I (84032) waveshare_rlcd_4_2: key_edge corr_id=kdp-84032 key=1(boot) edge=down hold_ms=0
+[2026-11-02 17:26:24] I (84212) waveshare_rlcd_4_2: key_edge corr_id=kdp-84212 key=1(boot) edge=up hold_ms=180
+[2026-11-02 17:26:24] I (84212) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-84212 key=1(boot) gesture=1(click)
+[2026-11-02 17:26:24] I (84392) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-84392 key=1(boot) gesture=click hold_ms=360 overlay=0
+[2026-11-02 17:26:24] I (84392) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-84392 action=3(page_next)
+[2026-11-02 17:26:24] I (84402) kidpal_rn: PAGE_SWITCH from=schedule to=story trigger=key local_from=1 local_to=2
+[2026-11-02 17:26:24] I (84412) kidpal_rn: PAGE_RENDER in=2 local=1 sview=0 ssess=0 active_ok=1
+[2026-11-02 17:26:24] I (84422) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-02 17:26:24] I (84432) kidpal_rn: render page STORY (P3) count=16
+[2026-11-02 17:26:24] I (84432) LcdDisplay: KEYBAR ovl=0 page=2 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-02 17:26:24] I (84432) kidpal_rn: PAGE_RENDER out=2 local=2 sview=0 ssess=0
+[2026-11-02 17:26:24] I (84452) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-02 17:26:24] I (84452) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-02 17:26:24] I (84452) kidpal_rn: chrome_front layer_top=2 force_hide=0 front=0
+[2026-11-02 17:26:24] I (84462) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-02 17:26:24] I (84472) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-02 17:26:24] I (84482) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-02 17:26:24] I (84482) LcdDisplay: KEYBAR ovl=0 page=2 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-02 17:26:35] I (94652) waveshare_rlcd_4_2: key_edge corr_id=kdp-94652 key=1(boot) edge=down hold_ms=0
+[2026-11-02 17:26:35] I (94902) waveshare_rlcd_4_2: key_edge corr_id=kdp-94902 key=1(boot) edge=up hold_ms=250
+[2026-11-02 17:26:35] I (94902) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-94902 key=1(boot) gesture=1(click)
+[2026-11-02 17:26:35] I (95082) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-95082 key=1(boot) gesture=click hold_ms=430 overlay=0
+[2026-11-02 17:26:36] I (96042) MCP: story_prefetch_armed screen=0 missing=4
+[2026-11-02 17:26:36] I (96042) MCP: story_prefetch_send id=2026-10-28-s6db51543 remaining=3
+[2026-11-02 17:26:36] I (96042) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-02 17:26:36] I (96042) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-02 17:26:36] I (96052) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-02 17:26:36] I (96062) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-02 17:26:36] I (96072) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-02 17:26:36] I (96072) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-02 17:26:36] I (96082) LcdDisplay: KEYBAR ovl=1 page=2 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-02 17:26:36] I (96092) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-02 17:26:36] I (96112) LcdDisplay: KEYBAR ovl=0 page=2 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-02 17:26:36] I (96562) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-28-s6db51543.txt bytes=414
+[2026-11-02 17:26:36] I (96562) MCP: story_fetch_prefetch_cached corr_id=kdp-96552 id=2026-10-28-s6db51543
+[2026-11-02 17:26:37] I (96922) waveshare_rlcd_4_2: key_edge corr_id=kdp-96922 key=1(boot) edge=down hold_ms=0
+[2026-11-02 17:26:37] I (97142) waveshare_rlcd_4_2: key_edge corr_id=kdp-97142 key=1(boot) edge=up hold_ms=220
+[2026-11-02 17:26:37] I (97142) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-97142 key=1(boot) gesture=1(click)
+[2026-11-02 17:26:37] I (97322) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-97322 key=1(boot) gesture=click hold_ms=400 overlay=0
+[2026-11-02 17:26:38] I (97622) MCP: story_prefetch_armed screen=0 missing=4
+[2026-11-02 17:26:38] I (97622) MCP: story_prefetch_send id=2026-10-28-s6db51543 remaining=3
+[2026-11-02 17:26:38] I (97622) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-02 17:26:38] I (97622) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-02 17:26:38] I (97642) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-02 17:26:38] I (97642) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-02 17:26:38] I (97642) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-02 17:26:38] I (97652) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-02 17:26:38] I (97662) LcdDisplay: KEYBAR ovl=1 page=2 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-02 17:26:38] I (97672) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-02 17:26:38] I (97682) LcdDisplay: KEYBAR ovl=0 page=2 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-02 17:26:38] I (98132) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-28-s6db51543.txt bytes=414
+[2026-11-02 17:26:38] I (98132) MCP: story_fetch_prefetch_cached corr_id=kdp-97742 id=2026-10-28-s6db51543
+[2026-11-02 17:26:39] I (98972) waveshare_rlcd_4_2: key_edge corr_id=kdp-98972 key=1(boot) edge=down hold_ms=0
+[2026-11-02 17:26:39] I (99172) waveshare_rlcd_4_2: key_edge corr_id=kdp-99172 key=1(boot) edge=up hold_ms=200
+[2026-11-02 17:26:39] I (99172) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-99172 key=1(boot) gesture=1(click)
+[2026-11-02 17:26:39] I (99362) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-99362 key=1(boot) gesture=click hold_ms=390 overlay=0
+[2026-11-02 17:26:40] I (99682) MCP: story_prefetch_armed screen=0 missing=4
+[2026-11-02 17:26:40] I (99682) MCP: story_prefetch_send id=2026-10-28-s6db51543 remaining=3
+[2026-11-02 17:26:40] I (99682) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-02 17:26:40] I (99682) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-02 17:26:40] I (99692) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-02 17:26:40] I (99702) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-02 17:26:40] I (99702) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-02 17:26:40] I (99722) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-02 17:26:40] I (99722) LcdDisplay: KEYBAR ovl=1 page=2 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-02 17:26:40] I (99732) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-02 17:26:40] I (99752) LcdDisplay: KEYBAR ovl=0 page=2 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-02 17:26:40] I (100192) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-28-s6db51543.txt bytes=414
+[2026-11-02 17:26:40] I (100192) MCP: story_fetch_prefetch_cached corr_id=kdp-99782 id=2026-10-28-s6db51543
+[2026-11-02 17:26:41] I (100592) waveshare_rlcd_4_2: key_edge corr_id=kdp-100592 key=1(boot) edge=down hold_ms=0
+[2026-11-02 17:26:41] I (100792) waveshare_rlcd_4_2: key_edge corr_id=kdp-100792 key=1(boot) edge=up hold_ms=200
+[2026-11-02 17:26:41] I (100792) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-100792 key=1(boot) gesture=1(click)
+[2026-11-02 17:26:41] I (100982) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-100982 key=1(boot) gesture=click hold_ms=390 overlay=0
+[2026-11-02 17:26:41] I (101302) MCP: story_prefetch_armed screen=1 missing=4
+[2026-11-02 17:26:41] I (101302) MCP: story_prefetch_send id=2026-10-23-s9c3d989b remaining=3
+[2026-11-02 17:26:41] I (101302) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-02 17:26:41] I (101302) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-02 17:26:41] I (101322) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-02 17:26:41] I (101322) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-02 17:26:41] I (101322) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-02 17:26:41] I (101332) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-02 17:26:41] I (101342) LcdDisplay: KEYBAR ovl=1 page=2 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-02 17:26:41] I (101352) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-02 17:26:41] I (101372) LcdDisplay: KEYBAR ovl=0 page=2 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-02 17:26:41] I (101802) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-23-s9c3d989b.txt bytes=265
+[2026-11-02 17:26:41] I (101802) MCP: story_fetch_prefetch_cached corr_id=kdp-101392 id=2026-10-23-s9c3d989b
+[2026-11-02 17:26:43] I (102832) waveshare_rlcd_4_2: key_edge corr_id=kdp-102832 key=1(boot) edge=down hold_ms=0
+[2026-11-02 17:26:43] I (103042) waveshare_rlcd_4_2: key_edge corr_id=kdp-103042 key=1(boot) edge=up hold_ms=210
+[2026-11-02 17:26:43] I (103042) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-103042 key=1(boot) gesture=1(click)
+[2026-11-02 17:26:43] I (103232) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-103232 key=1(boot) gesture=click hold_ms=400 overlay=0
+[2026-11-02 17:26:44] I (103602) MCP: story_prefetch_armed screen=1 missing=4
+[2026-11-02 17:26:44] I (103602) MCP: story_prefetch_send id=2026-10-23-s9c3d989b remaining=3
+[2026-11-02 17:26:44] I (103602) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-02 17:26:44] I (103602) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-02 17:26:44] I (103622) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-02 17:26:44] I (103622) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-02 17:26:44] I (103622) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-02 17:26:44] I (103632) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-02 17:26:44] I (103642) LcdDisplay: KEYBAR ovl=1 page=2 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-02 17:26:44] I (103652) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-02 17:26:44] I (103672) LcdDisplay: KEYBAR ovl=0 page=2 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-02 17:26:44] I (104122) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-23-s9c3d989b.txt bytes=265
+[2026-11-02 17:26:44] I (104122) MCP: story_fetch_prefetch_cached corr_id=kdp-103692 id=2026-10-23-s9c3d989b
+[2026-11-02 17:26:45] I (104522) waveshare_rlcd_4_2: key_edge corr_id=kdp-104522 key=1(boot) edge=down hold_ms=0
+[2026-11-02 17:26:45] I (104722) waveshare_rlcd_4_2: key_edge corr_id=kdp-104722 key=1(boot) edge=up hold_ms=200
+[2026-11-02 17:26:45] I (104722) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-104722 key=1(boot) gesture=1(click)
+[2026-11-02 17:26:45] I (104902) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-104902 key=1(boot) gesture=click hold_ms=380 overlay=0
+[2026-11-02 17:26:45] I (105252) MCP: story_prefetch_armed screen=1 missing=4
+[2026-11-02 17:26:45] I (105252) MCP: story_prefetch_send id=2026-10-23-s9c3d989b remaining=3
+[2026-11-02 17:26:45] I (105252) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-02 17:26:45] I (105262) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-02 17:26:45] I (105262) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-02 17:26:45] I (105272) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-02 17:26:45] I (105282) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-02 17:26:45] I (105282) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-02 17:26:45] I (105292) LcdDisplay: KEYBAR ovl=1 page=2 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-02 17:26:45] I (105302) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-02 17:26:45] I (105332) LcdDisplay: KEYBAR ovl=0 page=2 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-02 17:26:45] I (105772) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-23-s9c3d989b.txt bytes=265
+[2026-11-02 17:26:45] I (105772) MCP: story_fetch_prefetch_cached corr_id=kdp-105762 id=2026-10-23-s9c3d989b
+[2026-11-02 17:26:49] I (108912) waveshare_rlcd_4_2: key_edge corr_id=kdp-108912 key=0(key) edge=down hold_ms=0
+[2026-11-02 17:26:49] I (109042) waveshare_rlcd_4_2: key_edge corr_id=kdp-109042 key=0(key) edge=up hold_ms=130
+[2026-11-02 17:26:49] I (109142) waveshare_rlcd_4_2: key_edge corr_id=kdp-109142 key=0(key) edge=down hold_ms=0
+[2026-11-02 17:26:49] I (109272) waveshare_rlcd_4_2: key_edge corr_id=kdp-109272 key=0(key) edge=up hold_ms=130
+[2026-11-02 17:26:49] I (109272) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-109272 key=0(key) gesture=2(double_click)
+[2026-11-02 17:26:50] I (109462) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-109462 key=0(key) gesture=double hold_ms=320 overlay=0
+[2026-11-02 17:26:50] I (109462) MCP: story_open_fetch id=2026-10-23-s0b648bca (queued ahead of prefetch)
+[2026-11-02 17:26:50] I (109522) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-23-s0b648bca.txt bytes=273
+[2026-11-02 17:26:50] I (109522) MCP: story_fetch_answer_enter corr_id=kdp-109512 id=2026-10-23-s0b648bca
+[2026-11-02 17:26:50] I (109522) MCP: story_text_dispatch corr_id=kdp-109512 screens=1 degrade=false
+[2026-11-02 17:26:50] I (109542) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-02 17:26:50] I (109542) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-02 17:26:50] I (109552) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-02 17:26:50] I (109552) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-02 17:26:50] I (109562) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-02 17:26:50] I (109572) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-02 17:26:50] I (109572) LcdDisplay: KEYBAR ovl=1 page=2 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-02 17:26:50] I (109582) story_page: STORY_RENDER page=1 vcount=16 lcount=16 rec=0
+[2026-11-02 17:26:50] I (110272) MCP: story_prefetch_send id=2026-10-23-se1a1c443 remaining=1
+[2026-11-02 17:26:50] I (110312) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-23-se1a1c443.txt bytes=348
+[2026-11-02 17:26:50] I (110312) MCP: story_fetch_prefetch_cached corr_id=kdp-110292 id=2026-10-23-se1a1c443
+[2026-11-02 17:26:55] I (115272) MCP: story_prefetch_send id=2026-10-23-se2afcd23 remaining=0
+[2026-11-02 17:26:55] I (115312) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-23-se2afcd23.txt bytes=270
+[2026-11-02 17:26:55] I (115312) MCP: story_fetch_prefetch_cached corr_id=kdp-115302 id=2026-10-23-se2afcd23
+[2026-11-02 17:27:01] I (120422) SystemInfo: free sram: 55475 minimal sram: 31195
+[2026-11-02 17:27:01] I (121382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-121382 rtc=17:27 date=11-02 wday=0
+[2026-11-02 17:27:59] I (179412) MCP: display_dispatch view=schedule corr_id=kdp-179412 courses=37 degrade=false
+[2026-11-02 17:27:59] I (179412) MCP: display_dispatch view=home corr_id=kdp-179402 upcoming_apply ok
+[2026-11-02 17:27:59] I (179412) MCP: schedule_grid_restore corr_id=kdp-179412 courses=37 cached=37
+[2026-11-02 17:28:01] I (180422) SystemInfo: free sram: 54979 minimal sram: 31195
+[2026-11-02 17:28:01] I (181382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-181382 rtc=17:28 date=11-02 wday=0
+[2026-11-02 17:29:01] I (240422) SystemInfo: free sram: 55503 minimal sram: 31195
+[2026-11-02 17:29:01] I (241382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-241382 rtc=17:29 date=11-02 wday=0
+[2026-11-02 17:30:01] I (300422) SystemInfo: free sram: 55495 minimal sram: 31195
+[2026-11-02 17:30:01] I (301382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-301382 rtc=17:30 date=11-02 wday=0
+[2026-11-02 17:31:01] I (360422) SystemInfo: free sram: 54987 minimal sram: 31195
+[2026-11-02 17:31:01] I (361382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-361382 rtc=17:31 date=11-02 wday=0
+[2026-11-02 17:32:01] I (420422) SystemInfo: free sram: 55495 minimal sram: 31195
+[2026-11-02 17:32:01] I (421382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-421382 rtc=17:32 date=11-02 wday=0
+[2026-11-02 17:33:01] I (480422) SystemInfo: free sram: 54991 minimal sram: 31195
+[2026-11-02 17:33:01] I (481382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-481382 rtc=17:33 date=11-02 wday=0
+[2026-11-02 17:34:01] I (540422) SystemInfo: free sram: 54979 minimal sram: 31195
+[2026-11-02 17:34:01] I (541382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-541382 rtc=17:34 date=11-02 wday=0
+[2026-11-02 17:35:01] I (601382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-601382 rtc=17:35 date=11-02 wday=0
+[2026-11-02 17:35:02] I (601422) SystemInfo: free sram: 55499 minimal sram: 31195
+[2026-11-02 17:36:01] I (661382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-661382 rtc=17:36 date=11-02 wday=0
+[2026-11-02 17:36:02] I (661422) SystemInfo: free sram: 55011 minimal sram: 31195
+[2026-11-02 17:37:01] I (721382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-721382 rtc=17:37 date=11-02 wday=0
+[2026-11-02 17:37:02] I (721422) SystemInfo: free sram: 55527 minimal sram: 31195
+[2026-11-02 17:38:01] I (781382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-781382 rtc=17:38 date=11-02 wday=0
+[2026-11-02 17:38:02] I (781422) SystemInfo: free sram: 54999 minimal sram: 31195
+[2026-11-02 17:39:01] I (841382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-841382 rtc=17:39 date=11-02 wday=0
+[2026-11-02 17:39:02] I (841422) SystemInfo: free sram: 55011 minimal sram: 31195
+[2026-11-02 17:40:01] I (901382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-901382 rtc=17:40 date=11-02 wday=0
+[2026-11-02 17:40:02] I (901422) SystemInfo: free sram: 55515 minimal sram: 31195
+[2026-11-02 17:41:01] I (961382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-961382 rtc=17:41 date=11-02 wday=0
+[2026-11-02 17:41:02] I (961422) SystemInfo: free sram: 55011 minimal sram: 31195
+[2026-11-02 17:42:01] I (1021382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1021382 rtc=17:42 date=11-02 wday=0
+[2026-11-02 17:42:02] I (1021422) SystemInfo: free sram: 54999 minimal sram: 31195
+[2026-11-02 17:42:59] I (1079392) MCP: display_dispatch view=home corr_id=kdp-1079392 upcoming_apply ok
+[2026-11-02 17:42:59] I (1079412) MCP: display_dispatch view=schedule corr_id=kdp-1079402 courses=37 degrade=false
+[2026-11-02 17:42:59] I (1079412) MCP: schedule_grid_restore corr_id=kdp-1079402 courses=37 cached=37
+[2026-11-02 17:43:01] I (1081382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1081382 rtc=17:43 date=11-02 wday=0
+[2026-11-02 17:43:02] I (1081422) SystemInfo: free sram: 55515 minimal sram: 31195
+[2026-11-02 17:44:01] I (1141382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1141382 rtc=17:44 date=11-02 wday=0
+[2026-11-02 17:44:02] I (1141422) SystemInfo: free sram: 55011 minimal sram: 31195
+[2026-11-02 17:45:01] I (1201382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1201382 rtc=17:45 date=11-02 wday=0
+[2026-11-02 17:45:02] I (1201422) SystemInfo: free sram: 54999 minimal sram: 31195
+[2026-11-02 17:46:01] I (1261382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1261382 rtc=17:46 date=11-02 wday=0
+[2026-11-02 17:46:02] I (1261422) SystemInfo: free sram: 55527 minimal sram: 31195
+[2026-11-02 17:47:01] I (1321382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1321382 rtc=17:47 date=11-02 wday=0
+[2026-11-02 17:47:02] I (1321422) SystemInfo: free sram: 54999 minimal sram: 31195
+[2026-11-02 17:48:01] I (1381382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1381382 rtc=17:48 date=11-02 wday=0
+[2026-11-02 17:48:02] I (1381422) SystemInfo: free sram: 55527 minimal sram: 31195
+[2026-11-02 17:49:01] I (1441382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1441382 rtc=17:49 date=11-02 wday=0
+[2026-11-02 17:49:02] I (1441422) SystemInfo: free sram: 55515 minimal sram: 31195
+[2026-11-02 17:50:01] I (1501382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1501382 rtc=17:50 date=11-02 wday=0
+[2026-11-02 17:50:02] I (1501422) SystemInfo: free sram: 55011 minimal sram: 31195
+[2026-11-02 17:51:01] I (1561382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1561382 rtc=17:51 date=11-02 wday=0
+[2026-11-02 17:51:02] I (1561422) SystemInfo: free sram: 55515 minimal sram: 31195
+[2026-11-02 17:52:01] I (1621382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1621382 rtc=17:52 date=11-02 wday=0
+[2026-11-02 17:52:02] I (1621422) SystemInfo: free sram: 55011 minimal sram: 31195
+[2026-11-02 17:53:01] I (1681382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1681382 rtc=17:53 date=11-02 wday=0
+[2026-11-02 17:53:02] I (1681422) SystemInfo: free sram: 54999 minimal sram: 31195
+[2026-11-02 17:54:01] I (1741382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1741382 rtc=17:54 date=11-02 wday=0
+[2026-11-02 17:54:02] I (1741422) SystemInfo: free sram: 55527 minimal sram: 31195
+[2026-11-02 17:55:01] I (1801382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1801382 rtc=17:55 date=11-02 wday=0
+[2026-11-02 17:55:02] I (1801422) SystemInfo: free sram: 54999 minimal sram: 31195
+[2026-11-02 17:56:01] I (1861382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1861382 rtc=17:56 date=11-02 wday=0
+[2026-11-02 17:56:02] I (1861422) SystemInfo: free sram: 55011 minimal sram: 31195
+[2026-11-02 17:57:01] I (1921382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1921382 rtc=17:57 date=11-02 wday=0
+[2026-11-02 17:57:02] I (1921422) SystemInfo: free sram: 55515 minimal sram: 31195
+[2026-11-02 17:57:59] I (1979392) MCP: display_dispatch view=home corr_id=kdp-1979382 upcoming_apply ok
+[2026-11-02 17:57:59] I (1979402) MCP: display_dispatch view=schedule corr_id=kdp-1979402 courses=37 degrade=false
+[2026-11-02 17:57:59] I (1979402) MCP: schedule_grid_restore corr_id=kdp-1979402 courses=37 cached=37
+[2026-11-02 17:58:01] I (1981382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1981382 rtc=17:58 date=11-02 wday=0
+[2026-11-02 17:58:02] I (1981422) SystemInfo: free sram: 55011 minimal sram: 31195
+[2026-11-02 17:59:01] I (2041382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-2041382 rtc=17:59 date=11-02 wday=0
+[2026-11-02 17:59:02] I (2041422) SystemInfo: free sram: 55011 minimal sram: 31195
+[2026-11-02 18:00:01] I (2101382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-2101382 rtc=18:00 date=11-02 wday=0
+[2026-11-02 18:00:02] I (2101422) SystemInfo: free sram: 55515 minimal sram: 31195
+[2026-11-02 18:01:01] I (2161382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-2161382 rtc=18:01 date=11-02 wday=0
+[2026-11-02 18:01:02] I (2161422) SystemInfo: free sram: 55011 minimal sram: 31195
+[2026-11-02 18:02:01] I (2221382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-2221382 rtc=18:02 date=11-02 wday=0
+[2026-11-02 18:02:02] I (2221422) SystemInfo: free sram: 55515 minimal sram: 31195
+[2026-11-02 18:03:01] I (2281382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-2281382 rtc=18:03 date=11-02 wday=0
+[2026-11-02 18:03:02] I (2281422) SystemInfo: free sram: 55527 minimal sram: 31195
+[2026-11-02 18:04:01] I (2341382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-2341382 rtc=18:04 date=11-02 wday=0
+[2026-11-02 18:04:02] I (2341422) SystemInfo: free sram: 54999 minimal sram: 31195
+[2026-11-02 18:05:01] I (2401382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-2401382 rtc=18:05 date=11-02 wday=0
+[2026-11-02 18:05:02] I (2401422) SystemInfo: free sram: 55527 minimal sram: 31195
+[2026-11-02 18:06:01] I (2461382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-2461382 rtc=18:06 date=11-02 wday=0
+[2026-11-02 18:06:02] I (2461422) SystemInfo: free sram: 54999 minimal sram: 31195
+[2026-11-02 18:07:01] I (2521382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-2521382 rtc=18:07 date=11-02 wday=0
+[2026-11-02 18:07:02] I (2521422) SystemInfo: free sram: 55011 minimal sram: 31195
+[2026-11-02 18:08:01] I (2581382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-2581382 rtc=18:08 date=11-02 wday=0
+[2026-11-02 18:08:02] I (2581422) SystemInfo: free sram: 55515 minimal sram: 31195
+[2026-11-02 18:09:01] I (2641382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-2641382 rtc=18:09 date=11-02 wday=0
+[2026-11-02 18:09:02] I (2641422) SystemInfo: free sram: 55011 minimal sram: 31195
+[2026-11-02 18:10:01] I (2701382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-2701382 rtc=18:10 date=11-02 wday=0
+[2026-11-02 18:10:02] I (2701422) SystemInfo: free sram: 54999 minimal sram: 31195
+[2026-11-02 18:11:01] I (2761382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-2761382 rtc=18:11 date=11-02 wday=0
+[2026-11-02 18:11:02] I (2761422) SystemInfo: free sram: 55515 minimal sram: 31195
+[2026-11-02 18:12:01] I (2821382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-2821382 rtc=18:12 date=11-02 wday=0
+[2026-11-02 18:12:02] I (2821422) SystemInfo: free sram: 55003 minimal sram: 31195
+[2026-11-02 18:12:59] I (2879392) MCP: display_dispatch view=home corr_id=kdp-2879382 upcoming_apply ok
+[2026-11-02 18:12:59] I (2879402) MCP: display_dispatch view=schedule corr_id=kdp-2879402 courses=37 degrade=false
+[2026-11-02 18:12:59] I (2879402) MCP: schedule_grid_restore corr_id=kdp-2879402 courses=37 cached=37
+[2026-11-02 18:13:01] I (2881382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-2881382 rtc=18:13 date=11-02 wday=0
+[2026-11-02 18:13:02] I (2881422) SystemInfo: free sram: 55007 minimal sram: 31195
+[2026-11-02 18:14:01] I (2941382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-2941382 rtc=18:14 date=11-02 wday=0
+[2026-11-02 18:14:02] I (2941422) SystemInfo: free sram: 55527 minimal sram: 31195
+[2026-11-02 18:15:01] I (3001382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-3001382 rtc=18:15 date=11-02 wday=0
+[2026-11-02 18:15:02] I (3001422) SystemInfo: free sram: 54999 minimal sram: 31195
+[2026-11-02 18:16:01] I (3061382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-3061382 rtc=18:16 date=11-02 wday=0
+[2026-11-02 18:16:02] I (3061422) SystemInfo: free sram: 55527 minimal sram: 31195
+[2026-11-02 18:17:01] I (3121382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-3121382 rtc=18:17 date=11-02 wday=0
+[2026-11-02 18:17:02] I (3121422) SystemInfo: free sram: 55515 minimal sram: 31195
+[2026-11-02 18:18:01] I (3181382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-3181382 rtc=18:18 date=11-02 wday=0
+[2026-11-02 18:18:02] I (3181422) SystemInfo: free sram: 55011 minimal sram: 31195
+[2026-11-02 18:19:01] I (3241382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-3241382 rtc=18:19 date=11-02 wday=0
+[2026-11-02 18:19:02] I (3241422) SystemInfo: free sram: 55515 minimal sram: 31195
+[2026-11-02 18:20:01] I (3301382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-3301382 rtc=18:20 date=11-02 wday=0
+[2026-11-02 18:20:02] I (3301422) SystemInfo: free sram: 55011 minimal sram: 31195
+[2026-11-02 18:21:01] I (3361382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-3361382 rtc=18:21 date=11-02 wday=0
+[2026-11-02 18:21:02] I (3361422) SystemInfo: free sram: 54999 minimal sram: 31195
+[2026-11-02 18:22:01] I (3421382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-3421382 rtc=18:22 date=11-02 wday=0
+[2026-11-02 18:22:02] I (3421422) SystemInfo: free sram: 55011 minimal sram: 31195
+[2026-11-02 18:23:01] I (3481382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-3481382 rtc=18:23 date=11-02 wday=0
+[2026-11-02 18:23:02] I (3481422) SystemInfo: free sram: 54999 minimal sram: 31195
+[2026-11-02 18:24:01] I (3541382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-3541382 rtc=18:24 date=11-02 wday=0
+[2026-11-02 18:24:02] I (3541422) SystemInfo: free sram: 55011 minimal sram: 31195
+[2026-11-02 18:25:01] I (3601382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-3601382 rtc=18:25 date=11-02 wday=0
+[2026-11-02 18:25:02] I (3601422) SystemInfo: free sram: 55515 minimal sram: 31195
+[2026-11-02 18:26:01] I (3661382) waveshare_rlcd_4_2: rtc_writeback corr_id=kdp-3661382 ok rtc=18:26:01 date=11-02
+[2026-11-02 18:26:01] I (3661382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-3661382 rtc=18:26 date=11-02 wday=0
+[2026-11-02 18:26:02] I (3661422) SystemInfo: free sram: 54979 minimal sram: 31195
+[2026-11-02 18:27:01] I (3721372) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-3721372 rtc=18:27 date=11-02 wday=0
+[2026-11-02 18:27:02] I (3721422) SystemInfo: free sram: 54991 minimal sram: 31195
+[2026-11-02 18:27:59] I (3779402) MCP: display_dispatch view=home corr_id=kdp-3779392 upcoming_apply ok
+[2026-11-02 18:27:59] I (3779412) MCP: display_dispatch view=schedule corr_id=kdp-3779412 courses=37 degrade=false
+[2026-11-02 18:27:59] I (3779412) MCP: schedule_grid_restore corr_id=kdp-3779412 courses=37 cached=37
+[2026-11-02 18:28:01] I (3781382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-3781382 rtc=18:28 date=11-02 wday=0
+[2026-11-02 18:28:02] I (3781422) SystemInfo: free sram: 55507 minimal sram: 31195
+[2026-11-02 18:29:01] I (3841382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-3841382 rtc=18:29 date=11-02 wday=0
+[2026-11-02 18:29:02] I (3841422) SystemInfo: free sram: 54979 minimal sram: 31195
+[2026-11-02 18:30:01] I (3901382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-3901382 rtc=18:30 date=11-02 wday=0
+[2026-11-02 18:30:02] I (3901422) SystemInfo: free sram: 55507 minimal sram: 31195
+[2026-11-02 18:31:01] I (3961382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-3961382 rtc=18:31 date=11-02 wday=0
+[2026-11-02 18:31:02] I (3961422) SystemInfo: free sram: 55495 minimal sram: 31195
+[2026-11-02 18:32:01] I (4021382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-4021382 rtc=18:32 date=11-02 wday=0
+[2026-11-02 18:32:02] I (4021422) SystemInfo: free sram: 54991 minimal sram: 31195
+[2026-11-02 18:33:01] I (4081382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-4081382 rtc=18:33 date=11-02 wday=0
+[2026-11-02 18:33:02] I (4081422) SystemInfo: free sram: 55495 minimal sram: 31195
+[2026-11-02 18:34:01] I (4141382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-4141382 rtc=18:34 date=11-02 wday=0
+[2026-11-02 18:34:02] I (4141422) SystemInfo: free sram: 54991 minimal sram: 31195
+[2026-11-02 18:35:01] I (4201382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-4201382 rtc=18:35 date=11-02 wday=0
+[2026-11-02 18:35:02] I (4201422) SystemInfo: free sram: 54979 minimal sram: 31195
+[2026-11-02 18:36:01] I (4261382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-4261382 rtc=18:36 date=11-02 wday=0
+[2026-11-02 18:36:02] I (4261422) SystemInfo: free sram: 55527 minimal sram: 31195
+[2026-11-02 18:37:01] I (4321382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-4321382 rtc=18:37 date=11-02 wday=0
+[2026-11-02 18:37:02] I (4321422) SystemInfo: free sram: 54999 minimal sram: 31195
+[2026-11-02 18:38:01] I (4381382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-4381382 rtc=18:38 date=11-02 wday=0
+[2026-11-02 18:38:02] I (4381422) SystemInfo: free sram: 55011 minimal sram: 31195
+[2026-11-02 18:39:01] I (4441382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-4441382 rtc=18:39 date=11-02 wday=0
+[2026-11-02 18:39:02] I (4441422) SystemInfo: free sram: 55515 minimal sram: 31195
+[2026-11-02 18:40:01] I (4501382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-4501382 rtc=18:40 date=11-02 wday=0
+[2026-11-02 18:40:02] I (4501422) SystemInfo: free sram: 55011 minimal sram: 31195
+[2026-11-02 18:41:01] I (4561382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-4561382 rtc=18:41 date=11-02 wday=0
+[2026-11-02 18:41:02] I (4561422) SystemInfo: free sram: 54999 minimal sram: 31195
+[2026-11-02 18:42:01] I (4621382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-4621382 rtc=18:42 date=11-02 wday=0
+[2026-11-02 18:42:02] I (4621422) SystemInfo: free sram: 55527 minimal sram: 31195
+[2026-11-02 18:42:59] I (4679392) MCP: display_dispatch view=home corr_id=kdp-4679382 upcoming_apply ok
+[2026-11-02 18:42:59] I (4679402) MCP: display_dispatch view=schedule corr_id=kdp-4679402 courses=37 degrade=false
+[2026-11-02 18:42:59] I (4679402) MCP: schedule_grid_restore corr_id=kdp-4679402 courses=37 cached=37
+[2026-11-02 18:43:01] I (4681382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-4681382 rtc=18:43 date=11-02 wday=0
+[2026-11-02 18:43:02] I (4681422) SystemInfo: free sram: 55011 minimal sram: 31195
+[2026-11-02 18:44:01] I (4741382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-4741382 rtc=18:44 date=11-02 wday=0
+[2026-11-02 18:44:02] I (4741422) SystemInfo: free sram: 55515 minimal sram: 31195
+[2026-11-02 18:45:01] I (4801382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-4801382 rtc=18:45 date=11-02 wday=0
+[2026-11-02 18:45:02] I (4801422) SystemInfo: free sram: 55527 minimal sram: 31195
+[2026-11-02 18:46:01] I (4861382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-4861382 rtc=18:46 date=11-02 wday=0
+[2026-11-02 18:46:02] I (4861422) SystemInfo: free sram: 54999 minimal sram: 31195
+[2026-11-02 18:47:01] I (4921382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-4921382 rtc=18:47 date=11-02 wday=0
+[2026-11-02 18:47:02] I (4921422) SystemInfo: free sram: 55527 minimal sram: 31195
+[2026-11-02 18:48:01] I (4981382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-4981382 rtc=18:48 date=11-02 wday=0
+[2026-11-02 18:48:02] I (4981422) SystemInfo: free sram: 54999 minimal sram: 31195
+[2026-11-02 18:49:01] I (5041382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-5041382 rtc=18:49 date=11-02 wday=0
+[2026-11-02 18:49:02] I (5041422) SystemInfo: free sram: 55011 minimal sram: 31195
+[2026-11-02 18:50:01] I (5101382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-5101382 rtc=18:50 date=11-02 wday=0
+[2026-11-02 18:50:02] I (5101422) SystemInfo: free sram: 55515 minimal sram: 31195
+[2026-11-02 18:51:01] I (5161382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-5161382 rtc=18:51 date=11-02 wday=0
+[2026-11-02 18:51:02] I (5161422) SystemInfo: free sram: 55011 minimal sram: 31195
+[2026-11-02 18:52:01] I (5221382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-5221382 rtc=18:52 date=11-02 wday=0
+[2026-11-02 18:52:02] I (5221422) SystemInfo: free sram: 54999 minimal sram: 31195
+[2026-11-02 18:53:01] I (5281382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-5281382 rtc=18:53 date=11-02 wday=0
+[2026-11-02 18:53:02] I (5281422) SystemInfo: free sram: 55527 minimal sram: 31195
+[2026-11-02 18:54:01] I (5341382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-5341382 rtc=18:54 date=11-02 wday=0
+[2026-11-02 18:54:02] I (5341422) SystemInfo: free sram: 54999 minimal sram: 31195
+[2026-11-02 18:55:01] I (5401382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-5401382 rtc=18:55 date=11-02 wday=0
+[2026-11-02 18:55:02] I (5401422) SystemInfo: free sram: 55011 minimal sram: 31195
+[2026-11-02 18:56:01] I (5461382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-5461382 rtc=18:56 date=11-02 wday=0
+[2026-11-02 18:56:02] I (5461422) SystemInfo: free sram: 55515 minimal sram: 31195
+[2026-11-02 18:57:01] I (5521382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-5521382 rtc=18:57 date=11-02 wday=0
+[2026-11-02 18:57:02] I (5521422) SystemInfo: free sram: 55011 minimal sram: 31195
+[2026-11-02 18:57:59] I (5579392) MCP: display_dispatch view=home corr_id=kdp-5579382 upcoming_apply ok
+[2026-11-02 18:57:59] I (5579402) MCP: display_dispatch view=schedule corr_id=kdp-5579402 courses=37 degrade=false
+[2026-11-02 18:57:59] I (5579402) MCP: schedule_grid_restore corr_id=kdp-5579402 courses=37 cached=37
+[2026-11-02 18:58:01] I (5581382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-5581382 rtc=18:58 date=11-02 wday=0
+[2026-11-02 18:58:02] I (5581422) SystemInfo: free sram: 55519 minimal sram: 31195
+[2026-11-02 18:59:01] I (5641382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-5641382 rtc=18:59 date=11-02 wday=0
+[2026-11-02 18:59:02] I (5641422) SystemInfo: free sram: 55523 minimal sram: 31195
+[2026-11-02 19:00:01] I (5701382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-5701382 rtc=19:00 date=11-02 wday=0
+[2026-11-02 19:00:02] I (5701422) SystemInfo: free sram: 55003 minimal sram: 31195
+[2026-11-02 19:01:01] I (5761382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-5761382 rtc=19:01 date=11-02 wday=0
+[2026-11-02 19:01:02] I (5761422) SystemInfo: free sram: 55523 minimal sram: 31195
+[2026-11-02 19:02:01] I (5821382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-5821382 rtc=19:02 date=11-02 wday=0
+[2026-11-02 19:02:02] I (5821422) SystemInfo: free sram: 55003 minimal sram: 31195
+[2026-11-02 19:03:01] I (5881382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-5881382 rtc=19:03 date=11-02 wday=0
+[2026-11-02 19:03:02] I (5881422) SystemInfo: free sram: 55007 minimal sram: 31195
+[2026-11-02 19:04:01] I (5941382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-5941382 rtc=19:04 date=11-02 wday=0
+[2026-11-02 19:04:02] I (5941422) SystemInfo: free sram: 55519 minimal sram: 31195
+[2026-11-02 19:05:01] I (6001382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-6001382 rtc=19:05 date=11-02 wday=0
+[2026-11-02 19:05:02] I (6001422) SystemInfo: free sram: 55007 minimal sram: 31195
+[2026-11-02 19:06:01] I (6061382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-6061382 rtc=19:06 date=11-02 wday=0
+[2026-11-02 19:06:02] I (6061422) SystemInfo: free sram: 55003 minimal sram: 31195
+[2026-11-02 19:07:01] I (6121382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-6121382 rtc=19:07 date=11-02 wday=0
+[2026-11-02 19:07:02] I (6121422) SystemInfo: free sram: 55523 minimal sram: 31195
+[2026-11-02 19:08:01] I (6181382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-6181382 rtc=19:08 date=11-02 wday=0
+[2026-11-02 19:08:02] I (6181422) SystemInfo: free sram: 55003 minimal sram: 31195
+[2026-11-02 19:09:01] I (6241382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-6241382 rtc=19:09 date=11-02 wday=0
+[2026-11-02 19:09:02] I (6241422) SystemInfo: free sram: 55007 minimal sram: 31195
+[2026-11-02 19:10:01] I (6301382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-6301382 rtc=19:10 date=11-02 wday=0
+[2026-11-02 19:10:02] I (6301422) SystemInfo: free sram: 55519 minimal sram: 31195
+[2026-11-02 19:11:01] I (6361382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-6361382 rtc=19:11 date=11-02 wday=0
+[2026-11-02 19:11:02] I (6361422) SystemInfo: free sram: 55007 minimal sram: 31195
+[2026-11-02 19:12:01] I (6421382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-6421382 rtc=19:12 date=11-02 wday=0
+[2026-11-02 19:12:02] I (6421422) SystemInfo: free sram: 55519 minimal sram: 31195
+[2026-11-02 19:12:59] I (6479382) MCP: display_dispatch view=home corr_id=kdp-6479382 upcoming_apply ok
+[2026-11-02 19:12:59] I (6479402) MCP: display_dispatch view=schedule corr_id=kdp-6479402 courses=37 degrade=false
+[2026-11-02 19:12:59] I (6479412) MCP: schedule_grid_restore corr_id=kdp-6479402 courses=37 cached=37
+[2026-11-02 19:13:01] I (6481382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-6481382 rtc=19:13 date=11-02 wday=0
+[2026-11-02 19:13:02] I (6481422) SystemInfo: free sram: 55519 minimal sram: 31195
+[2026-11-02 19:14:01] I (6541382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-6541382 rtc=19:14 date=11-02 wday=0
+[2026-11-02 19:14:02] I (6541422) SystemInfo: free sram: 55007 minimal sram: 31195
+[2026-11-02 19:15:01] I (6601382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-6601382 rtc=19:15 date=11-02 wday=0
+[2026-11-02 19:15:02] I (6601422) SystemInfo: free sram: 55519 minimal sram: 31195
+[2026-11-02 19:16:01] I (6661382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-6661382 rtc=19:16 date=11-02 wday=0
+[2026-11-02 19:16:02] I (6661422) SystemInfo: free sram: 55007 minimal sram: 31195
+[2026-11-02 19:17:01] I (6721382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-6721382 rtc=19:17 date=11-02 wday=0
+[2026-11-02 19:17:02] I (6721422) SystemInfo: free sram: 55003 minimal sram: 31195
+[2026-11-02 19:18:01] I (6781382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-6781382 rtc=19:18 date=11-02 wday=0
+[2026-11-02 19:18:02] I (6781422) SystemInfo: free sram: 55523 minimal sram: 31195
+[2026-11-02 19:19:01] I (6841382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-6841382 rtc=19:19 date=11-02 wday=0
+[2026-11-02 19:19:02] I (6841422) SystemInfo: free sram: 55003 minimal sram: 31195
+[2026-11-02 19:20:01] I (6901382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-6901382 rtc=19:20 date=11-02 wday=0
+[2026-11-02 19:20:02] I (6901422) SystemInfo: free sram: 55007 minimal sram: 31195
+[2026-11-02 19:21:01] I (6961382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-6961382 rtc=19:21 date=11-02 wday=0
+[2026-11-02 19:21:02] I (6961422) SystemInfo: free sram: 55519 minimal sram: 31195
+[2026-11-02 19:22:01] I (7021382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-7021382 rtc=19:22 date=11-02 wday=0
+[2026-11-02 19:22:02] I (7021422) SystemInfo: free sram: 55007 minimal sram: 31195
+[2026-11-02 19:23:01] I (7081382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-7081382 rtc=19:23 date=11-02 wday=0
+[2026-11-02 19:23:02] I (7081422) SystemInfo: free sram: 55003 minimal sram: 31195
+[2026-11-02 19:24:01] I (7141382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-7141382 rtc=19:24 date=11-02 wday=0
+[2026-11-02 19:24:02] I (7141422) SystemInfo: free sram: 55523 minimal sram: 31195
+[2026-11-02 19:25:01] I (7201382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-7201382 rtc=19:25 date=11-02 wday=0
+[2026-11-02 19:25:02] I (7201422) SystemInfo: free sram: 55003 minimal sram: 31195
+[2026-11-02 19:26:01] I (7261382) waveshare_rlcd_4_2: rtc_writeback corr_id=kdp-7261382 ok rtc=19:26:01 date=11-02
+[2026-11-02 19:26:01] I (7261382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-7261382 rtc=19:26 date=11-02 wday=0
+[2026-11-02 19:26:02] I (7261422) SystemInfo: free sram: 55503 minimal sram: 31195
+[2026-11-02 19:27:01] I (7321382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-7321382 rtc=19:27 date=11-02 wday=0
+[2026-11-02 19:27:02] I (7321422) SystemInfo: free sram: 55499 minimal sram: 31195
+[2026-11-02 19:27:59] I (7379382) MCP: display_dispatch view=home corr_id=kdp-7379382 upcoming_apply ok
+[2026-11-02 19:27:59] I (7379402) MCP: display_dispatch view=schedule corr_id=kdp-7379402 courses=37 degrade=false
+[2026-11-02 19:27:59] I (7379402) MCP: schedule_grid_restore corr_id=kdp-7379402 courses=37 cached=37
+[2026-11-02 19:28:01] I (7381382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-7381382 rtc=19:28 date=11-02 wday=0
+[2026-11-02 19:28:02] I (7381422) SystemInfo: free sram: 54991 minimal sram: 31195
+[2026-11-02 19:29:01] I (7441382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-7441382 rtc=19:29 date=11-02 wday=0
+[2026-11-02 19:29:02] I (7441422) SystemInfo: free sram: 55495 minimal sram: 31195
+[2026-11-02 19:30:01] I (7501382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-7501382 rtc=19:30 date=11-02 wday=0
+[2026-11-02 19:30:02] I (7501422) SystemInfo: free sram: 54991 minimal sram: 31195
+[2026-11-02 19:31:01] I (7561382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-7561382 rtc=19:31 date=11-02 wday=0
+[2026-11-02 19:31:02] I (7561422) SystemInfo: free sram: 54979 minimal sram: 31195
+[2026-11-02 19:32:01] I (7621382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-7621382 rtc=19:32 date=11-02 wday=0
+[2026-11-02 19:32:02] I (7621422) SystemInfo: free sram: 55507 minimal sram: 31195
+[2026-11-02 19:33:01] I (7681382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-7681382 rtc=19:33 date=11-02 wday=0
+[2026-11-02 19:33:02] I (7681422) SystemInfo: free sram: 54979 minimal sram: 31195
+[2026-11-02 19:34:01] I (7741382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-7741382 rtc=19:34 date=11-02 wday=0
+[2026-11-02 19:34:02] I (7741422) SystemInfo: free sram: 54991 minimal sram: 31195
+[2026-11-02 19:35:01] I (7801382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-7801382 rtc=19:35 date=11-02 wday=0
+[2026-11-02 19:35:02] I (7801422) SystemInfo: free sram: 55495 minimal sram: 31195
+[2026-11-02 19:36:01] I (7861382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-7861382 rtc=19:36 date=11-02 wday=0
+[2026-11-02 19:36:02] I (7861422) SystemInfo: free sram: 55011 minimal sram: 31195
+[2026-11-02 19:37:01] I (7921382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-7921382 rtc=19:37 date=11-02 wday=0
+[2026-11-02 19:37:02] I (7921422) SystemInfo: free sram: 54999 minimal sram: 31195
+[2026-11-02 19:38:01] I (7981382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-7981382 rtc=19:38 date=11-02 wday=0
+[2026-11-02 19:38:02] I (7981422) SystemInfo: free sram: 55527 minimal sram: 31195
+[2026-11-02 19:39:01] I (8041382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-8041382 rtc=19:39 date=11-02 wday=0
+[2026-11-02 19:39:02] I (8041422) SystemInfo: free sram: 54999 minimal sram: 31195
+[2026-11-02 19:40:01] I (8101382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-8101382 rtc=19:40 date=11-02 wday=0
+[2026-11-02 19:40:02] I (8101422) SystemInfo: free sram: 55527 minimal sram: 31195
+[2026-11-02 19:41:01] I (8161382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-8161382 rtc=19:41 date=11-02 wday=0
+[2026-11-02 19:41:02] I (8161422) SystemInfo: free sram: 55515 minimal sram: 31195
+[2026-11-02 19:42:01] I (8221382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-8221382 rtc=19:42 date=11-02 wday=0
+[2026-11-02 19:42:02] I (8221422) SystemInfo: free sram: 55011 minimal sram: 31195
+[2026-11-02 19:42:59] I (8279382) MCP: display_dispatch view=home corr_id=kdp-8279382 upcoming_apply ok
+[2026-11-02 19:42:59] I (8279402) MCP: display_dispatch view=schedule corr_id=kdp-8279402 courses=37 degrade=false
+[2026-11-02 19:42:59] I (8279402) MCP: schedule_grid_restore corr_id=kdp-8279402 courses=37 cached=37
+[2026-11-02 19:43:01] I (8281382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-8281382 rtc=19:43 date=11-02 wday=0
+[2026-11-02 19:43:02] I (8281422) SystemInfo: free sram: 55527 minimal sram: 31195
+[2026-11-02 19:44:01] I (8341382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-8341382 rtc=19:44 date=11-02 wday=0
+[2026-11-02 19:44:02] I (8341422) SystemInfo: free sram: 54999 minimal sram: 31195
+[2026-11-02 19:45:01] I (8401382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-8401382 rtc=19:45 date=11-02 wday=0
+[2026-11-02 19:45:02] I (8401422) SystemInfo: free sram: 55011 minimal sram: 31195
+[2026-11-02 19:46:01] I (8461382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-8461382 rtc=19:46 date=11-02 wday=0
+[2026-11-02 19:46:02] I (8461422) SystemInfo: free sram: 55515 minimal sram: 31195
+[2026-11-02 19:47:01] I (8521382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-8521382 rtc=19:47 date=11-02 wday=0
+[2026-11-02 19:47:02] I (8521422) SystemInfo: free sram: 55011 minimal sram: 31195
+[2026-11-02 19:48:01] I (8581382) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-8581382 rtc=19:48 date=11-02 wday=0
+[2026-11-02 19:48:02] I (8581422) SystemInfo: free sram: 54999 minimal sram: 31195

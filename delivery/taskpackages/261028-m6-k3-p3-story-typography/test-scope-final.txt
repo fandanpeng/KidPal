@@ -1,0 +1,20 @@
+# final 相位影响面圈定清单（261028-m6-k3-p3-story-typography）
+# 来源 = taskpackage acceptanceTestsFile + impactedTestsSeed + detect_changes（per-Pod 图索引 C-AI-KidPal-pod-m2，
+# since a1e763f7，impacted_total=23 全部落 firmware/main 测试面，未截断）。integrator test-scope 机器可执行子集。
+# server 面（crossEnd list_stories / _relay_display_blocks_to_device）零 producer diff 预期兑现（git diff 圈定 server/ 零 diff），不在圈定内。
+# 归档件 firmware/main/test/acceptance/archive/happy_flow_capture.test.c：blast radius hop1 命中但为 archive-reference 种子（零修改、零重锚、不入 host 编译），按计划注记排除。
+# 本包新冻结件（acceptanceTestsFile）
+firmware/main/test/story_typography.acceptance.c
+# 本包修订冻结件（acceptanceTestsFile；story_page_v2 revision 5 + font_assets_runtime revision 3 收紧型 supersede）
+firmware/main/test/story_page_v2.acceptance.c
+firmware/main/test/font_assets_runtime.acceptance.c
+# detect_changes blast radius（hop1/2：CMakeLists host SRCS 接线面 + 共享 smoke seam）
+firmware/main/test/host_infra_smoke.acceptance.c
+firmware/main/test/schedule_grid_16px.acceptance.c
+firmware/main/test/schedule_grid.acceptance.c
+firmware/main/test/p1_home_16px.acceptance.c
+firmware/main/test/p1_home_battery.acceptance.c
+firmware/main/test/p1_cjk_name.acceptance.c
+# impactedTestsSeed 回归种子（mcp_server 同文件改动后记录会话/对话引导回归；本包不改会话生命周期）
+firmware/main/test/record_session_lifecycle.acceptance.c
+firmware/main/test/record_dialogue_guide.acceptance.c

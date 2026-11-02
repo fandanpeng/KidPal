@@ -64,3 +64,20 @@
 - **human 现场裁定（原话逐字）**：「上午显示4行 最后一行，还是有一点被截断了，你可以看照片，如果是放不下的原因，我们可以把晚上保留两行就行了」→ 版式 78/78/69→88/88/49、容量 4/4/3→4/4/2；acceptance-author 冻结件真机轮条修订（授权 = human 原话）+ builder 常量同步；verify scoped 8 闸绿 + final bearing r2 全绿（r2.json）；supervisor verdict 换新 ESCALATE、gate-check 绿。commit 10f13a60。
 - **第二轮看屏（复烧 0x20000 后）**：human 裁「可以了」——上午第 4 行完整、晚上带正常显示现有 2 门、其余回归面无异常。**P2S-E5 真机轮 PASS**。
 - **需求面**：容量 4/4/2 同步起草中（story-author，v1.70），requirement-reviewer 审稿后随合并批落。
+
+## 2026-11-02 · P2（m6-k2b）合并入本地 main（human 合并门批准，随批需求同步 v1.70）
+
+- P2：merge-driver --pod（human-approval-ref=2f611c92）→ rebase → quick-check 2 闸绿 → merge OK → 本地 main @ 335af886（簿记 4ee8f796）。需求同步 v1.70（容量 4/4/2 + 带高 88/88/49）随批 frozen（93dc1df5，story-author + requirement-reviewer 四查 PASS）。
+- 真机轮 P2S-E5 两轮收口：第一轮发现上午第 4 行墨底截断 → human 现场裁定（88/88/49 + 4/4/2）→ 修订轮全绿复烧 → 第二轮 human 裁「可以了」。
+- **列车状态**：P0/P1/P2 均 merged；剩 P3（261028-m6-k3-p3-story-typography，mergeOrder 63）待 launch——P3 收口轮兼 workstream 四页并集终端收口（P3 前 P2 必须 merged ✓）。遗留：ARQ-261029 上游 ※ 写入侧待派单；远程发布（release-pr --publish）待 human。
+
+## 2026-11-02 · P3（m6-k3）launch 面准备 + 基线重测锚
+
+- **调度判定**：本批单包 = `261028-m6-k3-p3-story-typography`（列车 P3 终端包，mergeOrder 63，rigor full / riskTier high，dependsOn=[P0 已 merged 4912575c / P1 随批并入 / P2 已 merged 335af886]）。LP10 满足（三包齐，P3 收口轮兼 workstream 四页并集终端收口）；launchPreconditions ①②③ 满足（上游 phase 完成 / anchors v1.70+§12 冻结 / UI-ready 在位）。human 在池树 `C:/AI/KidPal-pod-m2`（常驻分支 `dev/pod-m2`）直启，复用本树。
+- **互斥租用检查**：扫描 `devloop/pods/*.json` 全部指向本树的条目（26 条）均 merged，无活跃 Pod 占用本树或 `dev/pod-m2`。
+- **机械门**：`settings-lint.mjs` 3 files 0 RED 0 WARN；`--check-launch 261028-m6-k3-p3-story-typography --base-ref dev/pod-m2` ok=true blocking 空（LP4/LP5 为 workstream 级、P0 launch 批已核满足；LP10 本批核满足）。
+- **分支同步**：main（4ee8f796，P2 merge 335af886 + 簿记）并入 `dev/pod-m2`（该分支原领先一个 aae6543c 记账 commit）→ merge commit `d8d37558`，无冲突，树净。
+- **交接卫生**：tracked 净（`.changes-index-state.json` 为纯行尾噪声、已还原）、零 untracked；managed_components 软链原生 python 验真 True；host build 热缓存（ninja no work to do）。
+- **firmware host 面基线锚（重测产物）**：**258 Tests / 3 Failures / 0 Ignored** @ SHA `d8d37558`（2026-11-02 本树实测；命令 = WSL `wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build` + `wsl -d Ubuntu-24.04 -- ./firmware/main/test/host_app/build/host_infra_test.elf`；3 红全为 p1_auxbar AB-A1/A2/A4 存量族，与 P0 锚 `589e0127`（242/3）、P2 锚 `6ce77123`（253/3）红名单零变化；总数 253→258 = P2 开发期新增 schedule_grid_16px 断言随 P2 合入，预期内）。差异判停：P2 锚 `6ce77123` 对 `firmware/` 有 diff（P2 已合 main）→ 强制重测，本行为 P3 起合法引用锚。落盘锚 = 本行。
+- **server 面基线锚（引用不重跑）**：**395 passed / 9 deselected / 33 subtests passed / 0 failed** @ SHA `6ce77123`（2026-11-02 实测；命令 = `python -m pytest -q --import-mode=importlib -m "not live" C:/AI/KidPal-pod-m2/server/acceptance`；落盘锚 = 本文件 2026-11-02 P2 段 server 锚行）。差异判停 2026-11-02 复核：`git diff --quiet 6ce77123 HEAD -- server/` exit 0 → 引用不重跑。
+- **遗留 human 项**：ARQ-261029 上游 ※ 写入侧待派单（终端轮复证 P1/P2 页下划线时若仍无样本按观测受限记录）；远程发布（release-pr --publish）待 human；缺 assets 降级真机观测已于 2026-10-29 human 裁豁免（P3T-E4 该子项按豁免记录）。
