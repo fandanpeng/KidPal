@@ -14,7 +14,9 @@
  * _display_wire_arguments 实测）：
  *   - schedule data wire = {"week":{"courses":[{"day":int,"slot":int,"name":str,
  *     "flags":int}, …]}}；day 0 基（周一=0..周日=6）、slot 0 上午/1 下午/2 晚上、
- *     flags bit0=※ 临时 bit1=星标（键集精确 {day,slot,name,flags}）；day/slot/flags 是
+ *     flags bit0=临时课 bit1=星标（键集精确 {day,slot,name,flags}；bit0 形态 =
+ *     板端课名下划线——name 本身不带 ※ 前缀，ARQ-261029 producer 实测锚定；
+ *     day/slot/flags 是
  *     JSON 数字、name 是字符串。设备收到的 `data` 参数 = front
  *     json.dumps(data, ensure_ascii=False) 字符串 → **默认分隔符含空格**（": " / ", "），
  *     解析必须容忍空白（本文件 canonical 载荷按 wire 实况带空格钉）。
@@ -50,11 +52,13 @@
  *       int  day;            -- 0..6, 0=周一..6=周日（契约 §1.3② day 0 基）
  *       int  slot;           -- 0..2, 0=上午 1=下午 2=晚上
  *       char name[KSG_NAME_CAP]; -- 课程名 UTF-8 bytes（safe-truncated, 恒 NUL 结尾）
- *       int  flags;          -- KSG_FLAG_TEMP(0x1 ※) | KSG_FLAG_STAR(0x2 星标), 0..3
+ *       int  flags;          -- KSG_FLAG_TEMP(0x1 临时课/下划线) | KSG_FLAG_STAR(0x2 星标), 0..3
  *   } kidpal_schedule_course_t;
  *
  *   #define KSG_NAME_CAP   48
- *   #define KSG_FLAG_TEMP  0x1   -- bit0 ※ 临时安排（B1 一次性安排区块）
+ *   #define KSG_FLAG_TEMP  0x1   -- bit0 临时课（B1 一次性安排区块；板端标记形态 =
+ *                                     课名下 2px 下划线，※ 前缀已退役, F-9
+ *                                     2026-11-02 重锚——wire 位语义不变）
  *   #define KSG_FLAG_STAR  0x2   -- bit1 星标呼应（group_upcoming 当前「接下来」项）
  *   #define KSG_COURSE_CAP 84    -- 周网格缓存容量上限 = 7 天 × 3 格 × 每格 4 门
  *                                     （cache_schedule 网格化定容冻结值；渲染节点
@@ -85,16 +89,24 @@
  *           canvas-p2 网格底线实测 y254、底条上缘 y262；旧值系贴旧底条顶 252 的适配位）；
  *           y>=255 = 网格外带，网格**严格零墨**
  *           （键帽条三槽常驻不被网格遮挡, M3K2-A6）。
- *           表头带 y[0..29]；槽位行带 slot0 y[30..103] / slot1 y[104..177] /
- *           slot2 y[178..254]；标签列 x[0..39]；day 列带 x[40+51*d .. 90+51*d]（d=0..6）。
+ *           表头带 y[0..29]；槽位行带 slot0 y[30..117] / slot1 y[118..205] /
+ *           slot2 y[206..254]（2026-11-02 F-3/P2S-E1 重基线 78/78/69 → 同日真机轮
+ *           human 裁定修订 88/88/49（授权链见 REVISION LOG 2026-11-02 真机轮条）；
+ *           16px + pitch 19 版式——supersede 授权链见 REVISION LOG 2026-11-02 条；
+ *           表头带、标签列、列宽 51 与 KSG_GRID_BOTTOM=254 零偏移）；
+ *           标签列 x[0..39]；day 列带 x[40+51*d .. 90+51*d]（d=0..6）。
  *           (day,slot) 格 = day 列带 × slot 行带；格内多课**逐门竖排**（同格多条目
- *           自上而下堆叠），课程名行 pitch >= KSG_FONT_MIN_PX(14)（NFR-READ-1）；
+ *           自上而下堆叠），课程名行 pitch = KSG_ROW_PITCH(19)（2026-11-02 F-3 收紧：
+ *           原 >= KSG_FONT_MIN_PX(14)，下限语义保留——19 >= 14）；
  *           **不做格内滚动**，格内溢出走截断降级（spec S-F1.2 补充规则口径）。
  *       - today_col ∈ 0..6 → 该 day 列带整列高亮（粗框/反色，与未高亮列在真帧上可
  *         区分），高亮墨不越出该列带；today_col 越域（含 -1 = 未注入星期 / 7 / 负值）
  *         → 无任何列高亮（不画假「今天」；兜底纪律同 home_p1 日期未知不画假日期）。
- *       - flags bit0 → ※ 临时标记与课程名同格可见；bit1 → 星标（★）与课程名同格
- *         可见；两标记在真帧上互相可区分（※≠★）；无 flags 的课不带任何标记。
+ *       - flags bit0 → 临时标记与课程名同格可见（2026-11-02 F-9/P2S-E3 重基线：形态 =
+ *         课名下 2px 下划线，※ 前缀退役——形态细节锚移交 schedule_grid_16px.acceptance.c
+ *         SG16-A5；ARQ-261029 口径：一律锚 flags bit0，不锚 name 前缀）；bit1 → 星标
+ *         （★）与课程名同格可见（不动）；两标记在真帧上互相可区分；无 flags 的课
+ *         不带任何标记。
  *       - 返回 n（成功绘制的课程条数, n=0 空课表合法页画空网格骨架）；-1 于非法参数
  *         （n<0、n>0 且 courses==NULL）；绝不崩溃。
  *
@@ -195,8 +207,8 @@
  *             test 3（结构半: inject_weekday 缝 + 板级 RTC 装配点接线 + 家族在世
  *             守卫）+ test 10（render 真帧: today_col 0..6 逐列高亮带浓度 + 跨天
  *             切换 diff + 越域不高亮）
- *   coverage: M3K2-A3（※ 临时标记 + 星标呼应齿: flags 位渲染）-> test 2（行为半:
- *             flags 0..3 逐位保真解析）+ test 11（render 真帧: ※/★ 各自可见 +
+ *   coverage: M3K2-A3（临时标记 + 星标呼应齿: flags 位渲染；F-9 后 bit0 形态 = 下划线）-> test 2（行为半:
+ *             flags 0..3 逐位保真解析）+ test 11（render 真帧: 临时标记/★ 各自可见 +
  *             互相可区分 + 无 flags 不带标记）
  *   coverage: M3K2-A4（新形状消费 + 缓存齿: 周网格缓存 + 自足式最小 JSON 解析 +
  *             畸形/缺字段/越界 cap 一律 -1 + V27）-> test 1（结构半: 路由消费新形状
@@ -877,12 +889,12 @@ TEST_CASE("schedule grid: 周网格新形状载荷解析与降级 (M3K2-A4)",
     TEST_ASSERT_TRUE_MESSAGE(courses[1].day == 0 && courses[1].slot == 2 &&
                                  strcmp(courses[1].name, "口语") == 0 &&
                                  courses[1].flags == KSG_FLAG_TEMP,
-        "KSG-A4 RED: course 1 flags bit0 (※ 临时) lost in parse — 临时标记位必须保真");
+        "KSG-A4 RED: course 1 flags bit0 (临时课) lost in parse — 临时标记位必须保真");
     TEST_ASSERT_TRUE_MESSAGE(courses[2].day == 5 && courses[2].slot == 2 &&
                                  courses[2].flags == KSG_FLAG_STAR,
         "KSG-A4 RED: course 2 flags bit1 (星标) lost in parse — 星标呼应位必须保真");
     TEST_ASSERT_TRUE_MESSAGE(courses[3].day == 6 && courses[3].flags == 3,
-        "KSG-A4 RED: course 3 combined flags (※+星标) lost in parse");
+        "KSG-A4 RED: course 3 combined flags (临时+星标) lost in parse");
 
     /* 一格多门 = 同 (day,slot) 多条逐门保留（producer 逐门下发, WF-F1-02 竖排数据面） */
     {
@@ -1569,7 +1581,9 @@ static void ksg_day_band(int day, int *x0, int *x1)
 
 static void ksg_slot_band(int slot, int *y0, int *y1)
 {
-    static const int ys[3][2] = { { 30, 103 }, { 104, 177 }, { 178, 251 } };
+    /* F-3/P2S-E1 重基线 + 真机轮修订（2026-11-02）：带高 88/88/49——表头带 0..29 不变，
+     * slot2 下缘贴 KSG_GRID_BOTTOM=254（49 行）。 */
+    static const int ys[3][2] = { { 30, 117 }, { 118, 205 }, { 206, 254 } };
     *y0 = ys[slot][0];
     *y1 = ys[slot][1];
 }
@@ -1651,15 +1665,19 @@ TEST_CASE("schedule grid: 网格版式真帧——格归属与零溢出 (M3K2-A1
 }
 
 /* ------------------------------------------------------------------------ *
- * M3K2-A1/NFR-READ-1 render — 格内多课竖排行 pitch >= 14px 真测 + 不做格内滚动
+ * M3K2-A1/NFR-READ-1 render — 格内多课竖排行 pitch 19 锚真帧 + 不做格内滚动
  * （二课同格 diff 全落本格带 = 不外溢不滚走）。
+ * 2026-11-02 F-3/P2S-E1 收紧重基线：pitch 下限 14 → 19（KSG_PITCH_P2）；夹具改
+ * 同名双课使 delta == pitch 精确可判（异名两行墨高差 ±1 会让下限判读漂移）。
+ * KSG_FONT_MIN_PX(14) 常量与 NFR-READ-1 下限语义保留不动（19 >= 14）。
  * ------------------------------------------------------------------------ */
-TEST_CASE("schedule grid: 格内行 pitch 14px 下限真帧 (M3K2-A1/NFR-READ-1 render)",
+TEST_CASE("schedule grid: 格内行 pitch 19 锚真帧 (M3K2-A1/NFR-READ-1 render)",
           "[schedule_grid][M3K2-A1][render]")
 {
     kidpal_schedule_course_t cs[2];
     int x0, x1, y0, y1, min_a, max_a, dark_a, min_b, max_b, dark_b;
     int total, in_band;
+    const int ksg_pitch_p2 = 19; /* F-3 重基线：16px 下格内行 pitch（原下限 14 收紧） */
 
     TEST_ASSERT_TRUE_MESSAGE(host_infra_render_frame() == 0,
         "KSG render RED(infra): host_infra_render_frame failed — 包 0 渲染缝不在世");
@@ -1667,7 +1685,8 @@ TEST_CASE("schedule grid: 格内行 pitch 14px 下限真帧 (M3K2-A1/NFR-READ-1 
     ksg_day_band(0, &x0, &x1);
     ksg_slot_band(0, &y0, &y1);
 
-    /* 单课帧 vs 双课同格帧：第二课必须在同格内向下堆叠, 且行 pitch >= 14px */
+    /* 单课帧 vs 双课同格帧（同名，两行字形逐字节同形）：第二课必须在同格内向下
+     * 堆叠, 且行 pitch == 19（同名夹具下 span 差恰为 pitch） */
     ksg_render_snap(ksg_course(&cs[0], 0, 0, "语文", 0), 1, -1, f_a);
     ksg_ink_span(f_a, x0, y0, x1, y1, &min_a, &max_a, &dark_a);
     TEST_ASSERT_TRUE_MESSAGE(dark_a > 0 && min_a >= 0,
@@ -1676,15 +1695,15 @@ TEST_CASE("schedule grid: 格内行 pitch 14px 下限真帧 (M3K2-A1/NFR-READ-1 
         "「字体现实」节; 若系后者即真红）");
 
     ksg_course(&cs[0], 0, 0, "语文", 0);
-    ksg_course(&cs[1], 0, 0, "数学", 0);
+    ksg_course(&cs[1], 0, 0, "语文", 0);
     ksg_render_snap(cs, 2, -1, f_b);
     ksg_ink_span(f_b, x0, y0, x1, y1, &min_b, &max_b, &dark_b);
     TEST_ASSERT_TRUE_MESSAGE(dark_b > dark_a,
         "KSG-A1 render RED: adding a second course to the same cell added no ink — "
         "格内多课逐门竖排缺失 (WF-F1-02)");
-    TEST_ASSERT_TRUE_MESSAGE(max_b - min_b >= max_a - min_a + KSG_FONT_MIN_PX,
-        "KSG-A1 render RED: stacked second course line pitch < 14px — NFR-READ-1 "
-        "1bpp CJK 字号下限被突破（真机 14px 贴线, 12px 起不可辨）");
+    TEST_ASSERT_TRUE_MESSAGE(max_b - min_b >= max_a - min_a + ksg_pitch_p2,
+        "KSG-A1 render RED: stacked second course line pitch < 19 — F-3/P2S-E1 16px "
+        "版式 pitch 锚被突破（KSG_ROW_PITCH 必须 = 19; NFR-READ-1 14px 下限仍在其下）");
 
     /* 不做格内滚动/不外溢：加课引入的 diff 像素必须全部留在本格带内 */
     ksg_diff_stats(f_a, f_b, x0, y0, x1, y1, &total, &in_band);
@@ -1760,12 +1779,16 @@ TEST_CASE("schedule grid: 今天列整列高亮与跨天切换真帧 (M3K2-A2 re
 }
 
 /* ------------------------------------------------------------------------ *
- * M3K2-A3 render — ※ 临时标记 / 星标呼应真帧（flags 位渲染与固定课区分）。
- * 注：※(U+203B)/★(U+2605) 在 GB2312 全量 font_body.bin 有字形（真机 K3 目测终审）;
- * host 子集字体若缺字形, builder 须让标记在 host 帧可见（兜底画法纪律同 home_p1
- * 描边兜底）——「标记可见」本身即验收面（孩子能一眼区分临时课）。
+ * M3K2-A3 render — 临时标记 / 星标呼应真帧（flags 位渲染与固定课区分）。
+ * 2026-11-02 F-9/P2S-E3 重基线：bit0 标记形态 = 课名下 2px 下划线（※ 前缀与字形
+ * 探测/兜底退役——形态细节锚 = schedule_grid_16px.acceptance.c SG16-A5；下划线为
+ * 程序化画线、无字体字形依赖）。★(U+2605) 星标不动：host 字面缺字形时仍走程序化
+ * 兜底画法（兜底画法与真字形在真帧上都落在课程名所在格带内）——「标记可见」本身
+ * 即验收面（孩子能一眼区分临时课）。ARQ-261029 口径：一律锚 flags bit0，不锚
+ * name 前缀。本件断言保持形态无关（可见/落带/可区分/叠加/确定性），回归不变式
+ * 由本件钉、形态细节由 16px 冻结件钉。
  * ------------------------------------------------------------------------ */
-TEST_CASE("schedule grid: ※/星标标记真帧 (M3K2-A3 render)",
+TEST_CASE("schedule grid: 临时标记/星标标记真帧 (M3K2-A3 render)",
           "[schedule_grid][M3K2-A3][render]")
 {
     kidpal_schedule_course_t base_f, f1, f2, f3;
@@ -1779,14 +1802,14 @@ TEST_CASE("schedule grid: ※/星标标记真帧 (M3K2-A3 render)",
 
     ksg_render_snap(ksg_course(&base_f, 3, 2, "口语", 0), 1, -1, f_a); /* 无标记基准 */
 
-    /* flags bit0 (※ 临时)：diff 必须非零且全落本格带 */
+    /* flags bit0 (临时课)：diff 必须非零且全落本格带（F-9 后形态 = 下划线） */
     ksg_render_snap(ksg_course(&f1, 3, 2, "口语", KSG_FLAG_TEMP), 1, -1, f_b);
     ksg_diff_stats(f_a, f_b, x0, y0, x1, y1, &total, &in_band);
     TEST_ASSERT_TRUE_MESSAGE(total > 0 && in_band == total,
-        "KSG-A3 render RED: flags bit0 (※ 临时安排) produced no visible in-cell ink "
-        "diff — ※ 标记缺失或不可见/越格（S-F1.2 AC3: 临时安排与固定课区分）");
+        "KSG-A3 render RED: flags bit0 (临时课) produced no visible in-cell ink "
+        "diff — 临时标记缺失或不可见/越格（S-F1.2 AC3: 临时安排与固定课区分）");
 
-    /* flags bit1 (星标)：可见、落本格带、且与 ※ 互相可区分 */
+    /* flags bit1 (星标)：可见、落本格带、且与临时标记互相可区分 */
     ksg_render_snap(ksg_course(&f2, 3, 2, "口语", KSG_FLAG_STAR), 1, -1, f_b);
     ksg_diff_stats(f_a, f_b, x0, y0, x1, y1, &total, &in_band);
     TEST_ASSERT_TRUE_MESSAGE(total > 0 && in_band == total,
@@ -1798,11 +1821,11 @@ TEST_CASE("schedule grid: ※/星标标记真帧 (M3K2-A3 render)",
         ksg_render_snap(&f1, 1, -1, f_tmp);
         ksg_diff_stats(f_tmp, f_b, x0, y0, x1, y1, &t, &ib);
         TEST_ASSERT_TRUE_MESSAGE(t > 0,
-            "KSG-A3 render RED: ※ and ★ markers are pixel-identical — 两标记必须可区分 "
+            "KSG-A3 render RED: 临时标记 and ★ markers are pixel-identical — 两标记必须可区分 "
             "（临时安排 ≠ 当前接下来星标, 语义混同即失真）");
     }
 
-    /* flags=3（※+星标叠加）：在 bit0 帧之上仍有可见增量（星标不被 ※ 吞） */
+    /* flags=3（临时+星标叠加）：在 bit0 帧之上仍有可见增量（星标不被临时标记吞） */
     ksg_render_snap(ksg_course(&f3, 3, 2, "口语", KSG_FLAG_TEMP | KSG_FLAG_STAR), 1, -1, f_b);
     ksg_diff_stats(f_a, f_b, x0, y0, x1, y1, &total, &in_band);
     TEST_ASSERT_TRUE_MESSAGE(total > 0 && in_band == total,
@@ -1853,4 +1876,45 @@ TEST_CASE("schedule grid: ※/星标标记真帧 (M3K2-A3 render)",
  *               零偏移。red baseline 判读：行为齿红在 weak 哨兵（seam 终形未实现），
  *               结构齿红在树扫描真实缺失（HP1_PREVIEW_MAX/访问族/话术字面均不在世），
  *               A1/A4/A6/A2-structural 族必须保持绿（既有实现在世）。
+ *   2026-11-02  收紧型 supersede（acceptance-author, TaskPackage 261028-m6-k2b-p2-
+ *               schedule-16px; 授权链 = 本包 exitCriteria P2S-E1/E3 + FROZEN PROPOSAL
+ *               §3.1 F-3/F-9（upstreamFrozen sha1:af2e3627）+ requirements v1.69 版本行
+ *               + brief v7 + impactedTestsSeed[0] frozen-rebaseline 派发）:
+ *               ① 版式重基线（F-3/P2S-E1）：槽位行带 30..103 / 104..177 / 178..254 →
+ *                  30..107 / 108..185 / 186..254（带高 74/74/77 → 78/78/69；16px +
+ *                  pitch 19 版式）。头注区钉与 ksg_slot_band 探针表同步；表头带
+ *                  y[0..29]、标签列 x[0..39]、day 列带宽 51、KSG_GRID_BOTTOM=254
+ *                  零偏移。TEST 8/9/11 的带内 containment 判读随新带。
+ *               ② pitch 收紧（F-3/P2S-E1）：TEST 9 行 pitch 断言下限 14 → 19（局部
+ *                  ksg_pitch_p2），夹具改同名双课（「语文」×2）使 span 差恰等于 pitch、
+ *                  判读精确化；测试名 14px 下限 → 19 锚。KSG_FONT_MIN_PX=14 常量与
+ *                  NFR-READ-1 下限语义保留不动（19 >= 14，FAS 键 schedule_ksg_font_
+ *                  min_px 不破）。
+ *               ③ 标记重锚（F-9/P2S-E3）：TEST 11 语义 ※ → 临时标记（flags bit0；
+ *                  板端形态 = 课名下 2px 下划线、※ 前缀与字形探测/程序化兜底退役）；
+ *                  断言保持形态无关（可见/落带/可区分/叠加/确定性五齿零改），形态
+ *                  细节锚移交新冻结件 schedule_grid_16px.acceptance.c SG16-A5。头注
+ *                  跨端事实与 KSG_FLAG_TEMP 语义注记随 ARQ-261029 口径改写：一律锚
+ *                  flags bit0、不锚 name 前缀（producer 实测不写 ※ 进 name）。
+ *               零触碰面：KSG_COURSE_CAP=84 常量与解析 cap 负断言（F-8：缓存/解析
+ *               cap 不得缩成渲染上限）、越带负锚（y>=255 网格外带严格零墨）、星标
+ *               断言本体（bit1 可见/可区分/叠加）、A4 解析矩阵与 flags 逐位保真、
+ *               A2 注入缝、A5 upcoming 族、A6 回归靶、扫描器自检、结构齿全部——
+ *               零偏移；schedule_grid_restore.acceptance.c 只镜像留痕、行为零改
+ *               （P2S-E3）。冻结时点设计态红（builder 落 F-3/F-9 前 host 现跑）：
+ *               TEST 8 格归属（旧带渲染墨落新带外）、TEST 9 pitch（16 < 19）、
+ *               TEST 11 带内判读（slot2 旧带 178 起 vs 新带 186 起）；A1 结构/A2/
+ *               A4/A5/A6 与 TEST 10（今天列，带无关）必须保持绿。
+ *   2026-11-02  真机轮修订（acceptance-author; 授权链 = P2S-E5 真机轮 human 原话
+ *               逐字：「上午显示4行 最后一行，还是有一点被截断了，你可以看照片，
+ *               如果是放不下的原因，我们可以把晚上保留两行就行了」+ P2S-E5）:
+ *               ① 槽位行带 30..107 / 108..185 / 186..254（78/78/69）→ 30..117 /
+ *                  118..205 / 206..254（88/88/49）——同日真机轮诊断 78/78/69 下
+ *                  slot0 第 4 行墨底恰压带底线 y=107 零余量、真机末行截 1-2px，
+ *                  human 裁定带高改 88/88/49 给末行让余量。头注区钉与 ksg_slot_band
+ *                  探针表同步；KSG_GRID_BOTTOM=254、表头带、pitch 19 零偏移。
+ *               ② 本件不含容量断言（渲染容量 4/4/2 修订锚 = schedule_grid_16px.
+ *                  acceptance.c SG16-A4），容量面对本文件零触碰。
+ *               ③ 零触碰面不变：KSG_COURSE_CAP=84、越带负锚、星标断言、解析矩阵、
+ *                  A5/A6 族、restore 交叉锚。
  * --------------------------------------------------------------------------- */

@@ -163,11 +163,12 @@ typedef enum {
 #define KSTORY_LIST_ROWS_PER_SCREEN 4
 
 /* 阅读态分页行高单源（seam [K1]/SPV2-B2 tooth 9 锁单源在世, 不锁数值）: 400x300 版面、
- * 正文排版按 NFR-READ-1（13.5px 起、行高 1.72 -> ~23px/视觉行, content 区 ~200px 可容
- * ~8 视觉行 @ 每自然行可折 ~2 视觉行）-> 4 自然行/屏, 与既有设备分页行为一致、
- * 本次实测重冻维持 4。切片按 '\n' 自然行计（open_reader 同性质）。
+ * 正文排版随 M6 字体体系升级为 16px body（line_height ~23px/视觉行；requirements
+ * v1.69 S-F2.3 补充规则「正文 16px / 标题 20px」）——content 区 ~200px 可容 ~8 视觉
+ * 行 @ 每自然行可折 ~2 视觉行，阅读每屏自然行由 4 收敛为 3（PROPOSAL F-4 / P3T-E2；
+ * 疏密与翻页手感由 P3T-E4 真机轮终判）。切片按 '\n' 自然行计（open_reader 同性质）。
  * >12 屏显示位截断已退役（notes 边角⑧: 真实分栏、长文全篇可达——分屏数与切片不封顶）。 */
-#define KSTORY_READER_LINES_PER_SCREEN 4
+#define KSTORY_READER_LINES_PER_SCREEN 3
 
 /* ---- ⑧ 常驻语音入口双指令（S-F2.1 AC3 + intro 对账③）: 「我要讲故事」+「帮我记
  * 下来」双触发词逐字住 story_page.c 渲染面（冻结齿 SPV2-B2 tooth 3 扫描 .c 文件
