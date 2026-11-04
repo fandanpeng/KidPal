@@ -57,8 +57,8 @@ facePlan: |
   触 UI 包另须 frozen PNG/brief 版本对齐。
 anchors:
   req: "requirements.md §9 v1.71（2026-11-04 档 2 结构性·触 UI 定稿、frozen）——星星积分本（新增 F6 五 story S-F6.1~S-F6.5）+ 故事封皮与四页导航（新增 S-F2.6、F2 下沉 P4 模块、§2.2/§2.3/§2.4 共享底座重排）+ §4 金币/星星视觉边界（封皮徽记同族形态）+ NFR-OFF-1 积分边界 + 新增 NFR-PERF-4（软时延待真机定数）+ §6 阶段五；glossary 五词条 + 三条注记/连带随批；human 四轮看图终拍（三轮打回、四轮通过）；reviewer 五查 + 三轮靶向复审 PASS；architect 可行性三件无 🔴；UI 产物 = 设计母版 v9 + brief v8 + V9 变更帧 11 张（UI-ready 消费判据 = §9 v1.71 版本行 + brief v8 对齐注记，均在位）"
-  arch: 待回填
-  contract: 待回填
+  arch: "architecture.md §12 changeId 行 `261103-star-points-story-cover`（2026-11-04 landed）——§5.1.1 四页设备组件、枚举驱动语境映射（source_page 改 KP_PAGE_*+子页状态，禁数字 case）、9 view / §5.1.2 points.py 确定性单 writer、QQ 积分 skill、front 积分职责 / §5.1.3 points.py 单向依赖 / §5.2 场景④ P4 化 + 新增场景⑥ / §5.3.2 points 状态位置 / §5.4 账本·目标·锁·RAM 缓存行与逻辑事实段 / §6.2 积分介质边界 / §6.5 两类去重分离与 keyset 分页 / §5.5 资产·UI 态·prompt / §7 9 view 指针 / §9 五阶段与演进 / §12 本行；制品 = delivery/review/261103-arch-review-star-points-story-cover/（FROZEN v1.0 + R1 BLOCK(F1)→v0.2 + R2 靶向 GREEN + landing-verdict PASS + landing-summary 含闸例外授权与 cite-check v1 盲区申报）；ADR-018 同批落（docs/decisions/ADR.md）"
+  contract: "interface-contract.md 五触点 LANDED（CDQ-261103-star-points-story-cover，docs/debt/contract/，fourClass = ACCOMPANIES_SPEC_CHANGE 正式裁定 = R1）：§1.3 新增 ⑦ points_home / ⑧ points_ledger + §1.3③ story_list 改 P4 模块共享帧（total 封皮计数、后台推送统一 restore:true、空 data 薄载荷进封皮）+ §1.3①④ 页位句对账 + §1.4 add_points/redeem_points 网关决定类薄意图 + §1.5 白名单 9 view、积分来源门禁、第 7 条积分面机械职责 + §1.6 prompt 积分纪律改写 + §四 kidpal_session_ctx 闭集扩六值（points_ledger 只读 selected_id）+ 新增 kidpal_points_delete（隐式 ack）/ kidpal_points_page（keyset 分页）+ §四变更记录条；落地 commit b930f498（landing-verifier PASS；闸凭据 = human 2026-11-04 授权例外直落 main，BLOCK off-main 记 landing-summary）"
   imp: 待回填
 openQ:
   - id: route

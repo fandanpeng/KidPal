@@ -7,10 +7,11 @@
 > 列：changeId | 日期 | 状态 | 已合main。review 状态机：draft→frozen→landed(终态)。
 > 2026-10-15 前历史批见 delivery/archive/changes/arch/INDEX.md（261015-gov-review-changes-taxonomy T6 第 4 条归档指针）。
 
-## review (30)
+## review (31)
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
+| [261103-arch-review-star-points-story-cover](261103-arch-review-star-points-story-cover/) | 2026-11-03 | landed | yes |
 | [261029-gov-review-gov-loop-simplification](261029-gov-review-gov-loop-simplification/) | 2026-10-29 | landed | yes |
 | [261029-gov-review-p9-script-hygiene-cluster](261029-gov-review-p9-script-hygiene-cluster/) | 2026-10-29 | landed | yes |
 | [261028-arch-review-font-typography-scaleup](261028-arch-review-font-typography-scaleup/) | 2026-10-28 | landed | yes |

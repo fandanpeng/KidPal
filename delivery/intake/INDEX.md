@@ -11,7 +11,7 @@
 
 | changeId | 触面 | status | anchors回填 | 日期 | 漂移标 |
 |---|---|---|---|---|---|
-| 261103-star-points-story-cover | req+arch+contract+imp | in-flight | 1/4 | 2026-11-03 | — |
+| 261103-star-points-story-cover | req+arch+contract+imp | in-flight | 3/4 | 2026-11-03 | — |
 | 261028-font-typography-scaleup | req+arch+imp | in-flight | 4/3 | 2026-10-28 | ⚠未闭环 |
 | 261025-spec-reconciliation-memory-writing-scope | req+arch | closed | 2/2 | 2026-10-25 | — |
 | 261022-device-memory-prompt-overhaul | req+arch+contract+imp | in-flight | 4/4 | 2026-10-22 | ⚠未闭环 |

@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/tech/_archive/2026/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**2026 年已结 27 条**（薄行：证据正文在条目文件里，点 ID 即达）。
+**2026 年已结 28 条**（薄行：证据正文在条目文件里，点 ID 即达）。
 
 | ID | title | 已结日期 | 依据 |
 |---|---|---|---|
@@ -38,3 +38,4 @@
 | [TECH-261024-overlay-close-speaking-no-session-end](TECH-261024-overlay-close-speaking-no-session-end.md) | 播报态关层不结束会话——overlay_close 复用 ToggleChatState 只打断停播，回首页后麦克风仍开并继续语音问答（KPLOG011 真机实证） | 2026-10-24 | 261024-vq-overlay-close-end-session |
 | [TECH-261025-dreaming-capture-pollutes-honcho](TECH-261025-dreaming-capture-pollutes-honcho.md) | memory-core dreaming 子回合被 honcho 插件当普通对话采集，污染孩子画像（占最近 100 条窗口 13%）——第三方插件采集策略与宿主记忆政策不同源 | 2026-10-26 | consumed-by delivery/intake/261025-spec-reconciliation-memory-writing-scope.md（配置包 + 数据清理 + 升级清单防线已执行完毕；spec 修订由该 spine 承接） |
 | [ARQ-260831-small-cjk-1bpp-readability](ARQ-260831-small-cjk-1bpp-readability.md) | 16px 以下 CJK 文字在 1bpp 真机的可读性下限未实测，直接锁死 V3 设计稿字号下限 | 2026-10-28 | consumed-by: 261028-font-typography-scaleup（change-intake §3a 立项消费结项） |
+| [ARQ-260918-spec-face-3page-reconcile](ARQ-260918-spec-face-3page-reconcile.md) | spec 面两文件仍写撤页前的旧实现态：`docs/architecture.md` 三处过时叙述 + 一处未收回的【修复项】标记，`docs/requirements.md` 行 166 ② 页序漂移台账行未消解 | 2026-11-04 | consumed-by 261103-arch-review-star-points-story-cover（主线程 Track B 落地 b930f498） |
