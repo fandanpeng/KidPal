@@ -1,7 +1,7 @@
 ---
 workstream: 261103-star-points-story-cover
 workType: [new-capability, remediation]
-status: draft
+status: frozen
 opened: 2026-11-03
 upstreamRefs:
   - "delivery/ideas/261103-story-cover-navigation.md"
@@ -12,7 +12,7 @@ upstreamRefs:
 
 # 星星积分本与故事封皮（四页导航 + 金币账本）
 
-> **状态：DRAFT v1.0 · 2026-11-03**（FROZEN 前置 = 需求/架构/契约面 anchors 回填 + 拟议 story 锚真实入 frozen requirements + §1 两查通过；届时 human 盖 FROZEN。作者≠判官。）
+> **状态：FROZEN v1.0 · 2026-11-04**（FROZEN 凭据 = human 触点① 裁 OQ 与 ③拆包路由 + architect 分流 review GREEN（review.md）+ 需求/架构/契约三面 anchors 回填（spine 3/4，imp 随 K0–K5）+ §1 两查通过（2026-11-04 实查：story 锚零已砍清单命中；可行性 ✅1/🟡5、无 🔴）+ human 触点② 盖冻结（2026-11-04 AskUserQuestion）。作者≠判官。）
 > 本件由主线程按 `/triage-change` ③档路径落盘，内容 = architect 分流 review 的 reviewed plan 搬运 + human 触点① 裁定回灌（OQ-1/2/3，2026-11-03）；回灌处已逐条标注。
 
 ## 1. 要达成什么（业务目的清单）
@@ -32,8 +32,8 @@ upstreamRefs:
 
 **【硬项 · 起草侧自检两查（FROZEN 前自查，降低冻结后打回）】**
 
-- [ ] 清单引用的 story 编号**无一命中** `docs/requirements.md`「已砍清单」节（拟议锚 S-F2.6/S-F6.1–S-F6.5 尚未落入 frozen requirements——本查在需求面定稿后执行，通过前不得盖 FROZEN）。
-- [ ] 引用 story 的可行性三态**无 🔴**（同上，需求面定稿后执行）。
+- [x] 清单引用的 story 编号**无一命中** `docs/requirements.md`「已砍清单」节（2026-11-04 实查：已砍清单节内 S-F2.6/S-F6.x 零命中；节内旧编号 S-F2.5/S-F3.x 非本批引用）。
+- [x] 引用 story 的可行性三态**无 🔴**（2026-11-04 实查：S-F2.6 ✅、S-F6.1–S-F6.5 🟡）。
 
 > 拟议的 `S-F2.6`、`S-F6.x` 是供需求面采用的锚，不冒充当前 frozen story；若需求面改号，回 architect 做机械锚更新，portfolio-planner 不得猜测。
 
@@ -105,4 +105,4 @@ K1 虽属 backend/internal-service 形态，但其完成结果是可独立验证
 
 - 2026-11-03 · 人类触点①（/triage-change）：确认 ③拆包 + spike-first 命中（K0 = ②Full 端到端最小 spike）；OQ-1 裁「允许负余额」（覆盖 architect 推荐位）、OQ-2 裁「禁止删激活目标，先切换」、OQ-3 裁「5–200 正整数」。裁决全文 = review.md。
 - 2026-11-03 · architect 分流 review 返回：③拆包 GREEN + spike-first 必须保留；BLOCKING findings R-01–R-06 已转化为需求 OQ / 架构契约任务 / 包级 launch 前置。sign-off 全文 = review.md。
-- 待办：human 触点②（盖 FROZEN）= 需求/架构/契约 anchors 回填 + §1 两查通过后执行。
+- 2026-11-04 · 人类触点②：**盖 FROZEN v1.0**（两查实跑通过后 AskUserQuestion 授权；拆包下游 = portfolio-planner 指 workstream 261103-star-points-story-cover，K0 spike → K1–K5 串行）。
