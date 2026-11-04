@@ -289,14 +289,14 @@
     {
       "text": "LP5 门 1 GREEN + human 过目切法：architect 轻量 checklist 五项与 workType 分流全过，裁决 append review.md「门 1」节；未绿不得 commit-before-launch。",
       "scope": "workstream",
-      "status": "unverified",
-      "evidence": ""
+      "status": "verified",
+      "evidence": "review.md「门 1」节（2026-11-04）：第一轮 BLOCK（F-01..F-05）→ planner 六项修正 → 聚焦复检 GREEN；human 过目切法通过并授权 commit（2026-11-04）"
     },
     {
       "text": "LP6 commit-before-launch：roadmap、本 decision-coverage、task_plan 与七包 taskpackage/plan 先 commit 到专用 base ref（非 main），Pod worktree 自该 ref 建出；board 不入 commit。",
       "scope": "workstream",
-      "status": "unverified",
-      "evidence": ""
+      "status": "verified",
+      "evidence": "commit 22b30654（2026-11-04，main）：七包 taskpackage/plan + roadmap/decision-coverage/task_plan + M7 里程碑 + 门1 verdict 均入库，board 未入 commit。base ref 口径随 M6 先例演进：仓内已无 base/* 分支、拆包制品直落 main，包级 base ref = prep 后树 HEAD（包首提交父），check-launch 基准 = main——LP6 的「非 main」括注为旧惯例残留，按现行先例执行并在此留痕"
     },
     {
       "text": "LP7 K0 真实 QQ 最小 producer 预评已由门 1 裁定：真实 QQ 一次性明确指令 → 既有 main agent → K0 最小 add CLI，不建临时 skill；canary token 关联日志。禁直编 state 文件、禁终端调 CLI 冒充 QQ、禁本地 OpenClaw 注入冒充、禁提前建 K3 skill。该 verified 只覆盖预评，真实执行结果仍由 K0 spike 证据判定。",
