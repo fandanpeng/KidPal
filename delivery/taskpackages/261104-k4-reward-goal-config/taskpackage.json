@@ -1,0 +1,260 @@
+{
+  "changeId": "261104-k4-reward-goal-config",
+  "title": "奖励场景与激活目标——四预置美术、QQ 自定义/切换/删除、唯一激活与刻度/兑换联动",
+  "rigor": "full",
+  "sourceType": "proposal",
+  "origin": {
+    "type": "proposal",
+    "upstreamType": "proposal",
+    "upstreamRef": "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md",
+    "upstreamFrozen": "sha1:4eca114e6998e14e",
+    "workstream": "261103-star-points-story-cover"
+  },
+  "subsystem": "points 目标配置 + QQ skill 扩展 + 1bpp 场景资产 + firmware 进度线刻度",
+  "story": "S-F6.5 · 奖励场景与激活目标配置（AC1–AC4）+ S-F6.1 · 看积分进度与最近记录（AC2、AC3）+ S-F6.3 · 设备语音记账与兑换（AC3 切目标后金额）+ S-F6.4 · QQ 家长记账与更正（AC4、AC5）。",
+  "planRef": "delivery/taskpackages/261104-k4-reward-goal-config/plan.md",
+  "sourceRefs": [
+    "S-F6.5-AC1",
+    "S-F6.5-AC2",
+    "S-F6.5-AC3",
+    "S-F6.5-AC4",
+    "S-F6.1-AC2",
+    "S-F6.1-AC3",
+    "S-F6.3-AC3",
+    "S-F6.4-AC4",
+    "S-F6.4-AC5",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-09",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.2-OQ-2",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.2-OQ-3",
+    "delivery/workstreams/261103-star-points-story-cover/task_plan.md#K4",
+    "docs/architecture.md#§5.5.2",
+    "docs/contracts/interface-contract.md#§1.3⑦",
+    "docs/ui/kidpal-ui-design-v9.html",
+    "docs/ui/UIUX-DESIGN-BRIEF.md"
+  ],
+  "acceptanceRefs": [
+    "docs/requirements.md#S-F6.5",
+    "docs/requirements.md#S-F6.1-AC2",
+    "docs/requirements.md#S-F6.1-AC3",
+    "docs/requirements.md#S-F6.3-AC3",
+    "docs/requirements.md#S-F6.4-AC4",
+    "docs/requirements.md#S-F6.4-AC5"
+  ],
+  "acceptance": [],
+  "acceptanceTestsFile": [],
+  "redBaselineCommand": "",
+  "redBaselineResult": "",
+  "exitCriteria": [
+    "K4G-E1: 四预置 `sc-choco/sc-movie/sc-wheel/sc-gift` 与自定义 `sc-flag` 经既有母版→栅格化→KAP1 管线产出，资产标识、1bpp 内容和设备装载证据一致；不新增字体或重排分区。",
+    "K4G-E2: 真实 QQ 证据覆盖新增 5/200 边界内自定义、出界拒绝、切换唯一激活、非激活自定义删除、预置删除拒绝和激活自定义先切换再删；歧义仍普通文本一次报错。",
+    "K4G-E3: server 与 host 验收证明目标切换只改激活配置、不自动扣分，历史兑换名目不变；切换后语音/QQ 兑换只认新分值，设备刻度与场景标同步伸缩。",
+    "K4G-E4: 一轮真机看四预置、通用标记、大分值与越目标版面，QQ 切目标时其他页不抢前台、积分页原地刷新；V9 design review 与资源预算证据在场。切目标刷新在既有真机证据中顺带记录与 NFR-PERF-4 相同的“QQ 消息→积分页原地刷新”实测时延字段，不写死阈值。",
+    "K4G-E5: K1/K2/K3 的账本、渲染和 QQ 回归零新增红；本包不建设备设置页、不做逐自定义美术、不承接 K5 的 `ic-coin` 封皮资产或导航范围。"
+  ],
+  "iterationBudget": 3,
+  "fixBudget": 4,
+  "supervisorBlockBudget": 2,
+  "contractRefs": [
+    "docs/contracts/interface-contract.md#§1.3⑦",
+    "docs/contracts/interface-contract.md#§1.4",
+    "docs/contracts/interface-contract.md#§1.5"
+  ],
+  "docRefs": [
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md",
+    "delivery/workstreams/261103-star-points-story-cover/review.md",
+    "delivery/workstreams/261103-star-points-story-cover/task_plan.md",
+    "delivery/taskpackages/261104-k4-reward-goal-config/plan.md",
+    "docs/requirements.md",
+    "docs/architecture.md",
+    "docs/contracts/interface-contract.md",
+    "docs/decisions/ADR.md",
+    "docs/ui/kidpal-ui-design-v9.html",
+    "docs/ui/UIUX-DESIGN-BRIEF.md",
+    "docs/ui/V9/points-home.png",
+    "docs/ui/V9/points-home-empty.png",
+    "docs/ui/V9/points-home-negative.png"
+  ],
+  "docsSyncRequired": false,
+  "docsSyncReason": "四预置、资产闭集、OQ-2/OQ-3、唯一激活和刻度/兑换联动均已由 v1.71、架构与契约冻结。",
+  "docsOwner": "integrator",
+  "securityReviewRequired": false,
+  "adrRequired": false,
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline",
+    "firmware-build",
+    "live-manual"
+  ],
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": [],
+    "note": "Draft 态空骨架；目标边界、切换不扣分和资产装载均须有可转红证据。"
+  },
+  "crossEnd": {
+    "counterparts": [
+      {
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "_push_display_payload"
+      },
+      {
+        "path": "firmware/main/display/view_router.c",
+        "symbol": "kidpal_display_route"
+      }
+    ],
+    "exempt": ""
+  },
+  "changeManifest": [
+    "server/gateway/points.py",
+    "server/gateway/front/front_app.py",
+    "server/deploy/openclaw-skills/workspace-main/kidpal-points-write/SKILL.md",
+    "server/deploy/openclaw-skills/workspace-main/kidpal-points-write/scripts/**",
+    "server/acceptance/test_reward_goal_config.acceptance.py",
+    "server/tests/test_points_goal_units.py",
+    "tools/asset-pipeline/gen_assets.mjs",
+    "tools/asset-pipeline/gen_art_spiffs.mjs",
+    "tools/simulator/LvglWindowsSimulator/assets/assets.c",
+    "tools/simulator/LvglWindowsSimulator/assets/assets.h",
+    "firmware/main/assets/spiffs_root/sc-choco.bin",
+    "firmware/main/assets/spiffs_root/sc-movie.bin",
+    "firmware/main/assets/spiffs_root/sc-wheel.bin",
+    "firmware/main/assets/spiffs_root/sc-gift.bin",
+    "firmware/main/assets/spiffs_root/sc-flag.bin",
+    "firmware/main/display/points_page.c",
+    "firmware/main/display/points_page.h",
+    "firmware/main/test/reward_goal_config.acceptance.c",
+    "firmware/main/test/host_app/main/CMakeLists.txt"
+  ],
+  "impactedTestsSeed": [
+    {
+      "path": "server/acceptance/test_points_ledger_core.acceptance.py",
+      "kind": "regression",
+      "note": "K1 已建立目标存储与不变量，本包扩展配置命令不得放松余额、历史分录或单 writer 规则。"
+    },
+    {
+      "path": "server/acceptance/test_qq_points_channel.acceptance.py",
+      "kind": "regression",
+      "note": "K3 的加/兑/查/删与普通错误回复保持，新目标命令复用同一 skill 和 CLI。"
+    },
+    {
+      "path": "firmware/main/test/points_device_ui.acceptance.c",
+      "kind": "frozen-rebaseline",
+      "note": "K2 的默认游乐场 40 是起始基线；K4 增加自定义/切换/伸缩，不削弱四态、负余额和 restore 断言。"
+    },
+    {
+      "path": "firmware/main/test/acceptance/archive/ui_art_integration.acceptance.c",
+      "kind": "regression-reference",
+      "note": "KAP1 格式与既有资产闭集的历史验收参照，只读不重开；新增资产 additive，现役加载/降级行为不变。"
+    }
+  ],
+  "uiux": {
+    "uiuxRequired": true,
+    "uiuxLevel": 2,
+    "designRefs": [
+      "docs/ui/V9/points-home.png",
+      "docs/ui/V9/points-home-empty.png",
+      "docs/ui/V9/points-home-negative.png"
+    ],
+    "sharedUiRefs": [
+      "docs/ui/kidpal-ui-design-v9.html",
+      "docs/ui/UIUX-DESIGN-BRIEF.md"
+    ],
+    "uiAcceptanceRefs": [
+      "points-home",
+      "points-home-empty",
+      "points-home-negative"
+    ],
+    "designReviewRequired": true,
+    "designReviewEvidenceRequired": true,
+    "repoVisualArtifactRequired": false
+  },
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/261103-star-points-story-cover/"
+  ],
+  "riskTier": "high",
+  "riskRationale": "目标配置直接决定兑换金额并跨 QQ、持久状态、front、资产管线和设备进度线；错误会导致错误扣账或目标/显示不一致，故为 high。",
+  "gateProfile": [
+    "evidence-integrity",
+    "test-quality",
+    "state-machine",
+    "mcp-tool-contract"
+  ],
+  "mergeOrder": 75,
+  "dependsOn": [
+    "261104-k1-points-ledger-core",
+    "261104-k2-points-device-ui",
+    "261104-k3-qq-points-channel"
+  ],
+  "decisionCoverage": [
+    {
+      "decision": "D-09 · 书封/场景资产走既有管线",
+      "summary": "本包承担四预置与自定义通用旗标，封皮 ic-coin 归 K5；稳定资产标识来自契约闭集。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-09"],
+      "landsIn": "exitCriteria:K4G-E1"
+    },
+    {
+      "decision": "OQ-2 · 禁止删除激活自定义目标",
+      "summary": "预置不可删，激活自定义必须先切换，任何路径不出现暂无目标页。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.2-OQ-2"],
+      "landsIn": "exitCriteria:K4G-E2"
+    },
+    {
+      "decision": "OQ-3 · 自定义目标 5–200 正整数",
+      "summary": "边界内外经真实 QQ 和 server 双侧验证，出界一次性报错。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.2-OQ-3"],
+      "landsIn": "exitCriteria:K4G-E2"
+    },
+    {
+      "decision": "S-F6.5 AC3 · 唯一激活与刻度伸缩",
+      "summary": "切目标只改激活配置，设备进度线随新分值伸缩且 restore 不抢前台。",
+      "sourceRefs": ["S-F6.5-AC3", "S-F6.1-AC2"],
+      "landsIn": "exitCriteria:K4G-E3"
+    },
+    {
+      "decision": "S-F6.3 AC3 · 切目标后兑换只认新分值",
+      "summary": "旧目标分值不再兑换，切目标本身不产生负向分录，历史名目保持快照。",
+      "sourceRefs": ["S-F6.3-AC3"],
+      "landsIn": "exitCriteria:K4G-E3"
+    },
+    {
+      "decision": "D-10 · 配置仍走 points.py 单 writer",
+      "summary": "QQ 只整理命令，目标配置校验和持久化由同一执行器承载。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-10"],
+      "landsIn": "exitCriteria:K4G-E2"
+    },
+    {
+      "decision": "D-01 · 故事封皮资产与导航",
+      "summary": "封皮 ic-coin 与 P4 层级导航不在本包，统一由 K5 承接。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-01"],
+      "landsIn": "package:261104-k5-story-cover-nav"
+    }
+  ],
+  "crossPackageBehaviors": [
+    {
+      "topic": "K1 目标存储到 K4 完整配置行为",
+      "owner": "261104-k1-points-ledger-core",
+      "carriedBy": "261104-k4-reward-goal-config",
+      "note": "K1 提供合法存储与校验，K4 用真实 QQ 完成自定义/切换/删除及切目标后兑换联动。"
+    },
+    {
+      "topic": "K3 QQ skill 的目标配置扩展",
+      "owner": "261104-k3-qq-points-channel",
+      "carriedBy": "261104-k4-reward-goal-config",
+      "note": "沿用同一 skill、CLI 和普通错误回复，不新建第二 QQ 通道或 ask_user 流程。"
+    },
+    {
+      "topic": "K2 进度线缝的场景资产与刻度消费",
+      "owner": "261104-k2-points-device-ui",
+      "carriedBy": "261104-k4-reward-goal-config",
+      "note": "K4 补资产与切换行为，K2 的四态/restore/负余额基线不回退。"
+    },
+    {
+      "topic": "资产管线的 K4/K5 串行分工",
+      "owner": "261104-k4-reward-goal-config",
+      "carriedBy": "261104-k5-story-cover-nav",
+      "note": "K4 只产四场景与 sc-flag，K5 后序在同一管线补 ic-coin 与书封，避免并行修改生成器与资产清单。"
+    }
+  ],
+  "notes": "影响面机械辅证：架构 §5.5.2 与 tools/asset-pipeline 实读确认 gen_assets.mjs→gen_art_spiffs.mjs→firmware/main/assets/spiffs_root 的既有产线；契约 target.asset 闭集为 sc-choco/sc-movie/sc-wheel/sc-gift/sc-flag，V9 已把游乐场定稿为 sc-wheel，不得回用 sc-castle。相邻冻结锚：K1 目标存储、K2 默认 40、K3 QQ skill、ui_art_integration KAP1 格式均保留；新增资产 additive，不新增字体/分区，不为自定义奖励名猜图。K4 等 K1–K3 merged，mergeOrder=75。"
+}

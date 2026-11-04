@@ -1,8 +1,8 @@
 # delivery/workstreams Index
 
-> 自动生成（hook：编辑 delivery/workstreams/ 即重建；标记 done 即归档）。**勿手改**。最后更新 2026-10-28。
+> 自动生成（hook：编辑 delivery/workstreams/ 即重建；标记 done 即归档）。**勿手改**。最后更新 2026-11-04。
 
-## Active (5)
+## Active (6)
 
 | slug | status | area | owner | opened | summary |
 |---|---|---|---|---|---|
@@ -11,6 +11,7 @@
 | [device-memory-overhaul](device-memory-overhaul/task_plan.md) | active | systems | main-thread | 2026-10-22 | 设备语音链路「越用越聪明」整体重构——持久会话 + Honcho 记忆画像 + prompt 迁 AGENTS.md + 工具收窄 + 课表机械注入（P1–P5 单 Pod 串行） |
 | [gov-debt-reduction](gov-debt-reduction/task_plan.md) | active | governance | main-thread | 2026-10-26 | docs/debt/gov/ 未结条目的分簇清偿计划——按收益/成本比排 P1–P4 四波，P1 / P1.5 / P2 / P3（搭载） / P4 五波均已合 main；2026-10-27 human 指示残留 20 条重排 P5–P9 继续清偿，仅 4 条保持条件锁 |
 | [261028-font-typography-scaleup](261028-font-typography-scaleup/task_plan.md) | active | systems | main-thread | 2026-10-28 | 字体体系升级——正文/列表 16px、阅读标题 20px 居中省略、课表 pitch 19 容量 4/4/3、临时标记下划线化；字体落 assets 分区 .bin + cbin 运行时装载 + 编译内 14px 兜底（P0 spike 阻塞三个页面包） |
+| [261103-star-points-story-cover](261103-star-points-story-cover/task_plan.md) | active | systems | main-thread | 2026-11-03 | 星星积分本（金币账本：单页进行中、设备语音 + QQ 双通道记账、可配置奖励目标）+ 故事封皮与四页导航（主页面 3→4、故事模块下沉 P4 封皮子页）；契约 9 view / 薄意图 / 删除与 keyset 分页私有帧随批已落 |
 
 ## Archived (3)
 

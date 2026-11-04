@@ -1,0 +1,219 @@
+{
+  "changeId": "261104-k3-qq-points-channel",
+  "title": "QQ 家长积分通道——正式 kidpal-points-write skill、加兑查删、稳定定位与一次性错误回复",
+  "rigor": "full",
+  "sourceType": "proposal",
+  "origin": {
+    "type": "proposal",
+    "upstreamType": "proposal",
+    "upstreamRef": "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md",
+    "upstreamFrozen": "sha1:4eca114e6998e14e",
+    "workstream": "261103-star-points-story-cover"
+  },
+  "subsystem": "OpenClaw workspace-main 积分 skill + points.py CLI + front restore 推送 + 真实 QQ 验收",
+  "story": "S-F6.4 · QQ 家长记账与更正（AC1–AC5）+ S-F6.3 · 设备语音记账与兑换（AC3、AC4、AC5 同规则半）+ S-F6.2 · 浏览详细账本与删除误记（AC4 删除重算半）+ NFR-PERF-4 · 记账反馈时延。",
+  "planRef": "delivery/taskpackages/261104-k3-qq-points-channel/plan.md",
+  "sourceRefs": [
+    "S-F6.4-AC1",
+    "S-F6.4-AC2",
+    "S-F6.4-AC3",
+    "S-F6.4-AC4",
+    "S-F6.4-AC5",
+    "S-F6.3-AC3",
+    "S-F6.3-AC4",
+    "S-F6.3-AC5",
+    "S-F6.2-AC4",
+    "docs/requirements.md#NFR-PERF-4",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-05",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-07",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-10",
+    "delivery/workstreams/261103-star-points-story-cover/task_plan.md#K3",
+    "docs/debt/tech/TECH-261030-qqbot-ask-user-block.md",
+    "docs/debt/tech/TECH-261012-qq-schedule-write-format-gap.md",
+    "docs/debt/tech/TECH-261023-openclaw-tool-face-prompt-only-readonly.md",
+    "docs/contracts/interface-contract.md#§1.3⑦",
+    "docs/contracts/interface-contract.md#§1.5",
+    "server/deploy/openclaw-skills/workspace-main/kidpal-schedule-write/SKILL.md",
+    "server/gateway/front/front_app.py"
+  ],
+  "acceptanceRefs": [
+    "docs/requirements.md#S-F6.4",
+    "docs/requirements.md#S-F6.3-AC3",
+    "docs/requirements.md#S-F6.3-AC4",
+    "docs/requirements.md#S-F6.3-AC5",
+    "docs/requirements.md#NFR-PERF-4",
+    "docs/debt/tech/TECH-261030-qqbot-ask-user-block.md"
+  ],
+  "acceptance": [],
+  "acceptanceTestsFile": [],
+  "redBaselineCommand": "",
+  "redBaselineResult": "",
+  "exitCriteria": [
+    "K3Q-E1: 新 `kidpal-points-write` skill 的机检/marker 工程形态与离线验收在场；所有加/兑/查/删只调 K1 points.py CLI，真实执行结果决定 QQ 回复，不直接编辑状态或 schedule.md。",
+    "K3Q-E2: 真实 QQ 证据覆盖加分、兑换、查余额/目标/最近记录、按稳定 id 或最近列表序号删除；兑换金额、资格和重复扣规则与设备语音一致。",
+    "K3Q-E3: 歧义、格式错误和定位不清均以普通 QQ 文本一次性报错并给可重述格式；全程无 `ask_user`、无多轮澄清依赖、无 900 秒卡死或后续消息排队。",
+    "K3Q-E4: QQ 写入/删除时设备在其他页不抢前台，积分页在屏原地刷新；front 推送、points 回执、QQ 回复与设备日志能按 command_id/分录 id 对账。按 NFR-PERF-4 记录真实 QQ 消息到积分页原地刷新的实测时延，不写死阈值。",
+    "K3Q-E5: 目标自定义/切换/删除的完整管理留给 K4，本包只建立家长账本通道；TECH-261030、TECH-261012 与 TECH-261023 不被宣称结项，实际 diff 限于 changeManifest。"
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "contractRefs": [
+    "docs/contracts/interface-contract.md#§1.3⑦",
+    "docs/contracts/interface-contract.md#§1.3⑧",
+    "docs/contracts/interface-contract.md#§1.4",
+    "docs/contracts/interface-contract.md#§1.5"
+  ],
+  "docRefs": [
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md",
+    "delivery/workstreams/261103-star-points-story-cover/review.md",
+    "delivery/workstreams/261103-star-points-story-cover/task_plan.md",
+    "delivery/taskpackages/261104-k3-qq-points-channel/plan.md",
+    "docs/requirements.md",
+    "docs/architecture.md",
+    "docs/contracts/interface-contract.md",
+    "docs/decisions/ADR.md",
+    "docs/debt/tech/TECH-261030-qqbot-ask-user-block.md",
+    "docs/debt/tech/TECH-261012-qq-schedule-write-format-gap.md",
+    "docs/debt/tech/TECH-261023-openclaw-tool-face-prompt-only-readonly.md"
+  ],
+  "docsSyncRequired": false,
+  "docsSyncReason": "QQ 同规则、一次性可判、稳定定位和 restore 语义已由 requirements/架构/契约冻结；本包只落 skill 与真实通道证据。",
+  "docsOwner": "integrator",
+  "securityReviewRequired": false,
+  "adrRequired": false,
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline",
+    "live-manual"
+  ],
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": [],
+    "note": "Draft 态空骨架；真实 QQ 不卡死与设备不抢前台证据必须另留，不能由 prompt 静态检查替代。"
+  },
+  "crossEnd": {
+    "counterparts": [
+      {
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "_push_display_payload"
+      },
+      {
+        "path": "firmware/main/display/view_router.c",
+        "symbol": "kidpal_display_route"
+      }
+    ],
+    "exempt": ""
+  },
+  "changeManifest": [
+    "server/deploy/openclaw-skills/workspace-main/kidpal-points-write/SKILL.md",
+    "server/deploy/openclaw-skills/workspace-main/kidpal-points-write/scripts/**",
+    "server/gateway/points.py",
+    "server/gateway/front/front_app.py",
+    "server/acceptance/test_qq_points_channel.acceptance.py",
+    "server/tests/test_points_cli_units.py",
+    "server/deploy/manifest.yaml",
+    "server/deploy/deploy.sh",
+    "server/deploy/verify-deploy.sh"
+  ],
+  "impactedTestsSeed": [
+    {
+      "path": "server/acceptance/test_261017_openclaw_kidpal_skills.acceptance.py",
+      "kind": "regression",
+      "note": "部署三面与 skill 清单既有守卫保持；新积分 skill 不改 workspace-kidpal 只读边界或课表 skill。"
+    },
+    {
+      "path": "server/acceptance/test_261013_qq_schedule_write_closure.acceptance.py",
+      "kind": "regression",
+      "note": "仅复用课表 skill 工程形态；schedule.md、parser、备份还原和提醒 marker 不属于积分 writer。"
+    },
+    {
+      "path": "server/acceptance/test_points_ledger_core.acceptance.py",
+      "kind": "regression",
+      "note": "K1 的单 writer、幂等、删除和兑换不变量不得被 QQ 入口绕开或复制。"
+    }
+  ],
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/261103-star-points-story-cover/"
+  ],
+  "riskTier": "high",
+  "riskRationale": "真实家长输入可触发持久加账、兑换和删除，并跨 OpenClaw、points.py、front 与设备；还存在 ask_user 卡死和错误定位风险，故为 high。",
+  "gateProfile": [
+    "evidence-integrity",
+    "test-quality",
+    "state-machine",
+    "mcp-tool-contract"
+  ],
+  "mergeOrder": 74,
+  "dependsOn": [
+    "261104-k1-points-ledger-core",
+    "261104-k2-points-device-ui"
+  ],
+  "decisionCoverage": [
+    {
+      "decision": "D-05 · QQ 与语音共享账本规则并可删除",
+      "summary": "正式 QQ skill 提供加/兑/查/删，所有规则经 K1 同一执行器，不依赖 ask_user。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-05"],
+      "landsIn": "exitCriteria:K3Q-E2"
+    },
+    {
+      "decision": "D-07 · QQ/恢复推送不抢前台",
+      "summary": "QQ 所有写入只触发 restore 数据更新，积分页在屏原地刷新。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-07"],
+      "landsIn": "exitCriteria:K3Q-E4"
+    },
+    {
+      "decision": "D-10 · QQ 只调确定性单 writer",
+      "summary": "main agent 整理一次性命令并调 CLI，kidpal 数据目录与 points 状态不直接编辑，不形成第二套账本。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-10"],
+      "landsIn": "exitCriteria:K3Q-E1"
+    },
+    {
+      "decision": "S-F6.4 AC3/AC4 · 稳定定位与一次性可判",
+      "summary": "删除使用稳定记录 id 或最近列表序号；歧义只普通文本报错并给格式，不多轮追问。",
+      "sourceRefs": ["S-F6.4-AC3", "S-F6.4-AC4", "docs/debt/tech/TECH-261030-qqbot-ask-user-block.md"],
+      "landsIn": "exitCriteria:K3Q-E3"
+    },
+    {
+      "decision": "NFR-PERF-4 · QQ 到账与积分页原地刷新软时延",
+      "summary": "真实 QQ 验收记录消息到设备积分页原地刷新的实测时延，阈值仍待真机调优，不写死验收值。",
+      "sourceRefs": ["docs/requirements.md#NFR-PERF-4"],
+      "landsIn": "exitCriteria:K3Q-E4"
+    },
+    {
+      "decision": "D-09 · 奖励目标配置",
+      "summary": "四预置、自定义目标、切换和删除配置的完整管理由 K4 承接。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-09"],
+      "landsIn": "package:261104-k4-reward-goal-config"
+    },
+    {
+      "decision": "K0 QQ spike · 最小真实 canary",
+      "summary": "K0 已验证最小真实 QQ 通路，本包在其上正式化完整家长能力，不重做 spike 证明。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/review.md#D-spike-first"],
+      "landsIn": "exitCriteria:K3Q-E1"
+    }
+  ],
+  "crossPackageBehaviors": [
+    {
+      "topic": "K0 QQ canary 到正式家长通道",
+      "owner": "261104-k3-qq-points-channel",
+      "carriedBy": "261104-k3-qq-points-channel",
+      "note": "K0 只证明最小真实写入，K3 新 skill 承载完整加/兑/查/删与一次性错误回复。"
+    },
+    {
+      "topic": "K1 CLI 与 K2 restore 消费缝的联合复证",
+      "owner": "261104-k1-points-ledger-core",
+      "carriedBy": "261104-k3-qq-points-channel",
+      "note": "K1 负责命令执行，K2 负责设备刷新，K3 用真实 QQ 把两端串起；不得绕开任一缝。"
+    },
+    {
+      "topic": "QQ 目标配置命令的后续扩展",
+      "owner": "261104-k4-reward-goal-config",
+      "carriedBy": "261104-k4-reward-goal-config",
+      "note": "K3 建立 skill 与普通错误回复纪律，K4 在同一 skill 上新增自定义/切换/删除目标，不另建通道。"
+    }
+  ],
+  "notes": "影响面机械辅证：图索引确认 front 自推链和 points.py 新数据域；kidpal-schedule-write 实读确认可复用的是机检、marker、部署与失败回复工程形态，不是 schedule.md 写路径。共享面：K3 排在 K1/K2 后，points.py/front 只在其合并基线上做必要接线。TECH-261030 只作硬约束，不修插件；TECH-261012 只复用先例不结项；TECH-261023 的只读防线不扩为直接文件写。mergeOrder=74。"
+}

@@ -1,0 +1,242 @@
+{
+  "changeId": "261104-k0-points-e2e-spike",
+  "title": "端到端最小 spike——真实语音与 QQ 记账、权威 points_home 推送、设备消费与首尾分页 canary",
+  "rigor": "full",
+  "sourceType": "proposal",
+  "origin": {
+    "type": "proposal",
+    "upstreamType": "proposal",
+    "upstreamRef": "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md",
+    "upstreamFrozen": "sha1:4eca114e6998e14e",
+    "workstream": "261103-star-points-story-cover"
+  },
+  "subsystem": "server points 最小写入与 front 推送 + OpenClaw 薄意图 + firmware points_home 最小消费",
+  "story": "S-F6.3 · 设备语音记账与兑换（AC1、AC2 最小通路）+ S-F6.4 · QQ 家长记账与更正（AC1、AC5 最小通路）+ S-F6.2 · 浏览详细账本与删除误记（AC1 首尾分页 canary）+ NFR-PERF-4 · 记账反馈时延。",
+  "planRef": "delivery/taskpackages/261104-k0-points-e2e-spike/plan.md",
+  "sourceRefs": [
+    "S-F6.3-AC1",
+    "S-F6.3-AC2",
+    "S-F6.4-AC1",
+    "S-F6.4-AC5",
+    "S-F6.2-AC1",
+    "docs/requirements.md#NFR-PERF-4",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-07",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-08",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-10",
+    "delivery/workstreams/261103-star-points-story-cover/task_plan.md#K0",
+    "delivery/workstreams/261103-star-points-story-cover/review.md#D-spike-first",
+    "docs/contracts/interface-contract.md#§1.3⑦",
+    "docs/contracts/interface-contract.md#§1.3⑧",
+    "docs/contracts/interface-contract.md#§1.4",
+    "docs/contracts/interface-contract.md#§四-kidpal_points_page",
+    "server/gateway/front/front_app.py",
+    "server/gateway/display_schema.py",
+    "server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md",
+    "firmware/main/display/view_router.c"
+  ],
+  "acceptanceRefs": [
+    "docs/requirements.md#S-F6.3",
+    "docs/requirements.md#S-F6.4",
+    "docs/requirements.md#S-F6.2-AC1",
+    "docs/requirements.md#NFR-PERF-4",
+    "delivery/workstreams/261103-star-points-story-cover/review.md#D-spike-first"
+  ],
+  "acceptance": [],
+  "acceptanceTestsFile": [],
+  "redBaselineCommand": "",
+  "redBaselineResult": "",
+  "exitCriteria": [
+    "K0S-E1: `spike-evidence.md` 记录一条真实设备完整语音记账句与真实 QQ canary 的端到端证据，设备实际显示权威余额和原因；文件写入、CLI 返回或 pytest 读回只能作辅证，不能替代消费端目击。QQ 双状态首选两笔同形 canary，具体要求见 K0S-E3。",
+    "K0S-E2: 首尾两条可识别记录经 `kidpal_points_page` 的消费端分页证据在场，证明看到的不只是最近一条；front 命令、推送、设备 view 路由和页面消费日志可按同一 canary 关联。",
+    "K0S-E3: 首选两笔同形真实 QQ canary 分别取证：第一笔在设备其他页发送并验证不抢前台，第二笔在积分页在屏时发送并验证原地刷新；设备主动语音成功路径展示积分主页。若执行时只能一笔，另一状态只能作为离线/宿主证据，不得宣称两种状态均由真实 QQ 链路验证。NFR-PERF-4 只记录实测时延，不写死未拍阈值。",
+    "K0S-E4: K0a 合并后重取基线完成 host build、device build 与真机终验，ready-to-merge 同样在此之后。firmware/main/test/host_app/main/CMakeLists.txt 是两包唯一共享构建清单，由 K0 在此时追加；K0 不修改 K0a 的 render_node/keybar/story_page 文件，P3 接管使用 K0a 留下的缝。",
+    "K0S-E5: server 离线验收、host/设备构建与 spike 证据由 acceptance-author/verifier 固化；本包只交付最小通路，正式单 writer 不变量归 K1，完整 UI/删除归 K2，正式 QQ skill 归 K3。",
+    "K0S-E6: 若真实 QQ 最小通路必须提前建立 K3 的完整 skill 或扩大写权，停止并升级主线程重核边界；不得以人工直接写 state 文件冒充 QQ 端到端证据。"
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "contractRefs": [
+    "docs/contracts/interface-contract.md#§1.3⑦",
+    "docs/contracts/interface-contract.md#§1.3⑧",
+    "docs/contracts/interface-contract.md#§1.4",
+    "docs/contracts/interface-contract.md#§1.5",
+    "docs/contracts/interface-contract.md#§四-kidpal_points_page"
+  ],
+  "docRefs": [
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md",
+    "delivery/workstreams/261103-star-points-story-cover/review.md",
+    "delivery/workstreams/261103-star-points-story-cover/task_plan.md",
+    "delivery/taskpackages/261104-k0-points-e2e-spike/plan.md",
+    "docs/requirements.md",
+    "docs/architecture.md",
+    "docs/contracts/interface-contract.md",
+    "docs/decisions/ADR.md",
+    "docs/ui/kidpal-ui-design-v9.html",
+    "docs/ui/UIUX-DESIGN-BRIEF.md",
+    "docs/ui/V9/points-home.png"
+  ],
+  "docsSyncRequired": false,
+  "docsSyncReason": "spike 消费的 display、薄意图和分页契约已 landed；本包产实现与 spike 证据，不重写上游语义。",
+  "docsOwner": "integrator",
+  "securityReviewRequired": false,
+  "adrRequired": false,
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline",
+    "firmware-build",
+    "live-manual"
+  ],
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": [],
+    "note": "Draft 态空骨架；真实消费端证据不因 offline 变异证据齐备而豁免。"
+  },
+  "crossEnd": {
+    "counterparts": [
+      {
+        "path": "firmware/main/display/view_router.c",
+        "symbol": "kidpal_display_route"
+      },
+      {
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "_push_display_payload"
+      }
+    ],
+    "exempt": ""
+  },
+  "changeManifest": [
+    "server/gateway/points.py",
+    "server/gateway/display_schema.py",
+    "server/gateway/front/front_app.py",
+    "server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md",
+    "server/acceptance/test_points_e2e_spike.acceptance.py",
+    "server/tests/test_points_spike_units.py",
+    "firmware/main/display/points_page.c",
+    "firmware/main/display/points_page.h",
+    "firmware/main/display/view_router.c",
+    "firmware/main/display/view_router.h",
+    "firmware/main/mcp_server.cc",
+    "firmware/main/protocols/protocol.h",
+    "firmware/main/protocols/protocol.cc",
+    "firmware/main/application.cc",
+    "firmware/main/CMakeLists.txt",
+    "firmware/main/test/points_spike.acceptance.c",
+    "firmware/main/test/host_app/main/CMakeLists.txt",
+    "delivery/taskpackages/261104-k0-points-e2e-spike/spike-evidence.md"
+  ],
+  "impactedTestsSeed": [
+    {
+      "path": "server/acceptance/test_record_dialogue_guide.acceptance.py",
+      "kind": "regression",
+      "note": "既有 start_organizing 自推/relay 分叉必须保持；新增 add_points/redeem_points 不得变成设备可盲转控制动作。"
+    },
+    {
+      "path": "server/acceptance/test_m4k1_story_cloud_link.acceptance.py",
+      "kind": "regression",
+      "note": "session_ctx 既有 home/schedule/story 拦截与故事归档行为不变，本包不实现 K2 的积分摘要注入。"
+    },
+    {
+      "path": "firmware/main/test/record_dialogue_guide.acceptance.c",
+      "kind": "regression",
+      "note": "view/control 数值码采用 additive 尾部扩展，既有路由和 start_organizing 行为零偏移。"
+    }
+  ],
+  "uiux": {
+    "uiuxRequired": true,
+    "uiuxLevel": 2,
+    "designRefs": [
+      "docs/ui/V9/points-home.png"
+    ],
+    "sharedUiRefs": [
+      "docs/ui/kidpal-ui-design-v9.html",
+      "docs/ui/UIUX-DESIGN-BRIEF.md"
+    ],
+    "uiAcceptanceRefs": [
+      "points-home"
+    ],
+    "designReviewRequired": true,
+    "designReviewEvidenceRequired": true,
+    "repoVisualArtifactRequired": false
+  },
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/261103-star-points-story-cover/"
+  ],
+  "riskTier": "high",
+  "riskRationale": "首次建立语音/QQ→云端持久状态→front→真实设备的业务数据通路，涉及跨系统写权限、线格式和真机/真实 QQ 证据，故为 high。",
+  "gateProfile": [
+    "evidence-integrity",
+    "test-quality",
+    "mcp-tool-contract",
+    "state-machine"
+  ],
+  "mergeOrder": 71,
+  "dependsOn": [],
+  "decisionCoverage": [
+    {
+      "decision": "D-07 · QQ/恢复推送不抢前台，主动语音成功例外跳积分页",
+      "summary": "spike 首选以两笔同形真实 QQ canary 分别验证其他页不抢前台与积分页原地刷新，并以真实设备验证主动语音成功跳页；仅一笔时另一状态只能作离线/宿主证据。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-07"],
+      "landsIn": "exitCriteria:K0S-E3"
+    },
+    {
+      "decision": "D-08-spike · points display、薄意图与分页最小通路",
+      "summary": "实现契约已冻结形状的最小生产者/消费者，并放置首尾分页 canary。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-08"],
+      "landsIn": "exitCriteria:K0S-E2"
+    },
+    {
+      "decision": "D-10 · LLM 只产薄意图，确定性模块写账",
+      "summary": "spike 只建立最小确定性写入路径；完整原子写、余额重算与全部不变量由 K1 正式化。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-10"],
+      "landsIn": "package:261104-k1-points-ledger-core"
+    },
+    {
+      "decision": "S-F6.3 AC1/AC2 · 完整语音句记账并跳页",
+      "summary": "真实设备说一句完整记账句，以设备看到权威余额与原因为证据。",
+      "sourceRefs": ["S-F6.3-AC1", "S-F6.3-AC2"],
+      "landsIn": "exitCriteria:K0S-E1"
+    },
+    {
+      "decision": "S-F6.4 AC1/AC5 · QQ 最小写入与不抢前台",
+      "summary": "真实 QQ canary 走最小写入通路，验证 restore 更新不接管前台。",
+      "sourceRefs": ["S-F6.4-AC1", "S-F6.4-AC5"],
+      "landsIn": "exitCriteria:K0S-E1"
+    },
+    {
+      "decision": "D-02 · 完整积分 UI 与删除",
+      "summary": "本包只做最小渲染，完整主页、详细账本和删除由 K2 承接。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-02"],
+      "landsIn": "package:261104-k2-points-device-ui"
+    },
+    {
+      "decision": "D-05 · 正式 QQ 家长通道",
+      "summary": "本包不提前实现完整 QQ skill；正式加/兑/查/删、稳定定位和错误回复由 K3 承接。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-05"],
+      "landsIn": "package:261104-k3-qq-points-channel"
+    }
+  ],
+  "crossPackageBehaviors": [
+    {
+      "topic": "P3 静态占位到最小 points_home 渲染的接管",
+      "owner": "261104-k0a-four-page-skeleton",
+      "carriedBy": "261104-k0-points-e2e-spike",
+      "note": "K0a 提供接管缝并先落共享 host CMake；K0 并行开发服务端与新增 points 文件，K0a merged 后重取基线追加 firmware/main/test/host_app/main/CMakeLists.txt，再跑 host/device build 与真机终验。该 CMake 是两包唯一共享文件，不宣称零重叠。"
+    },
+    {
+      "topic": "最小写入路径到正式单 writer 的升级",
+      "owner": "261104-k1-points-ledger-core",
+      "carriedBy": "261104-k1-points-ledger-core",
+      "note": "K0 只验证端到端真值，K1 在同一 points.py 上补齐锁、原子写、重算、幂等和全部不变量，不另起第二账本。"
+    },
+    {
+      "topic": "QQ spike canary 到正式家长通道",
+      "owner": "261104-k3-qq-points-channel",
+      "carriedBy": "261104-k3-qq-points-channel",
+      "note": "K0 只留真实 QQ 最小写入证据；K3 才实现完整 skill、稳定定位和普通错误回复。"
+    }
+  ],
+  "notes": "spike-first 命中 ARQ-261024，严禁以文件写入或 pytest 读回自证。影响面机械辅证：图索引确认 _push_story_list→_push_display_payload→display_tool_call 的既有自推链、validate_display 白名单/控制动作面与 kidpal_display_route；points.py 当前无图节点，确属新建。K0a/K0 以 P3 接管缝加唯一共享 host CMake 解耦，mergeOrder 70/71 钉死；K0 的 host/device build、真机终验与 ready-to-merge 均在 K0a merged 后执行。门 1 已裁定真实 QQ 最小 producer = 真实 QQ 一次性明确指令→既有 main agent→K0 最小 add CLI，不建临时 skill；执行仍须以 K0 spike 证据判定。"
+}

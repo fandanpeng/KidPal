@@ -7,18 +7,19 @@
 > 列：changeId | 日期 | 状态 | 已合main。review 状态机：draft→frozen→landed(终态)。
 > 2026-10-15 前历史批见 delivery/archive/changes/arch/INDEX.md（261015-gov-review-changes-taxonomy T6 第 4 条归档指针）。
 
-## review (26)
+## review (31)
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
-| [261029-gov-review-p9-script-hygiene-cluster](261029-gov-review-p9-script-hygiene-cluster/) | 2026-10-29 | landed | yes |
+| [261103-arch-review-star-points-story-cover](261103-arch-review-star-points-story-cover/) | 2026-11-03 | landed | yes |
 | [261029-gov-review-gov-loop-simplification](261029-gov-review-gov-loop-simplification/) | 2026-10-29 | landed | yes |
+| [261029-gov-review-p9-script-hygiene-cluster](261029-gov-review-p9-script-hygiene-cluster/) | 2026-10-29 | landed | yes |
+| [261028-arch-review-font-typography-scaleup](261028-arch-review-font-typography-scaleup/) | 2026-10-28 | landed | yes |
 | [261028-gov-review-author-implementation-lane](261028-gov-review-author-implementation-lane/) | 2026-10-28 | landed | yes |
 | [261028-gov-review-p8-gate-semantics-cluster](261028-gov-review-p8-gate-semantics-cluster/) | 2026-10-28 | landed | yes |
-| [261028-arch-review-font-typography-scaleup](261028-arch-review-font-typography-scaleup/) | 2026-10-28 | landed | — |
 | [261027-gov-review-draft-cost-relief](261027-gov-review-draft-cost-relief/) | 2026-10-27 | landed | yes |
 | [261027-gov-review-p5-spike-anchor-cluster](261027-gov-review-p5-spike-anchor-cluster/) | 2026-10-27 | landed | yes |
-| [261027-gov-review-p6-landing-gate-cluster](261027-gov-review-p6-landing-gate-cluster/) | 2026-10-27 | landed | — |
+| [261027-gov-review-p6-landing-gate-cluster](261027-gov-review-p6-landing-gate-cluster/) | 2026-10-27 | landed | yes |
 | [261027-gov-review-p7-devloop-doc-cluster](261027-gov-review-p7-devloop-doc-cluster/) | 2026-10-27 | landed | yes |
 | [261027-gov-review-p75-closeout-shoot-cluster](261027-gov-review-p75-closeout-shoot-cluster/) | 2026-10-27 | landed | yes |
 | [261026-gov-review-final-phase-dispatch-contract](261026-gov-review-final-phase-dispatch-contract/) | 2026-10-26 | landed | yes |
@@ -30,9 +31,9 @@
 | [261025-gov-review-release-pr-publish](261025-gov-review-release-pr-publish/) | 2026-10-25 | landed | yes |
 | [261024-gov-review-retro-efficiency-instrumentation](261024-gov-review-retro-efficiency-instrumentation/) | 2026-10-24 | landed | yes |
 | [261023-arch-review-memory-wiring-verified-behavior](261023-arch-review-memory-wiring-verified-behavior/) | 2026-10-23 | landed | yes |
-| [261022-arch-review-device-memory-prompt-overhaul](261022-arch-review-device-memory-prompt-overhaul/) | 2026-10-22 | landed | — |
-| [261021-arch-review-p3-record-cancel-lifecycle](261021-arch-review-p3-record-cancel-lifecycle/) | 2026-10-21 | landed | — |
-| [261019-arch-review-p3-record-dialogue-guide](261019-arch-review-p3-record-dialogue-guide/) | 2026-10-19 | landed | — |
+| [261022-arch-review-device-memory-prompt-overhaul](261022-arch-review-device-memory-prompt-overhaul/) | 2026-10-22 | landed | yes |
+| [261021-arch-review-p3-record-cancel-lifecycle](261021-arch-review-p3-record-cancel-lifecycle/) | 2026-10-21 | landed | yes |
+| [261019-arch-review-p3-record-dialogue-guide](261019-arch-review-p3-record-dialogue-guide/) | 2026-10-19 | landed | yes |
 | [261019-gov-review-docs-root-drift-cleanup](261019-gov-review-docs-root-drift-cleanup/) | 2026-10-19 | landed | yes |
 | [261019-gov-review-docs-root-ledger-rehome](261019-gov-review-docs-root-ledger-rehome/) | 2026-10-19 | landed | yes |
 | [261019-gov-review-local-memory-extraction](261019-gov-review-local-memory-extraction/) | 2026-10-19 | landed | yes |

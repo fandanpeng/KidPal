@@ -6,8 +6,8 @@
 
 ## 完工比例
 
-- **已验收**：0%（0 / 6 里程碑 accepted 及以后）
-- **在途预计**：33.3%（按 state 阶段加权：planning 0 · in_delivery .4 · qa .7 · ready .9 · accepted 1）
+- **已验收**：0%（0 / 7 里程碑 accepted 及以后）
+- **在途预计**：28.6%（按 state 阶段加权：planning 0 · in_delivery .4 · qa .7 · ready .9 · accepted 1）
 
 ## 里程碑基线
 
@@ -46,4 +46,10 @@
 | 里程碑 | 状态 | 健康 | 下一步 | 验收依据 |
 |---|---|---|---|---|
 | 阶段六·字体体系升级（正文 16px / 标题 20px / assets 运行时装载） | `in_delivery` | green | workstream 261028-font-typography-scaleup P0+P1 已 merged 本地 main（2026-10-29，human 合并门随批批准：P0 字体资产运行时装载 + host LARGE 修复轮，P1 首页 16px + 临时下划线；真机轮核心观测通过=看屏确认 16px 运行时字形正确；缺 assets 降级真机观测 human 裁定豁免）。剩：P2 p2-schedule-16px / P3 p3-story-typography 未 launch（P3=终端收口轮，P3 launch 前 P1 已 merged ✓）；ARQ-261029 上游 ※ 写入侧任务待派单（临时事件下划线真机样本前置，blocker）；远程发布（release-pr --publish + PR 合并）待 human。 | [ref](../docs/requirements.md) |
+
+### M7
+
+| 里程碑 | 状态 | 健康 | 下一步 | 验收依据 |
+|---|---|---|---|---|
+| 星星积分本 + 故事封皮导航（金币账本 + 四页循环，requirements §6 阶段五） | `planning` | green | workstream 261103-star-points-story-cover 拆包七包（K0a 四页骨架 ∥ K0 e2e spike 并行起步、合并序 K0a 先合；之后 K1 账本核心 → K2 设备积分 → K3 QQ 通道 → K4 目标配置 → K5 封皮导航 WIP=1 串行）。上游已齐：requirements v1.71 frozen（F6 五 story + S-F2.6）+ 架构 FROZEN v1.0（ADR-018、points.py 单 writer）+ 契约五触点 LANDED（9 view/add_points/redeem_points/kidpal_points_delete/kidpal_points_page/session_ctx 六值）+ PROPOSAL FROZEN v1.0 + spine anchors 3/4。下一步 = 拆包四件套（portfolio-planner 重派中）→ 门 1 → human 过目切法 → 逐包 launch | [ref](../docs/requirements.md) |
 

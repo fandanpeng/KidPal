@@ -1,0 +1,248 @@
+{
+  "changeId": "261104-k0a-four-page-skeleton",
+  "title": "四页骨架——P3 积分占位、P4 故事原地迁移、枚举驱动语境与阅读键修复",
+  "rigor": "full",
+  "sourceType": "proposal",
+  "origin": {
+    "type": "proposal",
+    "upstreamType": "proposal",
+    "upstreamRef": "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md",
+    "upstreamFrozen": "sha1:4eca114e6998e14e",
+    "workstream": "261103-star-points-story-cover"
+  },
+  "subsystem": "firmware 主页面枚举、BOOT 循环、keybar、故事页按键与会话来源映射",
+  "story": "S-F6.1 · 看积分进度与最近记录（AC4 数据未达半）+ S-F2.1 · 看「星星记录本」列表（AC1、AC2 回归）+ S-F2.2 · 对话式引导记录（AC1 回归）+ S-F2.3 · 回看记录（AC1、AC2）+ TECH-261028-p3-reader-key-falls-to-session-toggle。",
+  "planRef": "delivery/taskpackages/261104-k0a-four-page-skeleton/plan.md",
+  "sourceRefs": [
+    "S-F6.1-AC4",
+    "S-F2.1-AC1",
+    "S-F2.1-AC2",
+    "S-F2.2-AC1",
+    "S-F2.3-AC1",
+    "S-F2.3-AC2",
+    "docs/requirements.md#§2.3",
+    "docs/requirements.md#§2.4",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-01",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-08",
+    "delivery/workstreams/261103-star-points-story-cover/task_plan.md#K0a",
+    "docs/debt/tech/TECH-261028-p3-reader-key-falls-to-session-toggle.md",
+    "docs/decisions/ADR.md#ADR-018",
+    "firmware/main/display/story_page.c",
+    "firmware/main/display/kidpal_render_node.h",
+    "firmware/main/display/kidpal_render_node.cc",
+    "firmware/main/display/keybar.c",
+    "firmware/main/key_gesture_parser.h"
+  ],
+  "acceptanceRefs": [
+    "docs/requirements.md#S-F6.1-AC4",
+    "docs/requirements.md#S-F2.1",
+    "docs/requirements.md#S-F2.2",
+    "docs/requirements.md#S-F2.3",
+    "docs/requirements.md#§2.3",
+    "docs/requirements.md#§2.4",
+    "docs/debt/tech/TECH-261028-p3-reader-key-falls-to-session-toggle.md"
+  ],
+  "acceptance": [],
+  "acceptanceTestsFile": [],
+  "redBaselineCommand": "",
+  "redBaselineResult": "",
+  "exitCriteria": [
+    "K0A-E1: Pod 内 acceptance-author 产出并冻结四页循环、四点页点、逐页 source_page、故事三 story 零回归与阅读键缺陷的验收证据；红基线、变异证据和既有冻结件收紧型修订留痕齐全。",
+    "K0A-E2: host 全量验收与 device build 证据在场；P3 静态占位与 P4 故事原地迁移可编译，K0 的新 points_page.c 经本包接管缝接入。firmware/main/test/host_app/main/CMakeLists.txt 是两包唯一共享构建清单，K0 必须等本包 merged、重取基线后追加自己的登记。",
+    "K0A-E3: 一轮真机证据覆盖 BOOT 四页循环、四点及当前实心位、逐页 KEY 开会话后的 source_page、阅读 KEY 短按零响应、长按回列表和阅读键帽；串口日志与看屏证据可互相对账。",
+    "K0A-E4: 以 V9 相关帧完成 design review，review-packet 含 demo 对账行与未覆盖面申报；本包只宣称四页骨架和阅读键修复，不宣称故事封皮或积分正式业务已完成。",
+    "K0A-E5: 实际 diff 限于 changeManifest；TECH-261028 的消费关系与既有验收 supersede 授权链写入收口制品，不吸收 TECH-261022-p3-record-session-state-churn 的独立承接范围。"
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "contractRefs": [
+    "docs/contracts/interface-contract.md#§四-kidpal_session_ctx"
+  ],
+  "docRefs": [
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md",
+    "delivery/workstreams/261103-star-points-story-cover/task_plan.md",
+    "delivery/taskpackages/261104-k0a-four-page-skeleton/plan.md",
+    "docs/requirements.md",
+    "docs/architecture.md",
+    "docs/contracts/interface-contract.md",
+    "docs/decisions/ADR.md",
+    "docs/debt/tech/TECH-261028-p3-reader-key-falls-to-session-toggle.md",
+    "docs/debt/tech/TECH-261022-p3-record-session-state-churn.md",
+    "docs/ui/kidpal-ui-design-v9.html",
+    "docs/ui/UIUX-DESIGN-BRIEF.md",
+    "docs/ui/V9/canvas-p1.png",
+    "docs/ui/V9/canvas-p2.png",
+    "docs/ui/V9/canvas-p3.png",
+    "docs/ui/V9/p3-reader.png",
+    "docs/ui/V9/points-home-nodata.png"
+  ],
+  "docsSyncRequired": false,
+  "docsSyncReason": "四页导航、枚举驱动语境和阅读键语义已分别由 requirements v1.71、架构与 ADR-018 冻结；本包只落实现与验收镜像。",
+  "docsOwner": "integrator",
+  "securityReviewRequired": false,
+  "adrRequired": false,
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline",
+    "firmware-build",
+    "live-manual"
+  ],
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": [],
+    "note": "Draft 态空骨架；由 Pod 内 builder/verifier 按冻结验收逐条回填，拆包侧不预写变异结果。"
+  },
+  "crossEnd": {
+    "counterparts": [
+      {
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "_consume_kidpal_control"
+      }
+    ],
+    "exempt": ""
+  },
+  "changeManifest": [
+    "firmware/main/display/kidpal_render_node.h",
+    "firmware/main/display/kidpal_render_node.cc",
+    "firmware/main/display/keybar.c",
+    "firmware/main/display/keybar.h",
+    "firmware/main/key_gesture_parser.h",
+    "firmware/main/key_gesture_parser.cc",
+    "firmware/main/display/story_page.c",
+    "firmware/main/display/story_page.h",
+    "firmware/main/test/four_page_skeleton.acceptance.c",
+    "firmware/main/test/retract_p4_three_page.acceptance.c",
+    "firmware/main/test/key_layer_dispatch.acceptance.c",
+    "firmware/main/test/keybar_three_slot.acceptance.c",
+    "firmware/main/test/record_session_live.acceptance.c",
+    "firmware/main/test/story_page_v2.acceptance.c",
+    "firmware/main/test/host_app/main/CMakeLists.txt"
+  ],
+  "impactedTestsSeed": [
+    {
+      "path": "firmware/main/test/retract_p4_three_page.acceptance.c",
+      "kind": "frozen-rebaseline",
+      "note": "现钉三页枚举、三页循环与第四页越界；D-01 已批准改为四页，必须由 acceptance-author 留痕重锚。"
+    },
+    {
+      "path": "firmware/main/test/key_layer_dispatch.acceptance.c",
+      "kind": "frozen-rebaseline",
+      "note": "KD-E1 钉 PAGE_COUNT==3；仅更新页集重锚，不改变全局覆盖层 KEY 短按语义。"
+    },
+    {
+      "path": "firmware/main/test/keybar_three_slot.acceptance.c",
+      "kind": "frozen-rebaseline",
+      "note": "页槽表现钉 P3 故事；需重排 P3 积分与 P4 故事，覆盖层页点隐藏和闭集单源不变。"
+    },
+    {
+      "path": "firmware/main/test/record_session_live.acceptance.c",
+      "kind": "frozen-rebaseline",
+      "note": "S1 钉数值 page==2 与三值闭集；改枚举驱动并保留 home/schedule/story 原行为。"
+    },
+    {
+      "path": "firmware/main/test/story_page_v2.acceptance.c",
+      "kind": "regression",
+      "note": "故事列表、阅读、删除与盖章既有断言为零回归基线；阅读键归属缺陷按 TECH-261028 收紧。"
+    }
+  ],
+  "uiux": {
+    "uiuxRequired": true,
+    "uiuxLevel": 4,
+    "designRefs": [
+      "docs/ui/V9/canvas-p1.png",
+      "docs/ui/V9/canvas-p2.png",
+      "docs/ui/V9/canvas-p3.png",
+      "docs/ui/V9/p3-reader.png",
+      "docs/ui/V9/points-home-nodata.png"
+    ],
+    "sharedUiRefs": [
+      "docs/ui/kidpal-ui-design-v9.html",
+      "docs/ui/UIUX-DESIGN-BRIEF.md"
+    ],
+    "uiAcceptanceRefs": [
+      "canvas-p1",
+      "canvas-p2",
+      "canvas-p3",
+      "p3-reader",
+      "points-home-nodata"
+    ],
+    "designReviewRequired": true,
+    "designReviewEvidenceRequired": true,
+    "repoVisualArtifactRequired": false
+  },
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/261103-star-points-story-cover/"
+  ],
+  "riskTier": "high",
+  "riskRationale": "修改全局页面状态机、键路由和会话来源映射，错误会把积分页误切故事记录语境；同时触碰多组既有冻结验收并要求真机回归，故为 high。",
+  "gateProfile": [
+    "evidence-integrity",
+    "test-quality",
+    "state-machine",
+    "mcp-tool-contract"
+  ],
+  "mergeOrder": 70,
+  "dependsOn": [],
+  "decisionCoverage": [
+    {
+      "decision": "D-01-skeleton · 四页循环与四点页点骨架",
+      "summary": "P3 插入积分占位，故事原地迁到 P4；BOOT 四页循环与 keybar 四点先落定，封皮分层不在本包提前实现。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-01"],
+      "landsIn": "exitCriteria:K0A-E2"
+    },
+    {
+      "decision": "D-08-context · source_page 枚举驱动",
+      "summary": "废除数值 case 2，按 KP_PAGE_* 映射，保证新增 P3 不误报 story；后续子页语境由 K2/K5 扩展。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-08"],
+      "landsIn": "exitCriteria:K0A-E3"
+    },
+    {
+      "decision": "业务目的 8 · 修复故事阅读既有按键缺陷",
+      "summary": "TECH-261028 从原意图提示的 K5 前移至本包，修阅读 KEY 短按误开会话与键帽缺位。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§1-目的8", "docs/debt/tech/TECH-261028-p3-reader-key-falls-to-session-toggle.md"],
+      "landsIn": "exitCriteria:K0A-E3"
+    },
+    {
+      "decision": "S-F6.1 AC4 · 数据未达静态占位",
+      "summary": "本包只提供无业务逻辑的数据未达占位，不伪造 0 余额或进度线。",
+      "sourceRefs": ["S-F6.1-AC4"],
+      "landsIn": "exitCriteria:K0A-E2"
+    },
+    {
+      "decision": "D-01-cover · 故事封皮与逐层返回",
+      "summary": "故事在本包仍是 P4 平级页，封皮、列表下沉和逐层返回由 K5 承接。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-01"],
+      "landsIn": "package:261104-k5-story-cover-nav"
+    },
+    {
+      "decision": "D-02 · 积分正式页面与业务",
+      "summary": "最小 points_home 消费由 K0 建立，完整积分主页与账本由 K2 承接。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-02"],
+      "landsIn": "package:261104-k2-points-device-ui"
+    }
+  ],
+  "crossPackageBehaviors": [
+    {
+      "topic": "P3 静态占位接管缝与共享构建清单串行",
+      "owner": "261104-k0a-four-page-skeleton",
+      "carriedBy": "261104-k0-points-e2e-spike",
+      "note": "K0a 负责留下接管缝并先落共享 host CMake；K0 并行只开发服务端与新增 points 文件，K0a merged 后重取基线追加 firmware/main/test/host_app/main/CMakeLists.txt，其余 K0a 文件不改。该 CMake 是两包唯一共享文件，不宣称零重叠。"
+    },
+    {
+      "topic": "source_page 枚举映射的后续子页扩展",
+      "owner": "261104-k0a-four-page-skeleton",
+      "carriedBy": "261104-k2-points-device-ui",
+      "note": "K0a 先保证 home/schedule/points_home/story 正确；K2 增 points_ledger 子页语境，K5 增 story_cover 并保持 story 列表记录语境。"
+    },
+    {
+      "topic": "TECH-261022 共享 keybar/故事页串行对账",
+      "owner": "261104-k0a-four-page-skeleton",
+      "carriedBy": "261104-k0a-four-page-skeleton",
+      "note": "独立承接包不并入本包；合并前核对双方冻结验收，本包只处理四页骨架和 TECH-261028。"
+    }
+  ],
+  "notes": "workType = new-capability + remediation。影响面机械辅证：C-AI-KidPal 图索引确认 kidpal_render_node_cycle_next、kidpal_story_ctx_source_page、keybar 三函数和 application.cc 会话发送单点；source_page 图 inbound=0 属 C 调用解析缺口，已由 application.cc:1313-1320 实读补录。相邻冻结锚非零命中：retract_p4_three_page、key_layer_dispatch KD-E1、keybar_three_slot、record_session_live S1、story_page_v2；均为 D-01/D-08 或 TECH-261028 已批准的重锚/回归面，只能由 acceptance-author 收紧型留痕修订。K0a 与 K0 mergeOrder=70/71，K0a 必须先合；两包唯一共享文件为 firmware/main/test/host_app/main/CMakeLists.txt，K0 在 K0a merged 后追加，不宣称文件零重叠。"
+}

@@ -4,7 +4,7 @@
 > 读者：architect / planner / dev-loop 各 Pod。需求面（产品是什么）见 [requirements.md](requirements.md)；数据格式权威见 [contracts/interface-contract.md](contracts/interface-contract.md)（契约门）。
 > **文档分工（2026-09-14 重构定）**：本档 = 系统**结构与机制**的单一事实源；架构决策本体 = [ADR.md](decisions/ADR.md)（本章 §10 只留索引 + MVP 时代决策历史档）；数据格式 = contracts/；需求与阈值 = requirements.md；术语 = [glossary.md](glossary.md)。细节一旦在两处复制即开始腐烂——本档对上述各面只放指针。
 > **锚稳定规则**：本文件小节编号发布后视为稳定标识——requirements.md 的 story/NFR 支撑锚按号引用；改编号 = 有意识地同步改锚（`node .claude/scripts/spec-anchor-check.mjs` 机检抓悬空）。
-> **定名（2026-09-13）**：**MVP** = 已开发完成、经真机验证的交付基线；**Phase 1** = 即将开发的下一版（需求 = requirements.md v1.49+）。「二期」= Phase 1 之后。
+> **定名（2026-09-13）**：**MVP** = 已开发完成、经真机验证的交付基线；**Phase 1** = 即将开发的下一版（需求 = requirements.md，v1.71 frozen，2026-11-04）。「二期」= Phase 1 之后。
 > **现状标注约定**：【已实证】= live/真机验证过的事实；【修复项】= 已登记的 Phase 1 dev 修复项；【二期】= 明确后置。
 
 ---
@@ -100,7 +100,7 @@
 
 1. **哑终端**：设备零业务、零智能、业务数据零真相源存储（story 正文只读镜像为窄例外，见原则 5）；
 2. **唯一公网入口 = front**，引擎与 OpenClaw 不外露（18789 锁 loopback，决策 9/18/22）；
-3. **网关恒薄**：front 只做终结/鉴权/校验/relay/投递，业务逻辑 100% 在脑（决策 20「脑算网推」）；**同型切分注记（`261019-p3-record-dialogue-guide`，2026-10-19）**：记录语境对话态的卡壳引导与收尾忠实整理 = front 承载计时/计数/触发与指令装配（机械层）+ 脑侧一次性 LLM 回合生成（语义层）——ADR-002「可机判性切分」混合分层同型，推理与生成 100% 在脑，本原则语义不变（决策本体 = ADR-013）。
+3. **网关恒薄**：front 只做终结/鉴权/校验/relay/投递，业务逻辑 100% 在脑（决策 20「脑算网推」）；**同型切分注记（`261019-p3-record-dialogue-guide`，2026-10-19）**：记录语境对话态的卡壳引导与收尾忠实整理 = front 承载计时/计数/触发与指令装配（机械层）+ 脑侧一次性 LLM 回合生成（语义层）——ADR-002「可机判性切分」混合分层同型，推理与生成 100% 在脑，本原则语义不变（决策本体 = ADR-013）。**积分同型切分注记（`261103-star-points-story-cover`，2026-11-04）**：积分语义理解在脑，命令校验、余额重算、目标配置不变量和原子持久化是 gateway 可机判执行层（points.py 单 writer），与 ADR-002/ADR-004 的混合分层同型，不解释为允许 front 或 QQ 各自发明业务规则。
 4. **实时本地 · 语义云端**：音频信号处理（AEC/VAD/唤醒）必须本地，语义才上云（决策 3）；
 5. **介质禁令**：板端非易失介质仅存设备凭证、预栅格化资产与字体、固件本体；业务/身份/事项状态只驻 RAM（决策 24）。**窄例外（`261016-p3-story-body-sd-cache`，2026-10-17）**：SD 卡可为 **story 正文**留**只读镜像**（云端 story 归档仍为唯一真相源、板端不承载任何写入，见决策 24 注记 / §6.2）；提醒 / 课表 / 日志等其余业务数据仍不落板——此例外**只给 story 正文**、不扩及任意业务数据。 **介质白名单增列（`261018-sd-log-persist`，2026-10-18）**：SD 卡可存**设备诊断日志**（设备自身运行日志，常开 + 有界轮转、目录总量 16MB 封顶、可删除，见 §6.6 / §6.2 / 决策 24）——属可观测性数据、非业务真相源、不提供离线功能；本句「日志」= **业务日志**（家长知情权），业务日志仍不落板、语义不变。
 
@@ -150,10 +150,11 @@
 | NFR-PERF-1 不冷场 ≤4s | front 安抚定时器 `SOOTHING_TIMEOUT_MS=4000`（LLM 首 token 超时先推固定安抚句）+ 设备状态机 `THINKING_TIMEOUT_4S`→SPEAKING（COMFORT 标记）【状态机接线 = 修复项】 | §5.1 front 组件 / §5.1 会话状态机 |
 | NFR-PERF-2 查字 5 秒档 | OpenClaw 侧 `warm_char_cache.py` 预热 9574 字全量 `char_cache.json` + char_stroke hold-and-replace 缓存；【修复项】live 冷启动实测 ~109s，流式/异步优化待做 | §5.1 OpenClaw 补丁组件 |
 | NFR-PERF-3 记录会话卡壳引导时机 | front 卡壳计时器族（每句讲完起计时、接着说重置、计时到或明示卡壳词命中触发引导 LLM 回合、连续 2 轮无回应自动收尾；阈值权威 = requirements NFR-PERF-3〔待定、真机调优后立项拍数〕）+ `StoryAccumulator` 卡壳计时与引导轮次纯决策 | §5.1.2 front/story.py 组件行 / §5.2 场景④ |
+| NFR-PERF-4 记账/兑换到积分页刷新（软时延） | front 截获薄意图 → points.py 确定性执行 → 权威 points_home 推送（阈值权威 = requirements NFR-PERF-4〔软时延、真机调优定数〕，不在架构写数） | §5.1.2 points.py 组件行 / §5.2 场景⑥ / §6.6 |
 | NFR-SEC-1 强制鉴权 + 传输安全 | front TLS 终结（自签 RSA-3072 20 年）+ `websocket.accept()` 之前强制 `gw_auth.authorize`（constant-time、token ≥22 字符、未设拒服务）+ OpenClaw 18789 锁 loopback + 引擎层 `auth: false`（鉴权唯一权威在 front，260911 裁） | §6.1 / §5.3.2 |
 | NFR-SEC-2 出网记账 | 五条出网路径（§1.2 表；第④条 = 实时事实查询回合经 Tavily 联网搜索，v1.62 增；第⑤条 = 记忆画像管线 deriver→DeepSeek / embedding→DashScope，v1.67 增）+ 决策 19 记账 | §1.2 |
 | NFR-PRIV-1 记忆边界与保留 | 记忆写入范围（类级规则：平台内部系统回合不入画像；设备流程回合与孩子真实聊天统一归属、按内容参与记忆；家长侧回合列在边界外——机制实况与残余见 §6.7 残余申报）+ 抽取三层纵深（来源门 / 抽取策略 / 注入过滤）+ 自托管不出网 + 删除 = 运维手工 | §6.7 / §5.1.2 记忆子系统 / §5.4 记忆行 |
-| NFR-OFF-1 离线边界 | 设备不缓存事项/课表 + 介质禁令（白名单制）+ 断网仅本地时间/温湿度/电量 +RAM 渲染缓冲不禁（掉电即失，§6.2 澄清；story 正文只读镜像窄例外，§6.2） | §6.2 / §5.4 |
+| NFR-OFF-1 离线边界 | 设备不缓存事项/课表 + 介质禁令（白名单制）+ 断网仅本地时间/温湿度/电量 +RAM 渲染缓冲不禁（掉电即失，§6.2 澄清；story 正文只读镜像窄例外，§6.2）+ 积分只驻云端、设备无离线写队列（points 行，§5.4 / §6.2） | §6.2 / §5.4 |
 | NFR-SAFE-1 内容安全 | system prompt 简洁不啰嗦纪律（回合路由表承载，不设硬性句数上限；现行版本以 §5.5.5 现状指针为准）+ front 兜底文案与 V32 截断（超限按有处理的失败模式） | §5.1 front 组件 / §5.5.5 prompt 版本化 |
 | NFR-READ-1 1bpp CJK 下限 | `lv_font_conv` 生成 assets 分区 `.bin`，经 cbin 运行时装载；14px 下限已由九档真机对照实测，编译内 14px 字体兜底 | §5.5.3 字体管线 |
 
@@ -174,30 +175,36 @@
 | 应用主循环 | `application.cc` | WS 协议装载、OnIncomingJson 分发（tts/stt/llm/mcp/system）、主线程 Schedule 队列、OTA、abort 发送 |
 | **会话状态机** | `session_state_machine.cc` | 6 态（IDLE/LISTENING/THINKING/SPEAKING/MANUAL_RECORDING/ENDED）×11 事件（KEY_SHORT_PRESS/BOOT_SHORT_PRESS/END_INTENT/SESSION_TIMEOUT_60S/UTT_START/REPLY_READY/SPEAK_DONE/ABORT_SPEECH/THINKING_TIMEOUT_4S/START_RECORDING/STOP_RECORDING），表驱动纯逻辑、头注释自证「绝无真实 timer」。⚠️【修复项】`ses_machine_dispatch` 生产代码零调用——真机 60 秒自动关闭从未发生，Phase 1 接 timer 生产者（requirements §2.1 对账；录音态例外 = 不适用 60s 会话超时；自动收尾 = 网关侧卡壳引导 2 轮无回应——requirements v1.65 取代 v1.46「120s 自动收尾归档」口径） |
 | 设备状态机 | `device_state_machine.cc` | 小智原生态机（idle/connecting/listening/speaking…），`SetStatus` 仅映射三态——思考态不渲染【修复项，见 §5.5.4】 |
-| **渲染节点层** | `display/kidpal_render_node.cc` | 归一屏收口（唯一顶层屏）、页循环枚举 `HOME→CHAR→SCHEDULE→STORY`（注意：与 spec P1→P2→P3 页序漂移，撤 P4 后改 3 页【修复项】）、`cycle_next()` |
+| **渲染节点层** | `display/kidpal_render_node.cc` | 归一屏收口（唯一顶层屏）；主页面枚举统一为 `KP_PAGE_HOME → KP_PAGE_SCHEDULE → KP_PAGE_POINTS → KP_PAGE_STORY_COVER`，`KP_PAGE_COUNT=4`，`cycle_next()` 仅在这四个主页面间循环。故事列表/阅读/记录与积分详细账本是模块子页，不进入主页面取模序列；查字窗仍为覆盖窗。 |
 | **层栈** | `display/kidpal_layer.c` | 前台层栈单一权威：CHAT(1 常驻非栈)/LOCAL_PAGE(2)/VOICE(3)/SERVER_PAGE(4)/REMINDER(5)/PROVISION(6)，数值大者置前；push/pop/top 纯逻辑 host 可测。覆盖层 BOOT 隔离、提醒最高层、查字窗均落在本层栈语义上【BOOT 不翻页 dispatch 分流 = 修复项】 |
-| 页面组件 | `home_p1.c` / `schedule_page.c` / `story_page.c` / `char_page.cc` / `reminder_page.c` | 各页渲染与页内输入消费；story_page 含列表/阅读/录音（v1.65 增引导播报中子态）/整理过渡（v1.65 新增，契约 §1.4 `start_organizing` 触发）/盖章态；reminder_page 含设备侧四态（RECEIVED/QUEUED/RENDERED/ACKED） |
-| view 路由 | `display/view_router.c` | 7 view 白名单路由（text/home/control/char/schedule/story_list/story_text），UNKNOWN 拒绝 |
+| 页面组件 | `home_p1.c` / `schedule_page.c` / `points_page.c` / `story_page.c` / `story_cover.c` / `char_page.cc` / `reminder_page.c` | `points_page` 承载 P3 积分主页、详细账本、删除确认、分页游标与 RAM 缓存；`story_cover` 承载 P4 封皮；`story_page` 承载 P4 模块内列表/阅读/记录/整理/盖章及逐层返回；reminder 与 char 的覆盖层语义不变。 |
+| view 路由 | `display/view_router.c` | 9 view 白名单路由（text/home/control/char/schedule/story_list/story_text/points_home/points_ledger），UNKNOWN 拒绝；`story_list` 是 P4 模块共享数据帧，不再等同“切到列表”。 |
 | 板级层 | `boards/waveshare-s3-rlcd-4.2/` | CustomBoard 初始化序（I2C→codec→传感器→按键→LCD→art→渲染节点）；`custom_lcd_display.cc` 私有 RLCD 1bpp 驱动（非 esp_lcd 组件）；ADC 电池死成员【修复项：三处未接线，恒显满电】 |
-| 按键路由 | `key_gesture_parser.cc` + 板装配层 | 每键一个 parser 实例；dispatch 落在 iot_button 回调经 `key_route_global` **硬路由**产 GLOBAL_ACT_*（KEY CLICK=SESSION_TOGGLE / KEY LONG=HOME / BOOT CLICK=PAGE_NEXT / BOOT LONG=故事翻屏特例）。⚠️【修复项】全局硬路由不看当前层——「覆盖层 BOOT 不翻页」「KEY 长按返回上一层」「单双击消歧」等 Phase 1 键位改造落点（requirements §2.3 ⚠️ 对账） |
+| 按键路由 | `key_gesture_parser.cc` + 板装配层 + `keybar.c` | 以统一 `kidpal_page_id_t` 和子页状态分流，不再另维护一组平行数值。P3 主页 KEY 短按开会话、双击进详细，详细账本 BOOT 浏览/长按删除；P4 封皮 KEY 进列表，列表/阅读逐层返回。keybar 中槽恒为 4 点，P3 子页保持第 3 实心、P4 子页保持第 4 实心，覆盖层不显示页点。 |
 | 音频链路 | `audio/`（audio_service / codecs/box_audio_codec / processors/afe_audio_processor / wake_words/afe_wake_word / opus_*） | ES8311(出)+ES7210(入) 24kHz、AEC 参考信号、esp-sr ~2.2（AFE/WakeNet/VAD）、Opus 16k 上行 / 24k 下行 |
 | 协议层 | `protocols/websocket_protocol.cc` | NVS namespace "websocket"（url/token/version）读用；hello 协商（features: aec?/mcp:true，audio_params opus/16k/60ms）；BinaryProtocol3 二进制帧 |
-| MCP 工具面 | `mcp_server.cc` | `kidpal/display`（view+data → 0-6 路由 → 渲染节点 begin/end + cache_* 供 cycle_next）；`kidpal/alert`（alert 解析 → 四态入队 → 渲染 → `EmitRenderReceipt` 回执）；通用工具（音量 `self.audio_speaker.set_volume` / 亮度等）【音量语音调节的板端执行面落点，requirements v1.44】 |
+| MCP 工具面 | `mcp_server.cc` | `kidpal/display` 工具说明与路由扩至 9 view；积分权威帧只更新 RAM 缓存并按 `restore` 决定是否接管前台；删除账本分录经 §四 `kidpal_points_delete` 上行，分页经 `kidpal_points_page` 上行，均不走 MCP display 反向调用。 |
 | 资产 | `assets.cc` + `display/art_assets.c` | assets 分区 mmap + art SPIFFS 分区（`/art` VFS，KAP1 1bpp 美术），失败降级占位矩形 |
+
+会话语境映射单点仍由 application.cc 会话发起入口消费，但改由 `KP_PAGE_*` 符号与当前子页状态计算：HOME→`home`，SCHEDULE→`schedule`，POINTS 主页→`points_home`，POINTS 详细账本→`points_ledger`，STORY_COVER 封皮→`story_cover`，P4 故事列表→`story`。落地时把 `story_page.c:2285-2297` 的 `kidpal_story_ctx_source_page(int page)` 改为中性的 `kidpal_session_ctx_source_page(page, substate)`（可迁入中性模块），application.cc 单点同步传入两个维度；禁止只把 `case 2` 改成 `case 3`，也禁止以其它数字字面映射。未知或越界输入回退 `home` 并记日志，绝不能误回 `story`。`story` 只从 P4 故事列表产生记录语境，`points_*` 与 `story_cover` 均为普通问答语境，其中 points 由 front 注入账本摘要。P4 阅读、删除确认、整理过渡等需求未开放会话入口的状态不得发送 `kidpal_session_ctx`，不能借新映射额外开入口。
+
+`TECH-261022-p3-record-session-state-churn` 与本批共享 keybar/story_page 文件，K5 必须在其后串行对账，本批不重复承接该条目的会话状态改造。
 
 #### 5.1.2 服务端组件（server/）
 
 | 组件 | 文件 | 职责与现状 |
 |---|---|---|
-| **front 网关** | `server/gateway/front/front_app.py`（+ `server/gateway/` 冻结模块） | 唯一公网入口：TLS 终结（uvicorn ssl，自签 20 年证书）、HTTP upgrade 层强制鉴权（accept 之前，失败 403）、路由（GET /healthz、POST /command、POST /adaptation/dryrun、WS）、**ws 双泵**（上行透传；下行截获 `kidpal_display_blocks` 侧通道帧 → 机械校验 → 逐块 mcp 帧下发设备）、**故事面**（上行泵拦截 `kidpal_session_ctx`/`kidpal_story_delete`/`kidpal_story_discard` 整条消费不下透引擎；`source_page=story` 切记录语境对话态（v1.65 取代「累积态」）；stt 帧喂累积缓冲（只回显、不逐句进对话）+ 卡壳计时器族（每句讲完起计时〔阈值权威 = requirements NFR-PERF-3〕、接着说重置、计时到或明示卡壳词命中触发引导 LLM 回合 + `kidpal_speak` 注入播报〔ADR-003 同型〕，返回空/收声抑制 = 本轮不播报仍计轮，连续 2 轮无回应自动收尾）+ 记录语境等价信号注入引擎侧抑制 LLM（ADR-013）；收尾检出 → 下发 `start_organizing` → 一次性忠实整理 → 归档 + 下发 `story_text(seq)`；`story_list` 三时点自推〔① WS 建连恢复推送（`data.restore` 标记、只填缓存不抢前台——requirements v1.63 赎回，additive 字段已随契约门落（2026-10-12 human 批准，随 261010-p3-storylist-cold-start-restore 同批原子落），沿革与语义权威 = §5.2 场景④）② 归档后 ③ 删除后〕（沿革：建连即推曾于 260928-story-connect-push-defer 摘除）；relay 收紧引擎侧 `story_*` 块；卡壳计时 sweep（取代 120s 超时 sweep；pending-stop 挂起等转写窗口保留〔261001-m4-k3-story-archive-order〕）+ 引导/整理一次性 LLM 回合发起（机械触发归网关、语义生成在脑——ADR-002 混合分层同型，ADR-013））、提醒轮询循环；**引导 / 整理一次性 LLM 回合携 `user=<device_id>` 落同一设备 session 键族**（2026-10-24 R7/OQ-4；§6.7 按内容归属：孩子原话照常参与记忆，包装指令与模型回复的残余见该节残余申报）；**课表摘要注入**（会话建立时把 `schedule.py` 派生的课表文本经内部通道注入引擎，供动态 context 块消费——§5.2 场景②） |
+| **front 网关** | `server/gateway/front/front_app.py`（+ `server/gateway/` 冻结模块） | 唯一公网入口：TLS 终结（uvicorn ssl，自签 20 年证书）、HTTP upgrade 层强制鉴权（accept 之前，失败 403）、路由（GET /healthz、POST /command、POST /adaptation/dryrun、WS）、**ws 双泵**（上行透传；下行截获 `kidpal_display_blocks` 侧通道帧 → 机械校验 → 逐块 mcp 帧下发设备）、**故事面**（上行泵拦截 `kidpal_session_ctx`/`kidpal_story_delete`/`kidpal_story_discard` 整条消费不下透引擎；`source_page=story` 切记录语境对话态（v1.65 取代「累积态」）；stt 帧喂累积缓冲（只回显、不逐句进对话）+ 卡壳计时器族（每句讲完起计时〔阈值权威 = requirements NFR-PERF-3〕、接着说重置、计时到或明示卡壳词命中触发引导 LLM 回合 + `kidpal_speak` 注入播报〔ADR-003 同型〕，返回空/收声抑制 = 本轮不播报仍计轮，连续 2 轮无回应自动收尾）+ 记录语境等价信号注入引擎侧抑制 LLM（ADR-013）；收尾检出 → 下发 `start_organizing` → 一次性忠实整理 → 归档 + 下发 `story_text(seq)`；`story_list` 三时点自推〔① WS 建连恢复推送（`data.restore` 标记、只填缓存不抢前台——requirements v1.63 赎回，additive 字段已随契约门落（2026-10-12 human 批准，随 261010-p3-storylist-cold-start-restore 同批原子落），沿革与语义权威 = §5.2 场景④）② 归档后 ③ 删除后〕（沿革：建连即推曾于 260928-story-connect-push-defer 摘除）；relay 收紧引擎侧 `story_*` 块；卡壳计时 sweep（取代 120s 超时 sweep；pending-stop 挂起等转写窗口保留〔261001-m4-k3-story-archive-order〕）+ 引导/整理一次性 LLM 回合发起（机械触发归网关、语义生成在脑——ADR-002 混合分层同型，ADR-013））、提醒轮询循环；**引导 / 整理一次性 LLM 回合携 `user=<device_id>` 落同一设备 session 键族**（2026-10-24 R7/OQ-4；§6.7 按内容归属：孩子原话照常参与记忆，包装指令与模型回复的残余见该节残余申报）；**课表摘要注入**（会话建立时把 `schedule.py` 派生的课表文本经内部通道注入引擎，供动态 context 块消费——§5.2 场景②）；**积分面**：front 校验语音薄意图并为每次逻辑命令建立稳定 `command_id`，调用 points.py 执行后按真实结果答复与推送；QQ 侧由 front 观察 points.py 状态 `revision` 变化并推送同一权威视图。WS 建连、QQ 写入、删除与目标切换的积分推送均为恢复性数据更新，只填缓存不抢前台；设备主动语音记账/兑换成功或短窗去重命中时例外，主动展示积分主页。front 不做第二份余额算法，所有成功/拒绝均以 points.py 回执为准。 |
 | 鉴权 | `gateway/auth.py` | `authorize` 纯函数 + `secrets.compare_digest` 常时比较 + `TOKEN_MIN_CHARS=22`；token 来自 env，未设 = 拒绝服务，无 validation-mode 后门 |
-| display 校验 | `gateway/display_schema.py` | 7 view 白名单 + `MAX_DATA_BYTES=65536` + control 动作分表（拒转 `end_session`；放行 `stop_speaking`/`start_recording`）——display 契约的机械执行点（V27） |
+| display 校验 | `gateway/display_schema.py` | 9 view 白名单 + 积分 shape floor + 来源门禁。points_home/points_ledger 的完整载荷仅 front 自推可下发；引擎 display 流只能携带 `{}` 导航薄载荷。`add_points` / `redeem_points` 由 front 截获执行，引擎来源的同名列举不进入设备控制路由；front 自推的权威 points 帧走既有 self_push 通路。 |
 | mcp relay | `gateway/mcp_relay.py` | display/提醒统一 JSON-RPC `tools/call`（kidpal/display、kidpal/alert）；数字 id（时间戳+单调序号）；渲染回执消费 |
 | 兜底 | `gateway/fallback.py` | 4s 安抚定时器、错误兜底文案、V32 截断 |
 | provider 适配 | `gateway/provider.py` | OpenClaw/ASR/TTS 配置承载；`FEATURE_STREAMING_FORBIDS_MAX_TOKENS=true`（决策 18 硬约束） |
 | 课表解析 | `gateway/schedule.py` | B1 三区块 MD 纯解析（`parse_schedule_md`/`items_for_date`/`group_upcoming` 分组）——**唯一解析器**，openclaw-patch 复用不自建第二套 |
 | 故事归档 | `gateway/story.py` | `archive_story` 落盘 `<stories_dir>/<id>.md`（哨兵头 + kidpal-id/date/title）+ 持久流水号账本 `.seq.json`（`seq=max+1`、只增不减）；`list_stories` = 最新 ≤16 条窗口 + `total` 全量现存篇数；`story_text` = 三键 + 可选 `seq`（additive）；`delete_story` 硬删（哨兵头校验 + 越权/穿越拒绝 + 审计）；`is_finish_phrase` 收尾词检测 + 明示卡壳词表检测（同构子串扫描，词表 = 实现期可调常量）+ `StoryAccumulator` 卡壳计时与引导轮次纯决策（每句活动时刻重置计时、计时到 = 引导触发、连续 2 轮无回应 = 自动收尾、被抑制/返回空轮照常计轮——取代 `timed_out_sessions` 120s 纯静默决策；pending-stop 挂起窗口保留）+ 忠实整理输入装配（只取孩子的话；引导语与问答滤除） |
 | 提醒投递 | `gateway/reminders.py` | AlertDispatcher：每分钟轮询 pending.json → 到点推送 → 60s 超时重推 ×3 → 过期作废；`MAX_PENDING=64/MAX_TRACKED=256` |
+| **积分账本与目标配置** | `server/gateway/points.py` | 唯一确定性 writer。以进程间锁串行执行命令，在同一临界区内读取最新状态、校验、重算、原子替换并保存命令回执；余额与每条分录的变动前后余额全部由剩余分录派生。设备语音经 front API、QQ 经同模块 CLI 进入，两个入口共享全部不变量，不各写一套。 |
+| **QQ 积分 skill** | `server/deploy/openclaw-skills/workspace-main/kidpal-points-write/SKILL.md` | main agent 把家长自然语言整理成一次性可判命令后只调 points.py CLI，使用真实执行结果回复；不得直接编辑 `/opt/kidpal/points/`，不得写 schedule.md 或 workspace-kidpal 数据，不调用 `ask_user`。歧义命令用普通 QQ 文本报错并给可重述格式，删除以稳定记录 id 或最近列表序号定位。 |
 | **引擎部署副本补丁** | `server/deploy/engine-patch/`（connection.py 0.9.6 改 + kidpal_display_strip.py） | 官方镜像不动、bind-mount 原位覆盖容器内 `core/` 两文件：fence 状态机三态（normal/tag/fence，未闭合 fence 裸载荷进 blocks 绝不进 TTS「宁默不念 JSON」）；单一剥离点（TTS 流与全文共享状态机）；对话历史存剥离前原文；`kidpal_speak` 指令认领 → 复用引擎既有音频链出音（ADR-003）；**启动标记行 `kidpal display-strip patch active` = 补丁在位的唯一机械报警锚**；**动态 context 装配**（本回合时间 / 日期 + front 注入的课表摘要拼入每轮动态块，缓存边界之下、不含静态纪律） |
 | **OpenClaw 侧补丁** | `server/deploy/openclaw-patch/` | 提醒生产侧混合分层（ADR-002）：`reminder_schedule_lib.py` 确定性脚本（三档算术 20:30/07:45/前 15min + 幂等 id 确定性散列 ≤40 字符 + `pending.json` 原子写 + 坏输入降级）；语义判断 = agent 回合产 `semantic.json`（缺/坏降级机械兜底文案）；`char_stroke_lib.py` + `warm_char_cache.py`（9574 字缓存）；`make_openclaw_patch.py`（OpenClaw dist hold-and-replace 补丁，drift-guard） |
 | **记忆子系统（Honcho 自托管侧车）** | `server/deploy/honcho/**`（compose + 配置 + apply/rollback + 健康检查） | peer / session / message 存储、deriver 抽 observation、representation 生成、`before_prompt_build` 画像注入；五容器全部绑定 127.0.0.1（api 18100）；写入范围与残余见 §6.7；与引擎 / OpenClaw 同机共生、数据本机不出网 |
@@ -206,7 +213,7 @@
 
 #### 5.1.3 组件依赖方向
 
-设备协议层 ⇄ front（唯一对外面）；front → 引擎（明文 ws；服务端内部注入：`kidpal_speak` / 记录语境等价信号 / 课表摘要）→ OpenClaw（OpenAI 兼容；每轮 `user` 标识 + 本回合 + 动态 context 块）；front ↔ 提醒交接目录（pending.json/semantic.json）；openclaw-patch 脚本 ← 复用 gateway/schedule.py 解析器（单源）；设备渲染层 ← MCP 工具面注入（view 路由单向）。
+设备协议层 ⇄ front（唯一对外面）；front → 引擎（明文 ws；服务端内部注入：`kidpal_speak` / 记录语境等价信号 / 课表摘要）→ OpenClaw（OpenAI 兼容；每轮 `user` 标识 + 本回合 + 动态 context 块）；front ↔ 提醒交接目录（pending.json/semantic.json）；openclaw-patch 脚本 ← 复用 gateway/schedule.py 解析器（单源）；设备渲染层 ← MCP 工具面注入（view 路由单向）；front / QQ skill（kidpal-points-write）→ points.py（同一确定性执行器）→ /opt/kidpal/points/state.json 单向依赖，OpenClaw 主 agent 不直接持有状态写路径。
 
 ### 5.2 运行视图（关键场景端到端）
 
@@ -220,9 +227,17 @@
 
 **③ 查字**：同 ② 前半；OpenClaw 判查字意图 → `char_stroke_lib` 从 9574 字 `char_cache.json` hold-and-replace 组 D3 笔顺 JSON（逐笔念笔名 = OpenClaw 回复文本自由承载，requirements v1.55 恢复——2026-09-15 真机实证「勇」9 笔笔名几何对照零错误，试点期持续核错误率；若走权威笔名数据源需 D3 契约扩展，届时契约门）→ `view=char` 覆盖窗（驻留到按键或 5 分钟无操作；**弹窗即静态显示整字、笔顺演示由 KEY 短按起播（再按 = 重播）**、长按关窗；BOOT 关窗回原页不翻页；播完会话即结束不回聆听态——requirements v1.36/v1.37/v1.43/v1.59 口径）。2026-09-15 真机复验：全链恢复可跑（语音应答→窗开 ~21.6s，5 秒档优化归 Phase 1）；板端两缺陷定位 = LVGL 任务栈溢出（已验证修复方向）+ SVG 解析器缺 C 命令（见 §8 风险债 5）。
 
-**④ 记录归档**（对话式引导记录——requirements v1.65 / `261019-p3-record-dialogue-guide` 重写，取代旧「累积转写」链路；决策本体 = ADR-013）：触发词（「我要讲故事」/「帮我记下来」）或 P3 会话上下文信号（设备告知「会话发起自 P3」，网关会话建立即切**记录语境对话态**——requirements v1.65 取代 v1.32「累积态」；信号载体 = 契约 §四 `kidpal_session_ctx`——**front 上行泵整条拦截消费、无论取值、引擎不感知本消息**，TLS 之后不下透）→ 聆听产逐句 stt（D3-甲聆听形态，manual 模式作废——manual 模式 ASR 在 listen stop 才触发、录音期间产不出 stt，收尾词前置检测与卡壳引导物理不可能，261001 q8 真机复核）+ front 旁路累积（stt 帧喂入会话记录缓冲、右区回显照旧，AI 不逐句回复）+ **引擎侧抑制 LLM**（261001 Package B 定形：记录语境期间引擎不对 stt 跑 LLM 回合——human 261001 触点①裁读法乙「全程无 LLM 回合」；front 截不住引擎→OpenClaw 的 loopback 直达调用，抑制必须在引擎侧：front 经既有内部注入通道向引擎注入等价记录语境信号〔ADR-003 `kidpal_speak` 同型先例、引擎补丁认领〕使引擎侧跳过 LLM 派发；front↔引擎为服务端内部链路、信号形状不入契约）→ **卡壳轻引导**（每句讲完起卡壳计时——阈值权威 = requirements NFR-PERF-3〔待定、真机调优后立项拍数〕；孩子接着说即重置；计时到或明示卡壳词命中——检出器 = 关键词表子串扫描、`is_finish_phrase` 同构——→ front 把目前累积的孩子的话发一次性引导 LLM 回合〔引导指令：只基于已讲内容提问、不提供情节选项、不代编情节；**可返回空 = 本轮不引导但轮次照计**——孩子说「别说话听我讲」的收声抑制同此形态，收声不停摆〕→ 轻引导一句 → `kidpal_speak` 注入播报〔ADR-003 既有音频链〕→ 继续聆听；设备停留记录屏不跳页、引导播报中 KEY 短按 = 打断引导继续聆听）→ **收尾三式**（front 机械扫描 stt 文本命中收尾词「我说完了/讲完啦/说完了」（「说完了」v1.66 并入，与 requirements v1.66 同批）/ 再按 KEY（listen-stop）/ **连续 2 轮引导无回应自动收尾**〔取代 120s 无语音超时 sweep；轮次含被抑制与返回空的不播报轮——收声不停摆〕；三式皆走正常归档、不丢弃）→ 下发 `start_organizing`（契约 §1.4 新增控制动作：设备切整理过渡演出、整理中 KEY/BOOT 均不响应；三式统一下发、重复幂等）→ **忠实整理**（全程孩子的话一次性发 LLM〔忠实整理指令：只用孩子原话与事实，去口水词、断句、分段、起标题〔≤12 字口径不变、随整合同一回合产出〕，不换表达、不补情节；引导语、孩子中途提问与 AI 回答滤除不进素材〕；KEY 路径沿 pending-stop 挂起窗口等迟到转写〔261001-m4-k3-story-archive-order 既有机制保留〕）→ `story.py` 归档（**持久流水号账本 `<stories_dir>/.seq.json`** 分配 `seq=max+1`、只增不减——同 id 重写不变、删除不回退、重启存活、账本缺失/损坏重建不回退 + 告警）→ `story_text`（**携带 `data.seq`**）下发渲染（离整理过渡态）+ 盖章演出（N = 入册流水号只增不减）。引导/整理指令载体 = **front 侧版本化 prompt 制品**（独立一次性 LLM 回合、不走 OpenClaw 主 agent 共享 system prompt——**不触 §5.5.5**；接线不变式沿 ADR-001 三面相等，制品随实现包落）；整理/引导链路失败 = **当轮素材不归档**（孩子已讲内容不写成故事、不分配 seq——丢稿口径显式化；失败态素材保全取舍设计稿与 v1.65 均未覆盖，归 §6 留根、不发明新需求语义）+ §6.3 固定安抚句 + text 视图结束当轮（自然离整理过渡态）。卡壳引导与忠实整理 = front 承载计时/计数/触发与指令装配（机械层）+ 脑侧一次性 LLM 回合生成（语义层）——ADR-002 混合分层同型，§2.4 原则 3 注记。**story_list = front 机械 producer 推送（三时点）**（① WS 建连恢复推送 + ② 归档成功后 + ③ 删除执行后。时点① = **恢复性推送**——requirements v1.63 赎回 260928 挂起的重裁：WS 建连时附带重推 story_list，载荷带 `data.restore` 标记（wire 载体 = 契约 §1.3③ story_list 的 additive 字段，**已随契约门落地（2026-10-12 human 批准，随 261010-p3-storylist-cold-start-restore 同批原子落）**，复刻 §1.3② P2 周网格 ADR-005 先例），设备只填 RAM 列表缓存、不接管前台，P3 在屏时仅重绘本页。沿革：「WS 建连即推」曾于 260928-story-connect-push-defer 摘除——真机拓扑下设备每会话重开 WS，建连即推会在每次按 KEY 时给设备打 story_list 帧、旧固件无条件渲染 P3 页盖掉聆听态〔story_page 零 CJK → 半截页〕；本次回归以 restore 标记 + 只填缓存不抢前台消解该缺陷的复现路径（实现 = front 建连恢复推送 + 板端 restore 分流，归 261010-p3-storylist-cold-start-restore 包）；`items` = 最新 ≤16 条窗口、`total` = 全量现存篇数，二者独立、`items.length` 不顶替 `total`；推送未达期间翻到 P3 = 数据未达空态（requirements S-F2.1 AC6，不显计数））——推送触发属行为策略（不进契约）；**引擎侧来源的 `story_*` display 块经 front relay 收紧降级**（story 数据单源 = front 机械推送）。**丢弃** = 取消链显式化（2026-10-21，`261021-p3-record-cancel-lifecycle`）：记录会话中按 BOOT 丢弃（requirements S-F2.2 AC4「取消、已录内容丢弃退回列表——不设重录恢复」）→ 设备于关闭音频通道前同连接先行发送契约 §四 `kidpal_story_discard`（端→网关单向；网关按本连接 session_id 权威取消、不信载荷值）→ front 取消该记录会话（累积缓冲销毁、素材不入册、不触发归档与 `story_list` 重推、在途引导/整理产出丢弃，幂等 + 审计日志）；断连隐式取消（cancel-on-disconnect）维持为兜底通道（human 2026-10-21 裁维持，spine q2）。**删除** = 契约 §四 `kidpal_story_delete`（端→网关单向）→ front `story.py::delete_story` **硬删** MD（哨兵头校验 + 路径穿越/无哨兵头拒绝 + 审计日志留痕）→ 重推 `story_list` 对账（`total` −1 可见 = 隐式 ack 载体；seq 不回退）。误判兜底见 §10 决策 25 取代注记与 requirements v1.47/v1.49 修订；「刚才那段是故事」挽回口径在记录语境对话态内不再需要（闲聊语境、其他页保留——requirements v1.65 S-F2.2 补充规则）。
+**④ 记录归档**（对话式引导记录——requirements v1.65 / `261019-p3-record-dialogue-guide` 重写，取代旧「累积转写」链路；决策本体 = ADR-013）：触发词（「我要讲故事」/「帮我记下来」）或 P3 会话上下文信号（设备告知「会话发起自 P3」，网关会话建立即切**记录语境对话态**——requirements v1.65 取代 v1.32「累积态」；信号载体 = 契约 §四 `kidpal_session_ctx`——**front 上行泵整条拦截消费、无论取值、引擎不感知本消息**，TLS 之后不下透）→ 聆听产逐句 stt（D3-甲聆听形态，manual 模式作废——manual 模式 ASR 在 listen stop 才触发、录音期间产不出 stt，收尾词前置检测与卡壳引导物理不可能，261001 q8 真机复核）+ front 旁路累积（stt 帧喂入会话记录缓冲、右区回显照旧，AI 不逐句回复）+ **引擎侧抑制 LLM**（261001 Package B 定形：记录语境期间引擎不对 stt 跑 LLM 回合——human 261001 触点①裁读法乙「全程无 LLM 回合」；front 截不住引擎→OpenClaw 的 loopback 直达调用，抑制必须在引擎侧：front 经既有内部注入通道向引擎注入等价记录语境信号〔ADR-003 `kidpal_speak` 同型先例、引擎补丁认领〕使引擎侧跳过 LLM 派发；front↔引擎为服务端内部链路、信号形状不入契约）→ **卡壳轻引导**（每句讲完起卡壳计时——阈值权威 = requirements NFR-PERF-3〔待定、真机调优后立项拍数〕；孩子接着说即重置；计时到或明示卡壳词命中——检出器 = 关键词表子串扫描、`is_finish_phrase` 同构——→ front 把目前累积的孩子的话发一次性引导 LLM 回合〔引导指令：只基于已讲内容提问、不提供情节选项、不代编情节；**可返回空 = 本轮不引导但轮次照计**——孩子说「别说话听我讲」的收声抑制同此形态，收声不停摆〕→ 轻引导一句 → `kidpal_speak` 注入播报〔ADR-003 既有音频链〕→ 继续聆听；设备停留记录屏不跳页、引导播报中 KEY 短按 = 打断引导继续聆听）→ **收尾三式**（front 机械扫描 stt 文本命中收尾词「我说完了/讲完啦/说完了」（「说完了」v1.66 并入，与 requirements v1.66 同批）/ 再按 KEY（listen-stop）/ **连续 2 轮引导无回应自动收尾**〔取代 120s 无语音超时 sweep；轮次含被抑制与返回空的不播报轮——收声不停摆〕；三式皆走正常归档、不丢弃）→ 下发 `start_organizing`（契约 §1.4 新增控制动作：设备切整理过渡演出、整理中 KEY/BOOT 均不响应；三式统一下发、重复幂等）→ **忠实整理**（全程孩子的话一次性发 LLM〔忠实整理指令：只用孩子原话与事实，去口水词、断句、分段、起标题〔≤12 字口径不变、随整合同一回合产出〕，不换表达、不补情节；引导语、孩子中途提问与 AI 回答滤除不进素材〕；KEY 路径沿 pending-stop 挂起窗口等迟到转写〔261001-m4-k3-story-archive-order 既有机制保留〕）→ `story.py` 归档（**持久流水号账本 `<stories_dir>/.seq.json`** 分配 `seq=max+1`、只增不减——同 id 重写不变、删除不回退、重启存活、账本缺失/损坏重建不回退 + 告警）→ `story_text`（**携带 `data.seq`**）下发渲染（离整理过渡态）+ 盖章演出（N = 入册流水号只增不减）。引导/整理指令载体 = **front 侧版本化 prompt 制品**（独立一次性 LLM 回合、不走 OpenClaw 主 agent 共享 system prompt——**不触 §5.5.5**；接线不变式沿 ADR-001 三面相等，制品随实现包落）；整理/引导链路失败 = **当轮素材不归档**（孩子已讲内容不写成故事、不分配 seq——丢稿口径显式化；失败态素材保全取舍设计稿与 v1.65 均未覆盖，归 §6 留根、不发明新需求语义）+ §6.3 固定安抚句 + text 视图结束当轮（自然离整理过渡态）。卡壳引导与忠实整理 = front 承载计时/计数/触发与指令装配（机械层）+ 脑侧一次性 LLM 回合生成（语义层）——ADR-002 混合分层同型，§2.4 原则 3 注记。**story_list = P4 模块共享数据帧**。front 的所有后台恢复/对账推送（含 WS 建连、记录语境建立、归档成功后和删除执行后）均以 `data.restore:true` 推送，只更新封皮与列表共用的 RAM 缓存、不接管前台；封皮与列表都以 `total` 渲染现存篇数，不另造故事计数源。孩子明确说「打开故事」时，OpenClaw 只发 `story_list` 空 data 导航薄载荷，front 展开完整载荷且不带 restore，设备据此进入 P4 封皮而非跳过封皮进列表。归档后的盖章与返回列表由 story_text/本地模块状态承接，不再靠 story_list 主动抢前台。`items` 仍是最新 ≤16 条窗口，`total` 仍是全量现存篇数；窗口外旧条目的既有边界不因本批扩张。front 原“relay 收紧 story_* 块”句相应收窄：story_list 仅空 data 导航薄载荷可由 front 截获展开，非空 story_list 与任意 story_text 的引擎来源仍拒转。推送触发属行为策略（不进契约）；**引擎侧来源的 `story_*` display 块经 front relay 收紧降级**（story 数据单源 = front 机械推送）。**丢弃** = 取消链显式化（2026-10-21，`261021-p3-record-cancel-lifecycle`）：记录会话中按 BOOT 丢弃（requirements S-F2.2 AC4「取消、已录内容丢弃退回列表——不设重录恢复」）→ 设备于关闭音频通道前同连接先行发送契约 §四 `kidpal_story_discard`（端→网关单向；网关按本连接 session_id 权威取消、不信载荷值）→ front 取消该记录会话（累积缓冲销毁、素材不入册、不触发归档与 `story_list` 重推、在途引导/整理产出丢弃，幂等 + 审计日志）；断连隐式取消（cancel-on-disconnect）维持为兜底通道（human 2026-10-21 裁维持，spine q2）。**删除** = 契约 §四 `kidpal_story_delete`（端→网关单向）→ front `story.py::delete_story` **硬删** MD（哨兵头校验 + 路径穿越/无哨兵头拒绝 + 审计日志留痕）→ 重推 `story_list` 对账（`total` −1 可见 = 隐式 ack 载体；seq 不回退）。误判兜底见 §10 决策 25 取代注记与 requirements v1.47/v1.49 修订；「刚才那段是故事」挽回口径在记录语境对话态内不再需要（闲聊语境、其他页保留——requirements v1.65 S-F2.2 补充规则）。
 
 **⑤ 提醒推送**：OpenClaw cron 每 15 分钟跑 `reminder_schedule_lib.py` 重算三档（QQ 录入后即时再跑）→ `pending.json` 原子写 → front 每分钟轮询 → AlertDispatcher 到点推送 `mcp kidpal/alert`（载荷带 speech 字段）→ 设备四态入队 → 渲染即回执（出队依据；同 id 接收即入集去重）→ 语音出音 = front 注入 `{"type":"kidpal_speak"}` → 引擎认领转调既有 `speak_txt`（edge-tts + Opus 下行链，ADR-003；不自建合成/不注入二进制音频帧）。超时 60s 重推 ×3，过期作废；录音态期间提醒排队延后（requirements v1.46）。
+
+**⑥ 积分记账、查账与更正**：
+A. 设备语音：设备在积分主页/详细账本发起会话时先送 `kidpal_session_ctx`（points_home / points_ledger，详细账本可带 selected_id）→ front 从 points.py 取当前余额、激活目标与被选分录，经既有内部注入通道形成有界账本摘要 → ASR/OpenClaw 只产 add_points / redeem_points 薄意图 → front 校验并生成稳定 command_id → points.py 串行执行 → front 按真实回执播报结果并推送 points_home。成功或短窗去重命中时该主动语音路径展示 P3 积分主页；不完整句不产动作、只走普通对话。
+B. QQ：main agent 经 kidpal-points-write 把每条家长消息整理为一次性可判命令并调 points.py CLI → 同一执行器返回成功或普通文本可转述的错误 → front 发现 revision 变化后推送 points_home（以及删除时的 points_ledger 首页）restore 载荷。设备在其他页不抢前台，积分页在屏时原地刷新。任何路径不得调用 ask_user。
+C. 冷启动与完整账本：WS 建连时 front 推送 points_home 和 points_ledger 首页 restore 载荷。KEY 双击或「打开详细账本」时设备发 kidpal_points_page 首页请求，front 回首页帧并进入 P3 详细账本；后续翻屏发 next_cursor，front 以 keyset 游标回下一页 restore 载荷。revision 不一致或游标失效时回最新首页并令设备清空旧分页缓存，不静默拼接不同版本。
+D. 删除：设备整屏确认后发送 kidpal_points_delete(id) → points.py 删除该分录、重算全部余额与变动前后余额 → front 重推 points_home 与 points_ledger 首页 restore 对账。重复/已不存在 id 幂等 no-op 仍重推；非法 id 拒绝并审计。QQ 删除走同一执行器。
+E. 目标配置：QQ 新增/切换/删除自定义目标均走 points.py。预置场景不可删，激活中的自定义目标不可删，必须先切换；自定义分值只接受 5–200 正整数。切目标只改激活配置，不自动产生兑换分录，历史兑换名目保持原快照。
+断网或云端不可达时设备写操作给可见失败且不本地排队；QQ 消息无法到达云端时同样失败，不由模型假报成功。句式不完整不执行；兑换分值不等于当前激活目标或余额不足时拒绝且不写账；同一 `command_id` 重放返回首次结果、不新增分录；短窗语义去重命中不新增分录但按 S-F6.3 AC5 回应并跳积分页；持久化失败不得推送“成功”视图。QQ 歧义只普通报错，绝不挂起等多轮澄清。
 
 ### 5.3 部署视图（跑在哪、怎么运维）
 
@@ -249,7 +264,7 @@
 | 引擎服务 | `xiaozhi-container.service` → docker compose（`xiaozhi-esp32-server`，官方镜像 6.9GB，`network_mode: host`） | 自绑 `127.0.0.1:8010` 明文 ws（不外露）；`data/.config.yaml` overlay + models 卷；engine-patch 两文件 bind-mount 覆盖 `core/` |
 | 编排大脑 | OpenClaw（宿主进程） | `18789` 锁 loopback（gateway.bind=loopback，部署期断言）；容器经真 loopback 访问 |
 | 记忆子系统 | Honcho 自托管栈（`server/deploy/honcho/**` 声明 → ECS `/opt/honcho` compose；五容器） | api `127.0.0.1:18100` 全 loopback（端口探针纳入 §5.3.3 部署后核验）；postgres + pgvector 落本机持久卷；资源基线 = ECS 2C/4G（2026-10-22 升级后基线；prep 税 / 内存压力 P3 后复测，TECH-261022-openclaw-prep-tax-memory-pressure） |
-| 交接目录 | `/opt/kidpal/alerts/`（pending.json + semantic.json）、`/opt/kidpal/stories/` | 同机文件交接，front 与 OpenClaw 共享 |
+| 交接目录 | `/opt/kidpal/alerts/`（pending.json + semantic.json）、`/opt/kidpal/stories/`、`/opt/kidpal/points/`（state.json + .lock，points.py 单 writer） | 同机文件交接，front 与 OpenClaw 共享 |
 | 配置与密钥 | `provider.config.yaml`（渲染源）→ `data/.config.yaml`（overlay 渲染产物）；`secrets.env` chmod 600（仓库只有 `.example`） | 引擎 `server.auth: false`（鉴权唯一权威在 front，260911 裁）；token ≥22 字符否则拒绝渲染 |
 | 历史单 | `xiaozhi-gateway.service`（legacy）、`kidpal-shim.service`（已退役） | shim 8080 已停；公网探针实证 8080 不可达、8000 唯一入口（260903 实证） |
 
@@ -271,10 +286,13 @@
 | 课表 `schedule.md` | OpenClaw workspace `/root/.openclaw/workspace/kidpal/` | OpenClaw（QQ 录入改写）/ 家长直改 | 持久；过期一次性安排查询时过滤、不归档 | 云端持久 | 契约 B1 |
 | 故事 `stories/<id>.md` | `/opt/kidpal/stories/` | front `story.py` 归档 | 持久；删除 = 云端同步**硬删** MD（requirements v1.47；**链路载体 = 契约 §四 `kidpal_story_delete`**，2026-09-24 已 LANDED） | 云端持久 | 契约 §1.3③ story_list / §1.3④ story_text |
 | 入册流水号账本 `.seq.json` | `/opt/kidpal/stories/.seq.json` | front `story.py`（原子写、单写者） | 持久；**只增不减**（删除不回退、同 id 重写不变、重启存活；缺失/损坏则从现存文件重建 + 告警、不倒退） | 云端持久 | 契约 §1.3④（`seq` 语义）/ ADR-007 |
+| 积分账本与目标配置 `points/state.json` | `/opt/kidpal/points/` | 仅 `points.py`（front API 与 QQ CLI 共用） | 云端持久；保存分录、激活目标、自定义目标、revision 与命令回执；预置四场景为实现内不可删常量，出厂激活游乐场 40 | 云端唯一真相源 | requirements F6；端云显示形状 = 契约 §1.3⑦⑧ |
+| 积分写入互斥 `.lock` | `/opt/kidpal/points/` | `points.py` 进程间锁 | 仅执行期同步原语，不是业务事实源 | 不作为余额或配置来源 | §6.5 积分段 |
 | 提醒 `alerts/pending.json` + `semantic.json` | `/opt/kidpal/alerts/` | 脚本（原子写）/ agent | 到点作废、过期不补发 | 云端可失（cron 重算再生） | §5.2 场景⑤ |
 | 字库 `chardata/` + `char_cache.json` | OpenClaw workspace | `warm_char_cache.py` 生成 | 静态 | 云端持久 | 契约 D3 |
 | 设备凭证（url/token/version） | 设备 NVS namespace "websocket" | 配网写入（token=24B CSPRNG） | 持久 | 掉电保持 | 介质禁令白名单（决策 24） |
 | 板端业务/状态（提醒 id 集合、渲染缓冲、层栈、会话态） | 设备 RAM | 固件 | 会话期 | **掉电即失、禁落非易失介质** | 决策 24 |
+| 积分渲染缓存 | 设备 RAM | 固件 | 缓存 points_home、已取账本页、revision、游标与当前选中 id；掉电即失，禁止写 NVS/SD | 重启后靠恢复推送和按需分页重建 | 契约 §1.3⑦⑧ / §四 |
 | story 正文本地副本（**只读镜像**） | 设备 SD 卡 `/sdcard/story/` | 固件（云端 story 归档为唯一真相源，板端不承载任何写入） | 持久（随卡；卡可换） | 掉电保持 | **决策 24 carve-out**（261016-p3-story-body-sd-cache，只读镜像例外，见 §6.2）／契约 §1.3④ story_text |
 | 设备诊断日志 `logs/KPLOGnnn.TXT` | 设备 SD 卡 `/sdcard/logs/` | 固件诊断日志写盘任务（`esp_log_set_vprintf` 钩子 → PSRAM 环形缓冲 → 低优先级批量刷盘；单写者） | 常开；有界轮转（512KB × 32 个，目录总量 16MB 封顶、覆盖最旧） | 掉电保持（随卡；卡可拔可换、可删除） | 决策 24 白名单增列（261018-sd-log-persist，见 §6.6）／板端自定义明文行格式（非端云数据格式，无契约权威；含 STT / LLM 对话原文，见决策 24 注记） |
 | 1bpp 美术/字体/提示音 | 设备 art+assets 分区 | 资产管线（构建期） | 静态 | 随固件面 | §5.5.2 |
@@ -282,6 +300,8 @@
 | 对话历史（剥离前原文，引擎本地副本） | 引擎容器内存 | 引擎 | 连接期；**本地非权威副本、不向 OpenClaw 重放**（ADR-015） | 掉电即失 | — |
 | 记忆·会话消息（peer / session / message） | Honcho postgres（ECS 本机；pgvector 向量列） | OpenClaw Honcho 插件（每轮 persist；写入范围与残余见 §6.7） | 持久；删除 = 运维手工（NFR-PRIV-1） | 云端持久 | Honcho 内部 schema（非契约） |
 | 记忆·画像（observation / representation） | 同上 | Honcho deriver（LLM 抽取）→ representation | 持久、随抽取滚动更新；删除同上 | 云端持久 | 语义权威 = requirements NFR-PRIV-1；形状非契约 |
+
+`points/state.json` 的内部存储结构由 points.py 单源拥有，不在端云契约复制一份。逻辑事实包括：稳定分录 id、带正负号的 delta、事由、发生时间、变动前后余额、产生通道与 command_id；激活目标 id、自定义目标、revision 和命令回执。余额恒为剩余分录 delta 之和；每次删除后按时间顺序重算所有后续分录的 balance_before/balance_after。预置目标删除拒绝，激活自定义目标删除拒绝，目标切换不改历史分录。
 
 ### 5.5 开发视图（怎么造、怎么验）
 
@@ -294,7 +314,7 @@
 
 #### 5.5.2 资产管线（预栅格化 1bpp）
 
-设计稿 HTML 内嵌 SVG 为唯一母版 → 脚本抽取 symbol → 栅格化 → **RGB565 `.bin`**（I1 索引仅留真机 bin-decoder 优化项，可回收 16 倍空间）→ SPIFFS art 分区；模拟器同批资产双端渲染。管线三坑已修：透明 SVG 先 flatten(#ffffff) 再阈值化；libvips 不解析多层 `<use href>`；`<text>` 依赖运行环境字体（真机须以实际字体子集重烘）。⚠️ 预算口径 = 策略笔记实测于 art 切分前（47 资产 599,698B + P2–P4 估算 ≈3.85MB vs assets 8MB、余量 54.1%）；现分区为 art 512KB（KAP1 美术）+ assets 8MB 双分区（§5.5.6），47 项资产的实际落位与 P4 笔顺字盘（~3.1MB）装载目标须在 Phase 1 资产装载时复核。PSRAM 预算：LVGL draw buffer 240KB + RLCD 帧缓冲 15KB + 两张 LUT 360KB；ThorVG sdkconfig 默认关——预栅格化是复杂图形唯一低成本路径。详见 [notes/ui-implementation-strategy.md](notes/ui-implementation-strategy.md)。**字体预算注记（`261028-font-typography-scaleup`，2026-10-28）**：本批新增 16px 正文与 20px 阅读标题两枚全量 CJK `.bin` 计入 assets 8MB 分区预算，不占 ota_0 / ota_1；assets 起草期实测余量 5,597,745B（约 5.34MiB，见 ADR-017），两枚新字体的实际尺寸由 P0 资产生成后复测，分区表不因本批重排。
+设计稿 HTML 内嵌 SVG 为唯一母版 → 脚本抽取 symbol → 栅格化 → **RGB565 `.bin`**（I1 索引仅留真机 bin-decoder 优化项，可回收 16 倍空间）→ SPIFFS art 分区；模拟器同批资产双端渲染。管线三坑已修：透明 SVG 先 flatten(#ffffff) 再阈值化；libvips 不解析多层 `<use href>`；`<text>` 依赖运行环境字体（真机须以实际字体子集重烘）。⚠️ 预算口径 = 策略笔记实测于 art 切分前（47 资产 599,698B + P2–P4 估算 ≈3.85MB vs assets 8MB、余量 54.1%）；现分区为 art 512KB（KAP1 美术）+ assets 8MB 双分区（§5.5.6），47 项资产的实际落位与 P4 笔顺字盘（~3.1MB）装载目标须在 Phase 1 资产装载时复核。PSRAM 预算：LVGL draw buffer 240KB + RLCD 帧缓冲 15KB + 两张 LUT 360KB；ThorVG sdkconfig 默认关——预栅格化是复杂图形唯一低成本路径。详见 [notes/ui-implementation-strategy.md](notes/ui-implementation-strategy.md)。**字体预算注记（`261028-font-typography-scaleup`，2026-10-28）**：本批新增 16px 正文与 20px 阅读标题两枚全量 CJK `.bin` 计入 assets 8MB 分区预算，不占 ota_0 / ota_1；assets 起草期实测余量 5,597,745B（约 5.34MiB，见 ADR-017），两枚新字体的实际尺寸由 P0 资产生成后复测，分区表不因本批重排。**积分与封皮资产登记（261103-star-points-story-cover）**：书封与大星徽 `ic-coin`、四预置场景 `sc-choco`（巧克力 20）/ `sc-movie`（看电影 30）/ `sc-wheel`（游乐场 40）/ `sc-gift`（礼物 50）和自定义通用旗标 `sc-flag` 均复用 §5.5.2 预栅格化管线；`pt-cat` 复用母版头部资产，不另造吉祥物。目标配置只存上述稳定资产标识，设备不根据奖励名猜图。字体现有 16px 正文、20px 标题与 14px 键帽档足够，本批不新增字体或分区。
 
 #### 5.5.3 字体管线
 
@@ -311,6 +331,7 @@ NFR-READ-1 的 14px 下限已由 2026-09-15 九档真机对照实测定案，并
 - **查字窗**（v1.36 改窗）：宿主常驻页改覆盖窗，渲染资产全复用；【修复项】`canvas-p4`→`char-window` 锚改名、进度珠死成员清理、当前笔白衬边已实现（小手占位删）、部首行装配未上屏须补；
 - **底部键帽条**：条体已常驻（基座 screen 所有），内部仅单个居中 label——三槽布局/页点/键帽图形【修复项】；
 - **首页辅助条**：联网图标链路已实现（断网 WiFi-slash + 强/中/弱三档）；电量【修复项】见 §5.3.1。
+- **积分与封皮 UI 态**：`points-home` 含正常、空账、数据未达、负余额四态；`points-ledger` 为全量可及的分屏列表，`points-delete-confirm` 复用故事删除确认同族覆盖层；`story-cover` 为 P4 模块入口。布局坐标与 1bpp 形态只指 UI-DESIGN-VERSIONS current 对应的 v9 / V9 帧，不在本文件复制像素。数据未达不是“空账”：前者没有权威帧、不得显示余额或进度线，后者已收到 `balance=0, recent=[]` 的权威帧并照常画目标。
 
 #### 5.5.5 OpenClaw prompt 承载与版本化（静态 / 动态两件）
 
@@ -321,6 +342,8 @@ NFR-READ-1 的 14px 下限已由 2026-09-15 九档真机对照实测定案，并
 **承载不变式（ADR-001 重定义，`261022-device-memory-prompt-overhaul`）**：① **静态面**：渲染面（live workspace `AGENTS.md`）== 声明面（`OPENCLAW_SYSTEM_PROMPT_CARRIER` + `provider.config.yaml` 静态承载三键，键形归 P1 实现）== 被测面（探针直接读同一 `AGENTS.md`）；② **动态面**：渲染面（`.config.yaml` `prompt:` 值）== 声明面（`provider.config.yaml` 动态模板三键）== 被测面（探针请求同源）。守卫从结构化指向解析当前承载（版本无关），集合相等照 ADR-001 本体两原则执行；ADR-001 的「版本化部署制品」实例枚举由本批重定义收窄为上述两面（ADR-014 记载 amend，不覆盖其决策本体）。
 
 **OQ-8 裁定（2026-10-22，本批）**：**否决「v12 双件」**——v12 与 `AGENTS.md` 同载静态语义 = 两处事实源，ADR-001 的三面相等会退化为「三面同指一版 + 一个影子副本」。**「单一事实源」原则采纳，落点 = 现有 prompt 资产家**：静态语义唯一件 = `openclaw-agents/workspace-kidpal/AGENTS.md`（原地）；动态模板与 carrier 留在 `server/deploy/` 现址（`kidpal-dynamic-context.v1.txt` / `OPENCLAW_SYSTEM_PROMPT_CARRIER`）。**不新建 `server/deploy/prompts/` 平行目录**——现成 `openclaw-agents/` 家仍在（`AGENTS.md`、README、历史版本文件），新造平行目录会产生「两个 prompt 家」的新歧义；搬家本身不产生单源语义收益，只增加 manifest / deploy / verify / README 四处路径改写与冻结验收测试 corpus 迁移的漂移面。目录归纳如确需，另立纯搬迁批，不阻塞本列车。
+
+**积分静态语义**：workspace-kidpal/AGENTS.md 的 view 白名单由七选一改九选一，新增积分回合与 points_home / points_ledger 导航薄载荷、add_points / redeem_points 两类薄意图。模型不得生成余额、目标分值权威值、分录 id、变动前后余额、revision、游标、资产标识或成功回执；只说中性承接语，实际结果由 front 播报。完整句式缺少事由/动作/分值时不产动作，兑换不产目标 id。main workspace 的新 QQ skill 同样只调确定性 CLI，并显式禁止 ask_user 与直接文件写入。上述内容仍由 §5.5.5 的静态单源和部署三面相等承载，不放入动态 context，不新建 prompt 家。
 
 #### 5.5.6 构建与测试基建
 
@@ -339,7 +362,7 @@ NFR-READ-1 的 14px 下限已由 2026-09-15 九档真机对照实测定案，并
 **在哪侧：front（唯一权威）。** TLS 终结（自签 RSA-3072，≥10 年门槛、实配 20 年）+ HTTP upgrade 层 accept 之前强制 token（常时比较、≥22 字符、未设拒服务、无 validation-mode 后门）+ OpenClaw 18789 锁 loopback（部署期断言）。引擎层 `auth: false`——HMAC 与小智引擎不相容，260911 裁静态 token 强制点唯一钉在 front。设备 token = 全设备共享单 token（MVP 单设备；已知取舍：无每设备身份、单点泄露危及全部）。CA 嵌入固件实现面 = dev-loop handoff V10；轮换脚本 + 到期告警在位（§5.3.3）。
 
 ### 6.2 离线边界与介质禁令
-**在哪侧：设备（禁令）+ 云（真相源）。** 断网仅本地时间/温湿度/电量；无提醒、课表/查字/问答不可用；不缓存任何事项。（「不缓存」禁的是落非易失介质的持久层；板端 RAM 渲染缓冲——P2 网格缓存、P1 seam——掉电即失，不在禁列，见 §5.4 板端状态行。）板端非易失介质白名单 = 设备凭证（url/token/version）+ 预栅格化资产与字体 + 固件本体；一切业务/身份/事项状态只驻 RAM、掉电即失（决策 24）。**story 正文缓存例外（`261016-p3-story-body-sd-cache`，2026-10-17）**：板端 SD 卡可为 **story 正文**留**只读镜像**——云端 story 归档仍为唯一真相源，板端不承载任何写入；断网时**已留存的正文照常回看**（需求侧 = S-F2.1）。此为决策 24 介质禁令的**窄例外**（白名单增列「story 正文只读镜像」），提醒 / 课表 / 日志等其余业务事项仍不落板；**离线边界语义（断网无提醒）不变**。 **设备诊断日志例外（`261018-sd-log-persist`，2026-10-18）**：板端 SD 卡可存**设备诊断日志**（设备自身运行日志，常开 + 有界轮转、目录总量 16MB 封顶、可删除，见 §6.6）——纯可观测性数据，不承载任何离线功能、不是业务真相源；白名单增列「设备诊断日志」。本段与原则 5 所列「日志」= **业务日志**（家长知情权），业务日志仍不落板、语义不变；提醒 / 课表仍不落板；**离线边界语义（断网无提醒）不变**。隐私接受注记见决策 24 注记。
+**在哪侧：设备（禁令）+ 云（真相源）。** 断网仅本地时间/温湿度/电量；无提醒、课表/查字/问答不可用；不缓存任何事项。（「不缓存」禁的是落非易失介质的持久层；板端 RAM 渲染缓冲——P2 网格缓存、P1 seam——掉电即失，不在禁列，见 §5.4 板端状态行。）板端非易失介质白名单 = 设备凭证（url/token/version）+ 预栅格化资产与字体 + 固件本体；一切业务/身份/事项状态只驻 RAM、掉电即失（决策 24）。**story 正文缓存例外（`261016-p3-story-body-sd-cache`，2026-10-17）**：板端 SD 卡可为 **story 正文**留**只读镜像**——云端 story 归档仍为唯一真相源，板端不承载任何写入；断网时**已留存的正文照常回看**（需求侧 = S-F2.1）。此为决策 24 介质禁令的**窄例外**（白名单增列「story 正文只读镜像」），提醒 / 课表 / 日志等其余业务事项仍不落板；**离线边界语义（断网无提醒）不变**。 **设备诊断日志例外（`261018-sd-log-persist`，2026-10-18）**：板端 SD 卡可存**设备诊断日志**（设备自身运行日志，常开 + 有界轮转、目录总量 16MB 封顶、可删除，见 §6.6）——纯可观测性数据，不承载任何离线功能、不是业务真相源；白名单增列「设备诊断日志」。本段与原则 5 所列「日志」= **业务日志**（家长知情权），业务日志仍不落板、语义不变；提醒 / 课表仍不落板；**离线边界语义（断网无提醒）不变**。隐私接受注记见决策 24 注记。**积分介质边界（`261103-star-points-story-cover`）**：积分账本、目标配置、分录副本和离线写队列均不得落设备非易失介质；RAM 中的权威帧渲染缓存不属于持久业务副本。设备写失败不本地暂存，恢复后只从云端重取，不做设备侧冲突合并。
 
 ### 6.3 错误处理与降级
 **原则：有处理的失败模式，不静默重试、不曝技术错误。** 云端任一环节失败 → 固定安抚句「网络出小差了，等一会儿再试试吧」+ text 视图结束当轮（决策 26）；display 脏块 → front 机械校验拒绝（丢弃或降级提示，不入板盲渲染，V27）；答案超限 → 截断/分屏（V32）；speech 合成失败 → 弹窗+提示音仍必达（V20/ADR-003 不对称必达）；fence 未闭合 → 裸载荷进 display 侧通道、绝不进 TTS（宁默不念 JSON）；art 挂载失败 → 占位矩形降级。
@@ -349,6 +372,11 @@ NFR-READ-1 的 14px 下限已由 2026-09-15 九档真机对照实测定案，并
 
 ### 6.5 幂等与一致性
 **在哪侧：提醒链路两端。** 幂等 id = 确定性散列（schedule 条目+档位+事件日期），脚本首次生成、跨重推/重算不变（ADR-002）；设备接收即入易失 known-id 集合（仅防重复入队）；回执出队 = 渲染即发（渲染即确认）；同 id 重推两态分处（已渲染→补回回执；排队未渲染→去重等渲染）；pending.json 临时文件原子写。重试 = 60s 超时重推、单档上限 3、不做重连即重推、过期静默作废。
+
+**积分链路的两类去重分离**：
+1. **传输幂等**针对同一逻辑命令的重试。channel adapter 为命令提供稳定 `command_id`；QQ 取平台消息 id 加命令序号，语音由 front 以连接/会话和相关回合序号建立。points.py 在同一锁临界区查询并保存命令回执，同 id 重放返回首次结果，不新增分录、不递增 revision。新的用户回合即使文案相同也必须使用新的 command_id，不能借传输幂等扩大去重窗口。
+2. **短窗语义去重**针对 S-F6.3 AC5 的重复表达。points.py 以可注入时钟判断短窗（起步值与调优定数的权威 = requirements S-F6.3 AC5，调优后回填），以相同正负分值和保守归一化后的事由匹配；归一化只去空白/标点、统一全半角和不改变事由的时间前缀，不引入模型相似分或模糊阈值。命中后返回“已记过”回执和当前权威余额，不新增分录；它与 command_id 无关，窗口外同文案仍是合法新命令。若真机验收证明「事由相近」需要更宽的模糊语义，回 /arch-change 评估，不在 Pod 内自调相似度。
+3. **分页一致性**采用 `(occurred_at, id)` 时间倒序 keyset 游标，不用 offset。游标携带最后一条排序键与 revision；插入或删除使 revision 变化时回最新首页并要求设备重置分页缓存，防止跨版本重复/漏项。每页 total 始终为当前全量分录数，items.length 不顶替 total。
 
 ### 6.6 可观测性
 三日志源：设备串口（COM5，被动 watch / 复位捕获纪律）、front systemd 日志（K6 结构化 + correlationId）、引擎 docker logs（补丁标记行 = 部署面报警锚）。
@@ -415,7 +443,7 @@ NFR-READ-1 的 14px 下限已由 2026-09-15 九档真机对照实测定案，并
 数据格式与端云接口的单一事实源 = [docs/contracts/interface-contract.md](contracts/interface-contract.md)（契约变更走 /arch-change loop，合并过机械凭据闸 pre-merge-escalation-gate.mjs——261015 批起无人签门）：
 
 - **笔顺 JSON（D3）**：已定稿——makemeahanzi，strokes SVG path + medians 骨架点；数据源与板端渲染要点见 §5.1.1 查字组件与 [notes/](notes/)；
-- **display 统一响应块（E1）**：`{view, data, speech_hint?}`，7 view 白名单；引擎剥离 → front 校验（V27）→ mcp 下发；control 动作表已含 `start_recording`（CDQ-260902 落地）；
+- **display 统一响应块（E1）**：`{view, data, speech_hint?}`，9 view 白名单（本批 + points_home/points_ledger，完整载荷由 front 单源产生，add_points/redeem_points 为 front 截获执行的薄意图）；引擎剥离 → front 校验（V27）→ mcp 下发；control 动作表已含 `start_recording`（CDQ-260902 落地）；
 - **课表 MD（B1）**：YAML frontmatter + 三区块表格；`remind_before_min` 已随三档阶梯废止；
 - **契约决策账**：契约相关未结项的状态唯一权威 = [docs/debt/contract/](debt/contract/)（一条目一文件 + 生成件 [INDEX.md](debt/contract/INDEX.md)）；本档不再内嵌逐条状态，防内嵌清单与账本再漂移。唯一例外 = 「音量调节」control 动作（requirements v1.44，§5.1.1 MCP 工具面）**仍在办**——debt 账本全域查无此条目（2026-10-19 grep 实测），本档保留此一行作可见性锚防丢账，随下次契约门处置后连本行一并删。
 
@@ -455,11 +483,11 @@ NFR-READ-1 的 14px 下限已由 2026-09-15 九档真机对照实测定案，并
 
 ## 9. 演进路线（as-is → to-be）
 
-> 架构侧演进视角；开发推进顺序权威 = requirements.md §6（Phase 1 四阶段）。
+> 架构侧演进视角；开发推进顺序权威 = requirements.md §6（Phase 1 五阶段：阶段五 = 星星积分本 + 故事封皮导航，`261103-star-points-story-cover`）。
 
 **as-is（MVP 已建基线，22 包 closed + happy-flow-host-capture 在办）**：方向 B 端云四层链路 live 全通（listen→ASR→TTS→音频下发 0 断链）；shim 退役、front 唯一公网入口落地；引擎 fence 剥离补丁 + front 校验 relay live；提醒 cron→pending.json→推送链路 live（L3 绿、L4 回执留红）；四页旧形态渲染（HOME→CHAR→SCHEDULE→STORY）；prompt v4 版本化接线；证书/overlay/secrets/cron 运维面就位。
 
-**to-be（Phase 1 结构变更）**：① 键路由改造——dispatch 按 `layer_top` 分流 + `cycle_next` 拆「清层/进页」（BOOT 隔离、KEY 长按返回上一层、单双击消歧仅列表态）；② 60s 问答会话 timer 生产者接线（会话状态机激活；原 120s 录音态阈值随 v1.65 作废——记录会话自动收尾归网关卡壳计时器族〔§5.2 场景④〕，本条接线范围相应收窄为单阈值）；③ 思考态渲染接线；④ 撤 P4 常驻页 → 3 页循环 + `char-window` 覆盖窗；⑤ display 周网格数据（契约）；⑥ 新增 control 动作（故事删除/音量调节，随契约门）+ 端→网关 `kidpal_session_ctx` 发送/拦截（契约已定义；固件侧接线点 = application.cc 会话发起入口读 `kidpal_layer_top()`，front 侧 = 上行泵帧解析处拦截）；⑦ L4 渲染回执修复 + 查字 live 链路修复。
+**to-be（Phase 1 结构变更）**：① 键路由按 layer_top 与子页状态分流，KEY 长按逐层返回，单双击消歧覆盖 P4 故事列表与 P3 积分主页；② 60s 问答会话 timer 生产者接线，记录会话继续沿 §5.2 场景④；③ 思考态渲染接线；④ 查字保持会话内覆盖窗，不占主页面页位；⑤ display 周网格与首页数据保持 front 单源；⑥ 在既有故事控制与会话语境之上新增积分薄意图、points 两个 view、删除与分页私有帧；⑦ L4 渲染回执与查字 live 修复继续按既有登记推进；⑧ 主页面改为首页→课表→P3 积分本→P4 故事封皮四页循环，积分账本由 points.py 单 writer 承载，故事列表/阅读下沉 P4 子页并复用 story_list.total 作封皮计数。实现顺序以 requirements §6 阶段五和 K0→K5 串行切片为准。
 
 **二期触发条件**：语音喊停（AEC 阈值实测就绪时）、品牌唤醒词「你好，小伴」（WakeNet 模型替换）、OTA（证书相位对账先行）、机械内容过滤层（合规需要时）、多设备（token 形态切换）。**重构触发**：引擎镜像升级 = 补丁漂移核对；需求重基线 = portfolio 重切（committed 条款）。
 
@@ -512,6 +540,7 @@ NFR-READ-1 的 14px 下限已由 2026-09-15 九档真机对照实测定案，并
 
 | changeId | 日期 | 改动面 | 依据 |
 |---|---|---|---|
+| 261103-star-points-story-cover | 2026-11-04 | 头部需求 frozen 指针 / §2.4 原则 3 同型注记 / §4 NFR-OFF-1 与 NFR-PERF-4 映射 / §5.1.1 四页设备组件、枚举驱动语境与 9 view / §5.1.2 points.py 单 writer、QQ skill、front 积分职责 / §5.1.3 依赖 / §5.2 场景④ P4 化与新增场景⑥ / §5.3.2 积分状态位置 / §5.4 账本、目标与 RAM 缓存 / §5.5.2 资产、§5.5.4 UI 态、§5.5.5 prompt / §6.2 积分介质边界、§6.5 两类去重与分页一致性 / §7 display 指针 9 view / §9 五阶段与演进 / §12 本行 | delivery/review/261103-arch-review-star-points-story-cover/PROPOSAL.md（requirements v1.71 frozen 为行为权威；契约 §1.3/§1.4/§1.5/§1.6/§四同批原子落；ADR-018 同批落；ARQ-260918 随旧页叙述改写按 consumed-by 结项） |
 | 261028-font-typography-scaleup | 2026-10-28 | §3.1 / §4 NFR-READ-1 映射 / §5.5.2 字体资产预算注记 / §5.5.3 字体管线换代（16px 正文 + 20px 标题、assets `.bin` + cbin 运行时装载 + 编译内 14px 兜底）/ §8.1 风险 10 闭账 / §12 本行 | delivery/review/261028-arch-review-font-typography-scaleup/PROPOSAL.md（需求面 v1.69 frozen 为语义输入、逐字不回改；契约面零动作；ADR-017 同批落） |
 | 261025-spec-reconciliation-memory-writing-scope | 2026-10-26 | §4（NFR-PRIV-1 映射行：两把配置键口径 → 类级规则 + 内容归属）/ §5.1.2（front 行一次性回合携 `user` 落设备 session 键族；记忆子系统行指针核后不动）/ §6.7 改写（逐行枚举 → 类级规则 + 现行机制与界限 + 七行实例表 + 残余与未闭合申报八条 + 记忆身份补一次性回合归属 + 画像边界来源门换代） | delivery/review/261025-arch-review-spec-reconciliation-memory-writing-scope/PROPOSAL.md（需求面 v1.68 为语义输入、不回改；契约面零动作；依据 = requirements v1.68 + spine + TECH-261026 + 261025 部署包与 docs-delta + architect 2026-10-26 核实） |
 | 261023-arch-review-memory-wiring-verified-behavior | 2026-10-23 | §1.3（记忆身份体系实测口径：设备级 session + 家庭单 owner 画像）/ §4（NFR-PRIV-1 映射行口径）/ §5.1.2（front 行括注、记忆子系统行）/ §5.4（记忆·会话消息行）/ §6.7 改写（逐回合判据 → 记忆写入范围 + 六行实况表 + 残余申报 + 记忆身份） | delivery/review/261023-arch-review-memory-wiring-verified-behavior/PROPOSAL.md（依据：human 2026-10-23 方案甲裁决 + 261022 批 advisory memory-wiring-advisory-20261023 §1/§5/§6；K3 冻结验收与生产接线换代归批 B） |
