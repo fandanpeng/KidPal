@@ -2,95 +2,117 @@
   "261015-gov-review-changes-taxonomy": {
     "date": "2026-10-15",
     "mergedInMain": "yes",
-    "landed": false
+    "landed": true
   },
   "261016-gov-review-nano-tier": {
     "date": "2026-10-16",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "261016-gov-review-triage-entry-identity": {
     "date": "2026-10-16",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "261017-arch-review-p3-story-body-sd-cache": {
     "date": "2026-10-17",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "261019-gov-review-local-memory-extraction": {
     "date": "2026-10-19",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "261018-arch-review-sd-log-persist": {
     "date": "2026-10-18",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "261019-gov-review-docs-root-ledger-rehome": {
     "date": "2026-10-19",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "261019-gov-review-docs-root-drift-cleanup": {
     "date": "2026-10-19",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "261023-arch-review-memory-wiring-verified-behavior": {
     "date": "2026-10-23",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "261025-gov-review-release-pr-publish": {
     "date": "2026-10-25",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "261024-gov-review-retro-efficiency-instrumentation": {
     "date": "2026-10-24",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "261025-arch-review-spec-reconciliation-memory-writing-scope": {
     "date": "2026-10-25",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "261026-gov-review-retro-efficiency-fidelity": {
     "date": "2026-10-26",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "261026-gov-review-merge-gate-cluster-fix": {
     "date": "2026-10-26",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "261026-gov-review-final-phase-dispatch-contract": {
     "date": "2026-10-26",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "261026-gov-review-p2-anchor-template-cluster": {
     "date": "2026-10-26",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "261026-gov-review-p4-pod-board-cluster": {
     "date": "2026-10-26",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "261027-gov-review-p5-spike-anchor-cluster": {
     "date": "2026-10-27",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "261027-gov-review-draft-cost-relief": {
     "date": "2026-10-27",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "261027-gov-review-p75-closeout-shoot-cluster": {
     "date": "2026-10-27",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "261027-gov-review-p7-devloop-doc-cluster": {
     "date": "2026-10-27",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "261028-gov-review-p8-gate-semantics-cluster": {
     "date": "2026-10-28",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "261028-gov-review-author-implementation-lane": {
     "date": "2026-10-28",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "261029-gov-review-gov-loop-simplification": {
     "date": "2026-10-29",
@@ -99,5 +121,30 @@
   "261029-gov-review-p9-script-hygiene-cluster": {
     "date": "2026-10-29",
     "mergedInMain": "yes"
+  },
+  "261019-arch-review-p3-record-dialogue-guide": {
+    "date": "2026-10-19",
+    "mergedInMain": "yes",
+    "landed": true
+  },
+  "261021-arch-review-p3-record-cancel-lifecycle": {
+    "date": "2026-10-21",
+    "mergedInMain": "yes",
+    "landed": true
+  },
+  "261022-arch-review-device-memory-prompt-overhaul": {
+    "date": "2026-10-22",
+    "mergedInMain": "yes",
+    "landed": true
+  },
+  "261027-gov-review-p6-landing-gate-cluster": {
+    "date": "2026-10-27",
+    "mergedInMain": "yes",
+    "landed": true
+  },
+  "261028-arch-review-font-typography-scaleup": {
+    "date": "2026-10-28",
+    "mergedInMain": "yes",
+    "landed": true
   }
 }
