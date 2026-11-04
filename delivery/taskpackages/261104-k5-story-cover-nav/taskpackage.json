@@ -1,0 +1,309 @@
+{
+  "changeId": "261104-k5-story-cover-nav",
+  "title": "故事封皮导航——P4 封皮、列表/阅读下沉、逐层返回与 story_list 共享帧消费",
+  "rigor": "full",
+  "sourceType": "proposal",
+  "origin": {
+    "type": "proposal",
+    "upstreamType": "proposal",
+    "upstreamRef": "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md",
+    "upstreamFrozen": "sha1:4eca114e6998e14e",
+    "workstream": "261103-star-points-story-cover"
+  },
+  "subsystem": "firmware P4 封皮与故事层级导航 + front/OpenClaw story_list P4 共享帧 + 书封资产",
+  "story": "S-F2.6 · 故事封皮与分层导航（AC1–AC4）+ S-F2.1 · 看「星星记录本」列表（AC1–AC7 回归）+ S-F2.2 · 对话式引导记录（AC1 入口回归）+ S-F2.3 · 回看记录（AC1、AC2）+ S-F2.4 · 星星保存成就盖章（AC2 现存计数半）。",
+  "planRef": "delivery/taskpackages/261104-k5-story-cover-nav/plan.md",
+  "sourceRefs": [
+    "S-F2.6-AC1",
+    "S-F2.6-AC2",
+    "S-F2.6-AC3",
+    "S-F2.6-AC4",
+    "S-F2.1-AC1",
+    "S-F2.1-AC2",
+    "S-F2.1-AC3",
+    "S-F2.1-AC4",
+    "S-F2.1-AC5",
+    "S-F2.1-AC6",
+    "S-F2.1-AC7",
+    "S-F2.2-AC1",
+    "S-F2.3-AC1",
+    "S-F2.3-AC2",
+    "S-F2.4-AC2",
+    "docs/requirements.md#§2.3",
+    "docs/requirements.md#§2.4",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-01",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-07",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-08",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-09",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§5",
+    "delivery/workstreams/261103-star-points-story-cover/task_plan.md#K5",
+    "docs/contracts/interface-contract.md#§1.3③",
+    "docs/contracts/interface-contract.md#§四-kidpal_session_ctx",
+    "docs/decisions/ADR.md#ADR-018",
+    "docs/debt/tech/TECH-261028-p3-reader-key-falls-to-session-toggle.md"
+  ],
+  "acceptanceRefs": [
+    "docs/requirements.md#S-F2.6",
+    "docs/requirements.md#S-F2.1",
+    "docs/requirements.md#S-F2.2",
+    "docs/requirements.md#S-F2.3",
+    "docs/requirements.md#S-F2.4-AC2",
+    "docs/requirements.md#§2.3",
+    "docs/requirements.md#§2.4",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§5"
+  ],
+  "acceptance": [],
+  "acceptanceTestsFile": [],
+  "redBaselineCommand": "",
+  "redBaselineResult": "",
+  "exitCriteria": [
+    "K5S-E1: Pod 内冻结验收覆盖封皮四件、四点第 4 实心、KEY 打开列表、BOOT wrap、逐层返回、语音只到封皮、覆盖层页点消失及故事三 story 回归；S-F2.1 AC7 覆盖正文未留存且取不回时的可见提示与不显示别篇。红基线和变异证据齐全。",
+    "K5S-E2: story_list 共享帧消费证据表明封皮计数只信 total，后台恢复/归档/删除推送均 restore:true，显式「打开故事」空 data 薄载荷只进封皮；不新增 story_cover view 或 cover_total。",
+    "K5S-E3: `ic-coin` 与书封经既有资产管线产出并在设备可见，V9 design review 完成；故事列表/阅读/录音等未变帧沿 V8/V9 口径，不因下沉重画或改文案。",
+    "K5S-E4: 一轮真机完成四页并集、封皮→列表→阅读及逐级返回、语音入口、删除/盖章计数、记录语境与阅读键回归；看屏、串口、front/引擎日志互证。",
+    "K5S-E5: 本包只承担导航并集收口 owner，review-packet 对账 PROPOSAL §5 的导航项并列明跨包端到端余项；整列车真机+真实 QQ 收口轮由主线程另组织，不以本包合并自动宣称 workstream 完成。",
+    "K5S-E6: TECH-261028 已在 K0a 修复，本包只做回归不重复承接；实际 diff 限于 changeManifest，K0a/K2 的枚举语境、积分页和四点基线零回退。"
+  ],
+  "iterationBudget": 3,
+  "fixBudget": 4,
+  "supervisorBlockBudget": 2,
+  "contractRefs": [
+    "docs/contracts/interface-contract.md#§1.3③",
+    "docs/contracts/interface-contract.md#§1.3④",
+    "docs/contracts/interface-contract.md#§1.5",
+    "docs/contracts/interface-contract.md#§1.6",
+    "docs/contracts/interface-contract.md#§四-kidpal_session_ctx"
+  ],
+  "docRefs": [
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md",
+    "delivery/workstreams/261103-star-points-story-cover/review.md",
+    "delivery/workstreams/261103-star-points-story-cover/task_plan.md",
+    "delivery/taskpackages/261104-k5-story-cover-nav/plan.md",
+    "docs/requirements.md",
+    "docs/architecture.md",
+    "docs/contracts/interface-contract.md",
+    "docs/decisions/ADR.md",
+    "docs/debt/tech/TECH-261028-p3-reader-key-falls-to-session-toggle.md",
+    "docs/debt/tech/TECH-261022-p3-record-session-state-churn.md",
+    "docs/ui/kidpal-ui-design-v9.html",
+    "docs/ui/UIUX-DESIGN-BRIEF.md",
+    "docs/ui/V9/story-cover.png",
+    "docs/ui/V9/canvas-p1.png",
+    "docs/ui/V9/canvas-p2.png",
+    "docs/ui/V9/points-home.png",
+    "docs/ui/V9/canvas-p3.png",
+    "docs/ui/V9/p3-reader.png"
+  ],
+  "docsSyncRequired": false,
+  "docsSyncReason": "封皮、P4 分层、story_list 共享帧、restore 与会话语境均已由 v1.71 和 landed 架构/契约冻结。",
+  "docsOwner": "integrator",
+  "securityReviewRequired": false,
+  "adrRequired": false,
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline",
+    "firmware-build",
+    "live-manual"
+  ],
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": [],
+    "note": "Draft 态空骨架；导航与故事回归的变异证据和真机目击分别回填。"
+  },
+  "crossEnd": {
+    "counterparts": [
+      {
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "_push_story_list"
+      },
+      {
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "_consume_kidpal_control"
+      },
+      {
+        "path": "server/gateway/display_schema.py",
+        "symbol": "validate_display"
+      }
+    ],
+    "exempt": ""
+  },
+  "changeManifest": [
+    "firmware/main/display/story_cover.c",
+    "firmware/main/display/story_cover.h",
+    "firmware/main/display/story_page.c",
+    "firmware/main/display/story_page.h",
+    "firmware/main/display/kidpal_render_node.h",
+    "firmware/main/display/kidpal_render_node.cc",
+    "firmware/main/display/keybar.c",
+    "firmware/main/display/keybar.h",
+    "firmware/main/display/lcd_display.cc",
+    "firmware/main/mcp_server.cc",
+    "firmware/main/application.cc",
+    "firmware/main/CMakeLists.txt",
+    "firmware/main/test/story_cover_nav.acceptance.c",
+    "firmware/main/test/story_page_v2.acceptance.c",
+    "firmware/main/test/record_session_live.acceptance.c",
+    "firmware/main/test/keybar_three_slot.acceptance.c",
+    "firmware/main/test/chrome_ghost.acceptance.c",
+    "firmware/main/test/host_app/main/CMakeLists.txt",
+    "server/gateway/front/front_app.py",
+    "server/gateway/display_schema.py",
+    "server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md",
+    "server/acceptance/test_story_cover_nav.acceptance.py",
+    "server/acceptance/test_m4k1_story_cloud_link.acceptance.py",
+    "server/acceptance/test_m4k3_record_session_live.acceptance.py",
+    "tools/asset-pipeline/gen_assets.mjs",
+    "tools/asset-pipeline/gen_art_spiffs.mjs",
+    "tools/simulator/LvglWindowsSimulator/assets/assets.c",
+    "tools/simulator/LvglWindowsSimulator/assets/assets.h",
+    "firmware/main/assets/spiffs_root/ic-coin.bin"
+  ],
+  "impactedTestsSeed": [
+    {
+      "path": "firmware/main/test/story_page_v2.acceptance.c",
+      "kind": "frozen-rebaseline",
+      "note": "列表 KEY 长按由原回首页改回封皮，列表/阅读/删除/盖章其余行为保留；阅读键以 K0a 修复为基线。"
+    },
+    {
+      "path": "firmware/main/test/record_session_live.acceptance.c",
+      "kind": "frozen-rebaseline",
+      "note": "K0a 的枚举驱动映射为基线，新增 story_cover 普通语境，story 列表仍切记录语境。"
+    },
+    {
+      "path": "firmware/main/test/keybar_three_slot.acceptance.c",
+      "kind": "frozen-rebaseline",
+      "note": "K0a 四点为基线，P4 封皮与故事子页键帽/页点按 v1.71 收紧，覆盖层隐藏不变。"
+    },
+    {
+      "path": "server/acceptance/test_m4k1_story_cloud_link.acceptance.py",
+      "kind": "frozen-rebaseline",
+      "note": " landed 契约要求后台 story_list 恒 restore:true；只重锚载荷与 P4 消费，不削弱归档/删除对账。"
+    },
+    {
+      "path": "server/acceptance/test_m4k3_record_session_live.acceptance.py",
+      "kind": "frozen-rebaseline",
+      "note": "既有条件推送时点与恰一帧语义保留，按新契约补 restore 与 P4 模块导航断言。"
+    },
+    {
+      "path": "firmware/main/test/chrome_ghost.acceptance.c",
+      "kind": "regression",
+      "note": "共享 keybar/故事转场，键帽鬼影和成功归档层栈收口不得因封皮下沉回归。"
+    }
+  ],
+  "uiux": {
+    "uiuxRequired": true,
+    "uiuxLevel": 4,
+    "designRefs": [
+      "docs/ui/V9/story-cover.png",
+      "docs/ui/V9/canvas-p1.png",
+      "docs/ui/V9/canvas-p2.png",
+      "docs/ui/V9/points-home.png",
+      "docs/ui/V9/canvas-p3.png",
+      "docs/ui/V9/p3-reader.png"
+    ],
+    "sharedUiRefs": [
+      "docs/ui/kidpal-ui-design-v9.html",
+      "docs/ui/UIUX-DESIGN-BRIEF.md"
+    ],
+    "uiAcceptanceRefs": [
+      "story-cover",
+      "canvas-p1",
+      "canvas-p2",
+      "points-home",
+      "canvas-p3",
+      "p3-reader"
+    ],
+    "designReviewRequired": true,
+    "designReviewEvidenceRequired": true,
+    "repoVisualArtifactRequired": false
+  },
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/261103-star-points-story-cover/"
+  ],
+  "riskTier": "high",
+  "riskRationale": "重组系统导航、故事模块层级、全局键位、front/Prompt 与既有记录会话，共享冻结面多且需真机验证逐层返回和零回归，故为 high。",
+  "gateProfile": [
+    "evidence-integrity",
+    "test-quality",
+    "state-machine",
+    "mcp-tool-contract"
+  ],
+  "mergeOrder": 76,
+  "dependsOn": [
+    "261104-k2-points-device-ui",
+    "261104-k4-reward-goal-config"
+  ],
+  "decisionCoverage": [
+    {
+      "decision": "D-01 · 四页封皮、故事下沉与逐层返回",
+      "summary": "K0a 四页骨架之上新增 P4 封皮，列表/阅读成为子页，阅读→列表→封皮→首页逐层返回。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-01"],
+      "landsIn": "exitCriteria:K5S-E1"
+    },
+    {
+      "decision": "D-07-story · 后台 story_list 只填缓存不抢前台",
+      "summary": "恢复/归档/删除推送统一 restore:true；显式打开故事与后台数据更新分流。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-07", "docs/contracts/interface-contract.md#§1.3③"],
+      "landsIn": "exitCriteria:K5S-E2"
+    },
+    {
+      "decision": "D-08-story · story_list 改 P4 共享帧与六值语境",
+      "summary": "空 data 薄载荷只进封皮，封皮/列表计数复用 total，story_cover 普通语境与 story 记录语境分开。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-08"],
+      "landsIn": "exitCriteria:K5S-E2"
+    },
+    {
+      "decision": "D-09-cover · 书封与 ic-coin 走既有资产管线",
+      "summary": "封皮书封和大星徽沿 V9 与 KAP1 产线落地，pt-cat 等既有资产复用。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-09"],
+      "landsIn": "exitCriteria:K5S-E3"
+    },
+    {
+      "decision": "业务目的 8 · TECH-261028 消费关系",
+      "summary": "阅读键缺陷已由 K0a 修复，本包只验证其不在封皮改造中回归，不重复修或重复结项。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§1-目的8", "docs/debt/tech/TECH-261028-p3-reader-key-falls-to-session-toggle.md"],
+      "landsIn": "exitCriteria:K5S-E6"
+    },
+    {
+      "decision": "§5 · workstream 收口之导航并集",
+      "summary": "本包承担 BOOT 四页与阅读到首页逐层返回的并集证据；跨包账本/QQ 联合收口由主线程另组织。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§5"],
+      "landsIn": "exitCriteria:K5S-E5"
+    }
+  ],
+  "crossPackageBehaviors": [
+    {
+      "topic": "K0a 四页骨架到 K5 封皮分层",
+      "owner": "261104-k0a-four-page-skeleton",
+      "carriedBy": "261104-k5-story-cover-nav",
+      "note": "K0a 的 P4 平级故事只是过渡态，K5 在其枚举/阅读键基线上新增封皮并下沉列表/阅读，不重修 TECH-261028。"
+    },
+    {
+      "topic": "story_list.total 在封皮与列表间复用",
+      "owner": "261104-k5-story-cover-nav",
+      "carriedBy": "261104-k5-story-cover-nav",
+      "note": "计数只有 story_list.total 一个权威源，删除/归档重推同步封皮与列表；不新增 view 或 cover_total。"
+    },
+    {
+      "topic": "source_page 的 story_cover 子页扩展",
+      "owner": "261104-k0a-four-page-skeleton",
+      "carriedBy": "261104-k5-story-cover-nav",
+      "note": "K0a 建枚举映射，K2 扩 points_ledger，K5 最后扩 story_cover；封皮普通问答，列表仍为 story 记录语境。"
+    },
+    {
+      "topic": "K4/K5 共享资产管线串行",
+      "owner": "261104-k4-reward-goal-config",
+      "carriedBy": "261104-k5-story-cover-nav",
+      "note": "K4 先产场景资产，K5 后在同一产线补 ic-coin 与书封；不并行修改生成器或生成件。"
+    },
+    {
+      "topic": "workstream 导航并集与跨包联合收口分界",
+      "owner": "261104-k5-story-cover-nav",
+      "carriedBy": "261104-k5-story-cover-nav",
+      "note": "K5 只收导航并集，PROPOSAL §5 全项由主线程另组织跨包真机+真实 QQ 轮，不留给 K5 单 Pod 自证。"
+    }
+  ],
+  "notes": "影响面机械辅证：图索引确认 story_page/kidpal_render_node/keybar/application 发送单点、front _push_story_list 的六个调用者与 display_schema story_list floor；ADR-018 明确否决 story_cover view/cover_total。相邻冻结锚非零命中：story_page_v2、record_session_live、keybar_three_slot、chrome_ghost、server M4K1/M4K3 story_list 断言； landed 契约的后台 restore:true 与旧实现/注释存在差距，由 acceptance-author 留痕重锚而非改契约。K5 依赖 K2 与 K4，借 K4 的传递依赖保证排在 K3 后，mergeOrder=76。"
+}

@@ -1,0 +1,292 @@
+{
+  "changeId": "261104-k2-points-device-ui",
+  "title": "设备积分本——points_home/points_ledger 全页、keyset 取页、删除确认、积分语境与语音闭环",
+  "rigor": "full",
+  "sourceType": "proposal",
+  "origin": {
+    "type": "proposal",
+    "upstreamType": "proposal",
+    "upstreamRef": "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md",
+    "upstreamFrozen": "sha1:4eca114e6998e14e",
+    "workstream": "261103-star-points-story-cover"
+  },
+  "subsystem": "firmware points_page、keybar/view/mcp/protocol/application + front 积分语境摘要",
+  "story": "S-F6.1 · 看积分进度与最近记录（AC1–AC6）+ S-F6.2 · 浏览详细账本与删除误记（AC1–AC5）+ S-F6.3 · 设备语音记账与兑换（AC1–AC6）+ NFR-OFF-1/NFR-PERF-4。",
+  "planRef": "delivery/taskpackages/261104-k2-points-device-ui/plan.md",
+  "sourceRefs": [
+    "S-F6.1-AC1",
+    "S-F6.1-AC2",
+    "S-F6.1-AC3",
+    "S-F6.1-AC4",
+    "S-F6.1-AC5",
+    "S-F6.1-AC6",
+    "S-F6.2-AC1",
+    "S-F6.2-AC2",
+    "S-F6.2-AC3",
+    "S-F6.2-AC4",
+    "S-F6.2-AC5",
+    "S-F6.3-AC1",
+    "S-F6.3-AC2",
+    "S-F6.3-AC3",
+    "S-F6.3-AC4",
+    "S-F6.3-AC5",
+    "S-F6.3-AC6",
+    "docs/requirements.md#§2.3",
+    "docs/requirements.md#NFR-OFF-1",
+    "docs/requirements.md#NFR-PERF-4",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-02",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-03",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-04",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-07",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-08",
+    "delivery/workstreams/261103-star-points-story-cover/task_plan.md#K2",
+    "docs/contracts/interface-contract.md#§1.3⑦",
+    "docs/contracts/interface-contract.md#§1.3⑧",
+    "docs/contracts/interface-contract.md#§四-kidpal_session_ctx",
+    "docs/contracts/interface-contract.md#§四-kidpal_points_delete",
+    "docs/contracts/interface-contract.md#§四-kidpal_points_page"
+  ],
+  "acceptanceRefs": [
+    "docs/requirements.md#S-F6.1",
+    "docs/requirements.md#S-F6.2",
+    "docs/requirements.md#S-F6.3",
+    "docs/requirements.md#§2.3",
+    "docs/requirements.md#NFR-OFF-1",
+    "docs/requirements.md#NFR-PERF-4"
+  ],
+  "acceptance": [],
+  "acceptanceTestsFile": [],
+  "redBaselineCommand": "",
+  "redBaselineResult": "",
+  "exitCriteria": [
+    "K2D-E1: Pod 内冻结验收覆盖积分主页四态、最近三条、越目标/负余额、详细账本单行与全量分页、键位、删除确认和冷启动恢复；红基线、变异证据及既有冻结件修订留痕齐全。",
+    "K2D-E2: host 与 server 离线证据证明 restore/显式打开分流、revision 重置清缓存、selected_id 只读注入、删除幂等对账和不完整句零写入；既有故事与 schedule 路由零新增红。",
+    "K2D-E3: 一轮真机覆盖完整语音加分/兑换、只提事件不记账、金额不匹配与余额不足拒答、短窗重复、断网可见失败、删除后重算与负余额、冷启动恢复；设备看屏与三源日志互证。",
+    "K2D-E4: 六张 V9 积分帧完成 design review，长原因、大分值、越目标和负余额不破坏 400×300 1bpp 版面；NFR-PERF-4 只记录实测，不写死阈值。",
+    "K2D-E5: 实际 diff 限于 changeManifest，K1 权威账本不被设备重算或持久化；review-packet 含 demo 对账与未覆盖面申报，K3 的 QQ 推送和 K4 的目标切换复用本包 restore/进度线缝。"
+  ],
+  "iterationBudget": 3,
+  "fixBudget": 4,
+  "supervisorBlockBudget": 2,
+  "contractRefs": [
+    "docs/contracts/interface-contract.md#§1.3⑦",
+    "docs/contracts/interface-contract.md#§1.3⑧",
+    "docs/contracts/interface-contract.md#§1.4",
+    "docs/contracts/interface-contract.md#§四-kidpal_session_ctx",
+    "docs/contracts/interface-contract.md#§四-kidpal_points_delete",
+    "docs/contracts/interface-contract.md#§四-kidpal_points_page"
+  ],
+  "docRefs": [
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md",
+    "delivery/workstreams/261103-star-points-story-cover/review.md",
+    "delivery/workstreams/261103-star-points-story-cover/task_plan.md",
+    "delivery/taskpackages/261104-k2-points-device-ui/plan.md",
+    "docs/requirements.md",
+    "docs/architecture.md",
+    "docs/contracts/interface-contract.md",
+    "docs/decisions/ADR.md",
+    "docs/ui/kidpal-ui-design-v9.html",
+    "docs/ui/UIUX-DESIGN-BRIEF.md",
+    "docs/ui/V9/points-home.png",
+    "docs/ui/V9/points-home-empty.png",
+    "docs/ui/V9/points-home-nodata.png",
+    "docs/ui/V9/points-home-negative.png",
+    "docs/ui/V9/points-ledger.png",
+    "docs/ui/V9/points-delete-confirm.png"
+  ],
+  "docsSyncRequired": false,
+  "docsSyncReason": "积分页面、键位、语音、删除、分页和离线语义均已由 v1.71 与 landed 架构/契约冻结，本包只实现与验收。",
+  "docsOwner": "integrator",
+  "securityReviewRequired": false,
+  "adrRequired": false,
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline",
+    "firmware-build",
+    "live-manual"
+  ],
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": [],
+    "note": "Draft 态空骨架；真机语音与删除证据不被 host 变异证据替代。"
+  },
+  "crossEnd": {
+    "counterparts": [
+      {
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "_consume_kidpal_control"
+      },
+      {
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "_push_display_payload"
+      },
+      {
+        "path": "server/gateway/display_schema.py",
+        "symbol": "validate_display"
+      }
+    ],
+    "exempt": ""
+  },
+  "changeManifest": [
+    "firmware/main/display/points_page.c",
+    "firmware/main/display/points_page.h",
+    "firmware/main/display/keybar.c",
+    "firmware/main/display/keybar.h",
+    "firmware/main/display/view_router.c",
+    "firmware/main/display/view_router.h",
+    "firmware/main/mcp_server.cc",
+    "firmware/main/application.cc",
+    "firmware/main/protocols/protocol.h",
+    "firmware/main/protocols/protocol.cc",
+    "firmware/main/CMakeLists.txt",
+    "firmware/main/test/points_device_ui.acceptance.c",
+    "firmware/main/test/record_session_live.acceptance.c",
+    "firmware/main/test/keybar_three_slot.acceptance.c",
+    "firmware/main/test/host_app/main/CMakeLists.txt",
+    "server/gateway/front/front_app.py",
+    "server/acceptance/test_points_device_ui.acceptance.py"
+  ],
+  "impactedTestsSeed": [
+    {
+      "path": "firmware/main/test/record_session_live.acceptance.c",
+      "kind": "frozen-rebaseline",
+      "note": "K0a 已改枚举驱动；本包只扩 points_ledger 子页语境，保持 story 记录语境和原发送时点。"
+    },
+    {
+      "path": "firmware/main/test/keybar_three_slot.acceptance.c",
+      "kind": "frozen-rebaseline",
+      "note": "K0a 的四点与 P3 主页槽为基线；详细账本/删除子态按 v1.71 收紧，覆盖层页点消失不变。"
+    },
+    {
+      "path": "firmware/main/test/story_page_v2.acceptance.c",
+      "kind": "regression",
+      "note": "删除确认可复用同族机制，故事列表/阅读/盖章数据与行为不并入积分。"
+    },
+    {
+      "path": "server/acceptance/test_m4k1_story_cloud_link.acceptance.py",
+      "kind": "regression",
+      "note": "新增 points_home/points_ledger/story_cover 等值的普通语境处理不得改变 story 的记录语境归档。"
+    }
+  ],
+  "uiux": {
+    "uiuxRequired": true,
+    "uiuxLevel": 2,
+    "designRefs": [
+      "docs/ui/V9/points-home.png",
+      "docs/ui/V9/points-home-empty.png",
+      "docs/ui/V9/points-home-nodata.png",
+      "docs/ui/V9/points-home-negative.png",
+      "docs/ui/V9/points-ledger.png",
+      "docs/ui/V9/points-delete-confirm.png"
+    ],
+    "sharedUiRefs": [
+      "docs/ui/kidpal-ui-design-v9.html",
+      "docs/ui/UIUX-DESIGN-BRIEF.md"
+    ],
+    "uiAcceptanceRefs": [
+      "points-home",
+      "points-home-empty",
+      "points-home-nodata",
+      "points-home-negative",
+      "points-ledger",
+      "points-delete-confirm"
+    ],
+    "designReviewRequired": true,
+    "designReviewEvidenceRequired": true,
+    "repoVisualArtifactRequired": false
+  },
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/261103-star-points-story-cover/"
+  ],
+  "riskTier": "high",
+  "riskRationale": "跨设备/front/云端持久账本实现新页面族、语音写入和删除上行，含全局键位、会话状态机和真实儿童交互，故为 high。",
+  "gateProfile": [
+    "evidence-integrity",
+    "test-quality",
+    "state-machine",
+    "mcp-tool-contract"
+  ],
+  "mergeOrder": 73,
+  "dependsOn": [
+    "261104-k1-points-ledger-core"
+  ],
+  "decisionCoverage": [
+    {
+      "decision": "D-02 · 单页积分主页与完整账本子页",
+      "summary": "points_page 从 spike 最小实现换为正式主页与详细账本，覆盖四态、最近三条、单行分录和全量可及。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-02"],
+      "landsIn": "exitCriteria:K2D-E1"
+    },
+    {
+      "decision": "D-03 / OQ-1 · 删除后重算与负余额如实显示",
+      "summary": "设备只发删除并消费权威重推，负数不藏、不钳位显示；兑换资格仍由 K1 判定。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-03", "S-F6.1-AC5", "S-F6.2-AC4"],
+      "landsIn": "exitCriteria:K2D-E3"
+    },
+    {
+      "decision": "D-04 · 完整语音句、短窗去重、设备语音不开放删除",
+      "summary": "完整句成功跳页，不完整句普通对话不落账；删除只走按键确认和私有上行。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-04"],
+      "landsIn": "exitCriteria:K2D-E3"
+    },
+    {
+      "decision": "D-06 · 云端真相源与断网可见失败",
+      "summary": "RAM 缓存可恢复重建，但不写 NVS/SD 账本或离线队列，断网写/删有可见失败。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-06"],
+      "landsIn": "exitCriteria:K2D-E3"
+    },
+    {
+      "decision": "D-07 · 恢复只填缓存，主动语音成功例外跳页",
+      "summary": "restore 与显式导航分流，其他页推送不抢前台，积分页在屏原地刷新。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-07"],
+      "landsIn": "exitCriteria:K2D-E2"
+    },
+    {
+      "decision": "D-08 · session_ctx、删除与分页私有帧消费",
+      "summary": "积分主页/详细账本语境、selected_id、kidpal_points_delete 与 keyset 请求按 landed 契约落地。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-08"],
+      "landsIn": "exitCriteria:K2D-E2"
+    },
+    {
+      "decision": "D-05 · QQ 家长通道复证",
+      "summary": "本包提供 restore/原地刷新消费缝，正式 QQ 加/兑/查/删由 K3 承接。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-05"],
+      "landsIn": "package:261104-k3-qq-points-channel"
+    },
+    {
+      "decision": "D-09 · 场景资产与刻度联动",
+      "summary": "本包建立进度线消费缝，四预置/自定义美术和切目标伸缩由 K4 承接。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-09"],
+      "landsIn": "package:261104-k4-reward-goal-config"
+    }
+  ],
+  "crossPackageBehaviors": [
+    {
+      "topic": "K1 权威账本到设备只读渲染与删除/分页上行",
+      "owner": "261104-k1-points-ledger-core",
+      "carriedBy": "261104-k2-points-device-ui",
+      "note": "K2 不重算余额、不本地持久化；删除和分页只消费 landed 私有帧及权威重推。"
+    },
+    {
+      "topic": "source_page 的 points_ledger 子页扩展",
+      "owner": "261104-k0a-four-page-skeleton",
+      "carriedBy": "261104-k2-points-device-ui",
+      "note": "K0a 已建立枚举驱动，本包补详细账本与 selected_id，K5 后续补 story_cover，不回退数字页位。"
+    },
+    {
+      "topic": "QQ/目标切换的 restore 与进度线消费缝",
+      "owner": "261104-k2-points-device-ui",
+      "carriedBy": "261104-k3-qq-points-channel",
+      "note": "K3 复证 QQ 到账不抢前台，K4 复证目标切换后刻度/场景标更新；两包都不另写设备渲染分支。"
+    },
+    {
+      "topic": "积分与故事星星的独立性",
+      "owner": "261104-k2-points-device-ui",
+      "carriedBy": "261104-k5-story-cover-nav",
+      "note": "K2 不动故事 total，K5 封皮计数仍复用 story_list.total，任何包不得把两套数字合并。"
+    }
+  ],
+  "notes": "影响面机械辅证：图索引确认 application.cc 会话发送单点、mcp_server display 路由族、view_router 既有 7 view 数值码和 front _consume_kidpal_control；K0/K1 已建立 points 最小生产消费，本包为串行正式化。相邻冻结锚非零命中：record_session_live、keybar_three_slot、story_page_v2、server session_ctx 族；K0a 已重锚的面以新基线为准，不重复回改旧三页断言。常量交叉扫描：删除确认 10 秒、消歧约 300ms 沿 spec，分页 limit 不钉死为 story 16，负余额只在删除重算后显示；NFR-PERF-4 不拍死数值。"
+}

@@ -109,3 +109,12 @@ delivery/intake/INDEX.md:10-29 的 16 条 spine 经积分/封皮/奖励关键词
 分流 review 结论为 **③拆包可提交 human 触点①确认，spike-first 必须保留**。上述 BLOCKING 项均已转化为需求 OQ、架构/契约任务或包级 launch 前置，没有留给实现 Pod 自裁的悬空项。本 sign-off 只表示 reviewed plan 的方向与拆包依据成立，不代表需求、架构、契约已经冻结，也不授权任何包 launch；PROPOSAL 的 FROZEN 仍归 human。
 
 （签署：architect 分流 review 实例，2026-11-03；主线程搬运落盘，OQ 裁定回灌见 PROPOSAL §3.2 与 spine openQ。）
+
+## 门 1（拆包四件套 checklist review，2026-11-04）
+
+- reviewer：architect（主线程另派，两轮 = 全量 checklist + 修正后聚焦复检）；制品 = roadmap.md + decision-coverage.json（13 LP）+ 7× delivery/taskpackages/261104-k*（taskpackage.json + plan.md）+ board 初始化（mergeOrder 70–76，K0a∥K0 并行对、其余 WIP=1 串行）。
+- **第一轮 verdict：BLOCK**（轻量修正型，七包方向与依赖主干成立，不放行 commit）。findings：F-01（BLOCKING）K0a/K0 双认领 host_app CMakeLists、「文件零重叠」声明失真；F-02（BLOCKING）K5 漏 S-F2.1 AC7；F-03（BLOCKING）K3 漏挂 NFR-PERF-4；F-04（MAJOR）K0 双状态证据一笔 QQ 消息不闭合；F-05（MAJOR）task_plan 风险字段漂移（K1 应 critical、K3/K4 应 high、medium-high 非法枚举）。
+- **LP7 裁定（第一轮内闭环）**：K0 QQ producer = 真实 QQ 一次性明确指令（带唯一 canary token）→ 既有 main agent → K0 暴露的最小 add CLI；**不建临时 skill**。四条禁令：禁直编 points/state.json、禁终端调 CLI 冒充 QQ、禁本地 OpenClaw 注入冒充、禁提前建 K3 正式 skill。LP7 verified 只覆盖预评可达性；真实执行由 K0 spike 证据判定、不预先标绿。
+- **planner 修正轮**：六项全部落盘——F-01 改「唯一共享构建清单 + K0a 先落、K0 重取基线后追加」（K0 的 host/device build、真机终验、ready-to-merge 后置到 K0a merged 后）；F-02 K5 回归集 AC1–AC7 + S-F2.1-AC7 sourceRef；F-03 K3 挂 NFR-PERF-4（sourceRefs/acceptanceRefs/K3Q-E4 实测时延不写死阈值）+ K4 顺带同时延字段；F-04 K0S-E3 首选两笔同形真实 QQ canary（其他页 / 积分页在屏各一笔）+ 单笔时诚实降级口径；F-05 task_plan 风险值对齐；LP7 evidence 回填本节。
+- **聚焦复检 verdict：GREEN**——五 findings 逐项闭环确认（K0a/K0 changeManifest 交集机械重算恰为 firmware/main/test/host_app/main/CMakeLists.txt 一处；AC1–AC7、NFR-PERF-4、两笔 canary、风险值、LP7 预评/执行边界均在位，无新增阻塞项）；K0a/K0/K3/K4/K5 五个改动包 devloop-artifact-check.mjs 全部 ok:true、advisories 空。
+- **sign-off：门 1 放行「human 过目切法 → commit」**；launchPreconditions 中 LP5（门 1 GREEN + human 过目）随本节落盘 + human 过目后闭环，LP6（commit 专用 base ref）随 commit 闭环。

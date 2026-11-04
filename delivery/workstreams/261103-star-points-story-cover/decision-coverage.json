@@ -1,0 +1,344 @@
+{
+  "workstream": "261103-star-points-story-cover",
+  "source": "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md",
+  "upstreamFrozen": "sha1:4eca114e6998e14e",
+  "archUpstream": "docs/architecture.md §12 changeId 行 + docs/decisions/ADR.md#ADR-018（2026-11-04 landed）",
+  "generatedBy": "portfolio-planner",
+  "generatedAt": "2026-11-04",
+  "updatedAt": "2026-11-04",
+  "_doc": [
+    "拆包输入复核：M7-star-points-cover 已登记 milestones.jsonl（state=planning），task_plan.md phases K0a/K0/K1–K5 在场，PROPOSAL FROZEN v1.0 模板硬项齐备；需求 v1.71、架构 ADR-018 与契约五触点均已 landed。D-01/D-08 的 spec 修订无剩余 launch 阻塞。",
+    "切法按 human 2026-11-04 确认的七包执行：K0a 四页骨架与 K0 端到端 spike 为唯一 WIP=2 并行对，mergeOrder=70/71 钉死 K0a 先合；两包 merged 后 WIP=1，K1→K2→K3→K4→K5，mergeOrder=72/73/74/75/76。PROPOSAL §4 原为六包且把 TECH-261028 放在 K5，只是意图提示；human 已确认七包与前移 K0a，本文件按新裁定投影。",
+    "依赖边分内容依赖与调度依赖：K0a/K0 dependsOn 均为空以允许并行开工，K0 的共享 host CMake 追加、host build、device build、真机终验和 ready-to-merge 另受 K0a merged 前置约束；K1 等 K0a+K0，K2 等 K1，K3 等 K1+K2，K4 等 K1+K2+K3，K5 等 K2+K4。K5 对 K4 的边用于锁定最后落共享导航面的串行序。",
+    "风险字段：K0a/K0/K2/K5=high（全局状态机、跨端契约和真实设备面）；K1=critical（持久分录删除、余额重算和兑换扣减，命中 data deletion）；K3/K4 不预降 medium，均为 high——前者可由真实 QQ 触发持久删除/兑换且有 ask_user 卡死风险，后者直接改变兑换金额并跨 QQ/账本/front/资产/设备。七包 rigor 均为 full。",
+    "story 引用机查：S-F2.6、S-F6.1–S-F6.5 及回归用 S-F2.1/S-F2.2/S-F2.3/S-F2.4 均不在 requirements §8 已砍清单，可行性无 🔴；sourceRefs 使用 S-Fx.y-ACn 复合锚，acceptance 唯一写点仍为 Pod 内 acceptance-author。",
+    "影响面机械辅证：C-AI-KidPal 图索引核实 kidpal_render_node_cycle_next、kidpal_story_ctx_source_page、keybar 三函数、view_router、front _push_story_list/_push_display_payload、_consume_kidpal_control 与 application.cc 会话发送单点；source_page 图 inbound=0 属 C 调用解析缺口，已由 application.cc:1313-1320 实读补录。points.py 无既有节点，story.py 的 seq ledger 是独立数据域；tools 资产管线不入图，按纪律以 gen_assets.mjs/gen_art_spiffs.mjs 实读补录。",
+    "跨包共享常量/冻结面交叉扫描：未发现包间互斥常量。保留值包括短窗起步 10 分钟且注入时间、删除确认 10 秒、keyset (occurred_at,id)+revision、契约分页 limit 默认 6/允许 1–50、资产闭集 sc-choco/sc-movie/sc-wheel/sc-gift/sc-flag、story_list.total 唯一计数源。行为碰撞面已登记：三页/数值 source_page 冻结断言归 K0a 重锚，display_schema/view/session_ctx  additive 扩展归 K0–K2，story_list 后台 restore:true 与旧实现/测试差距归 K5 重锚，KAP1/生成件归 K4→K5 串行。所有 supersede 只由 Pod 内 acceptance-author 留痕执行。",
+    "K0a/K0 共享构建清单与承重缝：K0a 的 P3 静态占位留下接管缝并先落 firmware/main/test/host_app/main/CMakeLists.txt；该文件是两包唯一共享构建清单，不再宣称文件零重叠。K0 并行开发服务端与新增 points 文件，K0a merged 后重取基线追加 CMake，随后才跑 host build、device build、真机终验并进入 ready-to-merge。",
+    "真实 QQ spike 预评已由门 1 裁定通过：真实 QQ 一次性明确指令 → 既有 main agent → K0 最小 add CLI，不建临时 skill；canary token 关联 QQ/front/points/设备日志。禁直编 state 文件、禁终端调 CLI 冒充 QQ、禁本地 OpenClaw 注入冒充、禁提前建 K3 skill。该裁定只闭合 producer 预评，真实执行结果仍由 K0 spike 证据判定。",
+    "acceptance 唯一写点 = Pod 内 acceptance-author：七包拆包期 acceptance=[]、acceptanceTestsFile=[]、redBaseline 为空；本文件与包级 decisionCoverage 只映射承载包/exitCriteria/跨包指针，不代写验收断言。",
+    "真机配额：K0a 四页骨架、K0 spike 终验、K2 积分页、K4 场景刻度、K5 导航并集各一轮；K3 使用真实 QQ 与设备联调。K5 只承担导航并集，PROPOSAL §5 整列车真机+真实 QQ 联合收口由主线程另组织。",
+    "共享外部 debt：TECH-261022-p3-record-session-state-churn 的独立承接包与本列车共享 keybar/story/front 文件，合并时复跑双方冻结件但不吸收其 scope；TECH-261028 只由 K0a 承接，K5 仅回归。当前 board 记录 261022-p3-record-chrome-ghost-fix 与 261022-p3-record-front-polish-fix 均 merged，无活跃并行 Pod 冲突。",
+    "frozen spec/架构/契约冲突审查：七包切法本身未发现实质冲突。现存实现/旧验收与 landed 契约的差距（七 view、数值 source_page、story_list 旧 restore/P3 语义）均已分配实现包，不属于要求改切法的冲突。"
+  ],
+  "decisionCoverage": [
+    {
+      "decision": "D-01a / 目的1 · 四页骨架与四点页点",
+      "summary": "P3 积分占位、P4 故事原地迁移、BOOT 四页循环、keybar 四点和枚举驱动语境先落地。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-01"],
+      "landsIn": "package:261104-k0a-four-page-skeleton"
+    },
+    {
+      "decision": "D-01b / 目的1 · 故事封皮与逐层返回",
+      "summary": "P4 封皮成为唯一入口，列表/阅读下沉，阅读→列表→封皮→首页逐层返回。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-01"],
+      "landsIn": "package:261104-k5-story-cover-nav"
+    },
+    {
+      "decision": "D-02a / 目的2 · 单页积分进度与最近三条",
+      "summary": "正式积分主页显示余额、目标进度、最近三条，兑换/切目标后同页重画。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-02"],
+      "landsIn": "package:261104-k2-points-device-ui"
+    },
+    {
+      "decision": "D-02b / 目的3 · 完整账本与删除的设备闭环",
+      "summary": "详细账本全量可及、单行分录、整屏删除确认与权威重推由设备包完成。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-02"],
+      "landsIn": "package:261104-k2-points-device-ui"
+    },
+    {
+      "decision": "目的4 · 设备完整语音句自助记账与兑换",
+      "summary": "完整句落账跳页、不完整句不记账、目标分值校验和真实兑现后扣由 K2 做端到端验收。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§1-目的4"],
+      "landsIn": "package:261104-k2-points-device-ui"
+    },
+    {
+      "decision": "目的5 · QQ 家长同规则账本",
+      "summary": "正式 QQ 加/兑/查/删、稳定定位、一次性错误回复和不抢前台由 K3 承接。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§1-目的5"],
+      "landsIn": "package:261104-k3-qq-points-channel"
+    },
+    {
+      "decision": "目的6 · 唯一激活奖励目标管理",
+      "summary": "四预置、自定义/切换/删除、通用标记与刻度伸缩由 K4 承接。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§1-目的6"],
+      "landsIn": "package:261104-k4-reward-goal-config"
+    },
+    {
+      "decision": "目的7a · 云端唯一真相源与断网不补写",
+      "summary": "持久状态、写入和失败语义由 K1 单 writer 承载，不建立本地离线队列。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§1-目的7"],
+      "landsIn": "package:261104-k1-points-ledger-core"
+    },
+    {
+      "decision": "目的7b · 建连恢复与故事/积分数字独立",
+      "summary": "K2 负责积分 RAM 缓存恢复与独立显示，K5 的封皮继续复用故事 total。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§1-目的7"],
+      "landsIn": "package:261104-k2-points-device-ui"
+    },
+    {
+      "decision": "目的8 · 修复阅读既有按键缺陷",
+      "summary": "TECH-261028 前移至 K0a，K5 只做回归不重复承接。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§1-目的8", "docs/debt/tech/TECH-261028-p3-reader-key-falls-to-session-toggle.md"],
+      "landsIn": "package:261104-k0a-four-page-skeleton"
+    },
+    {
+      "decision": "D-03 / OQ-1 · 分录事实、删除致负与兑换资格",
+      "summary": "余额由分录派生，删除重算允许负余额，兑换仍要求余额不低于激活目标且真实兑现后扣。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-03", "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.2-OQ-1"],
+      "landsIn": "package:261104-k1-points-ledger-core"
+    },
+    {
+      "decision": "D-04 · 完整句式、短窗去重与语音不删除",
+      "summary": "K1 负责确定性短窗去重，K2 负责完整/不完整句、语音跳页和按键删除闭环。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-04"],
+      "landsIn": "package:261104-k2-points-device-ui"
+    },
+    {
+      "decision": "D-05 · QQ 同规则且扩展家长管理",
+      "summary": "QQ 账本通道由 K3 建立，目标配置在同一通道由 K4 扩展。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-05"],
+      "landsIn": "package:261104-k3-qq-points-channel"
+    },
+    {
+      "decision": "D-06 · 云端真相源与离线边界",
+      "summary": "points.py 云端持久化为唯一事实源，断网不本地暂存补记。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-06"],
+      "landsIn": "package:261104-k1-points-ledger-core"
+    },
+    {
+      "decision": "D-07a · 积分 restore 与主动语音前台语义",
+      "summary": "K0 spike 首先用真实 QQ/设备验证其他页不抢前台和主动语音成功跳页。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-07"],
+      "landsIn": "package:261104-k0-points-e2e-spike"
+    },
+    {
+      "decision": "D-07b · story_list 后台推送不抢前台",
+      "summary": "K5 对齐恢复/归档/删除后台推送 restore:true 与显式封皮导航。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-07"],
+      "landsIn": "package:261104-k5-story-cover-nav"
+    },
+    {
+      "decision": "D-08a · 积分 display/薄意图/分页最小通路",
+      "summary": "K0 建立 points_home、薄意图、最小 points_page 与首尾分页 canary。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-08"],
+      "landsIn": "package:261104-k0-points-e2e-spike"
+    },
+    {
+      "decision": "D-08b · 删除与 keyset producer 正式化",
+      "summary": "K1 实现单 writer 删除重算、重推与 keyset+revision 分页。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-08"],
+      "landsIn": "package:261104-k1-points-ledger-core"
+    },
+    {
+      "decision": "D-08c · 积分语境、删除和分页设备消费",
+      "summary": "K2 实现 points_home/points_ledger 语境、selected_id、删除上行和分页缓存。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-08"],
+      "landsIn": "package:261104-k2-points-device-ui"
+    },
+    {
+      "decision": "D-08d · story_list P4 共享帧",
+      "summary": "K5 对齐空 data 封皮导航、total 共享计数、后台 restore 和 story_cover/story 语境。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-08"],
+      "landsIn": "package:261104-k5-story-cover-nav"
+    },
+    {
+      "decision": "D-09a · 四预置与自定义通用资产",
+      "summary": "K4 以既有资产管线产四场景和 sc-flag，不重排分区。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-09"],
+      "landsIn": "package:261104-k4-reward-goal-config"
+    },
+    {
+      "decision": "D-09b · 书封与 ic-coin 资产",
+      "summary": "K5 在同一管线后序生产封皮资产。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-09"],
+      "landsIn": "package:261104-k5-story-cover-nav"
+    },
+    {
+      "decision": "D-10 · LLM 薄意图与 points.py 单 writer",
+      "summary": "K1 统一校验、余额计算、目标配置和原子写，front/QQ 不实现第二账本。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-10"],
+      "landsIn": "package:261104-k1-points-ledger-core"
+    },
+    {
+      "decision": "OQ-2 · 禁止删除激活自定义目标",
+      "summary": "K1 提供存储约束，K4 用真实 QQ 验证先切换再删和恒有目标。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.2-OQ-2"],
+      "landsIn": "package:261104-k4-reward-goal-config"
+    },
+    {
+      "decision": "OQ-3 · 自定义目标 5–200 正整数",
+      "summary": "K1 提供校验，K4 验证边界内外和一次性错误回复。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.2-OQ-3"],
+      "landsIn": "package:261104-k4-reward-goal-config"
+    },
+    {
+      "decision": "§3.3 非目标 · 庆祝演出/惩罚扣分/语音删除/离线队列/多身份/合并星星等",
+      "summary": "这些是防 scope creep 的负向边界，各包保持不实现，违反即回 PROPOSAL 逃生门。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.3"],
+      "landsIn": "dropped",
+      "reason": "这些条目是明确非目标而非待实现能力；不拆入任何包即兑现，不能在实现期借 spike 或收口复活。"
+    },
+    {
+      "decision": "§5a · 导航并集收口",
+      "summary": "K5 承担 BOOT 四页、封皮与阅读到首页逐层返回的导航并集证据。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§5"],
+      "landsIn": "package:261104-k5-story-cover-nav"
+    },
+    {
+      "decision": "§5b · 跨包真机与真实 QQ 联合收口",
+      "summary": "整列车端到端收口不压给 K5 单 Pod，由主线程另组织一轮覆盖 PROPOSAL §5 全项。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§5"],
+      "landsIn": "dropped",
+      "reason": "不是取消收口，而是明确不由任一 TaskPackage 单独承接；主线程必须在七包后另组织联合收口并留存证据。"
+    }
+  ],
+  "crossPackageBehaviors": [
+    {
+      "topic": "P3 静态占位到 K0 最小渲染的接管缝",
+      "owner": "261104-k0a-four-page-skeleton",
+      "carriedBy": "261104-k0-points-e2e-spike",
+      "note": "K0a 提供接管缝并先落共享 host CMake，K0 并行开发服务端与新增 points 文件；K0a merged 后重取基线追加 firmware/main/test/host_app/main/CMakeLists.txt，再跑 host/device build 与真机终验。该 CMake 为两包唯一共享文件，不宣称零重叠。"
+    },
+    {
+      "topic": "K0 最小写入到 K1 正式单 writer",
+      "owner": "261104-k1-points-ledger-core",
+      "carriedBy": "261104-k1-points-ledger-core",
+      "note": "同一 points.py 正式化，不保留第二状态文件或 spike 旁路。"
+    },
+    {
+      "topic": "K1 权威账本到 K2 设备消费",
+      "owner": "261104-k1-points-ledger-core",
+      "carriedBy": "261104-k2-points-device-ui",
+      "note": "K2 只显示权威值并发送删除/分页请求，不本地重算或持久化。"
+    },
+    {
+      "topic": "K1 CLI 到 K3 正式 QQ 通道",
+      "owner": "261104-k1-points-ledger-core",
+      "carriedBy": "261104-k3-qq-points-channel",
+      "note": "K3 只整理一次性命令并调 CLI；K0 QQ canary 不等于正式通道完成。"
+    },
+    {
+      "topic": "K2 restore/进度线缝到 K3/K4 联动",
+      "owner": "261104-k2-points-device-ui",
+      "carriedBy": "261104-k3-qq-points-channel",
+      "note": "K3 复证 QQ 不抢前台，K4 复证切目标刻度；均复用 K2 消费缝。"
+    },
+    {
+      "topic": "K3 QQ skill 到 K4 目标配置扩展",
+      "owner": "261104-k3-qq-points-channel",
+      "carriedBy": "261104-k4-reward-goal-config",
+      "note": "同一 skill 增加自定义/切换/删除目标，不另建 QQ 通道或 ask_user 流程。"
+    },
+    {
+      "topic": "source_page 枚举映射的 K0a→K2→K5 扩展",
+      "owner": "261104-k0a-four-page-skeleton",
+      "carriedBy": "261104-k2-points-device-ui",
+      "note": "K0a 建基础映射，K2 补 points_ledger，K5 补 story_cover；story 列表记录语境不变。"
+    },
+    {
+      "topic": "K4/K5 资产管线串行",
+      "owner": "261104-k4-reward-goal-config",
+      "carriedBy": "261104-k5-story-cover-nav",
+      "note": "K4 产场景与 sc-flag，K5 后序产 ic-coin/书封，避免生成器和生成件并行相交。"
+    },
+    {
+      "topic": "story_list.total 在封皮与列表间复用",
+      "owner": "261104-k5-story-cover-nav",
+      "carriedBy": "261104-k5-story-cover-nav",
+      "note": "封皮与列表只信 total，不新增 story_cover view 或 cover_total，积分余额完全独立。"
+    },
+    {
+      "topic": "TECH-261028 前移与 K5 回归",
+      "owner": "261104-k0a-four-page-skeleton",
+      "carriedBy": "261104-k0a-four-page-skeleton",
+      "note": "K0a 唯一承接修复，K5 只验证封皮改造零回归，不重复结项。"
+    },
+    {
+      "topic": "导航并集与整列车联合收口分界",
+      "owner": "261104-k5-story-cover-nav",
+      "carriedBy": "261104-k5-story-cover-nav",
+      "note": "K5 只收导航并集；PROPOSAL §5 全项由主线程另组织跨包真机+真实 QQ 收口轮。"
+    }
+  ],
+  "launchPreconditions": [
+    {
+      "text": "LP1 上游需求冻结：requirements 头部与 §9 v1.71 行在位，D-01 的四页/封皮语义和 D-02 的 F6 五 story 已 frozen；适用于全部七包。",
+      "scope": "workstream",
+      "status": "verified",
+      "evidence": "docs/requirements.md 头部 frozen v1.71 + §9 v1.71 行（2026-11-04）；spine anchors.req 已回填"
+    },
+    {
+      "text": "LP2 上游架构冻结：architecture §12 的 261103-star-points-story-cover 行、points.py 单 writer、枚举驱动映射、场景⑥、keyset 与 ADR-018 在位。",
+      "scope": "workstream",
+      "status": "verified",
+      "evidence": "docs/architecture.md §12 changeId 行 + docs/decisions/ADR.md#ADR-018；delivery/review/261103-arch-review-star-points-story-cover landing-verdict PASS；spine anchors.arch 已回填"
+    },
+    {
+      "text": "LP3 上游契约落地：points_home/points_ledger、add_points/redeem_points、kidpal_points_delete/page、session_ctx 六值和 story_list P4 共享帧均已 landed；实现包不得再改契约。",
+      "scope": "workstream",
+      "status": "verified",
+      "evidence": "docs/contracts/interface-contract.md §1.3⑦⑧/§1.4/§四及 2026-11-04 变更记录；CDQ-261103-star-points-story-cover，landing commit b930f498；spine anchors.contract 已回填"
+    },
+    {
+      "text": "LP4 UI-ready：触 UI 包所需 V9 frozen PNG 在盘，requirements §9 v1.71 与 UIUX-DESIGN-BRIEF v8 对齐注记在位；K0a/K5 的系统蓝图与 K0/K2/K4 的逐页帧均已挂入 uiux.designRefs。",
+      "scope": "workstream",
+      "status": "verified",
+      "evidence": "docs/ui/UI-DESIGN-VERSIONS.md current=v9 + docs/ui/V9/ 11 帧实查 + docs/ui/UIUX-DESIGN-BRIEF.md v8 对齐 v1.71 + requirements §9 v1.71"
+    },
+    {
+      "text": "LP5 门 1 GREEN + human 过目切法：architect 轻量 checklist 五项与 workType 分流全过，裁决 append review.md「门 1」节；未绿不得 commit-before-launch。",
+      "scope": "workstream",
+      "status": "unverified",
+      "evidence": ""
+    },
+    {
+      "text": "LP6 commit-before-launch：roadmap、本 decision-coverage、task_plan 与七包 taskpackage/plan 先 commit 到专用 base ref（非 main），Pod worktree 自该 ref 建出；board 不入 commit。",
+      "scope": "workstream",
+      "status": "unverified",
+      "evidence": ""
+    },
+    {
+      "text": "LP7 K0 真实 QQ 最小 producer 预评已由门 1 裁定：真实 QQ 一次性明确指令 → 既有 main agent → K0 最小 add CLI，不建临时 skill；canary token 关联日志。禁直编 state 文件、禁终端调 CLI 冒充 QQ、禁本地 OpenClaw 注入冒充、禁提前建 K3 skill。该 verified 只覆盖预评，真实执行结果仍由 K0 spike 证据判定。",
+      "scope": "package:261104-k0-points-e2e-spike",
+      "status": "verified",
+      "evidence": "delivery/workstreams/261103-star-points-story-cover/review.md「门 1」2026-11-04 裁定：真实 QQ 一次性明确指令→既有 main agent→K0 最小 add CLI，不建临时 skill；canary token 关联日志及四项禁止口径。"
+    },
+    {
+      "text": "LP8 K0 终验顺序：K0 可与 K0a 并行 launch 做服务端与新增 points 文件开发，但共享 host CMake 追加、host build、device build、真机终验和 ready-to-merge 必须等 K0a merged 并重取基线；K0a mergeOrder=70 先合。",
+      "scope": "package:261104-k0-points-e2e-spike",
+      "status": "unverified",
+      "evidence": ""
+    },
+    {
+      "text": "LP9 K1 等 K0a 与 K0 均 merged 后方可 launch；K0 spike 的真实消费端证据和首尾分页 canary 必须已在位。",
+      "scope": "package:261104-k1-points-ledger-core",
+      "status": "unverified",
+      "evidence": ""
+    },
+    {
+      "text": "LP10 K2 等 K1 merged 后方可 launch；points.py 单 writer、删除/兑换不变量和 keyset producer 已成为可消费基线。",
+      "scope": "package:261104-k2-points-device-ui",
+      "status": "unverified",
+      "evidence": ""
+    },
+    {
+      "text": "LP11 K3 等 K1、K2 merged 后方可 launch，并由 launch 执行者确认真实 QQ 验证窗口和设备联调条件可用；真实歧义输入不卡死是必做证据。",
+      "scope": "package:261104-k3-qq-points-channel",
+      "status": "unverified",
+      "evidence": ""
+    },
+    {
+      "text": "LP12 K4 等 K1、K2、K3 merged 后方可 launch；四预置/自定义资产与 K5 封皮资产的产线串行顺序不得调换。",
+      "scope": "package:261104-k4-reward-goal-config",
+      "status": "unverified",
+      "evidence": ""
+    },
+    {
+      "text": "LP13 K5 等 K2 与 K4 merged 后方可 launch，借 K4 传递依赖保证排在 K3 后；K0a 的四页/阅读键和 K2 的 P3 积分页均不得回退。",
+      "scope": "package:261104-k5-story-cover-nav",
+      "status": "unverified",
+      "evidence": ""
+    }
+  ]
+}

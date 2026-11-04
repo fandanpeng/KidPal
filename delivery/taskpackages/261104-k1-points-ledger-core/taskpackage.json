@@ -1,0 +1,234 @@
+{
+  "changeId": "261104-k1-points-ledger-core",
+  "title": "云端确定性账本核心——points.py 单 writer、原子写与重算、两类幂等、删除和目标存储、keyset 分页",
+  "rigor": "full",
+  "sourceType": "proposal",
+  "origin": {
+    "type": "proposal",
+    "upstreamType": "proposal",
+    "upstreamRef": "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md",
+    "upstreamFrozen": "sha1:4eca114e6998e14e",
+    "workstream": "261103-star-points-story-cover"
+  },
+  "subsystem": "server/gateway points.py 确定性持久账本、目标配置、front producer 与离线验收",
+  "story": "S-F6.2 · 浏览详细账本与删除误记（AC1、AC4）+ S-F6.3 · 设备语音记账与兑换（AC3、AC4、AC5、AC6）+ S-F6.5 · 奖励场景与激活目标配置（AC1、AC2、AC4 存储半）+ NFR-OFF-1 · 离线边界。",
+  "planRef": "delivery/taskpackages/261104-k1-points-ledger-core/plan.md",
+  "sourceRefs": [
+    "S-F6.2-AC1",
+    "S-F6.2-AC4",
+    "S-F6.3-AC3",
+    "S-F6.3-AC4",
+    "S-F6.3-AC5",
+    "S-F6.3-AC6",
+    "S-F6.5-AC1",
+    "S-F6.5-AC2",
+    "S-F6.5-AC4",
+    "docs/requirements.md#NFR-OFF-1",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-03",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-06",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-08",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-10",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.2-OQ-1",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.2-OQ-2",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.2-OQ-3",
+    "delivery/workstreams/261103-star-points-story-cover/task_plan.md#K1",
+    "docs/architecture.md#§5.1.2",
+    "docs/architecture.md#§5.2-场景⑥",
+    "docs/architecture.md#§6.5",
+    "docs/contracts/interface-contract.md#§四-kidpal_points_delete",
+    "docs/contracts/interface-contract.md#§四-kidpal_points_page",
+    "docs/decisions/ADR.md#ADR-018"
+  ],
+  "acceptanceRefs": [
+    "docs/requirements.md#S-F6.2",
+    "docs/requirements.md#S-F6.3",
+    "docs/requirements.md#S-F6.5",
+    "docs/requirements.md#NFR-OFF-1",
+    "docs/architecture.md#§6.5",
+    "docs/contracts/interface-contract.md#§四-kidpal_points_delete",
+    "docs/contracts/interface-contract.md#§四-kidpal_points_page"
+  ],
+  "acceptance": [],
+  "acceptanceTestsFile": [],
+  "redBaselineCommand": "",
+  "redBaselineResult": "",
+  "exitCriteria": [
+    "K1L-E1: server pytest 覆盖单 writer 串行、原子追加与替换、余额和逐条前后余额重算、兑换资格/真实兑现/不重复扣、删除致负与删除后兑换约束；红基线和变异证据齐全。",
+    "K1L-E2: 注入时钟的验收证据证明短窗语义去重起步 10 分钟且窗口外合法新命令可写；稳定 command_id 的传输重放独立验证，不以文案去重代替传输幂等。",
+    "K1L-E3: keyset producer 与真实消费端复核覆盖首页、续页、最早页、插入/删除后的 revision 重置、非法游标和空账；不得使用 offset 或 story_list 16 条窗口冒充完整账本。",
+    "K1L-E4: 四预置与默认游乐场 40、自定义 5–200、预置不可删和激活自定义禁删的持久配置证据在场；目标切换不自动产生兑换分录，历史名目快照不改写。",
+    "K1L-E5: 断网/失败路径无设备本地写队列或补写机制；front 与 QQ 入口均只调同一 points.py，真实消费端复核结果与服务端状态一致。",
+    "K1L-E6: 实际 diff 限于 changeManifest，K0 spike 通路被正式化而非另起第二账本；K2/K3/K4 所需 producer/CLI 与回执形状有可读交接证据，离线测试不冒充真机终验。"
+  ],
+  "iterationBudget": 3,
+  "fixBudget": 4,
+  "supervisorBlockBudget": 2,
+  "contractRefs": [
+    "docs/contracts/interface-contract.md#§1.3⑦",
+    "docs/contracts/interface-contract.md#§1.3⑧",
+    "docs/contracts/interface-contract.md#§1.4",
+    "docs/contracts/interface-contract.md#§四-kidpal_points_delete",
+    "docs/contracts/interface-contract.md#§四-kidpal_points_page"
+  ],
+  "docRefs": [
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md",
+    "delivery/workstreams/261103-star-points-story-cover/review.md",
+    "delivery/workstreams/261103-star-points-story-cover/task_plan.md",
+    "delivery/taskpackages/261104-k1-points-ledger-core/plan.md",
+    "docs/requirements.md",
+    "docs/architecture.md",
+    "docs/contracts/interface-contract.md",
+    "docs/decisions/ADR.md"
+  ],
+  "docsSyncRequired": false,
+  "docsSyncReason": "单 writer、删除重算、两类幂等、目标配置和 keyset 语义已由 requirements、架构、契约与 ADR-018 冻结；本包只落实现。",
+  "docsOwner": "integrator",
+  "securityReviewRequired": false,
+  "adrRequired": false,
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline",
+    "live-manual"
+  ],
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": [],
+    "note": "Draft 态空骨架；账本不变量必须逐条有可转红的变异证据，真实消费端复核另行保留。"
+  },
+  "crossEnd": {
+    "counterparts": [
+      {
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "_push_display_payload"
+      },
+      {
+        "path": "firmware/main/display/view_router.c",
+        "symbol": "kidpal_display_route"
+      }
+    ],
+    "exempt": ""
+  },
+  "changeManifest": [
+    "server/gateway/points.py",
+    "server/gateway/front/front_app.py",
+    "server/gateway/display_schema.py",
+    "server/tests/test_points_ledger_units.py",
+    "server/acceptance/test_points_ledger_core.acceptance.py",
+    "server/deploy/manifest.yaml",
+    "server/deploy/deploy.sh",
+    "server/deploy/verify-deploy.sh"
+  ],
+  "impactedTestsSeed": [
+    {
+      "path": "server/tests/test_story_units.py",
+      "kind": "regression",
+      "note": "故事 seq 账本是独立数据域，只可参考原子写经验，不复用、不改名、不与积分余额合并。"
+    },
+    {
+      "path": "server/acceptance/test_m4k1_story_cloud_link.acceptance.py",
+      "kind": "regression",
+      "note": "既有 story_list/story_text 与故事删除语义不变；积分私有帧不得落入故事分支。"
+    },
+    {
+      "path": "server/acceptance/test_record_dialogue_guide.acceptance.py",
+      "kind": "regression",
+      "note": "既有 gateway 决定类与 forwardable 控制动作分叉保持，新增积分动作只由 front 截获执行。"
+    }
+  ],
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/261103-star-points-story-cover/"
+  ],
+  "riskTier": "critical",
+  "riskRationale": "本包直接拥有持久分录删除、余额重算和兑换扣减；错误会造成不可逆账本失真、重复扣除或跨通道双写，命中 data deletion 与核心业务正确性，故为 critical。",
+  "gateProfile": [
+    "evidence-integrity",
+    "test-quality",
+    "real-db",
+    "state-machine",
+    "mcp-tool-contract"
+  ],
+  "mergeOrder": 72,
+  "dependsOn": [
+    "261104-k0a-four-page-skeleton",
+    "261104-k0-points-e2e-spike"
+  ],
+  "decisionCoverage": [
+    {
+      "decision": "D-03 / OQ-1 · 分录为事实，删除重算允许负余额，兑换仍受资格约束",
+      "summary": "余额由剩余分录派生；加 50→兑 40→删加 50 后可得负余额，后续兑换仍要求余额不低于激活目标分值。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-03", "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.2-OQ-1"],
+      "landsIn": "exitCriteria:K1L-E1"
+    },
+    {
+      "decision": "D-04 · 短窗语义去重与完整记账规则",
+      "summary": "可注入时钟实现起步 10 分钟的保守归一化去重；完整/不完整句的模型侧规则由 K0/K2 验证，本包负责确定性去重。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-04"],
+      "landsIn": "exitCriteria:K1L-E2"
+    },
+    {
+      "decision": "D-06 · 云端唯一真相源，断网不本地补写",
+      "summary": "持久状态只在云端 points/state.json，失败不在设备或另一通道排队补写。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-06"],
+      "landsIn": "exitCriteria:K1L-E5"
+    },
+    {
+      "decision": "D-08 · 删除与 keyset 分页 producer",
+      "summary": "删除重推对账与 (occurred_at,id) keyset+revision 重置按 landed 契约实现。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-08"],
+      "landsIn": "exitCriteria:K1L-E3"
+    },
+    {
+      "decision": "D-10 · points.py 唯一确定性 writer",
+      "summary": "front API 与 QQ CLI 共用进程间锁、校验、原子写和回执，LLM/front/QQ 不各算一套余额。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-10"],
+      "landsIn": "exitCriteria:K1L-E5"
+    },
+    {
+      "decision": "OQ-2/OQ-3 · 目标配置存储边界",
+      "summary": "持久层支持四预置、自定义 5–200、禁删激活目标；完整 QQ 配置交互与设备刻度由 K4 承接。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.2-OQ-2", "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.2-OQ-3"],
+      "landsIn": "exitCriteria:K1L-E4"
+    },
+    {
+      "decision": "D-02 · 完整设备积分本",
+      "summary": "本包提供权威数据和分页 producer，设备主页、详细账本、删除确认和语音闭环由 K2 承接。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-02"],
+      "landsIn": "package:261104-k2-points-device-ui"
+    },
+    {
+      "decision": "D-05 · QQ 家长通道",
+      "summary": "本包提供共用 CLI/回执，正式 QQ skill 与真实家长交互由 K3 承接。",
+      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-05"],
+      "landsIn": "package:261104-k3-qq-points-channel"
+    }
+  ],
+  "crossPackageBehaviors": [
+    {
+      "topic": "points.py 单 writer 与 K0 最小路径正式化",
+      "owner": "261104-k1-points-ledger-core",
+      "carriedBy": "261104-k1-points-ledger-core",
+      "note": "K0/K0a 均 merged 后 launch；保留已验证端到端通路，在同一模块补齐全部不变量。"
+    },
+    {
+      "topic": "权威余额、分页和删除重推的设备消费",
+      "owner": "261104-k1-points-ledger-core",
+      "carriedBy": "261104-k2-points-device-ui",
+      "note": "K1 是数据语义 owner，K2 只显示权威值、发删除/取页请求，不在设备重算或持久化账本。"
+    },
+    {
+      "topic": "QQ CLI 与语音 API 共享全部账本规则",
+      "owner": "261104-k1-points-ledger-core",
+      "carriedBy": "261104-k3-qq-points-channel",
+      "note": "K3 只整理一次性命令并调 CLI，不直接编辑状态文件，不实现第二套删除/兑换规则。"
+    },
+    {
+      "topic": "目标配置存储到 QQ 管理与设备刻度联动",
+      "owner": "261104-k1-points-ledger-core",
+      "carriedBy": "261104-k4-reward-goal-config",
+      "note": "K1 先建立合法存储和校验，K4 完成 QQ 自定义/切换/删除、美术与切目标后兑换/刻度联动。"
+    }
+  ],
+  "notes": "影响面机械辅证：图索引对 points/ledger 搜索只见 story.py 的独立 seq ledger，未见 points.py，证明新数据域无旧 writer；front _push_display_payload 与设备 kidpal_display_route 是已核消费对端。相邻冻结锚：story.py/_save_ledger 与 server/tests/test_story_units.py 属故事 seq 独立域，零修改；display_schema/record_dialogue_guide 既有控制来源门禁保留。常量交叉扫描：短窗起步 10 分钟须注入时间，分页默认 limit=6、允许 1–50 以契约为准，story_list 16 条窗口禁止复用；负余额不得被既有非负假设钳位。K1 同时等 K0a/K0 merged，mergeOrder=72。"
+}
