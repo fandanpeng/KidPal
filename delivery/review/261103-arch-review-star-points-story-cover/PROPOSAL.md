@@ -1,6 +1,7 @@
 # PROPOSAL · 261103-arch-review-star-points-story-cover
 
-> **状态：DRAFT v0.1 · 2026-11-04 · 待 architect-reviewer 四查、主路径判档与契约四分类。** 立项依据 = spine `delivery/intake/261103-star-points-story-cover.md` facePlan 顺序 2、human 触点①与需求面 v1.71 frozen；本稿未自标 FROZEN。
+> **状态：DRAFT v0.2 · 2026-11-04 · 待 architect-reviewer R1 F1 靶向复核。** 立项依据 = spine `delivery/intake/261103-star-points-story-cover.md` facePlan 顺序 2、human 触点①与需求面 v1.71 frozen；本稿未自标 FROZEN。
+> **修订注记（R1 F1）**：v0.2 仅把短窗阈值改为 requirements S-F6.3 AC5 回引并同步 §6 留根指针，其余内容不变。
 > **承载 ARQ**：`ARQ-260918-spec-face-3page-reconcile` 由本批改写 architecture.md 撤查字页前旧四页叙述而消化，实际结项由主线程在落地后按 consumed-by 处理。根来源 = 上述 spine、workstream review R-01~R-13 与 frozen requirements v1.71。
 > **review 轨**：Track B；architect 预判**主路径**——触契约、改 §5.x 组件/场景/数据机制并新增 ADR，轻路径判据①②③④均不满足；最终判档归 architect-reviewer，只升不降。Track A 不触发：方向与三项开放问题均已由 human 裁定。
 > **packet-binding（FROZEN 生效）**：packet-id = 本 `PROPOSAL.md` §2 改法集（T1–T10）+ §5 验证集。packet = FROZEN PROPOSAL + landing-manifest + architect-landing-summary。
@@ -167,7 +168,7 @@ E. 目标配置：QQ 新增/切换/删除自定义目标均走 points.py。预�
 ```text
 **积分链路的两类去重分离**：
 1. **传输幂等**针对同一逻辑命令的重试。channel adapter 为命令提供稳定 `command_id`；QQ 取平台消息 id 加命令序号，语音由 front 以连接/会话和相关回合序号建立。points.py 在同一锁临界区查询并保存命令回执，同 id 重放返回首次结果，不新增分录、不递增 revision。新的用户回合即使文案相同也必须使用新的 command_id，不能借传输幂等扩大去重窗口。
-2. **短窗语义去重**针对 S-F6.3 AC5 的重复表达。points.py 以可注入时钟判断起步 10 分钟窗口，以相同正负分值和保守归一化后的事由匹配；归一化只去空白/标点、统一全半角和不改变事由的时间前缀，不引入模型相似分或模糊阈值。命中后返回“已记过”回执和当前权威余额，不新增分录；它与 command_id 无关，窗口外同文案仍是合法新命令。若真机验收证明「事由相近」需要更宽的模糊语义，回 /arch-change 评估，不在 Pod 内自调相似度。
+2. **短窗语义去重**针对 S-F6.3 AC5 的重复表达。points.py 以可注入时钟判断短窗（起步值与调优定数的权威 = requirements S-F6.3 AC5，调优后回填），以相同正负分值和保守归一化后的事由匹配；归一化只去空白/标点、统一全半角和不改变事由的时间前缀，不引入模型相似分或模糊阈值。命中后返回“已记过”回执和当前权威余额，不新增分录；它与 command_id 无关，窗口外同文案仍是合法新命令。若真机验收证明「事由相近」需要更宽的模糊语义，回 /arch-change 评估，不在 Pod 内自调相似度。
 3. **分页一致性**采用 `(occurred_at, id)` 时间倒序 keyset 游标，不用 offset。游标携带最后一条排序键与 revision；插入或删除使 revision 变化时回最新首页并要求设备重置分页缓存，防止跨版本重复/漏项。每页 total 始终为当前全量分录数，items.length 不顶替 total。
 ```
 
@@ -531,7 +532,7 @@ $ node .claude/scripts/spec-anchor-check.mjs
 ## 6. 留根清单
 
 - **长期增长与备份**：state.json、命令回执和分录首版不自动淘汰，容量与备份只观察；出现真实容量压力另立变更，不在 K1 静默加窗口或删除历史。
-- **短窗归一化**：起步 10 分钟沿需求，保守文本归一化是技术初值；真机若证明“事由相近”需要模糊匹配，必须回架构评审，不能由 Pod 自造相似度阈值。
+- **短窗归一化**：窗口起步值与调优定数的权威 = requirements S-F6.3 AC5，调优后回填；保守文本归一化是技术初值；真机若证明“事由相近”需要模糊匹配，必须回架构评审，不能由 Pod 自造相似度阈值。
 - **NFR-PERF-4**：软时延数值仍待真机调优，本文档批不填阈值；K0 先证明设备真实可见刷新。
 - **debt 关系**：ARQ-260918 由主线程按实际落地 consumed-by 结项；TECH-261028 由 K5 消化；TECH-261022-p3-record-session-state-churn 只串行对账；TECH-261030/TECH-261023/ARQ-260907 不借本批结项；CDQ-260914 需原三值回归后才可核销。
 - **QQ 与只读防线**：新 skill 调 CLI 不等于开放直接文件写权；任何改成 LLM 直写 state.json、front/QQ 各算一份余额或依赖 ask_user 的实现都必须回本批重审。
