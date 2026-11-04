@@ -4,7 +4,7 @@
 > 读者：architect / planner / dev-loop 各 Pod。需求面（产品是什么）见 [requirements.md](requirements.md)；数据格式权威见 [contracts/interface-contract.md](contracts/interface-contract.md)（契约门）。
 > **文档分工（2026-09-14 重构定）**：本档 = 系统**结构与机制**的单一事实源；架构决策本体 = [ADR.md](decisions/ADR.md)（本章 §10 只留索引 + MVP 时代决策历史档）；数据格式 = contracts/；需求与阈值 = requirements.md；术语 = [glossary.md](glossary.md)。细节一旦在两处复制即开始腐烂——本档对上述各面只放指针。
 > **锚稳定规则**：本文件小节编号发布后视为稳定标识——requirements.md 的 story/NFR 支撑锚按号引用；改编号 = 有意识地同步改锚（`node .claude/scripts/spec-anchor-check.mjs` 机检抓悬空）。
-> **定名（2026-09-13）**：**MVP** = 已开发完成、经真机验证的交付基线；**Phase 1** = 即将开发的下一版（需求 = requirements.md v1.49+）。「二期」= Phase 1 之后。
+> **定名（2026-09-13）**：**MVP** = 已开发完成、经真机验证的交付基线；**Phase 1** = 即将开发的下一版（需求 = requirements.md，v1.70 为上一 frozen；`261103-star-points-story-cover` 在途 updating）。「二期」= Phase 1 之后。
 > **现状标注约定**：【已实证】= live/真机验证过的事实；【修复项】= 已登记的 Phase 1 dev 修复项；【二期】= 明确后置。
 
 ---
