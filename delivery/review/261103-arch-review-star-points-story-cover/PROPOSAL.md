@@ -589,3 +589,15 @@ $ node .claude/scripts/spec-anchor-check.mjs
 **结构字段核对：** landing-manifest 围栏（三文件）与 packet-id 行在场；preflight 本审独立复跑绿（anchorUnion = manifest 集合相等）。结构字段 GREEN 前义务已满足，最终期限 FROZEN。
 
 **结论：BLOCK(F1)，单一否回项。** architect 按 F1 修改指令修订 T4/§6 留根后，本审复核该条及修订引入的新矛盾即可转 GREEN；判档与四分类裁定不受 F1 影响、随本记录生效。主线程在本批转 GREEN 前不得标 FROZEN。
+
+---
+
+### R2 · 2026-11-04 · architect-reviewer（F1 靶向复核；只核 F1 消解与越界扩散，R1 其余结论不重复审）
+
+**verdict: GREEN**
+
+**F1 复核：已消解。** 依据 commit `5f377f0819ecb6e80ffc1d8b153cf5c3686c4851`（DRAFT v0.2）真实 diff 独立核对（`git show 5f377f08`）：恰三处、仅本 PROPOSAL 一文件（4+/3−），与自报范围一致——① 头部版本行升 v0.2 + 修订注记行（纯记账，零语义）；② T4 §6.5 积分段第 2 条删「起步 10 分钟窗口」写数，改为「以可注入时钟判断短窗（起步值与调优定数的权威 = requirements S-F6.3 AC5，调优后回填）」——与 R1 修改指令句式一致，机制（可注入时钟/归一化白名单/窗口外合法新命令）逐字保留；③ §6 留根「短窗归一化」行改为同一回引句式。全文残留「10 分钟」检索仅命中 §7 本评审记录自身（R1 历史记述，append-only 豁免），§2 改法文本与 §6 留根零残留；requirements 侧权威句（S-F6.3 AC5「起步 10 分钟、真机调优定数」）经本审在 `docs/requirements.md:721` 复核在位，回引指向真实。
+
+**越界扩散：无。** diff 未触 §2 其它 T、§5 验证集、landing-manifest、ADR-018 附件与 §7 R1 原文；结构性连带核对——preflight 本审在 v0.2 复跑 `ok:true`、`anchorCount:3`、anchorUnion 恰为 manifest 三文件、findings/advisories 空——与 v0.1 逐字一致。修订未引入新矛盾：回引句不改变去重机制语义，K1/场景⑥失败边界等引用 S-F6.3 AC5 的段落不受影响。
+
+**结论：GREEN + 判档 = 主路径（Track B）+ 契约四分类 = `ACCOMPANIES_SPEC_CHANGE`（均沿 R1 裁定生效）。** 无未闭合否回项。R1 两条非阻断注记（M2K2-A2 夹具改写义务点名 / QQ skill 查账只读路径一句）维持非阻断、由 architect 落地编辑时酌情采纳，不拦 FROZEN。主线程可凭本 GREEN 标 FROZEN 并进入 packet-bound 落地；落地期实跑与 §5 基线如有字节差异，按 ARQ-261021 以落地实跑覆写并在本节留痕。
