@@ -555,3 +555,36 @@ $ node .claude/scripts/spec-anchor-check.mjs
 
 （判官 append-only 区；待 architect-reviewer 四查、主路径判档与契约四分类。主线程不预判结论。）
 
+---
+
+### R1 · 2026-11-04 · architect-reviewer（独立审稿；只读 canonical，唯一写入 = 本节）
+
+**verdict: BLOCK(F1)**
+
+**查一 · 意图保真：PASS。** spine human 原话五条逐一对上：故事封皮 + BOOT 四页循环（T1 渲染节点行、S-F2.6）；目标做活 + QQ 渠道设置（T2 QQ skill 行、场景⑥E、S-F6.5）；语音触发须完整记账句式（T7 add_points/redeem_points 拒绝条件、S-F6.3 AC1）；「允许负余额」仅删除重算（T4 逻辑事实段、契约⑦「负余额只能来自删除重算…front 不另做钳位」、K1 用例）；「禁止删，先切换」「5–200 正整数」「KEY短按=语音」（T4/场景⑥E、T1 按键路由行）。非目标清单与 ideas 已批示不做三项（庆祝演出/惩罚性扣分/加分护栏）一一对应，无夹带语义。子页页点（P3/P4 子页保持模块身份实心点）以 S-F2.6 补充规则 incorporation 的 ideas 连带决定（human 2026-11-03 拍板）为准，与 requirements §2.2「仅主页面显示」的表面张力经核对为该句与覆盖层对比的语境差异、不构成 story 语义变更，不退需求面。
+
+**查二 · 纪律合规：F1（一处阈值双源），其余 PASS。** 分工句三条核对：决策本体归 ADR-018（T9，五小节齐）；数据格式归 contracts（T4 明写 state.json 内部结构不在契约复制）；「需求与阈值归 requirements.md」在 T4 自身对 NFR-PERF-4 已写「阈值仍只回引 requirements、不在架构写数」——但同在 T4 的 §6.5 拟落地文本把未定阈值数字写死进架构（见 F1）。既有先例 = arch §5.2 场景④卡壳阈值只写「阈值权威 = requirements NFR-PERF-3〔待定〕」、不复述 8 秒。arc42 骨架与锚稳定规则：T1–T10 零改小节编号；spec-anchor-check 本审独立实跑逐字吻合基线 A（78/48/20/44、ok:true）。
+
+**查三 · 撞车复核：PASS。** ① ADR：本审独立复扫 `^## ADR-` 末条 = ADR-017、ADR-018 零命中；ADR-002/004/005/007/010/011/013 引据逐条到 ADR.md 核实在位且语义相符（ADR-011 device request→response 先例、ADR-007 隐式 ack、ADR-013 记录语境抑制均真实）。② 契约现行：`:63`「切到 P4 查字页」、`:105-110` story_list「归档/删除执行后恒不置 restore（缺省=主动展示）」、`:184` relay 收紧句、`:192` prompt 句均与 T6/T7 替换申报相符——story_list 后台推送统一 restore:true 是对既有生产纪律段的 modifying，走本 loop 合法、非暗改。③ architecture 现行：`:177` 旧四页叙述、`:180` 7 view、`:194` 7 view 校验、`:462` to-be「撤 P4 常驻页 → 3 页循环」全部命中 T1/T3/T10 覆盖清单；§9 as-is、§10 决策 14、双方变更记录按 §3 复扫模式豁免，豁免理由成立（历史留痕）。④ ARQ-260918 承接（T10 头部+§9）与 debt 消费表（spine §debt）一致，TECH-261022 串行对账、TECH-261023 只读防线均如实不借批结项。
+
+**查四 · 牵连面完整：PASS（附两条非阻断注记）。** ① 消费方：固件侧 view_router/mcp_server/keybar/key_gesture_parser/application.cc 逐一有 T 行与 impact 落点；本审亲核承重锚——`firmware/main/display/kidpal_render_node.h:32-37`（COUNT=3）、`story_page.c:2285-2298`（case 2 数值映射，含「M2K2-A2 冻结等值」防护注释）、`application.cc:1313-1320`（session_ctx 单点）、`server/gateway/display_schema.py:27-48`（7 view + 网关决定类分表）、`front_app.py:568-626`（self_push + restore 先例）、`kidpal-schedule-write/SKILL.md:58-115`（QQ→机检→marker 先例）——与 §2 引用逐字相符。② 反向锚：零改小节编号，requirements story 支撑锚（§5.1/§5.2/§5.4/§5.5.4/§6.2/§6.5）不受扰动；§12 changeId 行（launchPreconditions 消费判据）由 T10.4 承载。③ 结构字段：landing-manifest 围栏与 packet-id 行在场；preflight 本审独立复跑 `ok:true`、anchorUnion 恰为 manifest 三文件、findings/advisories 空。④ 基线 B/C/D 本审独立复跑吻合（requirements 哈希 `e775822a…f0a` 一致；ADR-017 末条 + ADR-018 零命中；契约 10 个 json 围栏计数本审复核一致、char 两示例含省略号非严格）。⑤ 部署次序与旧固件保护：impact「新固件先行 + 积分推送/封皮导航真机验收后才对生产设备开放」正确封住「旧固件把非 restore story_list 当列表帧抢前台」（260928 旧缺陷的复现路径）与「旧固件无 points 路由」两个面。
+
+**起草方五项自报重点核查——逐项独立核，均成立：**
+
+1. **单 writer 与网关恒薄同时成立；front 推送非第二真相源。** points.py 落 gateway 与既有形态同型（story.py 归档/硬删/seq 账本、schedule.py 唯一解析器、reminder_schedule_lib 均为 gateway 内确定性执行器先例）；T2 对 §2.4 原则 3 追加同型注记并挂 ADR-002/004，语义切分正确（语义理解在脑、校验/重算/原子写在执行器）。front 只依据 points.py 状态序列化权威帧、不另算余额（「所有成功/拒绝均以 points.py 回执为准」钉死）；余额/前后余额由 points.py 从剩余分录派生并持久，front 的 revision 观察 = 推送触发量、非独立计算源。QQ skill 与语音 API 共用同一模块与不变量，进程间锁补齐跨进程互斥（§5.4 `.lock` 行明确「不是业务事实源」）。
+2. **双轨去重支撑 S-F6.3 AC5 且不过度吞单；归一化边界守住。** 传输幂等（同 id 重放返首次结果、不新增分录、不递增 revision）与语义去重（窗口内命中回「已记过」+权威余额+跳页）机制分离、判据互不借用；「新的用户回合即使文案相同也必须使用新的 command_id」钉死传输幂等不被扩为去重窗口，窗口外同文案 = 合法新命令——吞单边界即 human AC5 裁定的 10 分钟短窗本身，无越权扩张。归一化白名单（空白/标点/全半角/不改变时间前缀）+「更宽模糊语义回 /arch-change、不在 Pod 内自调相似度」= 阈值与相似度调参权收回架构面，成立。
+3. **story_list P4 化兼容性、部署次序、旧固件保护、front 单源均守住。** 修改的是现契约生产纪律段（modifying，随本批原子落）；后台推送统一 restore:true 后，归档/删除不再抢前台与 S-F2.6 P4 模块、逐层返回、盖章由 story_text 承接的 frozen 语义自洽；「打开故事」空 data 薄载荷 + front 展开不带 restore → 进封皮不跳列表，满足 S-F2.6 AC4。front 单源未削弱：非空 story_list/story_text 引擎来源仍拒转，OpenClaw 新增的唯一出口是空 data 薄载荷（schedule 薄载荷先例同型），relay 收窄句在 T3/T6/T7 三处一致。旧固件保护见查四⑤。
+4. **keyset 分页 + revision 重置与删除不变量两层一致无漏。** `(occurred_at,id)` keyset + 游标携带 revision + 变更即回首页 reset，闭环防跨版本重复/漏项；OQ-1 在架构（删除后按时间序重算前后余额、余额=剩余分录 delta 之和、其它路径不造负余额）与契约（balance 系可正可负整数、front 不钳位）两层同口径，K1「加 50→兑 40→删加 50 得 −40、随后兑换必须拒绝」同时钉负余额仅删除路径与兑换余额门槛（S-F6.2 AC4/S-F6.3 AC3）；OQ-2/OQ-3 落 points.py 不变量与场景⑥E；目标规则不入 wire（targets 走 QQ CLI，非端云形状）故契约层无漏。删除消息沿 ADR-007 隐式 ack 先例，重发/幂等 no-op 仍重推语义与 `kidpal_story_delete` 同构。
+5. **source_page 映射完整且不误切记录语境；CDQ-260914 前置守住。** 六值闭集覆盖 P3 主页/详细与 P4 封皮/列表；记录语境仅 `story`（P4 列表），`points_*`/`story_cover` 均普通问答；未开放会话入口的状态（阅读/删除确认/整理过渡）禁发；「未知或越界回退 home 绝不回 story」（设备侧）与「未知值拒绝并记日志、不得回退成 story」（front 侧）双层一致。CDQ-260914 在 §3 明记未核销、核销前置 = K5 原三值发送与 front 拦截回归（§5.16），未被本批静默消化。
+
+**F1（否回项 · 纪律/阈值双源）**：T4 §6.5 积分段第 2 条拟落地文本「points.py 以可注入时钟判断起步 10 分钟窗口」把 requirements S-F6.3 AC5 明标「起步 10 分钟、**真机调优定数**」的未定阈值数字写死进架构，且句内无权威回引——与本稿自身对 NFR-PERF-4 的「阈值仍只回引 requirements、不在架构写数」及场景④卡壳阈值先例（不复述 8 秒）不一致；真机调优改数后此处必成第二源漂移。**修改指令**：该句改为「points.py 以可注入时钟判断语义去重窗口（起步值与真机调优定数的权威 = requirements S-F6.3 AC5，调优后回填）」，不在架构复述分钟数；§6 留根「短窗归一化」行的「起步 10 分钟沿需求」同步补「定数归 requirements」显式指针或改为同一回引句式。§5 验证集第 13 项未写具体分钟数，无需动。此为唯一否回项；修回后本审仅核 F1 及修订引入的新矛盾。
+
+**非阻断注记（两条，不构成否回）**：(1) 现役固件 `story_page.c:2287-2288` 注释自证「M2K2-A2 冻结等值」验收齿钉在数值映射上——T1 改枚举+子页驱动后该冻结验收必红并须随 K2/K5 重写，§5.14 已覆盖逐值核对，但建议包级 brief 显式点名 M2K2-A2 夹具改写义务，防实现包只改函数不换齿。(2) T2 QQ skill 行未显式写 S-F6.4 AC2 查账（家长问余额/目标/最近记录）的只读路径——按课表「读 MD 答询」先例，读 points.py 状态（CLI status 输出或只读 state.json）即可满足且不破只读防线，建议起草方顺手在 skill 行补一句，语义零变化。
+
+**判档：主路径（Track B）——确认起草方预判。** 轻路径判据逐条：① 零语义变化——不满足（新增数据域/页结构/契约形状）；② 改动性质——不满足（非错字/排版/指针刷新级）；③ 不触 `docs/contracts/**`——不满足（T6–T8 触契约）；④ 不触 §5.x——不满足（§5.1/§5.2/§5.4/§5.5/§6.5 改写）。判据须全部满足 → **主路径**。Track A 段不触发：判据只看收敛度——三项 OQ（负余额/禁删激活/5–200）均已 human 裁定、spike-first 与 ③拆包已裁、方向无未裁根本分叉、无红队声明；触承重面（§2.3 端云职责、契约形状）不自动升级。
+
+**契约四分类：`ACCOMPANIES_SPEC_CHANGE`（正式裁定，与起草方建议一致）。** 依据：全部契约改动（两类 display view、两控制动作、白名单/prompt、三条私有消息）逐条直接支撑 frozen requirements v1.71 的 F6/S-F2.6/§2.3，并与架构改动随批原子落地——非独立契约变更（有架构配套），非 spec↔contract 冲突裁改（drift 不成立）。反证过五问：无需 adapter/mapper（现契约形状确实无法表达分页/删除/积分载荷）；无现有扩展字段可放（§1.3 无积分 view、§四无删除/分页载体）；无本地命名撞 canonical（points_home/points_ledger/add_points 全新、与既有 view/action 闭集不撞）；未前塞二期能力（多设备/语音删除/惩罚性扣分均显式排除）；无既有形状可复用只差载荷（story_list 16 条窗口被 R-04 显式排除做账本边界）。CDQ-261103-star-points-story-cover 由主线程按本裁定值登记。
+
+**结构字段核对：** landing-manifest 围栏（三文件）与 packet-id 行在场；preflight 本审独立复跑绿（anchorUnion = manifest 集合相等）。结构字段 GREEN 前义务已满足，最终期限 FROZEN。
+
+**结论：BLOCK(F1)，单一否回项。** architect 按 F1 修改指令修订 T4/§6 留根后，本审复核该条及修订引入的新矛盾即可转 GREEN；判档与四分类裁定不受 F1 影响、随本记录生效。主线程在本批转 GREEN 前不得标 FROZEN。
