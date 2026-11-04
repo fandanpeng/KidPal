@@ -1,6 +1,6 @@
 # PROPOSAL · 261103-arch-review-star-points-story-cover
 
-> **状态：DRAFT v0.2 · 2026-11-04 · 待 architect-reviewer R1 F1 靶向复核。** 立项依据 = spine `delivery/intake/261103-star-points-story-cover.md` facePlan 顺序 2、human 触点①与需求面 v1.71 frozen；本稿未自标 FROZEN。
+> **状态：FROZEN v1.0 · 2026-11-04**（FROZEN 凭据 = spine human 触点①裁定 + R1 四查 BLOCK(F1)→v0.2 定点修订 + R2 靶向复核 GREEN；判档主路径 Track B、契约四分类 ACCOMPANIES_SPEC_CHANGE 沿 R1 裁定生效；作者≠判官由 R1/R2 独立审链承载，契约无人签门、合并过机械凭据闸。立项依据 = spine `delivery/intake/261103-star-points-story-cover.md` facePlan 顺序 2、human 触点①与需求面 v1.71 frozen。）
 > **修订注记（R1 F1）**：v0.2 仅把短窗阈值改为 requirements S-F6.3 AC5 回引并同步 §6 留根指针，其余内容不变。
 > **承载 ARQ**：`ARQ-260918-spec-face-3page-reconcile` 由本批改写 architecture.md 撤查字页前旧四页叙述而消化，实际结项由主线程在落地后按 consumed-by 处理。根来源 = 上述 spine、workstream review R-01~R-13 与 frozen requirements v1.71。
 > **review 轨**：Track B；architect 预判**主路径**——触契约、改 §5.x 组件/场景/数据机制并新增 ADR，轻路径判据①②③④均不满足；最终判档归 architect-reviewer，只升不降。Track A 不触发：方向与三项开放问题均已由 human 裁定。
