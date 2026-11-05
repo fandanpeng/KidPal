@@ -53,6 +53,7 @@ from gateway import reminders as gw_reminders
 from gateway import schedule as gw_schedule
 from gateway import schedule_push as gw_schedule_push
 from gateway import story as gw_story
+from gateway import points as gw_points
 
 
 app = FastAPI(title="KidPal direction-B streaming gateway front")
@@ -73,6 +74,21 @@ SIDE_CHANNEL_TYPE = "kidpal_display_blocks"
 # 块一律降级为友好 text——绝不把 story 载荷透传给设备。front 自推（_push_story_list /
 # 归档下发）不经 relay、天然豁免。非 story view 零变化。
 _STORY_SINGLE_SOURCE_VIEWS = frozenset({"story_list", "story_text"})
+
+# --- 积分面（TaskPackage 261104-k0-points-e2e-spike；契约 §1.3⑦⑧ / §1.4 / §四）--------
+# state 文件路径单源（env 名与 `python -m gateway.points` 同一名字，无第二账本）。
+POINTS_STATE_PATH = os.environ.get("KIDPAL_POINTS_STATE", "/opt/kidpal/points.json")
+# 积分来源门禁（契约 §1.5）：完整 points 帧只能由 front 依据 points.py 当前状态自推；
+# 引擎侧完整帧在 relay 沿降级为友好 text（story 单源先例同型）。空 data 导航薄载荷
+# 由 _expand_points_nav_intent 展开为完整帧——展开结果不再降级（front 机械产物）。
+_POINTS_SINGLE_SOURCE_VIEWS = frozenset({"points_home", "points_ledger"})
+# 积分薄意图动作（契约 §1.4 网关决定类；控制帧绝不发往任何一端）。
+_POINTS_CONTROL_ACTIONS = frozenset({"add_points", "redeem_points"})
+# kidpal_points_page 应答的分页步进：本包（K0 spike）每请求下发 1 条分录，使首条与
+# 最早一条分别经各自请求到达设备（K0PTS-A5 首尾 canary 的离线闭环形态）。设备请求里
+# 的 limit 仍按契约 §四 1–50 校验（越界拒绝、不回帧）；窗口宽度的正式化（设备缓存
+# 容量 = 6 的满窗翻页）归 K2 详细账本 UI。见交付报告的「形状疑点」项。
+_POINTS_PAGE_STEP = 1
 
 # --- P3 故事 manual 聆听累积态 + 整段转写归档（契约 §1.4 start_recording / P3-A4）------
 # front 见 relay 的 control/start_recording -> 把该连接会话切累积态（不按句送对话）；
@@ -626,6 +642,84 @@ async def _push_story_list(websocket, restore: bool = False) -> None:
     await _push_display_payload(websocket, payload)
 
 
+def _expand_points_nav_intent(payload) -> "dict | None":
+    """「打开积分本 / 打开详细账本」导航薄载荷 -> front 截获展开为完整帧。
+
+    契约 §1.3⑦⑧ 生产纪律：OpenClaw 只在显式打开时发
+    `{"view":"points_home","data":{}}` / `{"view":"points_ledger","data":{}}`；完整载荷
+    由 front 依据 points.py 当前状态产生。展开帧**不带 restore**（显式打开 = 主动展示）。
+    其它形状返回 None，原样走既有 relay 链交 display_schema 机械门裁决。
+    展开结果 = front 机械产物，不经引擎侧单源降级（K0PTS-A3）。
+    """
+    if not isinstance(payload, dict):
+        return None
+    view = payload.get("view")
+    if view not in _POINTS_SINGLE_SOURCE_VIEWS:
+        return None
+    if payload.get("data") != {}:
+        return None
+    try:
+        if view == "points_home":
+            return gw_points.build_points_home(POINTS_STATE_PATH)
+        return gw_points.build_points_ledger_page(POINTS_STATE_PATH)  # 首页完整帧
+    except Exception as e:  # noqa: BLE001 — state 读失败不炸中继（原样交机械门降级）
+        log.warning("points_nav_expand_err corr_id=%s view=%s err=%s",
+                    gw_mcp.corr_id(), view, type(e).__name__)
+        return None
+
+
+async def _consume_points_intent(websocket, payload, *, restore: bool = False) -> bool:
+    """薄意图截获执行缝（K0PTS-A1/A2/A4；契约 §1.4 add_points/redeem_points）。
+
+    payload 为 control/{add_points, redeem_points} 薄意图 -> 校验（add：points 正整数
+    非 bool 且 reason 非空 str；redeem：points 正整数）-> 调 points.py 同一确定性执行器
+    落账 -> 成功后经 `_push_display_payload` 自推**恰一帧**权威 points_home。
+
+    restore（keyword-only，缺省 False；D-07 / S-F6.4-AC5 数据面）：
+      True  = QQ/恢复通道（后台更新，帧 data 带 `restore: true`，设备只填缓存不抢前台）；
+      False = 语音成功路径（帧不带 restore，设备接管前台跳积分页）。
+    拒绝（畸形 / 执行器 ValueError）-> **不写账、不推 points_home**、返回 True（已消费，
+    控制帧绝不透传给任何一端）。非 points 控制帧 -> 返回 False（既有路由零偏移）。
+    """
+    if not isinstance(payload, dict) or payload.get("view") != "control":
+        return False
+    data = payload.get("data")
+    if not isinstance(data, dict):
+        return False
+    action = data.get("action")
+    if action not in _POINTS_CONTROL_ACTIONS:
+        return False
+
+    corr_id = gw_mcp.corr_id()   # K6：correlationId 贯穿拒绝/执行/推送三段日志
+    points = data.get("points")
+    try:
+        if not isinstance(points, int) or isinstance(points, bool) or points <= 0:
+            raise ValueError(f"points must be a positive integer, got {points!r}")
+        if action == "add_points":
+            reason = data.get("reason")
+            if not isinstance(reason, str) or not reason.strip():
+                raise ValueError("add_points requires a non-empty reason")
+            entry = gw_points.add_points(POINTS_STATE_PATH, points, reason)
+        else:
+            entry = gw_points.redeem_points(POINTS_STATE_PATH, points)
+    except ValueError as exc:
+        # 拒绝面：不落账、不推送、不透传（不伪造成功回执）。
+        log.warning("points_intent rejected corr_id=%s action=%s detail=%s",
+                    corr_id, action, exc)
+        return True
+
+    log.info("points_intent executed corr_id=%s action=%s entry_id=%s delta=%+d balance=%d",
+             corr_id, action, entry["id"], entry["delta"], entry["balance_after"])
+    try:
+        home = gw_points.build_points_home(POINTS_STATE_PATH)
+        if restore:
+            home["data"]["restore"] = True   # QQ/恢复通道：只填缓存不抢前台（D-07）
+        await _push_display_payload(websocket, home)
+    except Exception as e:  # noqa: BLE001 — 推送失败不改变「已消费」语义（控制帧仍不透传）
+        log.warning("points_home_push_err corr_id=%s err=%s", corr_id, type(e).__name__)
+    return True
+
+
 async def _consume_kidpal_control(session_id, obj, websocket, upstream=None) -> bool:
     """拦截设备→引擎的 KidPal 私有控制帧（契约 §四：网关消费并拦截、不下透引擎）。
 
@@ -658,6 +752,11 @@ async def _consume_kidpal_control(session_id, obj, websocket, upstream=None) -> 
       防跨会话伪造取消）；累积缓冲销毁、不归档、不推 story_list；幂等 no-op（会话已
       释放/非累积态/未知会话 cancel 返 False 即空转）；审计日志一行（logger kidpal-front
       含冻结 token story_discard + 本连接 session_id）。
+    - kidpal_points_page（TaskPackage 261104-k0-points-e2e-spike; 契约 §四 2026-11-04
+      LANDED）：整条消费并拦截、不下透引擎；cursor 缺省/null = 最新首页，limit 允许
+      1–50（越界拒绝记日志、不回帧）；以 points.py 当前状态 build_points_ledger_page
+      → 首页（cursor 空）不带 restore、续页（cursor 非空，含续页触发的重置）带
+      restore:true → 经 _push_display_payload 恰一帧应答。
     返回 True = 已消费（调用方不得转发引擎）。"""
     if not isinstance(obj, dict):
         return False
@@ -717,6 +816,39 @@ async def _consume_kidpal_control(session_id, obj, websocket, upstream=None) -> 
         # 审计一行（冻结 token story_discard + 本连接 session_id；载荷键仅参照）。
         log.info("story_discard corr_id=%s consumed=true cancelled=%s payload_session_id=%s",
                  session_id, dropped, payload_sid)
+        return True
+    if mtype == "kidpal_points_page":
+        # 契约 §四 kidpal_points_page（2026-11-04 LANDED；K0PTS-A5）：设备发起详细账本
+        # 分页请求 -> front 整条消费并拦截、不下透引擎；以 points.py 当前状态生成 §1.3⑧
+        # points_ledger 应答，每请求至多回一帧。limit 越界 -> 拒绝记日志、不回帧。
+        limit = obj.get("limit")
+        if limit is None:
+            limit = gw_points.PAGE_LIMIT_DEFAULT
+        if (not isinstance(limit, int) or isinstance(limit, bool)
+                or limit < gw_points.PAGE_LIMIT_MIN
+                or limit > gw_points.PAGE_LIMIT_MAX):
+            log.warning("points_page rejected corr_id=%s reason=invalid_limit limit=%r",
+                        session_id, limit)
+            return True
+        cursor = obj.get("cursor")
+        known_revision = obj.get("known_revision")
+        if not isinstance(known_revision, int) or isinstance(known_revision, bool):
+            known_revision = None  # 可选字段：缺省/畸形 = 不做版本重置判定
+        try:
+            page = gw_points.build_points_ledger_page(
+                POINTS_STATE_PATH, cursor=cursor, known_revision=known_revision,
+                limit=_POINTS_PAGE_STEP)
+        except ValueError as exc:
+            log.warning("points_page rejected corr_id=%s reason=%s", session_id, exc)
+            return True
+        if isinstance(cursor, str) and cursor:
+            # 续页（含续页触发的版本重置）是后台取数：带 restore:true 不抢前台（契约 §四）。
+            page["data"]["restore"] = True
+        await _push_display_payload(websocket, page)
+        log.info("points_page corr_id=%s cursor=%s reset=%s total=%s items=%d",
+                 session_id, "cont" if cursor else "home",
+                 page["data"]["page"]["reset"], page["data"]["page"]["total"],
+                 len(page["data"]["items"]))
         return True
     return False
 
@@ -1028,17 +1160,31 @@ def build_display_tool_calls(blocks: list) -> list:
         # schedule.expand_schedule_intent_payload -> week_grid_payload）。恰薄载荷
         # 才截获；读不到 schedule.md / 其它形状 -> _expand_schedule_intent 返回
         # None，原样走既有 relay 链交 display_schema 机械门裁决（Q5）。
+        front_expanded = False
         if payload is not None:
             expanded = _expand_schedule_intent(payload)
             if expanded is not None:
                 payload = expanded
+            else:
+                # 积分导航薄载荷截获展开（契约 §1.3⑦⑧ 生产纪律；K0PTS-A3）：恰
+                # `{"view":points_*, "data":{}}` 由 front 依据 points.py 当前状态展开为
+                # 完整帧，**不带 restore**（显式打开 = 主动展示）。
+                expanded_points = _expand_points_nav_intent(payload)
+                if expanded_points is not None:
+                    payload = expanded_points
+                    front_expanded = True
         if payload is not None:
-            ok, reason = gw_display.validate_display(payload)
+            # front 展开的完整 points 帧即 front 机械产物，走自推通路语义（self_push）
+            # ——积分来源门禁不放行引擎侧完整帧，但不得自拒 front 自己的展开结果。
+            ok, reason = gw_display.validate_display(payload, self_push=front_expanded)
         else:
             ok, reason = False, "display block is not JSON-object parseable"
         if ok:
             # Q7 收紧（story 单源）：引擎侧来源的 story_list/story_text 块降级为友好 text
             # （与脏块降级同语义），绝不把 story 载荷透传给设备；其它 view 照既有语义中继。
+            # 积分来源门禁（契约 §1.5，K0PTS-A3）由 display_schema 承载：引擎侧完整
+            # points 帧在 validate_display 被拒，走下方同款友好 text 降级（front 展开的
+            # 完整帧带 self_push 语义，不落此分支）。
             if payload.get("view") in _STORY_SINGLE_SOURCE_VIEWS:
                 display = _display_wire_arguments(
                     _friendly_downgrade_view("story_single_source"))
@@ -1062,13 +1208,21 @@ async def _relay_display_blocks_to_device(blocks: list, websocket, session_id=No
     261019-p3-record-dialogue-guide：调用方沿此向引擎腿注入 active=true 等价信号）。"""
     enter_edge = False
     for block in blocks:
-        if session_id is not None:
+        parsed = None
+        if isinstance(block, str):
             try:
-                if _story_route_display_payload(
-                        session_id, json.loads(block) if isinstance(block, str) else block):
-                    enter_edge = True
+                parsed = json.loads(block)
             except (TypeError, ValueError):
-                pass  # 脏块仍照常经 build_display_tool_calls 降级，旁路消费忽略
+                parsed = None
+        else:
+            parsed = block
+        # 积分薄意图截获执行缝（K0PTS-A1/A2/A4；契约 §1.4 网关决定类，2026-11-04）：
+        # **两侧 relay 路径收敛于此**（side-channel 与 fence 两路都过本函数）——消费即
+        # continue，控制帧绝不透传给设备；拒绝路径同样已消费（不落账、不推送、不透传）。
+        if await _consume_points_intent(websocket, parsed):
+            continue
+        if session_id is not None and _story_route_display_payload(session_id, parsed):
+            enter_edge = True
         envelope = build_display_tool_calls([block])[0]
         await websocket.send_text(
             json.dumps({"type": "mcp", "payload": envelope},

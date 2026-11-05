@@ -97,6 +97,9 @@ public:
      * CloseAudioChannel **之前**同连接先行（同一 TCP 有序, front 泵先消费 discard
      * 再处理断连）。无接收者形态同 fetch：活动实例 = s_kidpal_active_。 */
     friend void SendKidpalStoryDiscard();
+    /* §四 kidpal_points_page（TaskPackage 261104-k0-points-e2e-spike）: 无接收者发送
+     * 原语同 fetch/discard——活动实例 = s_kidpal_active_（同一访问友元通道）。 */
+    friend void SendKidpalPointsPage(const char *cursor, int known_revision, int limit);
 
 protected:
     std::function<void(const cJSON* root)> on_incoming_json_;
@@ -142,6 +145,18 @@ void SendKidpalStoryFetch(const char *const *ids, int count);
  * 无接收者形态同 SendKidpalStoryFetch：活动实例 = 最近构造且未析构的 Protocol
  * （s_kidpal_active_）；未就绪 = 静默 no-op（离线降级, 不产生半帧）。 */
 void SendKidpalStoryDiscard();
+
+/* §四 kidpal_points_page 发送原语（TaskPackage 261104-k0-points-e2e-spike;
+ * 逐字仿 SendKidpalStoryFetch 无接收者拼串形态）——设备发起详细账本分页请求、
+ * 网关以 points_ledger 帧应答（应答形状零新增）。
+ * 线形状（逐字）:
+ *   {"session_id":"<sid>","type":"kidpal_points_page","cursor":<null|"<opaque>">,
+ *    "known_revision":<int>,"limit":<int>}
+ * cursor == NULL / 空串 = 请求最新首页；known_revision < 0 = 不带版本（front 不做
+ * 版本重置判定）；limit 由调用方给 1–50（front 越界拒绝且不回帧）。
+ * 无接收者形态同 fetch/discard：活动实例 = 最近构造且未析构的 Protocol
+ * （s_kidpal_active_）；未就绪 = 静默 no-op（离线降级, 不产生半帧）。 */
+void SendKidpalPointsPage(const char *cursor, int known_revision, int limit);
 
 #endif // PROTOCOL_H
 

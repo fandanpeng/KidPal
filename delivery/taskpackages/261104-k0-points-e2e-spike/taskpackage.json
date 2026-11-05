@@ -11,11 +11,12 @@
     "workstream": "261103-star-points-story-cover"
   },
   "subsystem": "server points 最小写入与 front 推送 + OpenClaw 薄意图 + firmware points_home 最小消费",
-  "story": "S-F6.3 · 设备语音记账与兑换（AC1、AC2 最小通路）+ S-F6.4 · QQ 家长记账与更正（AC1、AC5 最小通路）+ S-F6.2 · 浏览详细账本与删除误记（AC1 首尾分页 canary）+ NFR-PERF-4 · 记账反馈时延。",
+  "story": "S-F6.3 · 设备语音记账与兑换（AC1、AC2 最小通路 + AC3 server 承载半——redeem 门禁随门 1 裁定最小 add/redeem CLI 冻结，K0PTS-A2 实测其规则）+ S-F6.4 · QQ 家长记账与更正（AC1、AC5 最小通路）+ S-F6.2 · 浏览详细账本与删除误记（AC1 首尾分页 canary）+ NFR-PERF-4 · 记账反馈时延。",
   "planRef": "delivery/taskpackages/261104-k0-points-e2e-spike/plan.md",
   "sourceRefs": [
     "S-F6.3-AC1",
     "S-F6.3-AC2",
+    "S-F6.3-AC3",
     "S-F6.4-AC1",
     "S-F6.4-AC5",
     "S-F6.2-AC1",
@@ -41,14 +42,48 @@
     "docs/requirements.md#NFR-PERF-4",
     "delivery/workstreams/261103-star-points-story-cover/review.md#D-spike-first"
   ],
-  "acceptance": [],
-  "acceptanceTestsFile": [],
-  "redBaselineCommand": "",
-  "redBaselineResult": "",
+  "acceptance": [
+    "K0PTS-A1: 薄意图截获与最小写入落账——引擎 display 流中 control/add_points 薄意图被 front 截获（控制帧绝不透传设备，契约 §1.4 网关决定类）；front 交 points.py 追加分录（六键统一分录形状 id/delta/reason/occurred_at/balance_before/balance_after，occurred_at 带时区 ISO8601）并持久化；成功后经 _push_display_payload 链自推权威 points_home 恰一帧（revision/balance/target 四键/recent 逐项权威、restore 缺席 = 语音成功路径接管前台跳积分页）；设备 wire 形状 view/data 双 String（对照 mcp_server.cc 实际接受什么）；add_points 执行器 API 形状上无产余额/分录 id/revision 入口（D-10）。回引 S-F6.3-AC1、S-F6.3-AC2、D-10、契约 §1.4。设计态红 = points.py 不在世",
+    "K0PTS-A2: 兑换门禁与拒绝路径（错误/边界面）——redeem_points 只认当前激活目标分值（DEFAULT_TARGET=游乐场 40 冻结）、余额不足拒、两种拒绝均 ValueError 且零落账；成功路径产生负向分录、事由统一取「兑换游乐场」（模型不提供 target id/负 delta）；畸形薄意图（points=0/bool/缺事由）拒绝执行：不落账、不推 points_home、控制帧不透传。回引 S-F6.3-AC3（server 承载半）、契约 §1.4 redeem_points 行。设计态红 = points.py 不在世",
+    "K0PTS-A3: points 视图白名单与积分来源门禁——display_schema VALID_VIEWS 7→9（既有 7 view 零偏移、基数恰 9）；引擎侧完整 points_home/points_ledger 帧拒转降级为 friendly text（story 单源先例同型）、空 data 导航薄载荷放行并由 front 展开为完整帧（balance 读自 points.py 当前状态 = 权威单源）；front 自推通路放行完整帧；完整形状 floor——balance/revision 非整数、target 缺四键、restore 非布尔拒绝；GATEWAY_DECISION_CONTROL_ACTIONS 增 add_points/redeem_points 且 relay 与 self_push 双路径恒拒（FORWARDABLE 不含、决定类与可透传类不相交）；workspace-kidpal AGENTS.md 含 add_points/redeem_points 薄意图纪律锚与不产余额/revision 禁令锚。回引 契约 §1.5、§1.6、D-08-spike。设计态红 = 白名单未扩 points_home",
+    "K0PTS-A4: restore 推送不抢前台语义（数据面）——_consume_points_intent 截获缝在世且 restore 为 keyword-only 缺省 False；restore=True（QQ/恢复通道）推送帧 data.restore is True、restore 缺省（语音成功通道）推送帧 restore 缺席；截获缝真接线锚（_relay_display_blocks_to_device 函数体内引用，防只可直调的空过缝）。真实 QQ 链路的实际不抢前台/原地刷新归 live-manual K0PTS-L2。回引 S-F6.4-AC5、D-07、契约 §1.3⑦ restore。设计态红 = 截获缝缺席",
+    "K0PTS-A5: kidpal_points_page 首尾分页 canary（离线半）——keyset (occurred_at,id) 时间倒序分页 limit=1 步进从最新 canary 到最早 canary 均可及；首页 page.reset=True 且无 restore 键、续页应答 restore=True 且 reset=False；page.total 为全量分录数（非 items.length）；非法游标/known_revision 不符回最新首页 reset=True；limit 越界（0/51）ValueError；设备上行 kidpal_points_page 经 front 整条消费拦截、恰一帧应答、不透传引擎；空账权威 items=[]/page.total=0/balance=0 不伪造分录。回引 S-F6.2-AC1、契约 §四 kidpal_points_page、K0S-E2（离线半）、D-08-spike。设计态红 = points.py 不在世",
+    "K0PTS-A6: QQ 最小 add CLI 单源——python -m gateway.points add/redeem 子命令成功 exit 0 落账、与 front 共享同一 points.py 执行器与同一 KIDPAL_POINTS_STATE state 文件（build_points_home 读到 CLI 写入 = 无第二账本）；非法输入（非整数分值/兑换金额不匹配）非零退出、不写账、输出一次性可判说明、不伪造成功回执。回引 S-F6.4-AC1、门 1 裁定（最小 add CLI）、D-10。设计态红 = points.py 不在世",
+    "K0PTS-F1: firmware view 路由 additive 数值码——VRT_ROUTE_POINTS_HOME=7/VRT_ROUTE_POINTS_LEDGER=8 枚举尾部 additive（view_router.h 同行锚 + kidpal_display_route 决策表真跑），既有 text/home/control/char/schedule/story_list/story_text 0..6 零偏移、NULL/未知降级 UNKNOWN；负锚——control/add_points 与 control/redeem_points 在设备侧恒 VRT_CTRL_UNKNOWN（网关决定类不直接下发设备，设备侧不可路由 = 误下发即降级），既有动作 0..3 零偏移（RDG-F1 冻结域不重开，只钉零偏移）。回引 契约 §1.3⑦⑧、§1.4。设计态红 = view_router 未扩（哨兵 -99 + 头锚缺席）",
+    "K0PTS-F2: firmware points_home 载荷最小消费——kidpal_points_home_parse 按契约 §1.3⑦ 示例逐字段解析（revision/balance/target 四键/recent 六键分录/restore 布尔；NULL/畸形/缺必带键/recent 超 3 条降级 -1 绝不盲渲染）；kidpal_points_home_takeover restore 分流——restore=true 只填缓存不抢前台（返回 0）、缺省/false 接管前台跳积分主页（返回 1）、NULL 降级。回引 契约 §1.3⑦、D-07、S-F6.4-AC5（设备分流半）。设计态红 = points_page.h/.c 不在世（哨兵）",
+    "K0PTS-F3: firmware points_ledger 载荷解析与分页缓存纪律——kidpal_points_ledger_parse 按 §1.3⑧ 示例解析（page 四键必带、items 容量 6、total/next_cursor/has_more/reset 逐项、畸形降级）；kidpal_points_ledger_apply 决策表——reset=true 丢弃旧分页缓存再装入（缓存计数替换不叠加）、同版本续页累加、跨版本续接拒绝 -1 且缓存零扰动（契约 §四「不得跨版本追加」）。回引 契约 §1.3⑧、§四、S-F6.2-AC1（设备消费半）。设计态红 = points_page.h/.c 不在世（哨兵）",
+    "K0PTS-F4: firmware 消费闭环与上行驱动方结构锚——mcp_server.cc 含 points 视图消费接线（VRT_ROUTE_POINTS_HOME 或 kidpal_points_home_parse 引用 >= 1，缺消费 = 权威帧下发后设备黑屏降级）；protocols/protocol.cc 或 protocol.h 或 application.cc 含 kidpal_points_page 上行驱动方引用（设备分页请求帧构造在世，缺驱动方 = front 应答无人消费）；host_app/main/CMakeLists.txt 同含 points_spike.acceptance.c 与 points_page.c 登记守（anti-vacuity；该清单为 K0a/K0 唯一共享构建文件，K0a merged 后 builder FIRST ACTION）。回引 K0S-E2、K0S-E4。设计态红 = 消费/驱动/登记锚全缺席",
+    {
+      "id": "K0PTS-L1",
+      "kind": "structural",
+      "text": "K0PTS-L1: live-manual 真实设备语音记账目击——真实设备说一句完整记账句（事由+动作词+分值），设备实际显示权威余额和原因；spike-evidence.md 记录端到端时间线（canary token、front 命令、推送、设备路由/消费日志、看屏照片）；文件写入、CLI 返回或 pytest 读回只能作辅证，不能替代消费端目击。回引 K0S-E1、S-F6.3-AC1、S-F6.3-AC2、D-spike-first。live-manual 层——不落自动断言、不计入 runner 通过面，载体 = delivery/taskpackages/261104-k0-points-e2e-spike/spike-evidence.md"
+    },
+    {
+      "id": "K0PTS-L2",
+      "kind": "structural",
+      "text": "K0PTS-L2: live-manual 真实 QQ 双状态 canary——首选两笔同形真实 QQ canary 分别取证：第一笔设备在其他页发送并验证不抢前台（数据更新、前台不动），第二笔积分页在屏时发送并验证原地刷新；设备主动语音成功路径展示积分主页；若执行时只能一笔，另一状态只能作为离线/宿主证据并如实申报，不得宣称两种状态均由真实 QQ 链路验证。回引 K0S-E1、K0S-E3、D-07、S-F6.4-AC1、S-F6.4-AC5。live-manual 层——载体 = delivery/taskpackages/261104-k0-points-e2e-spike/spike-evidence.md"
+    },
+    {
+      "id": "K0PTS-L3",
+      "kind": "structural",
+      "text": "K0PTS-L3: live-manual NFR-PERF-4 实测时延记录——语音记账句说完到积分页刷新出新余额的实际时延记录进 spike-evidence.md，只记录实测值、不写死未拍阈值（requirements 明示阈值待真机调优定数）。回引 NFR-PERF-4、K0S-E3。live-manual 层——载体 = delivery/taskpackages/261104-k0-points-e2e-spike/spike-evidence.md"
+    },
+    {
+      "id": "K0PTS-L4",
+      "kind": "structural",
+      "text": "K0PTS-L4: live-manual 首尾 canary 真机消费目击——首尾两条可识别记录经设备 kidpal_points_page 的消费端分页证据在场（看屏/消费日志按同一 canary token 与 front 命令、推送、设备路由日志关联），证明看到的不只是最近一条。回引 K0S-E2、S-F6.2-AC1、D-08-spike。live-manual 层——载体 = delivery/taskpackages/261104-k0-points-e2e-spike/spike-evidence.md"
+    }
+  ],
+  "acceptanceTestsFile": [
+    "server/acceptance/test_points_e2e_spike.acceptance.py",
+    "firmware/main/test/points_spike.acceptance.c"
+  ],
+  "redBaselineCommand": "server：python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance/test_points_e2e_spike.acceptance.py（server 面基线锚 = 395 passed / 0 failed @ 6ce77123，判停已裁定引用不重跑全量，只跑本包新件）；firmware host/device build：deferred: LP8 后置——K0a(261104-k0a-four-page-skeleton) merged、重取 firmware 基线后按 K0S-E4 实跑（MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf）；firmware 本件独立冒烟（冻结相位实编 + 设计态红取证，非 host/device 基线）：bash firmware/main/test/acceptance/red-baseline/k0pts_red_wrapper.sh",
+  "redBaselineResult": "acceptance-author 冻结实跑 2026-11-04 @ dev/261016-sd-card-mount（Pod 池树）。① server 新件单跑：6 tests，6 failed / 0 passed，收集零错误（冻结即冒烟 §3）；红因逐条对应当前 story 缺失的真实行为——A1/A2/A5/A6 = points.py 不在世（AssertionError: K0PTS RED: server/gateway/points.py 不在世）；A3 = display_schema 白名单未增 points_home（AssertionError: 'points_home' not found in {control, schedule, story_text, story_list, char, text, home}）；A4 = front_app.py 无 _consume_points_intent 截获缝；既有回归守卫断言（既有白名单零偏移/end_session 拒转）先于新面断言通过，无环境/依赖型红。② firmware host/device build：deferred: LP8 后置，K0a merged 后按判停协议重取 firmware 基线后实跑（不以冻结相位红冒充 host/device 基线）。③ firmware 本件独立冒烟（k0pts_red_wrapper.sh，WSL gcc -std=c11 -Wall -Wextra）：COMPILE_EXIT=0（C 类冻结验收实编 §4，编译通道 error 为零、零 warning）+ RUN_EXIT=4（4 tests 4 failures 全为设计态红——F1 view 路由哨兵/头锚缺席、F2/F3 points_page 哨兵、F4 mcp 消费锚缺席），红名逐条对应验收件头注 RED baseline 映射。",
   "exitCriteria": [
-    "K0S-E1: `spike-evidence.md` 记录一条真实设备完整语音记账句与真实 QQ canary 的端到端证据，设备实际显示权威余额和原因；文件写入、CLI 返回或 pytest 读回只能作辅证，不能替代消费端目击。QQ 双状态首选两笔同形 canary，具体要求见 K0S-E3。",
-    "K0S-E2: 首尾两条可识别记录经 `kidpal_points_page` 的消费端分页证据在场，证明看到的不只是最近一条；front 命令、推送、设备 view 路由和页面消费日志可按同一 canary 关联。",
-    "K0S-E3: 首选两笔同形真实 QQ canary 分别取证：第一笔在设备其他页发送并验证不抢前台，第二笔在积分页在屏时发送并验证原地刷新；设备主动语音成功路径展示积分主页。若执行时只能一笔，另一状态只能作为离线/宿主证据，不得宣称两种状态均由真实 QQ 链路验证。NFR-PERF-4 只记录实测时延，不写死未拍阈值。",
+    "K0S-E1: `spike-evidence.md` 记录一条真实设备完整语音记账句与真实 QQ canary 的端到端证据。通过判据（2026-11-05 human 真机轮裁定修正：原「设备实际显示权威余额和原因」以专属可见版式为隐含前提，与 K0 最小渲染范围不符）＝①权威账本真实落账（语音与 QQ 同一 state 文件、无第二账本）；②权威 points_home 帧真实下发并被设备固件解析接受（display_dispatch 日志 balance/revision/takeover 为凭）；③设备可见形态按 K0 最小渲染为限＝对话页文字行「星星 N 分 · 事由」，不要求专属积分页、版式可见性或会话浮层让位（完整可见积分主页归 K2，K0S-E5）。文件写入、CLI 返回或 pytest 读回只能作辅证。QQ 双状态首选两笔同形 canary，具体要求见 K0S-E3。",
+    "K0S-E2: 首尾两条可识别记录经 `kidpal_points_page` 的消费端分页证据在场（2026-11-05 human 裁定修正：设备侧分页请求运行时触发点在 K0/K0a 均未建——K0a 骨架冻结件明钉 points_ledger 语境 landsIn K2、K0 验收件 GAP-3 同记——本条设备半按降级申报顺延 K2，离线半（front 拦截应答 + 设备 parse/缓存纪律 K0PTS-A5/F3）维持有效证据）；front 命令、推送、设备 view 路由和页面消费日志可按同一 canary 关联。",
+    "K0S-E3: 首选两笔同形真实 QQ canary 分别取证（2026-11-05 human 裁定修正）：第一笔真实 QQ 落账已证（真实 QQ → main agent → 最小 add CLI → 单源 state 文件，QQ 回复正常、设备前台未动）；第二笔「积分页在屏原地刷新」依赖的 QQ 落账后设备缓存同步推送（restore=True 活调用方）在 K0 未接线（验收件 GAP-1 预申报、真机实测确认缺位），按降级申报顺延 K1/K2，不得宣称该状态已由真实 QQ 链路验证。NFR-PERF-4 只记录实测时延（语音链 ≈8s、QQ 链 ≈45s），不写死未拍阈值。",
     "K0S-E4: K0a 合并后重取基线完成 host build、device build 与真机终验，ready-to-merge 同样在此之后。firmware/main/test/host_app/main/CMakeLists.txt 是两包唯一共享构建清单，由 K0 在此时追加；K0 不修改 K0a 的 render_node/keybar/story_page 文件，P3 接管使用 K0a 留下的缝。",
     "K0S-E5: server 离线验收、host/设备构建与 spike 证据由 acceptance-author/verifier 固化；本包只交付最小通路，正式单 writer 不变量归 K1，完整 UI/删除归 K2，正式 QQ skill 归 K3。",
     "K0S-E6: 若真实 QQ 最小通路必须提前建立 K3 的完整 skill 或扩大写权，停止并升级主线程重核边界；不得以人工直接写 state 文件冒充 QQ 端到端证据。"
@@ -89,8 +124,103 @@
   ],
   "mutationRequired": true,
   "mutationEvidence": {
-    "perAcceptance": [],
-    "note": "Draft 态空骨架；真实消费端证据不因 offline 变异证据齐备而豁免。"
+    "perAcceptance": [
+      {
+        "acceptance": "K0PTS-A1: 薄意图截获与最小写入落账——引擎 display 流中 control/add_points 薄意图被 front 截获（控制帧绝不透传设备，契约 §1.4 网关决定类）；front 交 points.py 追加分录（六键统一分录形状 id/delta/reason/occurred_at/balance_before/balance_after，occurred_at 带时区 ISO8601）并持久化；成功后经 _push_display_payload 链自推权威 points_home 恰一帧（revision/balance/target 四键/recent 逐项权威、restore 缺席 = 语音成功路径接管前台跳积分页）；设备 wire 形状 view/data 双 String（对照 mcp_server.cc 实际接受什么）；add_points 执行器 API 形状上无产余额/分录 id/revision 入口（D-10）。回引 S-F6.3-AC1、S-F6.3-AC2、D-10、契约 §1.4。设计态红 = points.py 不在世",
+        "turnedRed": true,
+        "sensitive": true,
+        "mutation": "实放×3（2026-11-05 builder，逐条字节级还原+sha256 校验）：① relay 绕过 _consume_points_intent → 2 failed（A1 落账红+A4 restore 红）；② 截获不交执行器 → 2 failed；③ 推送改 front 本地拼装（revision 恒 0）→ 1 failed「revision 非权威值 0!=1」；还原后均 6 passed 回绿",
+        "affectedTest": "K0ptsThinIntentAcceptance::test_k0pts_a1… 等"
+      },
+      {
+        "acceptance": "K0PTS-A2: 兑换门禁与拒绝路径（错误/边界面）——redeem_points 只认当前激活目标分值（DEFAULT_TARGET=游乐场 40 冻结）、余额不足拒、两种拒绝均 ValueError 且零落账；成功路径产生负向分录、事由统一取「兑换游乐场」（模型不提供 target id/负 delta）；畸形薄意图（points=0/bool/缺事由）拒绝执行：不落账、不推 points_home、控制帧不透传。回引 S-F6.3-AC3（server 承载半）、契约 §1.4 redeem_points 行。设计态红 = points.py 不在世",
+        "turnedRed": true,
+        "sensitive": true,
+        "mutation": "实放×3：① 余额门移除 → 1 failed「ValueError not raised」；② 目标门移除 → 初轮不敏感（空账态被余额门遮蔽），acceptance-author 锐化 case（充值态验金额门）后复放转红「1 failed，ValueError not raised」；③ 畸形校验失效 → 1 failed「畸形薄意图被落账」；还原后均 6 passed",
+        "affectedTest": "K0ptsRedeemGateAcceptance::test_k0pts_a2…"
+      },
+      {
+        "acceptance": "K0PTS-A3: points 视图白名单与积分来源门禁——display_schema VALID_VIEWS 7→9（既有 7 view 零偏移、基数恰 9）；引擎侧完整 points_home/points_ledger 帧拒转降级为 friendly text（story 单源先例同型）、空 data 导航薄载荷放行并由 front 展开为完整帧（balance 读自 points.py 当前状态 = 权威单源）；front 自推通路放行完整帧；完整形状 floor——balance/revision 非整数、target 缺四键、restore 非布尔拒绝；GATEWAY_DECISION_CONTROL_ACTIONS 增 add_points/redeem_points 且 relay 与 self_push 双路径恒拒（FORWARDABLE 不含、决定类与可透传类不相交）；workspace-kidpal AGENTS.md 含 add_points/redeem_points 薄意图纪律锚与不产余额/revision 禁令锚。回引 契约 §1.5、§1.6、D-08-spike。设计态红 = 白名单未扩 points_home",
+        "turnedRed": true,
+        "sensitive": true,
+        "mutation": "实放×4：① VALID_VIEWS 去 points 两 view → 4 failed「points_home 下发 0 帧」；② 来源门禁移除 → 1 failed「引擎侧完整 points_home 通过真门」；③ GATEWAY_DECISION_CONTROL_ACTIONS 去两 action → 1 failed；④ floor 去 restore 布尔检查 → 1 failed；还原后均 6 passed",
+        "affectedTest": "K0ptsSchemaGateAcceptance::test_k0pts_a3… 等"
+      },
+      {
+        "acceptance": "K0PTS-A4: restore 推送不抢前台语义（数据面）——_consume_points_intent 截获缝在世且 restore 为 keyword-only 缺省 False；restore=True（QQ/恢复通道）推送帧 data.restore is True、restore 缺省（语音成功通道）推送帧 restore 缺席；截获缝真接线锚（_relay_display_blocks_to_device 函数体内引用，防只可直调的空过缝）。真实 QQ 链路的实际不抢前台/原地刷新归 live-manual K0PTS-L2。回引 S-F6.4-AC5、D-07、契约 §1.3⑦ restore。设计态红 = 截获缝缺席",
+        "turnedRed": true,
+        "sensitive": true,
+        "mutation": "实放×2（正反各一）：① 忽略 restore kwarg 恒 False → 1 failed「QQ 通道推送 restore 非 True」；② 恒 True → 2 failed「restore unexpectedly found in 推送帧」；还原后均 6 passed",
+        "affectedTest": "K0ptsRestoreSemanticsAcceptance::test_k0pts_a4… 等"
+      },
+      {
+        "acceptance": "K0PTS-A5: kidpal_points_page 首尾分页 canary（离线半）——keyset (occurred_at,id) 时间倒序分页 limit=1 步进从最新 canary 到最早 canary 均可及；首页 page.reset=True 且无 restore 键、续页应答 restore=True 且 reset=False；page.total 为全量分录数（非 items.length）；非法游标/known_revision 不符回最新首页 reset=True；limit 越界（0/51）ValueError；设备上行 kidpal_points_page 经 front 整条消费拦截、恰一帧应答、不透传引擎；空账权威 items=[]/page.total=0/balance=0 不伪造分录。回引 S-F6.2-AC1、契约 §四 kidpal_points_page、K0S-E2（离线半）、D-08-spike。设计态红 = points.py 不在世",
+        "turnedRed": true,
+        "sensitive": true,
+        "mutation": "实放×4：① 续页游标失效退化回首页 → 1 failed「续页非最早 canary」；② 生产者 limit 越界门移除 → 1 failed「limit=0 未拒绝」（wire 半 limit=51 断言对单层失效不敏感 = 生产者+front 双层防护，设计冗余非缺陷）；③ kidpal_points_page 分支改 if False 透传 → 1 failed「应答 0 帧」；④ 空账伪造分录 → 1 failed「items 非权威空数组」；还原后均 6 passed",
+        "affectedTest": "K0ptsPaginationCanaryAcceptance::test_k0pts_a5…"
+      },
+      {
+        "acceptance": "K0PTS-A6: QQ 最小 add CLI 单源——python -m gateway.points add/redeem 子命令成功 exit 0 落账、与 front 共享同一 points.py 执行器与同一 KIDPAL_POINTS_STATE state 文件（build_points_home 读到 CLI 写入 = 无第二账本）；非法输入（非整数分值/兑换金额不匹配）非零退出、不写账、输出一次性可判说明、不伪造成功回执。回引 S-F6.4-AC1、门 1 裁定（最小 add CLI）、D-10。设计态红 = points.py 不在世",
+        "turnedRed": true,
+        "sensitive": true,
+        "mutation": "实放×3：① CLI 第二 state 路径 → 1 failed「CLI add 未落账」（变异期 C:/tmp 第二账本已删）；② 拒绝路径 return 1 改 0 → 1 failed「exit 0 拒绝面缺失」；③ _parse_cli_int 归一放行 → 1 failed「exit 0」（证据受 unittest 首败中断限制，变异按构造必然写账，结论成立）；还原后均 6 passed",
+        "affectedTest": "K0ptsQqCliAcceptance::test_k0pts_a6…"
+      },
+      {
+        "acceptance": "K0PTS-F1: firmware view 路由 additive 数值码——VRT_ROUTE_POINTS_HOME=7/VRT_ROUTE_POINTS_LEDGER=8 枚举尾部 additive（view_router.h 同行锚 + kidpal_display_route 决策表真跑），既有 text/home/control/char/schedule/story_list/story_text 0..6 零偏移、NULL/未知降级 UNKNOWN；负锚——control/add_points 与 control/redeem_points 在设备侧恒 VRT_CTRL_UNKNOWN（网关决定类不直接下发设备，设备侧不可路由 = 误下发即降级），既有动作 0..3 零偏移（RDG-F1 冻结域不重开，只钉零偏移）。回引 契约 §1.3⑦⑧、§1.4。设计态红 = view_router 未扩（哨兵 -99 + 头锚缺席）",
+        "turnedRed": true,
+        "sensitive": true,
+        "mutation": "实放×2（WSL gcc 实现源+冻结件通道）：① VRT_ROUTE_POINTS_HOME 抢成 6 → 2 failed「points_home 未返回 7」；② kidpal_display_control_action 登记 add_points → 「设备侧可路由——网关决定类不直接下发」红；还原后均回「仅 CMake 后置红」基线",
+        "affectedTest": "TEST 1（kidpal_display_route 决策表）"
+      },
+      {
+        "acceptance": "K0PTS-F2: firmware points_home 载荷最小消费——kidpal_points_home_parse 按契约 §1.3⑦ 示例逐字段解析（revision/balance/target 四键/recent 六键分录/restore 布尔；NULL/畸形/缺必带键/recent 超 3 条降级 -1 绝不盲渲染）；kidpal_points_home_takeover restore 分流——restore=true 只填缓存不抢前台（返回 0）、缺省/false 接管前台跳积分主页（返回 1）、NULL 降级。回引 契约 §1.3⑦、D-07、S-F6.4-AC5（设备分流半）。设计态红 = points_page.h/.c 不在世（哨兵）",
+        "turnedRed": true,
+        "sensitive": true,
+        "mutation": "实放×3：① parse 忽略 restore 键 → 「restore=true 未解析为 1——分流载体缺失」红；② 畸形不降级 → 「盲渲染面」红；③ 分录 balance_after 缺失 → 逐字段红；还原后均回基线",
+        "affectedTest": "TEST 2"
+      },
+      {
+        "acceptance": "K0PTS-F3: firmware points_ledger 载荷解析与分页缓存纪律——kidpal_points_ledger_parse 按 §1.3⑧ 示例解析（page 四键必带、items 容量 6、total/next_cursor/has_more/reset 逐项、畸形降级）；kidpal_points_ledger_apply 决策表——reset=true 丢弃旧分页缓存再装入（缓存计数替换不叠加）、同版本续页累加、跨版本续接拒绝 -1 且缓存零扰动（契约 §四「不得跨版本追加」）。回引 契约 §1.3⑧、§四、S-F6.2-AC1（设备消费半）。设计态红 = points_page.h/.c 不在世（哨兵）",
+        "turnedRed": true,
+        "sensitive": true,
+        "mutation": "实放×3：① reset 分支改累加 → 「旧 9 条残留」红；② 跨版本续接放行 → 「旧版本分录追加进新版本缓存」红；③ page 四键必带删除 → 「缺 next_cursor/has_more/reset 未降级」红；还原后均回基线",
+        "affectedTest": "TEST 3"
+      },
+      {
+        "acceptance": "K0PTS-F4: firmware 消费闭环与上行驱动方结构锚——mcp_server.cc 含 points 视图消费接线（VRT_ROUTE_POINTS_HOME 或 kidpal_points_home_parse 引用 >= 1，缺消费 = 权威帧下发后设备黑屏降级）；protocols/protocol.cc 或 protocol.h 或 application.cc 含 kidpal_points_page 上行驱动方引用（设备分页请求帧构造在世，缺驱动方 = front 应答无人消费）；host_app/main/CMakeLists.txt 同含 points_spike.acceptance.c 与 points_page.c 登记守（anti-vacuity；该清单为 K0a/K0 唯一共享构建文件，K0a merged 后 builder FIRST ACTION）。回引 K0S-E2、K0S-E4。设计态红 = 消费/驱动/登记锚全缺席",
+        "turnedRed": true,
+        "sensitive": true,
+        "mutation": "实放×3（③ 于 2026-11-05 LP8 段补齐，K0a merged 后）：① 删 mcp_server.cc case VRT_ROUTE_POINTS_HOME 整块 → 红因切换为「mcp 消费锚缺席」= 判别力成立；② protocol.cc 帧类型字面改 kidpal_points_x → 红因切换为「上行驱动方缺席」；③ LP8 段：删除 host_app/main/CMakeLists.txt 的 display/points_page.c 登记行 → host runner 278 Tests 4 Failures，F4 由 PASS 转 FAIL 且红因正是登记守断言（字节级还原 sha256 8a466289…，复跑回 278/3 回绿）。登记守读 CMakeLists 原文（运行时 k0_read）故无需重编译即可观测",
+        "affectedTest": "TEST 4 + host runner K0PTS-F4"
+      },
+      {
+        "acceptance": "K0PTS-L1",
+        "turnedRed": null,
+        "sensitive": null,
+        "mutation": "变异不适用——真实设备消费端目击是价值本体（spike-first 铁律 + taskpackage note：真实消费端证据不因 offline 变异证据齐备而豁免）；载体 spike-evidence.md"
+      },
+      {
+        "acceptance": "K0PTS-L2",
+        "turnedRed": null,
+        "sensitive": null,
+        "mutation": "变异不适用——真实 QQ 双状态链路真值只能由真实 QQ 消费端取证；一笔缺失时按 K0S-E3 降级申报"
+      },
+      {
+        "acceptance": "K0PTS-L3",
+        "turnedRed": null,
+        "sensitive": null,
+        "mutation": "变异不适用——实测时延是观测记录非行为断言；载体 spike-evidence.md，阈值不拍数"
+      },
+      {
+        "acceptance": "K0PTS-L4",
+        "turnedRed": null,
+        "sensitive": null,
+        "mutation": "变异不适用——首尾 canary 设备消费端目击是 K0S-E2 真值半；offline 分页变异证据（A5）不豁免消费端证据"
+      }
+    ],
+    "note": "真实消费端证据不因 offline 变异证据齐备而豁免。2026-11-05 变异实放轮（builder 逐条字节级还原 + sha256 校验，收尾零残留证明在 pod-events mutation-round 事件）：28 条可执行变异全部敏感（27 初轮 + A2-2 经 acceptance-author 锐化冻结 case 后复放转敏感）；LP8 段（K0a merged 后）补齐 F4 CMake 登记守实放为第 29 条敏感（host runner 278/4→还原 278/3 回绿）；L1–L4 live-manual 变异不适用（structural 层）。"
   },
   "crossEnd": {
     "counterparts": [
@@ -178,43 +308,59 @@
     {
       "decision": "D-07 · QQ/恢复推送不抢前台，主动语音成功例外跳积分页",
       "summary": "spike 首选以两笔同形真实 QQ canary 分别验证其他页不抢前台与积分页原地刷新，并以真实设备验证主动语音成功跳页；仅一笔时另一状态只能作离线/宿主证据。",
-      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-07"],
+      "sourceRefs": [
+        "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-07"
+      ],
       "landsIn": "exitCriteria:K0S-E3"
     },
     {
       "decision": "D-08-spike · points display、薄意图与分页最小通路",
       "summary": "实现契约已冻结形状的最小生产者/消费者，并放置首尾分页 canary。",
-      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-08"],
+      "sourceRefs": [
+        "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-08"
+      ],
       "landsIn": "exitCriteria:K0S-E2"
     },
     {
       "decision": "D-10 · LLM 只产薄意图，确定性模块写账",
       "summary": "spike 只建立最小确定性写入路径；完整原子写、余额重算与全部不变量由 K1 正式化。",
-      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-10"],
+      "sourceRefs": [
+        "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-10"
+      ],
       "landsIn": "package:261104-k1-points-ledger-core"
     },
     {
       "decision": "S-F6.3 AC1/AC2 · 完整语音句记账并跳页",
       "summary": "真实设备说一句完整记账句，以设备看到权威余额与原因为证据。",
-      "sourceRefs": ["S-F6.3-AC1", "S-F6.3-AC2"],
+      "sourceRefs": [
+        "S-F6.3-AC1",
+        "S-F6.3-AC2"
+      ],
       "landsIn": "exitCriteria:K0S-E1"
     },
     {
       "decision": "S-F6.4 AC1/AC5 · QQ 最小写入与不抢前台",
       "summary": "真实 QQ canary 走最小写入通路，验证 restore 更新不接管前台。",
-      "sourceRefs": ["S-F6.4-AC1", "S-F6.4-AC5"],
+      "sourceRefs": [
+        "S-F6.4-AC1",
+        "S-F6.4-AC5"
+      ],
       "landsIn": "exitCriteria:K0S-E1"
     },
     {
       "decision": "D-02 · 完整积分 UI 与删除",
       "summary": "本包只做最小渲染，完整主页、详细账本和删除由 K2 承接。",
-      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-02"],
+      "sourceRefs": [
+        "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-02"
+      ],
       "landsIn": "package:261104-k2-points-device-ui"
     },
     {
       "decision": "D-05 · 正式 QQ 家长通道",
       "summary": "本包不提前实现完整 QQ skill；正式加/兑/查/删、稳定定位和错误回复由 K3 承接。",
-      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-05"],
+      "sourceRefs": [
+        "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-05"
+      ],
       "landsIn": "package:261104-k3-qq-points-channel"
     }
   ],

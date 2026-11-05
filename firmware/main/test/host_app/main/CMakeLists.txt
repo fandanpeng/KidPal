@@ -357,6 +357,16 @@ set(HOST_ACCEPTANCE_SRCS
     # 之前**（smoke 末位 = 最先执行, 包 0 boundary 齿注册序守卫）。
     "../../four_page_skeleton.acceptance.c"
 
+    # 包 261104-k0-points-e2e-spike（星星积分最小通路：points_home / points_ledger
+    # 载荷消费 + restore 分流 + 分页缓存纪律 + 上行分页驱动方）被测实现 + 冻结验收。
+    # display/points_page.{c,h} = [G2]/[G3] 纯逻辑 seam 强符号源（覆盖冻结件 weak
+    # 哨兵；零芯片/零 LVGL 依赖 -> host_app linux target 同源）；display/view_router.c
+    # 已在册。相对 host_app/main 分别为 ../../../display/ 与 ../../。本行按 K0a∥K0
+    # 共享清单约定在 K0a merged 后追加（K0S-E4/LP8）；**必须置于 host smoke
+    # acceptance 之前**（smoke 末位 = 最先执行, 包 0 boundary 齿注册序守卫）。
+    "../../../display/points_page.c"
+    "../../points_spike.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )
