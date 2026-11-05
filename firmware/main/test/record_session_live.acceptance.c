@@ -1043,6 +1043,67 @@ TEST_CASE("record_session_live: canary+注册序守卫 (RSL-C1)",
     free(cm);
 }
 
+/* ========================================================================== *
+ * TEST 10 — RSL-A9: Listening 分支积分子页语境扩点（2026-11-05 additive,
+ * TaskPackage 261104-k2-points-device-ui impactedTestsSeed frozen-rebaseline;
+ * D-08 + 契约 §四 kidpal_session_ctx「P3 积分主页/详细账本分别产生
+ * points_home/points_ledger，详细账本可附加 selected_id，其值只能来自最近收到
+ * 的 points_ledger items、设备不造 id」）。
+ * 性质: 纯结构齿（树扫真实工作树; builder 轮 1 已落实现——本齿落盘即绿, 无
+ * 哨兵面; 独立红跑通道同理绿）。强度 = 机制级源锚代理: 不钉逐字节 wire（同
+ * RSL-A1 强度申报）, wire 逐字节复证挂设备轮。story 语境映射（RSL-A3）、原
+ * 发送时点（RSL-A2: StartListening 前 + IsAudioProcessorRunning 门之外）、
+ * 单点消费语义零变化（K0a 重锚面零回退——本齿只 additive 追钉积分子页半）。
+ * ========================================================================== */
+/* coverage: 跨包承接 261104-k2-points-device-ui D-08 -- Listening 分支积分子页语境扩点（"points_ledger" 字面 + KPTS_SUBSTATE_LEDGER 子态门 + kidpal_points_ui_selected_id 只读读取 + 二参 ctx 原语调用同区） */
+/* coverage: 契约 §四 kidpal_session_ctx -- 详细账本语境 points_ledger + selected_id 只读附带（机制级源锚代理; 逐字节 wire 复证挂设备轮） */
+TEST_CASE("record_session_live: Listening 分支积分子页语境扩点 (RSL-A9)",
+          "[record_session_live][RSL-A9][structural]")
+{
+    char *listening;
+    char *region;
+
+    RSL_REQUIRE_ROOT();
+
+    /* tooth 1: Listening 分支内扩点结构同区在世——"points_ledger" 字面（详细账本
+     * 语境闭集值）+ KPTS_SUBSTATE_LEDGER 子态门（积分主页基层仍发 points_home,
+     * RSL-A3 tooth 1b 已钉映射; 本齿防扩点绕过子态门误覆盖）+
+     * kidpal_points_ui_selected_id 读取（selected_id 只读来源 = 设备侧消费态
+     * 单点, D-08「不造 id」的板端根）+ kidpal_points_ui_substate 门入参读取。
+     * 发送点仍单点住本分支（RSL-A2 tooth 1 恰一次断言零变化——扩点在该调用内
+     * 原地扩展, 不另立第二发送点）。 */
+    listening = rsl_region_between(RSL_APP_CC, "case kDeviceStateListening:",
+                                   "case kDeviceStateSpeaking:");
+    TEST_ASSERT_TRUE_MESSAGE(listening != NULL,
+        "RSL-A9 RED(infra): application.cc Listening 分支切片失败（case 锚漂移"
+        "——须复核本齿锚, 不属 builder 修订面）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        rsl_contains(listening, "\"points_ledger\"") &&
+        rsl_contains(listening, "KPTS_SUBSTATE_LEDGER") &&
+        rsl_contains(listening, "kidpal_points_ui_selected_id") &&
+        rsl_contains(listening, "kidpal_points_ui_substate"),
+        "RSL-A9 RED: Listening 分支缺积分子页语境扩点（\"points_ledger\" 字面 / "
+        "KPTS_SUBSTATE_LEDGER 子态门 / kidpal_points_ui_selected_id 只读读取——"
+        "契约 §四 详细账本语境 + selected_id 只读附带的板端构造半缺失; "
+        "261104-k2-points-device-ui D-08）");
+    free(listening);
+
+    /* tooth 2: ctx 原语 wire 半——protocol.cc SendKidpalSessionCtx 函数区含
+     * selected_id 序列化片段与 JSON 转义单源消费（空串/NULL 不附带 = 条件拼接,
+     * 转义单源与分页游标共用; 逐字节 wire 复证挂设备轮——强度申报见头注）。 */
+    region = rsl_region_between(RSL_PROTO_CC, "SendKidpalSessionCtx", "IsTimeout");
+    TEST_ASSERT_TRUE_MESSAGE(region != NULL,
+        "RSL-A9 RED(infra): protocol.cc SendKidpalSessionCtx 函数区切取失败"
+        "（原语未落/锚漂移——须复核本齿锚, 不属 builder 修订面）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        rsl_contains(region, "selected_id") &&
+        rsl_contains(region, "kidpal_points_json_escape"),
+        "RSL-A9 RED: protocol.cc SendKidpalSessionCtx 函数区缺 selected_id 序列化"
+        "片段/JSON 转义消费——详细账本语境 selected_id 附带半无承载（契约 §四 "
+        "selected_id 可选尾附; 畸形 id 未转义 = front 拒收风险）");
+    free(region);
+}
+
 /* --------------------------------------------------------------------------- *
  * RED baseline 判读口径（acceptance-author 冻结期实跑, 2026-09-30; 现状树 @5d58eb9,
  * firmware 自 2c7343a 零差异——既有齿零偏移由引用锚行判停承载, 不重跑全套 host build）:
@@ -1096,4 +1157,16 @@ TEST_CASE("record_session_live: canary+注册序守卫 (RSL-C1)",
  *               形态; 强度 = 机制级源锚代理, 逐字节 wire 复证挂设备轮）。既有 TEST
  *               1-7 断言集合零变化; 设计态红面追加 RSL-A8 全红 + RSL-A5 tooth 3
  *               换锚红（SendKidpalStoryDiscard 零命中）。
+ *   2026-11-05  additive 新增 TEST 10 / RSL-A9（acceptance-author, TaskPackage
+ *               261104-k2-points-device-ui impactedTestsSeed frozen-rebaseline;
+ *               授权 = planner ruling——builder 轮 1 因 scope-map deny 未改本冻结
+ *               件, 由 acceptance 写权属主追加最小增量）: Listening 分支积分子页
+ *               语境扩点结构齿（tooth 1 = "points_ledger" 字面 + KPTS_SUBSTATE_
+ *               LEDGER 子态门 + kidpal_points_ui_selected_id 只读读取同区; tooth 2
+ *               = protocol.cc SendKidpalSessionCtx 函数区 selected_id 序列化 +
+ *               kidpal_points_json_escape 转义单源消费）。D-08 + 契约 §四 详细
+ *               账本语境闭集半; 强度 = 机制级源锚代理, 逐字节 wire 复证挂设备轮。
+ *               既有 TEST 1-9 断言集合零变化——RSL-A1/A2 既有 needle 与二参
+ *               SendKidpalSessionCtx 现形兼容（builder 轮 1 已全绿实证）; story
+ *               语境映射 / 原发送时点 / 单点消费语义零回退（K0a 重锚面零触碰）。
  * --------------------------------------------------------------------------- */

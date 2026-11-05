@@ -1,0 +1,59 @@
+# test-scope-final — 261104-k2-points-device-ui（integrator 范围圈定终验，2026-11-05）
+#
+# 圈定方法（integrator Step 4①，2026-11-05）：
+#   范围 = 本包 acceptanceTestsFile ∪ taskpackage impactedTestsSeed ∪ detect_changes
+#   （C-AI-KidPal-pod-m2 专属索引，since=b96b978d，base=merge_base=b96b978d）blast
+#   radius 映射测试 ∪ 共享 seam 安全余量。图索引可用（21740 节点在册）→ 正常圈定，
+#   非降级。detect_changes：changed_files=29（含未提交制品）、seed_symbols=278、
+#   impacted_total=255（impacted_modules：firmware/main 154 / server/gateway 73 /
+#   server/acceptance 15 / server/tests 2 / builtins 10 / firmware/scripts 1）。
+#   全量回归 = 人工触发位，不跑（server 全量基线锚 = 415 passed / 9 deselected /
+#   33 subtests @ builder 轮3 eadb371f，pod-events builder-complete 事件；
+#   host 全量基线锚 = 287 Tests / 3 Failures，3 红全 p1_auxbar AB-A1/A2/A4 存量族，
+#   K0S-E4 判停引用）。
+#
+# 路径条目分节注记（供人读；机械消费只取下方纯路径行——闸 scope 匹配为逐行精确集合
+# 匹配，round 1 曾因路径行尾带中文注记交集为空、acceptance 闸 executor-skipped，
+# round 2 起本格式修正，留痕见 review-packet）。
+#
+# ── firmware 本包新冻结件 / 重锚件（acceptanceTestsFile + impactedTestsSeed
+#    frozen-rebaseline 两条）：
+firmware/main/test/points_device_ui.acceptance.c
+firmware/main/test/record_session_live.acceptance.c
+firmware/main/test/keybar_three_slot.acceptance.c
+# ── firmware 共享 seam / 种子回归（impactedTestsSeed regression + 图命中族；
+#    host 实跑形态 = 单 ELF 全件合跑，六件由 host 全量 287/3 承载，判停见下）：
+firmware/main/test/story_page_v2.acceptance.c
+firmware/main/test/points_spike.acceptance.c
+firmware/main/test/four_page_skeleton.acceptance.c
+# ── server 本包新冻结件 / 重钉件（acceptanceTestsFile + planner ruling5 扩单）：
+server/acceptance/test_points_device_ui.acceptance.py
+server/acceptance/test_points_e2e_spike.acceptance.py
+# ── server 共享 seam / 安全余量（K1 producer 冻结件 / 种子回归 / 图命中余量）：
+server/acceptance/test_points_ledger_core.acceptance.py
+server/acceptance/test_m4k1_story_cloud_link.acceptance.py
+server/acceptance/test_record_dialogue_guide.acceptance.py
+server/tests/test_story_units.py
+server/tests/test_engine_round_close_units.py
+server/tests/test_reminder_units.py
+#
+# ── 终验实测（2026-11-05，integrator 在本树实跑）：
+# $ python -m pytest -q --import-mode=importlib -m "not live" <上列 8 件 server 面>
+# → 末行逐字：154 passed, 1 warning, 3 subtests passed in 14.97s（分件逐件实测：本包
+#   冻结件 4；K0PTS-A5 重钉件 6；K1 producer 冻结件 10；m4k1 种子回归 36 / 3 subtests；
+#   record_dialogue_guide 共享缝 17；story units 40；engine_round_close units 4；
+#   reminder units 37；合计 154 passed / 0 failed，零误伤）。
+#
+# host 判停（K0S-E4 同族口径）：firmware 面 diff 判停实测
+# `git diff --quiet c1de02fe..HEAD -- firmware/` → exit 0（零差异）——builder 轮2
+# 后 host 全量 287 Tests / 3 Failures（rebaseline-complete 事件 14:16 实测，工作树
+# 含两件未提交重锚）以来固件零改动（轮3 eadb371f 仅 front_app.py），host 证据续用
+# 不重跑。
+#
+# ── 圈定判定：
+# 范围 = 影响面圈定清单（非全量、非缩到只剩本包档）：本包新件 2 + 重锚/重钉 3 +
+# 种子回归 2 + 共享 seam / 图命中余量 6，覆盖 changeManifest 全部 23 路径（实现面
+# 由冻结件与 device build 承载核对）与全部 impactedTestsSeed 四条。
+# live-manual 三段（K2PTS-L1 语音记账真机 / K2PTS-L2 分页翻屏与删除真机（含
+# K1L-L1/L2 挂接）/ K2PTS-L3 冷启动恢复真机）不在本终验范围（human 在场轮，
+# 诚实挂起，不伪造）。

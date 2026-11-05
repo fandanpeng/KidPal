@@ -42,3 +42,9 @@
 **环境事实**：专属图索引 `C-AI-KidPal-pod-m2` ready（2026-11-05 index_status 实查，21740 节点 / 64106 边，K1 points 面入图；复用树随树沿用，intake 自动增量）。
 
 **human 遗留项**：无新增（K0 gov 登记尾差、远程发布、K1 部署轮仍归主线程/human，与本包 launch 无涉）。
+
+## 2026-11-05 · K2 integrator 收口（离线面）
+
+**final 终验**：scope 圈定清单 `delivery/taskpackages/261104-k2-points-device-ui/test-scope-final.txt`（detect_changes C-AI-KidPal-pod-m2 专属索引 since=b96b978d 正常圈定）；final round 2 承重（invocationId 3fb1729b-b9fa-47bd-9629-d71f696776f2）10 闸全跑零 skip——firmware-build 真编译 fresh 绿、unit 154 passed / acceptance 73 passed / 3 subtests，verifier-evidence-check factOk:true；round 1 留痕（scope 清单注记格式缺陷致 acceptance 闸 executor-skipped，格式修正后重跑）。host 287/3 判停续用（c1de02fe..HEAD firmware 零差异）。圈定合跑零误伤（8 件 server 面逐件实测 154/0）。
+
+**closeout**：docs-delta.md（零文档变更）+ review-packet.md（demo 对账 E1/E2/E5 绿、E3/E4 pending 真机轮）+ overlap-probe.json（no-overlap；deviceOutcome required=true：device-round-evidence 待真机轮 + protocol.cc 申报登记集收窄项交 planner）落包目录；closeout-check PASS indexProjection inserted；pod-closed 事件 8f95f0f2 在 pod-events.jsonl。制品与三件测试面改动随后由 integrator commit 进 dev/pod-m2（不 push）。merge 门交 planner 跑 supervisor 闸；K2PTS-L1/L2/L3 真机轮（含 K1L-L1/L2 挂接）human 在场安排。
