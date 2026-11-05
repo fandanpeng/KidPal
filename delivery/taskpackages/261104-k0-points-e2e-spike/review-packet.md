@@ -109,3 +109,12 @@ K2）；external artifact — 无；residual risk — 看屏真实观感（字�
   `reason` 以 `risk-accepted` 开头的条目（七条 decision 全部 landsIn 到 exitCriteria 或
   K1/K2/K3 承接包），无 risk-accepted 台账项可列；ready-to-merge 判定本身按 K0S-E4 等 K0a
   merged 后由后续轮作出。
+
+---
+
+## 附件 · 2026-11-05 真机轮收口（planner 补记，human 在场裁定）
+
+- **真机轮证据**：见 [spike-evidence.md](spike-evidence.md)（语音记账 ×2、QQ canary ×1、「打开积分本」权威帧轮、时延实测 语音≈8s / QQ≈45s、「10」残段定性）。
+- **验收判据修正（human 裁定）**：K0S-E1/E2/E3 判定面从「设备可见版式」修正为「真值链 + 最小渲染形态」；原判据隐含专属积分页前提，与 K0 最小渲染范围不符。修正后：E1 达成、E4/E5/E6 达成、E2/E3 按降级申报（设备分页触发点与 QQ 缓存同步推送归 K2/K1，验收件 GAP-1/GAP-3 预申报兑现）。
+- **K2 输入（版式第一课）**：最小渲染行宿主 `chat_message_label_` 挂 `bottom_bar_`（页点上方），残段每页可见——K2 完整积分页落地时须替换该渲染面并消化残段观感。
+- **挂起转正**：LP8 全项完成（共享 CMake 追加 + host 基线 278/3 + device build 真编译 + 本真机终验）；live-manual 四条按修正判据落账（L4 降级申报）。
