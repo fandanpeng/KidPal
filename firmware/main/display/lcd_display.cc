@@ -13,6 +13,7 @@
 #include "keybar.h"
 #include "kidpal_layer.h" /* KIDPAL_LAYER_CHAR_WINDOW 前台层门控 (键帽查字窗分支) */
 #include "char_page.h"    /* kidpal_char_page_started (查字窗演示起播态外露, ACC-6 接线) */
+#include "points_page.h"  /* K2PTS-P6: KPTS_SUBSTATE_* 积分子态常量单源（键帽随态/页点） */
 
 #include <vector>
 #include <algorithm>
@@ -1386,6 +1387,9 @@ static void kidpal_keybar_sync_locked(void)
      * 最后已知子态若为 RECORDING, 帧分叉仍须由 rec_slots 单源裁。 */
     int story_rec_sub = (story_sub == KSTORY_PAGE_RECORDING || story_sub < 0)
                             ? kidpal_render_node_story_rec_substate() : 0;
+    /* K2 积分子态（TaskPackage 261104-k2-points-device-ui 轮 2）: 本地页 = 积分页且
+     * 基层前台时有效（其余 -1，回落既有路径）。子态常量单源 = points_page.h。 */
+    int points_sub = kidpal_render_node_points_substate();
     /* 有效 overlay 判据（页点显隐入参）: 层栈归一值 + WF-F2-06「正文取不回」提示态。
      * 该提示是本地基层上的故事页子态（非独立 layer, front_is_overlay 不报覆盖层），
      * 但语义是整屏覆盖层——brief:101「覆盖层……不显示页点」/ requirements:382
@@ -1397,7 +1401,8 @@ static void kidpal_keybar_sync_locked(void)
                         story_sub == KSTORY_PAGE_BODY_UNAVAILABLE ||
                         story_sub == KSTORY_PAGE_RECORDING ||
                         story_sub == KSTORY_PAGE_ORGANIZING ||
-                        story_sub == KSTORY_PAGE_STAMP) ? 1 : 0;
+                        story_sub == KSTORY_PAGE_STAMP ||
+                        points_sub == KPTS_SUBSTATE_DELETE_CONFIRM) ? 1 : 0;
 
     /* 渲染节点页 (KP_PAGE_*) 与键路由页序 (PAGE_P1..PAGE_P4) 四页态下逐项同序同值，
      * 页索引映射塌成恒等——直取即为「当前画的是哪一页」，无需换算表（实心页点与页槽
@@ -1442,6 +1447,13 @@ static void kidpal_keybar_sync_locked(void)
              * 纯逻辑缝 [CG-C2] 已把三态决策表全承载, 本处只做接线与环境门控
              * （夹钳窗 + 本地页 = P3）, 值域零重算（KB-E2）。 */
             slots_ok = 1;
+        } else if (points_sub == KPTS_SUBSTATE_LEDGER ||
+                   points_sub == KPTS_SUBSTATE_DELETE_CONFIRM) {
+            /* K2 积分子态键帽随态（TaskPackage 261104-k2-points-device-ui 轮 2）:
+             * 详细账本「问一问/下移」、删除确认「删掉/算了」——字面单源 =
+             * keybar.c kidpal_keybar_points_slots（V9 冻结页级 ref 逐字），设备侧
+             * 零重算。主页基层（KPTS_SUBSTATE_NONE）回落下方页槽表（问一问/下一页）。 */
+            slots_ok = (kidpal_keybar_points_slots(points_sub, &left, &right) == 0);
         } else if (front_layer == KIDPAL_LAYER_CHAR_WINDOW) {
             /* 查字窗前台 (v1.59 WF-F3-01 键帽随态变, ACC-6): 键帽随演示起播态变——
              * 未起播「播报」/ 起播后「重播」, 右槽 BOOT「结束」。值域仍走 keybar 纯逻辑

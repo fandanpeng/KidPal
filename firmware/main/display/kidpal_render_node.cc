@@ -57,6 +57,7 @@
 #include <esp_lvgl_port.h>
 #include <lvgl.h>
 
+#include <cstdio>
 #include <cstring>
 #include <string>
 
@@ -163,6 +164,22 @@ static int s_story_session_page = 0;
 extern "C" void kidpal_render_node_story_session_page(int page) {
     s_story_session_page = page;
 }
+
+/* ------------------------------------------------------------------------- *
+ * P3 星星积分本渲染缓存（TaskPackage 261104-k2-points-device-ui 轮 2）
+ *
+ * 权威帧由 mcp_server 消费链解析后经 cache_points_* 投递（与 cache_story 同型分工：
+ * 渲染节点只持有渲染所需 RAM 副本，四态/进度线/分页判定全部由 points_page.c 决策表在
+ * mcp 侧裁决，渲染面零重算、零本地持久化——plan 铁律「K1 唯一权威」）。
+ * s_points_home_received = 「数据已送达」判据（未达 = 从未收到权威帧 -> K0a 占位口径，
+ * 不显数字/不画进度线；与「确认空账」两态显式分叉，S-F6.1 AC4）。
+ * ---------------------------------------------------------------------- */
+static kidpal_points_home_t        s_points_home = {};
+static int                         s_points_home_received = 0;
+static kidpal_points_ledger_t      s_points_ledger = {};
+static kidpal_points_ledger_state_t s_points_state = {};
+static int                         s_points_ledger_received = 0;
+static int                         s_points_cursor = 0;
 
 /* ------------------------------------------------------------------------- *
  * 五态 chrome 显隐的前台维度桥 (RP-A5 r3/r4)：姿态/气泡仅当 VOICE 层为前台层时显示，
@@ -867,6 +884,351 @@ void kidpal_render_node_end_provision(void)
 }
 
 /* -------------------------------------------------------------------------
+ * P3 星星积分本渲染面（TaskPackage 261104-k2-points-device-ui 轮 2）
+ *
+ * 版式权威 = docs/ui/V9/ 六张 400×300 1bpp 帧（points-home / points-home-empty /
+ * points-home-nodata / points-home-negative / points-ledger / points-delete-confirm）+
+ * docs/ui/kidpal-ui-design-v9.html；与 story/schedule 既有正式页同族画法（纯 lv_obj
+ * 矩形 + lv_label，1bpp 阈值下墨色即黑/白两值，长原因 → LV_LABEL_LONG_DOT 截断、
+ * 大分值/越目标/负余额 → 坐标钳位，绝不越出 400×300）。
+ *
+ * 数据面零重算：四态判定 kidpal_points_home_state、进度线 kidpal_points_progress、
+ * 屏幕数 kidpal_points_ledger_screen_total 全住 display/points_page.c；本区只消费。
+ * 未达态（s_points_home_received == 0）由调用点内联画 K0a 占位（KP_POINTS_NODATA_HINT，
+ * 不显数字/不画进度线），**不经本区**（K0A-A4 冻结结构锚）。
+ * ---------------------------------------------------------------------- */
+#define RNP_INK        0x000000u
+#define RNP_FAINT      0x888888u
+#define RNP_LINE_X0    30
+#define RNP_LINE_X1    370
+#define RNP_LINE_Y     100
+
+static lv_obj_t *rn_points_label(lv_obj_t *scr, const char *text, int x, int y,
+                                 uint32_t color, const lv_font_t *font)
+{
+    lv_obj_t *l = lv_label_create(scr);
+
+    lv_label_set_text(l, text != NULL ? text : "");
+    lv_obj_set_pos(l, x, y);
+    lv_obj_set_style_text_color(l, lv_color_hex(color), 0);
+    lv_obj_set_style_text_font(l, font != NULL ? font : &font_puhui_14_1, 0);
+    return l;
+}
+
+static void rn_points_box(lv_obj_t *scr, int x, int y, int w, int h, uint32_t color)
+{
+    lv_obj_t *o = lv_obj_create(scr);
+
+    lv_obj_remove_style_all(o);
+    lv_obj_set_size(o, w, h);
+    lv_obj_set_pos(o, x, y);
+    lv_obj_set_style_bg_color(o, lv_color_hex(color), 0);
+    lv_obj_set_style_bg_opa(o, LV_OPA_COVER, 0);
+    lv_obj_clear_flag(o, LV_OBJ_FLAG_SCROLLABLE);
+}
+
+/* 圆角描边框（列表选中行 / 「详细 · 双击看」按钮 / 删除确认分录框）。 */
+static void rn_points_outline(lv_obj_t *scr, int x, int y, int w, int h)
+{
+    lv_obj_t *o = lv_obj_create(scr);
+
+    lv_obj_remove_style_all(o);
+    lv_obj_set_size(o, w, h);
+    lv_obj_set_pos(o, x, y);
+    lv_obj_set_style_bg_opa(o, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(o, 3, 0);
+    lv_obj_set_style_border_color(o, lv_color_hex(RNP_INK), 0);
+    lv_obj_set_style_border_opa(o, LV_OPA_COVER, 0);
+    lv_obj_set_style_radius(o, 12, 0);
+    lv_obj_clear_flag(o, LV_OBJ_FLAG_SCROLLABLE);
+}
+
+/* 分值 -> 线上横坐标（钳位 [X0, X1]；target <= 0 防御按 1 计——不除零）。 */
+static int rn_points_line_x(int value, int target)
+{
+    int x;
+
+    if (target <= 0) {
+        target = 1;
+    }
+    x = RNP_LINE_X0 + (RNP_LINE_X1 - RNP_LINE_X0) * value / target;
+    if (x < RNP_LINE_X0) {
+        x = RNP_LINE_X0;
+    }
+    if (x > RNP_LINE_X1) {
+        x = RNP_LINE_X1;
+    }
+    return x;
+}
+
+/* 进度线（V9 points-home*.png）：基线全程虚线、已走过部分实线、小伴标记在余额位。
+ * 负余额已在决策表里钳位成 pos=0/solid_len=0（全线虚线、小伴在起点）——本函数
+ * 只按数据画，不再二次判断（两处判断 = 两套真相源）。 */
+static void rn_render_points_progress_line(lv_obj_t *scr,
+                                           const kidpal_points_progress_t *pg)
+{
+    char label[16];
+    int i;
+    int solid_x;
+    int comrade_x;
+    int t;
+
+    /* 虚线基线（10px 步进的小段）。 */
+    for (i = RNP_LINE_X0; i < RNP_LINE_X1; i += 10) {
+        rn_points_box(scr, i, RNP_LINE_Y - 1, 5, 3, RNP_INK);
+    }
+    /* 实线：已走过部分（含超目标越场景标延伸——x 已按同一比例钳位到 X1）。 */
+    solid_x = rn_points_line_x(pg->solid_len, pg->target_points);
+    if (solid_x > RNP_LINE_X0) {
+        rn_points_box(scr, RNP_LINE_X0, RNP_LINE_Y - 2, solid_x - RNP_LINE_X0, 5,
+                      RNP_INK);
+    }
+    /* 刻度点 + 分值标签（起点 / 1/4 / 1/2 / 3/4 / 场景标）。 */
+    for (i = 0; i <= 4; i++) {
+        int x = RNP_LINE_X0 + (RNP_LINE_X1 - RNP_LINE_X0) * i / 4;
+
+        rn_points_box(scr, x - 4, RNP_LINE_Y - 4, 9, 9, RNP_INK);
+        if (i == 0) {
+            rn_points_label(scr, "起点", x - 14, RNP_LINE_Y + 12, RNP_INK,
+                            &font_puhui_14_1);
+        } else {
+            t = pg->target_points * i / 4;
+            snprintf(label, sizeof(label), "%d", t);
+            rn_points_label(scr, label, x - 12, RNP_LINE_Y + 12, RNP_INK,
+                            &font_puhui_14_1);
+        }
+    }
+    /* 小伴位置标记（余额位；负余额钳位在起点——数字本身仍由余额文本如实承载）。 */
+    comrade_x = rn_points_line_x(pg->pos, pg->target_points);
+    rn_points_box(scr, comrade_x - 8, RNP_LINE_Y - 30, 16, 16, RNP_INK);
+}
+
+/* 分值逐字（正数带 +，负数如实带 -；V9 points-home-negative.png「-40」）。 */
+static void rn_points_format_delta(int delta, char *out, size_t cap)
+{
+    if (delta > 0) {
+        snprintf(out, cap, "+%d", delta);
+    } else {
+        snprintf(out, cap, "%d", delta);
+    }
+}
+
+/* occurred_at（ISO8601 "YYYY-MM-DDThh:mm:ss+08:00"）-> V9 日期列：
+ * 与设备本地 RTC 同月日 -> 「今天」；否则「M月D日」。畸形/缺省 -> 空串（不伪造日期）。 */
+static void rn_points_format_date(const char *at, char *out, size_t cap)
+{
+    int mm;
+    int dd;
+
+    if (out == NULL || cap == 0) {
+        return;
+    }
+    out[0] = '\0';
+    if (at == NULL || strlen(at) < 10 ||
+        at[5] < '0' || at[5] > '9' || at[6] < '0' || at[6] > '9' ||
+        at[8] < '0' || at[8] > '9' || at[9] < '0' || at[9] > '9') {
+        return;
+    }
+    mm = (at[5] - '0') * 10 + (at[6] - '0');
+    dd = (at[8] - '0') * 10 + (at[9] - '0');
+    if (s_rtc_month > 0 && s_rtc_mday > 0 && mm == s_rtc_month && dd == s_rtc_mday) {
+        snprintf(out, cap, "今天");
+    } else {
+        snprintf(out, cap, "%d月%d日", mm, dd);
+    }
+}
+
+/* 一条分录行（最近三条 / 详细账本行 / 删除确认框共用列位）：delta | before→after |
+ * 事由 | 日期（列位由调用方按版面给定）。事由列定宽 + LV_LABEL_LONG_DOT——长原因
+ * 截尾，绝不撑破版面（K2D-E4）。 */
+static void rn_render_points_entry_row(lv_obj_t *scr, const kidpal_points_entry_t *e,
+                                       int y, int with_balances, int reason_x,
+                                       int reason_w, int date_x, int date_w)
+{
+    char buf[64];
+    char date[24];
+
+    rn_points_format_delta(e->delta, buf, sizeof(buf));
+    rn_points_label(scr, buf, 12, y, RNP_INK, kidpal_render_node_body_font());
+    if (with_balances) {
+        snprintf(buf, sizeof(buf), "%d→%d", e->balance_before, e->balance_after);
+        rn_points_label(scr, buf, 70, y, RNP_INK, &font_puhui_14_1);
+    }
+    {
+        lv_obj_t *reason = rn_points_label(scr, e->reason, reason_x, y, RNP_INK,
+                                           kidpal_render_node_body_font());
+        lv_obj_set_width(reason, reason_w);
+        lv_label_set_long_mode(reason, LV_LABEL_LONG_DOT);
+    }
+    rn_points_format_date(e->occurred_at, date, sizeof(date));
+    {
+        lv_obj_t *d = rn_points_label(scr, date, date_x, y, RNP_INK, &font_puhui_14_1);
+        lv_obj_set_width(d, date_w);
+        lv_obj_set_style_text_align(d, LV_TEXT_ALIGN_RIGHT, 0);
+    }
+}
+
+/* 删除确认框内的单条分录（V9 points-delete-confirm.png：列位整体右移进圆角框内，与
+ * 列表行不同起点）。 */
+static void rn_render_points_delete_entry(const kidpal_points_entry_t *e)
+{
+    char buf[64];
+    char date[24];
+
+    rn_points_format_delta(e->delta, buf, sizeof(buf));
+    rn_points_label(s_kidpal_scr, buf, 70, 134, RNP_INK, kidpal_render_node_body_font());
+    snprintf(buf, sizeof(buf), "%d→%d", e->balance_before, e->balance_after);
+    rn_points_label(s_kidpal_scr, buf, 130, 134, RNP_INK, &font_puhui_14_1);
+    {
+        lv_obj_t *reason = rn_points_label(s_kidpal_scr, e->reason, 190, 134, RNP_INK,
+                                           kidpal_render_node_body_font());
+        lv_obj_set_width(reason, 64);
+        lv_label_set_long_mode(reason, LV_LABEL_LONG_DOT);
+    }
+    rn_points_format_date(e->occurred_at, date, sizeof(date));
+    {
+        lv_obj_t *d = rn_points_label(s_kidpal_scr, date, 262, 134, RNP_INK,
+                                      &font_puhui_14_1);
+        lv_obj_set_width(d, 76);
+        lv_obj_set_style_text_align(d, LV_TEXT_ALIGN_RIGHT, 0);
+    }
+}
+
+/* 积分主页正文（数据已送达；NODATA 由调用点画 K0a 占位，不进本函数）。四态差异：
+ * 空账显 0 与目标 + 空账话术（进度线照画）；正常/超目标显数字 + 进度线 + 最近三条；
+ * 负余额数字如实负值、进度线钳位。页面结构单页不变（D-02）。 */
+static void rn_render_points_home_body_locked(void)
+{
+    kidpal_points_progress_t pg;
+    int state = kidpal_points_home_state(&s_points_home);
+    char buf[64];
+    int i;
+
+    /* 右上角余额（数字如实——负值不藏数；NODATA 不进本函数。CLIP = 超大分值
+     * 只截尾不换行、不撑破顶栏）。 */
+    snprintf(buf, sizeof(buf), "★ %d", s_points_home.balance);
+    {
+        lv_obj_t *bal = rn_points_label(s_kidpal_scr, buf, 218, 8, RNP_INK,
+                                        kidpal_render_node_title_font());
+        lv_obj_set_width(bal, 170);
+        lv_obj_set_style_text_align(bal, LV_TEXT_ALIGN_RIGHT, 0);
+        lv_label_set_long_mode(bal, LV_LABEL_LONG_CLIP);
+    }
+    /* 目标名（场景标位说明；超长截尾防撑破版面）。 */
+    {
+        lv_obj_t *tgt = rn_points_label(s_kidpal_scr, s_points_home.target_name, 30, 36,
+                                        RNP_INK, kidpal_render_node_body_font());
+        lv_obj_set_width(tgt, 220);
+        lv_label_set_long_mode(tgt, LV_LABEL_LONG_DOT);
+    }
+
+    if (kidpal_points_progress(&s_points_home, &pg) == 0) {
+        rn_render_points_progress_line(s_kidpal_scr, &pg);
+    }
+
+    rn_points_label(s_kidpal_scr, "最近得到", 12, 138, RNP_INK,
+                    kidpal_render_node_body_font());
+    rn_points_outline(s_kidpal_scr, 248, 132, 144, 28);
+    rn_points_label(s_kidpal_scr, "详细 · 双击看", 262, 138, RNP_INK,
+                    &font_puhui_14_1);
+
+    if (state == KPTS_HOME_STATE_EMPTY) {
+        lv_obj_t *hint = rn_points_label(s_kidpal_scr, "账本空空的，攒下第一笔积分吧",
+                                         40, 192, RNP_INK,
+                                         kidpal_render_node_body_font());
+        lv_obj_set_width(hint, 320);
+        lv_obj_set_style_text_align(hint, LV_TEXT_ALIGN_CENTER, 0);
+        return;
+    }
+    for (i = 0; i < s_points_home.recent_count && i < KPTS_RECENT_MAX; i++) {
+        rn_render_points_entry_row(s_kidpal_scr, &s_points_home.recent[i],
+                                   170 + i * 30, 0, 64, 226, 300, 88);
+    }
+}
+
+/* 详细账本页（V9 points-ledger.png）：单行分录（delta / before→after / 事由 / 日期）+
+ * 光标描边框 + 页脚「第 x 屏 · 共 y 屏」（分母 = page.total 全量换算，不以已缓存条数
+ * 顶替——全量可及，S-F6.2 AC1）。一屏行数 = 单帧容量 KPTS_LEDGER_ITEMS_MAX = 6。 */
+static void rn_render_points_ledger_locked(void)
+{
+    int i;
+    int rows = KPTS_LEDGER_ITEMS_MAX;
+    int screens;
+    int cur_screen;
+    char footer[64];
+
+    if (s_points_ledger_received == 0) {
+        lv_obj_t *hint = rn_points_label(s_kidpal_scr, KP_POINTS_NODATA_HINT, 40, 150,
+                                         RNP_INK, kidpal_render_node_body_font());
+        lv_obj_set_width(hint, 320);
+        lv_obj_set_style_text_align(hint, LV_TEXT_ALIGN_CENTER, 0);
+        return;
+    }
+    if (s_points_ledger.item_count <= 0) {
+        lv_obj_t *hint = rn_points_label(s_kidpal_scr, "账本空空的，攒下第一笔积分吧",
+                                         40, 150, RNP_INK,
+                                         kidpal_render_node_body_font());
+        lv_obj_set_width(hint, 320);
+        lv_obj_set_style_text_align(hint, LV_TEXT_ALIGN_CENTER, 0);
+        return;
+    }
+
+    for (i = 0; i < s_points_ledger.item_count && i < rows; i++) {
+        int y = 12 + i * 34;
+
+        if (i == s_points_cursor) {
+            rn_points_outline(s_kidpal_scr, 6, y - 6, 388, 32);
+        }
+        rn_render_points_entry_row(s_kidpal_scr, &s_points_ledger.items[i], y, 1, 150,
+                                   136, 300, 88);
+    }
+
+    /* 页脚：screen 数来自 page_total 全量换算；当前屏 = 已缓存页序号（新页到达时
+     * cached_count 已含本页）。 */
+    screens = kidpal_points_ledger_screen_total(&s_points_state, rows);
+    if (screens < 0) {
+        screens = 0;
+    }
+    cur_screen = (s_points_state.cached_count + rows - 1) / rows;
+    if (cur_screen < 1) {
+        cur_screen = 1;
+    }
+    if (screens < cur_screen) {
+        screens = cur_screen;
+    }
+    snprintf(footer, sizeof(footer), "第 %d 屏 · 共 %d 屏", cur_screen, screens);
+    {
+        lv_obj_t *f = rn_points_label(s_kidpal_scr, footer, 120, 246, RNP_INK,
+                                      &font_puhui_14_1);
+        lv_obj_set_width(f, 160);
+        lv_obj_set_style_text_align(f, LV_TEXT_ALIGN_CENTER, 0);
+    }
+}
+
+/* 删除确认整屏覆盖（V9 points-delete-confirm.png）：标题 + 待删分录取自当前光标行
+ * （只读缓存，绝不本地删）；页点消失由 keybar 消费 KPTS_SUBSTATE_DELETE_CONFIRM
+ * （dots_overlay）承载。 */
+static void rn_render_points_delete_locked(void)
+{
+    int idx = s_points_cursor;
+
+    if (idx < 0 || idx >= s_points_ledger.item_count) {
+        idx = 0;
+    }
+    rn_points_box(s_kidpal_scr, 0, 0, 400, 300, 0xFFFFFFu);
+    {
+        lv_obj_t *t = rn_points_label(s_kidpal_scr, "删掉这条?", 120, 70, RNP_INK,
+                                      kidpal_render_node_title_font());
+        lv_obj_set_width(t, 160);
+        lv_obj_set_style_text_align(t, LV_TEXT_ALIGN_CENTER, 0);
+    }
+    if (s_points_ledger.item_count > 0 && idx < KPTS_LEDGER_ITEMS_MAX) {
+        rn_points_outline(s_kidpal_scr, 56, 120, 288, 48);
+        rn_render_points_delete_entry(&s_points_ledger.items[idx]);
+    }
+}
+
+/* -------------------------------------------------------------------------
  * 阶段 B：BOOT 双按翻页（本地浏览层生命周期）
  * ---------------------------------------------------------------------- */
 
@@ -952,33 +1314,45 @@ static void rn_render_kidpal_page_locked(kidpal_page_id_t page)
             break;
         }
         case KP_PAGE_POINTS_HOME: {
-            /* P3 星星积分本「数据未达」静态占位（TaskPackage 261104-k0a-four-page-skeleton,
-             * seam [4]；S-F6.1-AC4 数据未达半 + decisionCoverage D-01-skeleton）。
-             * 本包只落纯等待口径：页名 + 居中等待话术（话术单源 = kidpal_render_node.h
-             * 的 KP_POINTS_NODATA_HINT，本处零字面重抄——文案单源纪律与故事空态话术同款）。
-             * **负锚三条**：不显示任何数字（数据未达显数会误导，不伪造 0 余额）、
-             * 不画进度线（进度线归 K2 正式积分主页 S-F6.1-AC2）、不借故事空态宏
-             * （S-F6.1-AC4 与 S-F2.1-AC5/AC6 话术各归各单源、须可区分）。
-             * 接管缝（K0A-E2）：K0 的 points_page.c 以同一宏 + 本 case 落点接入，
-             * 数据到达后的原地刷新（S-F6.1 补充规则「只填数据不抢前台」）归 K0/K2。 */
+            /* P3 星星积分本正式页（TaskPackage 261104-k2-points-device-ui 轮 2）：四态
+             * 主页 + 进度线 + 最近三条 / 详细账本子态 / 删除确认覆盖层（按 points_page.h
+             * 的 KPTS_SUBSTATE_* 分派）。未达态沿用 K0a 占位口径（话术单源 =
+             * KP_POINTS_NODATA_HINT，本处零话术字面重抄；不显数字、不画进度线）。
+             * 数据面判定全住 display/points_page.c，本 case 只做画法分派、零重算。 */
+            int pts_sub;
+
             lv_screen_load(s_kidpal_scr);
-            lv_obj_t *pts_title = lv_label_create(s_kidpal_scr);
-            lv_label_set_text(pts_title, "星星积分本");
-            lv_obj_set_style_text_font(pts_title, kidpal_render_node_title_font(), 0);
-            lv_obj_set_style_text_color(pts_title, lv_color_black(), 0);
-            lv_obj_set_pos(pts_title, 12, 6);
-            lv_obj_t *pts_hint = lv_label_create(s_kidpal_scr);
-            lv_label_set_text(pts_hint, KP_POINTS_NODATA_HINT);
-            lv_obj_set_style_text_font(pts_hint, kidpal_render_node_body_font(), 0);
-            lv_obj_set_style_text_color(pts_hint, lv_color_black(), 0);
-            lv_obj_set_style_text_align(pts_hint, LV_TEXT_ALIGN_CENTER, 0);
-            lv_obj_set_width(pts_hint, 380);
-            lv_label_set_long_mode(pts_hint, LV_LABEL_LONG_WRAP);
-            lv_obj_center(pts_hint);
+            pts_sub = kidpal_points_ui_substate();
+            if (pts_sub == KPTS_SUBSTATE_DELETE_CONFIRM) {
+                rn_render_points_delete_locked();
+            } else if (pts_sub == KPTS_SUBSTATE_LEDGER) {
+                /* 详细账本帧无页名标题（V9 points-ledger.png：列表自顶排版）。 */
+                rn_render_points_ledger_locked();
+            } else {
+                lv_obj_t *pts_title = lv_label_create(s_kidpal_scr);
+                lv_label_set_text(pts_title, "星星积分本");
+                lv_obj_set_style_text_font(pts_title,
+                                           kidpal_render_node_title_font(), 0);
+                lv_obj_set_style_text_color(pts_title, lv_color_black(), 0);
+                lv_obj_set_pos(pts_title, 12, 6);
+                if (s_points_home_received == 0) {
+                    lv_obj_t *pts_hint = lv_label_create(s_kidpal_scr);
+                    lv_label_set_text(pts_hint, KP_POINTS_NODATA_HINT);
+                    lv_obj_set_style_text_font(pts_hint,
+                                               kidpal_render_node_body_font(), 0);
+                    lv_obj_set_style_text_color(pts_hint, lv_color_black(), 0);
+                    lv_obj_set_style_text_align(pts_hint, LV_TEXT_ALIGN_CENTER, 0);
+                    lv_obj_set_width(pts_hint, 380);
+                    lv_label_set_long_mode(pts_hint, LV_LABEL_LONG_WRAP);
+                    lv_obj_center(pts_hint);
+                } else {
+                    rn_render_points_home_body_locked();
+                }
+            }
             s_local_page = KP_PAGE_POINTS_HOME;
-            /* 诊断行不带数值格式化——占位分支「零数字」口径同样覆盖日志面
-             * （K6 结构化日志的 correlationId 归 tick/事件面，本行只标页身份）。 */
-            ESP_LOGI(RN_TAG, "render page POINTS_HOME (P3) nodata placeholder");
+            /* 诊断行不带数值格式化——日志面与渲染面同一页身份口径（K6 结构化日志的
+             * correlationId 归 tick/事件面，本行只标页身份）。 */
+            ESP_LOGI(RN_TAG, "render page POINTS_HOME (P3) points page");
             break;
         }
         case KP_PAGE_STORY: {
@@ -1231,6 +1605,92 @@ extern "C" void kidpal_render_node_cache_story(const kidpal_story_view_t *v,
         s_story_data_received = 1;
     }
     if (t != NULL) { memcpy(&s_story_text, t, sizeof(s_story_text)); }
+}
+
+/* -------------------------------------------------------------------------
+ * P3 星星积分本渲染缓存 + 重渲缝（TaskPackage 261104-k2-points-device-ui 轮 2）
+ *
+ * 投递方 = mcp_server.cc 的 points_home / points_ledger 消费路由（解析 + 决策表裁决
+ * 之后）；本区只持有 RAM 副本与「数据已送达」标志，零持久化、零重算。
+ * ---------------------------------------------------------------------- */
+extern "C" void kidpal_render_node_cache_points_home(const kidpal_points_home_t *frame)
+{
+    if (frame == NULL) {
+        return;
+    }
+    memcpy(&s_points_home, frame, sizeof(s_points_home));
+    s_points_home_received = 1; /* 未达 -> 已送达（四态判定的 RAM 初态分叉点） */
+}
+
+extern "C" void kidpal_render_node_cache_points_ledger(
+    const kidpal_points_ledger_t *frame, const kidpal_points_ledger_state_t *state,
+    int cursor)
+{
+    if (frame != NULL) {
+        memcpy(&s_points_ledger, frame, sizeof(s_points_ledger));
+        s_points_ledger_received = 1;
+    }
+    if (state != NULL) {
+        memcpy(&s_points_state, state, sizeof(s_points_state));
+    }
+    s_points_cursor = (cursor < 0) ? 0 : cursor;
+}
+
+int kidpal_render_node_points_on_screen(void)
+{
+    return (kidpal_layer_top(&s_layer_stack) == KIDPAL_LAYER_LOCAL_PAGE &&
+            s_local_page == KP_PAGE_POINTS_HOME) ? 1 : 0;
+}
+
+int kidpal_render_node_points_substate(void)
+{
+    /* 覆盖层前台（VOICE/服务端页/提醒/查字/删除）时积分子态不可见——键帽归各覆盖层
+     * 自己的槽表（返回 -1 = 消费方回落既有路径，绝不画错键帽）。 */
+    if (kidpal_layer_top(&s_layer_stack) != KIDPAL_LAYER_LOCAL_PAGE) {
+        return -1;
+    }
+    if (s_local_page != KP_PAGE_POINTS_HOME) {
+        return -1;
+    }
+    return kidpal_points_ui_substate();
+}
+
+void kidpal_render_node_refresh_points(void)
+{
+    lvgl_port_lock(0);
+
+    if (s_kidpal_scr == NULL) {
+        lvgl_port_unlock();
+        return;
+    }
+    /* 只重渲基层积分页（本地导航 / 在屏 restore 原地刷新）；当前页非积分页 -> no-op
+     * ——restore 帧绝不抢前台（D-07）。页内子态由 points_page.h 单源状态机承载。 */
+    if (s_local_page == KP_PAGE_POINTS_HOME) {
+        rn_note_page_switch_trigger(RN_PAGE_TRIGGER_NET); /* 帧到达 / 页内导航重渲 */
+        rn_render_kidpal_page_locked(KP_PAGE_POINTS_HOME);
+    }
+    lvgl_port_unlock();
+}
+
+void kidpal_render_node_show_points_home(void)
+{
+    lvgl_port_lock(0);
+
+    if (s_kidpal_scr == NULL) {
+        lvgl_port_unlock();
+        return;
+    }
+    /* 主动接管前台（D-07 例外：仅设备主动语音记账成功 / 显式打开）：清 transient 覆盖层
+     * 回基层、落 LOCAL_PAGE 并渲积分主页。restore 帧绝不走本缝（另走 refresh_points）。 */
+    (void)kidpal_layer_pop_transients(&s_layer_stack);
+    kidpal_layer_push(&s_layer_stack, KIDPAL_LAYER_LOCAL_PAGE);
+    rn_note_page_switch_trigger(RN_PAGE_TRIGGER_NET);
+    rn_render_kidpal_page_locked(KP_PAGE_POINTS_HOME);
+    rn_voice_chrome_front_locked();
+
+    lvgl_port_unlock();
+    ESP_LOGI(RN_TAG, "show_points_home: LOCAL_PAGE front (layer top=%d)",
+             kidpal_layer_top(&s_layer_stack));
 }
 
 /* -------------------------------------------------------------------------

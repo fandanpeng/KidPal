@@ -2491,6 +2491,15 @@ int kidpal_story_key_owns(int front_layer, int kidpal_page, int page_state,
     if (page_state == KSTORY_PAGE_READER && front_layer == KIDPAL_LAYER_SERVER_PAGE) {
         return 1;
     }
+    /* (e) 基层 P3 星星积分主页（TaskPackage 261104-k2-points-device-ui 轮 2）: 积分页
+     * 页内手势族（积分主页 / 详细账本 / 删除确认子态）归积分消费面——板级经本判据
+     * 放行后 HandleStoryKey 分派 PointsDispatchKey；页不拥有该手势（主页 BOOT 页循环 /
+     * KEY 长按回首页）时返回 false 交回全局路由，K0a 四页骨架零偏移。积分页是
+     * LOCAL_PAGE 基层（无覆盖层），front_layer 归一值 = KIDPAL_LAYER_NONE；删除确认
+     * 是同一基层上的整屏画法（不另起层），故本支同样覆盖其吞全手势语义。 */
+    if (front_layer == KIDPAL_LAYER_NONE && kidpal_page == KP_PAGE_POINTS_HOME) {
+        return 1;
+    }
     /* 其余（VOICE/其它覆盖层前台且非记录语境 / 基层非故事页 / 记录语境标志未置）-> 0。 */
     return 0;
 }
