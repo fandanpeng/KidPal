@@ -2683,6 +2683,11 @@ CONFIG_CODEC_TAS5805M_SUPPORT=y
 # end of Audio Codec Device Configuration
 
 #
+# Image Effects Configuration
+#
+# end of Image Effects Configuration
+
+#
 # ESP IO Expander
 #
 CONFIG_IO_EXPANDER_ENABLE_GPIO_API_WRAPPER=y
