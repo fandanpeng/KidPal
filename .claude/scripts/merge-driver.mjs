@@ -1400,6 +1400,20 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
   log(`${changeId}: worktree at ${wt}`);
   warnWorktreeGateDivergence(wt, quickChecks); // ARQ-097 D1：主仓 canonical + worktree 分歧高声 warn
 
+  // 2026-11-05 热修（human 授权一次性，pod 261104-k0a-four-page-skeleton 合并链阻断实证）：
+  // 原样传字面量 'HEAD' 给前置升级闸，闸不归一化 ref、按字符串与 device-round-evidence
+  // .sourceCommit（sha）比较 → 凡带设备轮证据走 merge-driver 的包必然
+  // device-round-evidence-source-commit-mismatch BLOCK（261028 P8 设备轮硬门立起后首个
+  // 走通该路径的包实证）。此处先在 Pod worktree 解析 HEAD 为 sha 再传闸；闸手动直跑路径
+  // （无 --source-ref → 闸自解析 HEAD）语义不变。
+  function resolveGateSourceRef(worktreeDir) {
+    try {
+      return execFileSync('git', ['rev-parse', 'HEAD'], { cwd: worktreeDir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+    } catch {
+      return 'HEAD'; // 解析失败保留旧形态，闸侧 fail-closed 兜底
+    }
+  }
+
   // Step 1b: 前置升级闸（合并前必经；命中 → blocked 升级人，不 rebase、不 merge）
   // T2：--human-approval-ref 非空时透传，升级闸核验 pod-events 人批事件后可放行 ESCALATE 包（260904-gov-review-escalate-merge-approval）
   log(`${changeId}: running pre-merge escalation gate...`);
@@ -1407,7 +1421,7 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
   const overlapProbePath = join(wt, 'delivery', 'taskpackages', changeId, 'overlap-probe.json');
   if (!DRY_RUN) {
     try {
-      const gateArgs = [join(projectDir, '.claude', 'scripts', 'pre-merge-escalation-gate.mjs'), changeId, '--source-ref', 'HEAD', '--project-dir', projectDir, '--probe-out', overlapProbePath];
+      const gateArgs = [join(projectDir, '.claude', 'scripts', 'pre-merge-escalation-gate.mjs'), changeId, '--source-ref', resolveGateSourceRef(wt), '--project-dir', projectDir, '--probe-out', overlapProbePath];
       if (HUMAN_APPROVAL_REF) gateArgs.push('--human-approval-ref', HUMAN_APPROVAL_REF);
       execFileSync(
         'node',
