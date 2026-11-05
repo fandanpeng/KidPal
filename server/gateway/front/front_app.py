@@ -89,11 +89,10 @@ POINTS_STATE_PATH = os.environ.get(
 _POINTS_SINGLE_SOURCE_VIEWS = frozenset({"points_home", "points_ledger"})
 # 积分薄意图动作（契约 §1.4 网关决定类；控制帧绝不发往任何一端）。
 _POINTS_CONTROL_ACTIONS = frozenset({"add_points", "redeem_points"})
-# kidpal_points_page 应答的分页步进：本包（K0 spike）每请求下发 1 条分录，使首条与
-# 最早一条分别经各自请求到达设备（K0PTS-A5 首尾 canary 的离线闭环形态）。设备请求里
-# 的 limit 仍按契约 §四 1–50 校验（越界拒绝、不回帧）；窗口宽度的正式化（设备缓存
-# 容量 = 6 的满窗翻页）归 K2 详细账本 UI。见交付报告的「形状疑点」项。
-_POINTS_PAGE_STEP = 1
+# kidpal_points_page 的分页窗口 = 设备请求里的 limit（契约 §四：缺省 6、允许 1–50，
+# 越界拒绝、不回帧）。K0 spike 期的固定步进 _POINTS_PAGE_STEP = 1 已退役——正式详细
+# 账本一屏 6 行（= 设备单帧容量 KPTS_LEDGER_ITEMS_MAX），front 按设备自报窗口取页，
+# 不再由网关侧压成单条。见 261104-k2-points-device-ui K2PTS-P4/K2PTS-A5 重钉。
 
 # --- P3 故事 manual 聆听累积态 + 整段转写归档（契约 §1.4 start_recording / P3-A4）------
 # front 见 relay 的 control/start_recording -> 把该连接会话切累积态（不按句送对话）；
@@ -1026,9 +1025,10 @@ async def _consume_kidpal_control(session_id, obj, websocket, upstream=None) -> 
                  session_id, dropped, payload_sid)
         return True
     if mtype == "kidpal_points_page":
-        # 契约 §四 kidpal_points_page（2026-11-04 LANDED；K0PTS-A5）：设备发起详细账本
-        # 分页请求 -> front 整条消费并拦截、不下透引擎；以 points.py 当前状态生成 §1.3⑧
-        # points_ledger 应答，每请求至多回一帧。limit 越界 -> 拒绝记日志、不回帧。
+        # 契约 §四 kidpal_points_page（2026-11-04 LANDED；K0PTS-A5 重钉 2026-11-05）：设备
+        # 发起详细账本分页请求 -> front 整条消费并拦截、不下透引擎；以 points.py 当前状态
+        # 生成 §1.3⑧ points_ledger 应答，每请求至多回一帧。limit 越界 -> 拒绝记日志、不回帧；
+        # 界内 -> 按设备请求的窗口取页（缺省 6，与设备单帧容量一致）。
         limit = obj.get("limit")
         if limit is None:
             limit = gw_points.PAGE_LIMIT_DEFAULT
@@ -1045,7 +1045,7 @@ async def _consume_kidpal_control(session_id, obj, websocket, upstream=None) -> 
         try:
             page = gw_points.build_points_ledger_page(
                 POINTS_STATE_PATH, cursor=cursor, known_revision=known_revision,
-                limit=_POINTS_PAGE_STEP)
+                limit=limit)
         except ValueError as exc:
             log.warning("points_page rejected corr_id=%s reason=%s", session_id, exc)
             return True
