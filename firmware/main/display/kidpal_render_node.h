@@ -325,9 +325,12 @@ void kidpal_render_node_story_local_front(void);
  * 故事页随 D-01 四页骨架迁 P4，语义不变）：
  * 删除确认覆盖层为前台（STORY_DELETE 层 top）-> KSTORY_PAGE_DELETE；
  * 本地基层当前页 = STORY -> 缓存视图的页态（LIST/READER/RECORDING/STAMP）；
- * **例外一支**（TECH-261028 阅读态归属断链环补口, planner 2026-11-05 裁定 B）：
- * SERVER_PAGE 前台 + 本地页 = STORY + 缓存页态 = READER -> KSTORY_PAGE_READER
- * （阅读正文画在云端夹钳上, 归属判据必须仍能取到 READER；只此页态放开）；
+ * **例外一支**（TECH-261028 阅读态归属断链环补口, planner 2026-11-05 裁定 B；
+ * K0A-E3 真机缺陷修复 261104-k0a-four-page-skeleton fixer 轮——云端阅读渲染不经
+ * cache_story, 缓存页态驻留期停留 LIST, 故增信 story_page.c 的「最近成功落屏页态」）：
+ * SERVER_PAGE 前台 + 本地页 = STORY + （缓存页态 或 最近落屏页态）= READER ->
+ * KSTORY_PAGE_READER（阅读正文画在云端夹钳上, 归属判据必须仍能取到 READER；只此页态
+ * 放开）；
  * 其余（非故事页 / 前台为其它覆盖层 / 其它页态在覆盖层下）-> -1
  * （消费方回落既有键帽路径与 CG-A2「最后已知子态」过渡窗兜底）。
  * 无锁整数读，可跨任务调用。

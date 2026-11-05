@@ -1007,6 +1007,28 @@ int kidpal_story_text_parse(const char *data_json, kidpal_story_text_t *out)
 
 
 /* -------------------------------------------------------------------------- *
+ * 阅读态渲染页真相（TaskPackage 261104-k0a-four-page-skeleton fixer 轮, K0A-E3
+ * 真机缺陷：阅读态键帽取不到 READER）。
+ *
+ * 云端阅读正文渲染走 begin_page -> kidpal_story_page_render -> end_page 夹钳，**不经**
+ * kidpal_render_node_cache_story，故渲染节点 s_story_view.page 在阅读驻留期全程停留
+ * LIST。kidpal_render_node_story_substate() 的 READER 补口（SERVER_PAGE + READER ->
+ * READER）按 s_story_view.page 判永远取不到 READER -> 键帽链在进阅读后停列表槽
+ * 「说话·双击看/下移」（真机 KPLOG：substate=-1 last_known=0）。
+ *
+ * 本静态只记「最近一次成功落屏的页态」，供渲染节点 getter 判阅读态；**不改**
+ * s_story_view.page——退出阅读回列表时 rn_render_kidpal_page_locked 仍按 s_story_view
+ * 的 LIST 重渲，零副作用。初值 = LIST（未渲染 = 冷启动基层页）。
+ * ------------------------------------------------------------------------ */
+static int s_ksy_rendered_page = KSTORY_PAGE_LIST;
+
+int kidpal_story_page_rendered_page(void)
+{
+    return s_ksy_rendered_page;
+}
+
+
+/* -------------------------------------------------------------------------- *
  * kidpal_story_page_render — 渲染面 (纯 LVGL on the ACTIVE screen, P3-A2/A4/A5/A6)
  *
  * minimal: 布局常量按 host seam 400x300 定坐标；真实 RLCD 屏观感殿后 9b
@@ -1690,6 +1712,10 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
      * s_kidpal_img!=NULL && top==LOCAL_PAGE) 在 VOICE 让位/缺席后全真 -> 悬垂 UAF。
      * 调用方均已持 lvgl 锁（ScheduleStoryRender 夹钳 / StoryRecTimerCb LVGL 定时器 /
      * rn_render_kidpal_page_locked）; 失败降级出口（-1）不置——空白屏不谎报 P3。 */
+    /* K0A-E3 真机缺陷修复（261104-k0a-four-page-skeleton fixer 轮）: 记录本帧真实
+     * 落屏页态（阅读态键帽链判据，见文件内 s_ksy_rendered_page 注）。须先于
+     * story_page_front（后者在 READER 时触发键帽重 sync）。 */
+    s_ksy_rendered_page = v->page;
     kidpal_render_node_story_page_front();
     return 0;
 }

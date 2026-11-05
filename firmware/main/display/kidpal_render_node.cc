@@ -1289,16 +1289,26 @@ int kidpal_render_node_story_substate(void)
      * -1 —— 故事页新增的「READER + SERVER_PAGE 归故事页」支永远拿不到 READER, KEY 短按
      * 照旧漏到 key_route_layer 通用覆盖层列 -> SESSION_TOGGLE 误开会话。
      *
-     * 补口范围（**只对 READER 放开**）：本地基层页仍是故事页、且缓存页态确为阅读态时,
-     * 把 READER 如实报出。LIST/RECORDING/STAMP/DELETE 等仍走下方 -1 ——CG-A2 过渡窗
-     * 语义（「覆盖层/夹钳前台时缓存页态不可见」）在其余页态上零改动, 「最后已知子态」
-     * 兜底链照旧生效。副作用面（预期内）：阅读态键帽因此取到 kidpal_keybar_story_slots
-     * 的 READER 行「长按退出 / 翻屏」（TECH-261028 症状②的值域半）。
+     * 补口范围（**只对 READER 放开**）：本地基层页仍是故事页、且阅读面确已落屏为
+     * 阅读态时, 把 READER 如实报出。LIST/RECORDING/STAMP/DELETE 等仍走下方 -1 ——
+     * CG-A2 过渡窗语义（「覆盖层/夹钳前台时缓存页态不可见」）在其余页态上零改动,
+     * 「最后已知子态」兜底链照旧生效。副作用面（预期内）：阅读态键帽因此取到
+     * kidpal_keybar_story_slots 的 READER 行「长按退出 / 翻屏」（TECH-261028 症状②
+     * 的值域半）。
+     *
+     * K0A-E3 真机缺陷修复（261104-k0a-four-page-skeleton fixer 轮）：云端阅读正文渲染
+     * 走 begin_page -> kidpal_story_page_render -> end_page 夹钳，不经 cache_story，
+     * s_story_view.page 在阅读驻留期全程停留 LIST——仅按 s_story_view.page 判永远取
+     * 不到 READER（真机 keybar substate=-1 last_known=0）。故增信 s_story_view.page
+     * **或** story_page.c 的「最近成功落屏页态」getter（后者由阅读渲染写出）；后者
+     * 只在真正渲染过阅读面后为 READER，退出阅读回列表渲染即回落 LIST，不引入驻留外
+     * 误判。两个来源任一为 READER 即成立。
      *
      * 值域零新增：返回的是既有 KSTORY_PAGE_* 闭集成员, 消费方无新增分支。 */
     if (kidpal_layer_top(&s_layer_stack) == KIDPAL_LAYER_SERVER_PAGE &&
         s_local_page == KP_PAGE_STORY &&
-        s_story_view.page == KSTORY_PAGE_READER) {
+        (s_story_view.page == KSTORY_PAGE_READER ||
+         kidpal_story_page_rendered_page() == KSTORY_PAGE_READER)) {
         return KSTORY_PAGE_READER;
     }
     /* 本地基层当前页 = STORY -> 缓存视图的页态（LIST/READER/RECORDING/STAMP）。
@@ -1337,6 +1347,16 @@ void kidpal_render_node_story_page_front(void)
     /* 渲染成功出口的页归属真相单点: 基层内容页 = P3。写点恒在渲染路径（调用方已
      * 持 lvgl 锁）; 32 位对齐指针宽赋值, 与 g_story_* 跨任务宽松度同级。 */
     s_local_page = KP_PAGE_STORY;
+    /* K0A-E3 真机缺陷修复（261104-k0a-four-page-skeleton fixer 轮）：阅读正文渲染
+     * 走云端夹钳 SERVER_PAGE 且驻留期无任何键帽重 sync——进阅读瞬间的键帽 sync 早于
+     * 本渲染（begin_page 期 story_sub 仍是 -1，出列表槽「说话·双击看/下移」），此后
+     * 88 秒阅读驻留全程无 KEYBAR 重 sync。阅读面落屏后若本帧页态 = READER，按
+     * kidpal_render_node_story_substate() 补口（SERVER_PAGE + READER -> READER）补一次
+     * 键帽 sync，令键帽链真正消费到 READER（「长按退出 / 翻屏」）。只对 READER 触发，
+     * 其余页态（LIST/STAMP/RECORDING/…）零行为改动，CG-A2 过渡窗与既有同步点不变。 */
+    if (kidpal_story_page_rendered_page() == KSTORY_PAGE_READER) {
+        rn_keybar_sync_locked();
+    }
 }
 
 int kidpal_render_node_story_page_is_local(void)
