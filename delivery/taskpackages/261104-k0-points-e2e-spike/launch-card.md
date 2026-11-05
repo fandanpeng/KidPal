@@ -16,7 +16,7 @@
 - **QQ 取证路径（LP7 裁定，human 在场项）**：真实 QQ 一次性明确指令（带唯一 canary token）→ 既有 main agent → K0 最小 add CLI；**首选两笔同形 canary**（第一笔设备在其他页、第二笔积分页在屏）覆盖 K0S-E3 双状态。四条禁令：禁直编 points/state 文件、禁终端调 CLI 冒充 QQ、禁本地 OpenClaw 注入冒充、禁提前建 K3 正式 skill。预评通过 ≠ 执行预绿，证据由 spike-evidence.md 判定。
 - **跨包约束（LP8）**：`firmware/main/test/host_app/main/CMakeLists.txt` 为两包唯一共享构建清单——K0a 先落；本包在其 merged、重取基线后才追加登记并做 host/device build 与真机终验；不修改 K0a 的 render_node/keybar/story_page 文件，P3 接管使用 K0a 留下的缝。
 - **环境事实**：复用池树 `C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch`（常驻分支 `dev/261016-sd-card-mount`，2026-11-04 复位到 22b30654）；固件环境在位（managed_components 软链；host_app sdkconfig 已改名 `sdkconfig.pre-launch-bak-20261104`）；专属图索引 `C-AI-KidPal-pod-m1-k1a-key-layer-dispatch` 在册随树复用。
-- **会话标识**：点火后由 launch 执行者回填。
+- **会话标识**：2026-11-04 于本树以 VS Code 扩展会话直启 `/build-feature 261104-k0-points-e2e-spike`（human 指示不 headless）；扩展会话降级形态，settings-presence 事件已落 pod-events.jsonl。
 - **命令行**（两形态并列，标注适用条件）：
   ① 人在场交互式：`claude --settings .claude/dev-loop.settings.json --agent planner`
   ② 无人值守 headless：`claude -p --dangerously-skip-permissions --settings .claude/dev-loop.settings.json --agent planner`（另加 `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0`）

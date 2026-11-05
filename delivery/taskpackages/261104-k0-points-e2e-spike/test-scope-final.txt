@@ -1,0 +1,57 @@
+# test-scope-final — 261104-k0-points-e2e-spike（integrator 范围圈定终验，2026-11-05）
+
+范围 = 本包 acceptanceTestsFile ∪ taskpackage impactedTestsSeed ∪ 被改共享接缝的直接消费测试
+（front_app 四条被改接缝：_consume_points_intent 截获缝 / build_display_tool_calls points 展开
+分支 / _consume_kidpal_control kidpal_points_page 分支 / _relay_display_blocks_to_device 解析
+重构；display_schema VALID_VIEWS 与来源门禁）∪ firmware 实现源+冻结件 WSL gcc 实编通道。
+全量回归 = 人工触发位，不跑（server 全量基线锚 = 395 passed @ 6ce77123，判停引用不重跑）。
+
+## 圈定清单
+
+server 新件：
+  server/acceptance/test_points_e2e_spike.acceptance.py
+  server/tests/test_points_spike_units.py
+server 回归子集（impactedTestsSeed + 被改接缝直接消费方）：
+  server/acceptance/test_record_dialogue_guide.acceptance.py   （start_organizing 自推/relay 分叉 + 网关决定类动作域）
+  server/acceptance/test_m4k1_story_cloud_link.acceptance.py   （§1.6 story 锚重钉后全件 + display 校验既有面）
+  server/acceptance/test_record_cancel_lifecycle.acceptance.py （_consume_kidpal_control 既有 discard 分支零偏移）
+  server/acceptance/test_record_front_polish.acceptance.py     （front relay/降级链零偏移）
+  server/acceptance/test_schedule_grid_restore.acceptance.py   （_expand_schedule_intent 与 points 展开分支共存零偏移）
+firmware（WSL gcc 实现源+冻结件实编通道，builder 同款）：
+  编译件 = firmware/main/test/points_spike.acceptance.c + red-baseline/runner.c
+         + display/points_page.c + display/view_router.c + display/art_assets.c
+  预期 = COMPILE_EXIT=0；K0PTS-F1/F2/F3 PASS；F4 仅剩 LP8 后置 CMake 登记守一条红
+        （host_app/main/CMakeLists.txt 登记属 K0a merged 后 FIRST ACTION，K0S-E4/LP8）
+
+## 终验实测（2026-11-05，integrator 在本树实跑）
+
+① server：
+$ python -m pytest -q --import-mode=importlib -m "not live" server/acceptance/test_points_e2e_spike.acceptance.py server/tests/test_points_spike_units.py server/acceptance/test_record_dialogue_guide.acceptance.py
+→ 末行逐字：74 passed in 9.59s
+$ python -m pytest -q --import-mode=importlib -m "not live" server/acceptance/test_m4k1_story_cloud_link.acceptance.py server/acceptance/test_record_cancel_lifecycle.acceptance.py server/acceptance/test_record_front_polish.acceptance.py server/acceptance/test_schedule_grid_restore.acceptance.py
+→ 末行逐字：69 passed, 3 subtests passed in 3.64s
+（合计 143 passed / 0 failed；m4k1 在 §1.6 锚重钉后全绿——builder 轮的 1 既有红已随重钉消解）
+
+② firmware WSL gcc 实编通道：
+$ gcc -std=c11 -Wall -Wextra -Ifirmware/main/test/acceptance/red-baseline -Ifirmware/main \
+    -o /tmp/k0pts_green_runner firmware/main/test/points_spike.acceptance.c \
+    firmware/main/test/acceptance/red-baseline/runner.c firmware/main/display/points_page.c \
+    firmware/main/display/view_router.c firmware/main/display/art_assets.c   （WSL Ubuntu-24.04）
+→ COMPILE_EXIT=0（零 warning 零 error）
+$ /tmp/k0pts_green_runner
+→ 逐字末段：3 Tests PASS（F1/F2/F3）+ F4 FAIL（唯一红因 =「host_app/main/CMakeLists.txt
+   未登记 points_spike.acceptance.c」LP8 后置项）→ RUN_EXIT=1
+
+③ 机械闸（引用不重跑）：verify.mjs 8/8 全绿 @ 2026-11-04T23:52Z（verifier-round fact 在
+   verify-runs.jsonl；current/verdict.json = non-bearing projection）。其中 firmware-build
+   闸 = ESP-IDF device build 真编译绿（ninja 增量无重编 = 编译产物与当前源一致 →
+   mcp_server.cc / protocol.cc / points_page.c / view_router.cc 设备侧编译证据在案，
+   builder 轮「cpp 未经编译器验证」的诚实缺口已被该闸覆盖收窄；host_app host build
+   仍按 LP8 后置）。
+
+## 圈定判定
+
+- 范围 = 影响面圈定清单（非全量、非缩到只剩本包新件）：新件 2 + 回归子集 5 + firmware 实编通道，
+  覆盖本包 changeManifest 全部行为面与全部被改共享接缝的直接消费方。
+- F4 唯一红 = 有意挂起（LP8，K0S-E4），非圈定失败；live-manual 四条（K0PTS-L1..L4）不在
+  本终验范围（human 在场轮，载体 spike-evidence.md 未创建——诚实挂起，不伪造）。

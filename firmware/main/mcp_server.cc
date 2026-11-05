@@ -25,6 +25,8 @@
 #include "display/view_router.h"
 #include "display/schedule_page.h"
 #include "display/story_page.h"  /* 故事 P3 (包 260829-story-p3): 列表/阅读/录音/盖章消费面 */
+#include "display/points_page.h" /* 星星积分 P3 (261104-k0-points-e2e-spike): points_home/
+                                  * points_ledger 载荷消费 + restore 分流 + 分页缓存纪律 */
 #include "display/story_cache.h" /* P3 正文本地缓存纯逻辑面 (261016-p3-story-body-sd-cache):
                                   * RAM 索引 / 当屏缺失 / 双击三分支 / 预取决策 / id 校验 /
                                   * SD I/O 适配声明 */
@@ -62,6 +64,12 @@ namespace {
 kidpal_story_view_t g_story_view = {};
 kidpal_story_list_t g_story_list = {};
 kidpal_story_text_t g_story_text = {};
+/* 星星积分 P3 消费缓存（261104-k0-points-e2e-spike；单例视图无并发竞态——mcp 回调
+ * 同步跑在接收任务、渲染经 Application::Schedule 归主任务）。「数据未达不显示数字」
+ * （S-F6.1 AC4）= 这两块 RAM 初态为 0 且从未收到权威帧的事实，由本接线层承载。 */
+kidpal_points_home_t g_points_home = {};
+kidpal_points_ledger_t g_points_ledger = {};
+kidpal_points_ledger_view_t g_points_ledger_view = {};
 }  // namespace
 
 /* -------------------------------------------------------------------------- *
@@ -1373,8 +1381,9 @@ void McpServer::AddCommonTools() {
     AddTool("kidpal/display",
         "Render an E1 display payload issued by the KidPal gateway on this board. "
         "The payload carries a view (char/schedule/story_list/story_text/text/home/"
-        "control whitelist) and optional data; the board routes it to the matching "
-        "display face, applies control actions, and returns a delivery acknowledgement.",
+        "control/points_home/points_ledger whitelist) and optional data; the board routes "
+        "it to the matching display face, applies control actions, and returns a delivery "
+        "acknowledgement.",
         PropertyList({
             Property("view", kPropertyTypeString),
             Property("data", kPropertyTypeString, std::string(""))
@@ -1910,6 +1919,109 @@ void McpServer::AddCommonTools() {
                             kidpal_render_node_cache_story(&g_story_view, &g_story_list, &g_story_text);
                             kidpal_render_node_end_page();
                         });
+                    }
+                    break;
+                }
+                case VRT_ROUTE_POINTS_HOME: { /* VRT_ROUTE_POINTS_HOME —— P3 星星积分本
+                    * 主页（契约 §1.3⑦；261104-k0-points-e2e-spike 最小消费）。解析
+                    * data（revision/balance/target 四键/recent 六键分录/restore 布尔）：
+                    * 成功 -> 填 RAM 缓存 + restore 分流（takeover：true=只填缓存不抢
+                    * 前台 / 缺省false=接管前台跳积分页）；解析失败 (-1) -> 显式降级，
+                    * 绝不盲渲染（V27；restore 载荷失败静默，不打扰前台——ADR-005 同款）。 */
+                    cJSON_AddStringToObject(ack, "route", "points_home");
+                    char corr_id[24];
+                    snprintf(corr_id, sizeof(corr_id), "kdp-%u",
+                             static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+                    /* kidpal_points_home_t ≈ 0.7KB（3×分录 + target）→ 堆分配（本文件头
+                     * ssl_receive 4096B 栈纪律）。 */
+                    auto p_home = std::make_unique<kidpal_points_home_t>();
+                    if (kidpal_points_home_parse(data.c_str(), p_home.get()) != 0) {
+                        cJSON_AddBoolToObject(ack, "degrade", true);
+                        ESP_LOGW(TAG, "display_dispatch view=points_home corr_id=%s degrade=true",
+                                 corr_id);
+                        if (!mcp_json_get_bool(data, "restore")) {
+                            auto display = Board::GetInstance().GetDisplay();
+                            app.Schedule([display]() {
+                                display->SetChatMessage("system", "积分本暂时打不开，稍后再试试");
+                            });
+                        }
+                        break;
+                    }
+                    g_points_home = *p_home;
+                    int pts_takeover = kidpal_points_home_takeover(p_home.get());
+                    cJSON_AddNumberToObject(ack, "balance", p_home->balance);
+                    cJSON_AddNumberToObject(ack, "revision", p_home->revision);
+                    cJSON_AddNumberToObject(ack, "recent", p_home->recent_count);
+                    ESP_LOGI(TAG, "display_dispatch view=points_home corr_id=%s balance=%d "
+                                  "revision=%d restore=%d takeover=%d",
+                             corr_id, p_home->balance, p_home->revision,
+                             p_home->restore, pts_takeover);
+                    if (pts_takeover == 1) {
+                        /* minimal: K0 = 最小渲染（权威余额 + 最近一笔事由直接上屏，
+                         * 设备据此可见「权威余额和原因」）；金币/进度线/刻度等完整
+                         * 积分主页版式归 K2（261104-k2-points-device-ui）。 */
+                        auto home_snapshot = std::make_shared<kidpal_points_home_t>(*p_home);
+                        app.Schedule([home_snapshot]() {
+                            auto display = Board::GetInstance().GetDisplay();
+                            if (display == nullptr) {
+                                return;
+                            }
+                            char line[192];
+                            if (home_snapshot->recent_count > 0) {
+                                snprintf(line, sizeof(line), "星星 %d 分 · %s",
+                                         home_snapshot->balance,
+                                         home_snapshot->recent[0].reason);
+                            } else {
+                                snprintf(line, sizeof(line), "星星 %d 分",
+                                         home_snapshot->balance);
+                            }
+                            display->SetChatMessage("system", line);
+                        });
+                    }
+                    break;
+                }
+                case VRT_ROUTE_POINTS_LEDGER: { /* VRT_ROUTE_POINTS_LEDGER —— P3 详细账本
+                    * 分页（契约 §1.3⑧ + §四 kidpal_points_page；261104-k0 最小消费）。
+                    * 解析 data（items 六键分录 ≤6 / page 四键 / restore 布尔）-> 分页
+                    * 缓存纪律 kidpal_points_ledger_apply（reset 丢弃旧缓存、同版本续页
+                    * 累加、跨版本拒绝）。视觉版式归 K2。 */
+                    cJSON_AddStringToObject(ack, "route", "points_ledger");
+                    char corr_id[24];
+                    snprintf(corr_id, sizeof(corr_id), "kdp-%u",
+                             static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+                    auto p_ledger = std::make_unique<kidpal_points_ledger_t>();
+                    if (kidpal_points_ledger_parse(data.c_str(), p_ledger.get()) != 0) {
+                        cJSON_AddBoolToObject(ack, "degrade", true);
+                        ESP_LOGW(TAG, "display_dispatch view=points_ledger corr_id=%s degrade=true",
+                                 corr_id);
+                        if (!mcp_json_get_bool(data, "restore")) {
+                            auto display = Board::GetInstance().GetDisplay();
+                            app.Schedule([display]() {
+                                display->SetChatMessage("system", "详细账本暂时打不开，稍后再试试");
+                            });
+                        }
+                        break;
+                    }
+                    g_points_ledger = *p_ledger;
+                    {
+                        int apply_rc = kidpal_points_ledger_apply(
+                            &g_points_ledger_view, p_ledger.get());
+                        if (apply_rc != 0) {
+                            /* 跨版本续页被拒（契约 §四「不得跨版本追加」）：缓存零扰动。 */
+                            ESP_LOGW(TAG, "points_ledger_apply corr_id=%s cached_rev=%d "
+                                          "frame_rev=%d reset=%d -> reject",
+                                     corr_id, g_points_ledger_view.revision,
+                                     p_ledger->revision, p_ledger->reset);
+                        }
+                        cJSON_AddNumberToObject(ack, "total", p_ledger->page_total);
+                        cJSON_AddNumberToObject(ack, "items", p_ledger->item_count);
+                        ESP_LOGI(TAG, "display_dispatch view=points_ledger corr_id=%s "
+                                      "total=%d items=%d reset=%d has_more=%d apply_rc=%d "
+                                      "cached=%d rev=%d",
+                                 corr_id, p_ledger->page_total, p_ledger->item_count,
+                                 p_ledger->reset, p_ledger->has_more, apply_rc,
+                                 g_points_ledger_view.cached_count,
+                                 g_points_ledger_view.revision);
                     }
                     break;
                 }

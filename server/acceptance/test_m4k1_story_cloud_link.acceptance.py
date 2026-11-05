@@ -822,7 +822,13 @@ class M4K1ContractGateAcceptance(unittest.TestCase):
             "§1.3③ items ≤16 窗口": "最新 ≤16 条窗口",
             "§1.3④ data.seq 只增不减": "入册流水号，只增不减",
             "§四 kidpal_story_delete": "kidpal_story_delete",
-            "§1.6 story 段": "涉及星星记录本时：只用文字答复",
+            # 2026-11-04 重钉（tighten-only 锚面修订）：旧锚「涉及星星记录本时：只用
+            # 文字答复」随上游 261103-star-points-story-cover 批契约改写删除（b930f498），
+            # 在本包 base ref 22b30654 上已 0 命中 = 既有红，非本包削弱；planner 裁定
+            # 重钉（pod-events 2026-11-04 planner-ruling），锚句换为落批 §1.6 措辞
+            # 「不得生成完整 story_list/story_text」，原保护意图（引擎/模型不得绕过
+            # 文字纪律直接产星星记录本内容、数据由网关机械推送）保全不变。
+            "§1.6 story 段": "涉及星星记录本时不得生成完整 story_list/story_text",
         }
         for label, needle in anchors.items():
             self.assertIn(

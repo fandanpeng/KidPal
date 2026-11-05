@@ -118,3 +118,4 @@
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [261104-k0a-four-page-skeleton](261104-k0a-four-page-skeleton/) | 2026-11-04 | delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md | closed | 261103-star-points-story-cover |
+| [261104-k0-points-e2e-spike](261104-k0-points-e2e-spike/) | 2026-11-04 | delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md | closed | 261103-star-points-story-cover |
