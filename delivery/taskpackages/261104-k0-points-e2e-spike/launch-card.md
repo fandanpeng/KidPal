@@ -11,7 +11,7 @@
 - **固件严格模式默认开**：`VERIFY_FW_BUILD_REQUIRED=1`（无关闭留痕即开）。
 - **验证形态申报**（机器消费行，闸按顶格前缀解析）：
 
-验证形态申报（JSON）：{"schemaVersion":1,"precedents":{},"deviceOutcome":{"userVisible":true,"acceptanceRefs":["S-F6.1","S-F6.3","NFR-PERF-4"],"hostUncompilablePaths":["firmware/main/display/points_page.c","firmware/main/display/kidpal_render_node.cc","firmware/main/mcp_server.cc"],"reason":"launch 预估：spike 的通过证据即设备看屏（K0S-E1/E3），真机终验按 LP8 后置到 K0a merged 后；points_page.c 为新增文件、host 编入待共享 CMake 追加时定，kidpal_render_node.cc 与 mcp_server.cc 为设备专属/设备侧 TU——Pod intake 按实际 diff 收窄"}}
+验证形态申报（JSON）：{"schemaVersion":1,"precedents":{},"deviceOutcome":{"userVisible":true,"acceptanceRefs":["K0PTS-L1","K0PTS-L3","K0S-E3"],"hostUncompilablePaths":["firmware/main/mcp_server.cc"],"reason":"真机轮后收窄（2026-11-05，按实际 diff）：points_page.c 已随共享 CMake 登记 host 可编、kidpal_render_node.cc 属 K0a 非本包 diff——申报集只留 mcp_server.cc（设备专属 TU、在册且在 diff）；live-manual 目击与降级申报见 spike-evidence.md / device-round-evidence.md"}}
 
 - **QQ 取证路径（LP7 裁定，human 在场项）**：真实 QQ 一次性明确指令（带唯一 canary token）→ 既有 main agent → K0 最小 add CLI；**首选两笔同形 canary**（第一笔设备在其他页、第二笔积分页在屏）覆盖 K0S-E3 双状态。四条禁令：禁直编 points/state 文件、禁终端调 CLI 冒充 QQ、禁本地 OpenClaw 注入冒充、禁提前建 K3 正式 skill。预评通过 ≠ 执行预绿，证据由 spike-evidence.md 判定。
 - **跨包约束（LP8）**：`firmware/main/test/host_app/main/CMakeLists.txt` 为两包唯一共享构建清单——K0a 先落；本包在其 merged、重取基线后才追加登记并做 host/device build 与真机终验；不修改 K0a 的 render_node/keybar/story_page 文件，P3 接管使用 K0a 留下的缝。
