@@ -192,8 +192,8 @@
         "acceptance": "K0PTS-F4: firmware 消费闭环与上行驱动方结构锚——mcp_server.cc 含 points 视图消费接线（VRT_ROUTE_POINTS_HOME 或 kidpal_points_home_parse 引用 >= 1，缺消费 = 权威帧下发后设备黑屏降级）；protocols/protocol.cc 或 protocol.h 或 application.cc 含 kidpal_points_page 上行驱动方引用（设备分页请求帧构造在世，缺驱动方 = front 应答无人消费）；host_app/main/CMakeLists.txt 同含 points_spike.acceptance.c 与 points_page.c 登记守（anti-vacuity；该清单为 K0a/K0 唯一共享构建文件，K0a merged 后 builder FIRST ACTION）。回引 K0S-E2、K0S-E4。设计态红 = 消费/驱动/登记锚全缺席",
         "turnedRed": true,
         "sensitive": true,
-        "mutation": "实放×2 + deferred×1：① 删 mcp_server.cc case VRT_ROUTE_POINTS_HOME 整块 → 红因切换为「mcp 消费锚缺席」= 判别力成立；② protocol.cc 帧类型字面改 kidpal_points_x → 红因切换为「上行驱动方缺席」；③ CMake 登记守变异 deferred（登记行 LP8 后置未在世，待 K0a merged 后 verifier 实放）；还原后均回基线",
-        "affectedTest": "TEST 4"
+        "mutation": "实放×3（③ 于 2026-11-05 LP8 段补齐，K0a merged 后）：① 删 mcp_server.cc case VRT_ROUTE_POINTS_HOME 整块 → 红因切换为「mcp 消费锚缺席」= 判别力成立；② protocol.cc 帧类型字面改 kidpal_points_x → 红因切换为「上行驱动方缺席」；③ LP8 段：删除 host_app/main/CMakeLists.txt 的 display/points_page.c 登记行 → host runner 278 Tests 4 Failures，F4 由 PASS 转 FAIL 且红因正是登记守断言（字节级还原 sha256 8a466289…，复跑回 278/3 回绿）。登记守读 CMakeLists 原文（运行时 k0_read）故无需重编译即可观测",
+        "affectedTest": "TEST 4 + host runner K0PTS-F4"
       },
       {
         "acceptance": "K0PTS-L1",
@@ -220,7 +220,7 @@
         "mutation": "变异不适用——首尾 canary 设备消费端目击是 K0S-E2 真值半；offline 分页变异证据（A5）不豁免消费端证据"
       }
     ],
-    "note": "真实消费端证据不因 offline 变异证据齐备而豁免。2026-11-05 变异实放轮（builder 逐条字节级还原 + sha256 校验，收尾零残留证明在 pod-events mutation-round 事件）：28 条可执行变异全部敏感（27 初轮 + A2-2 经 acceptance-author 锐化冻结 case 后复放转敏感）；F4 CMake 登记守 deferred: LP8（K0a merged 后实放）；L1–L4 live-manual 变异不适用（structural 层）。"
+    "note": "真实消费端证据不因 offline 变异证据齐备而豁免。2026-11-05 变异实放轮（builder 逐条字节级还原 + sha256 校验，收尾零残留证明在 pod-events mutation-round 事件）：28 条可执行变异全部敏感（27 初轮 + A2-2 经 acceptance-author 锐化冻结 case 后复放转敏感）；LP8 段（K0a merged 后）补齐 F4 CMake 登记守实放为第 29 条敏感（host runner 278/4→还原 278/3 回绿）；L1–L4 live-manual 变异不适用（structural 层）。"
   },
   "crossEnd": {
     "counterparts": [
