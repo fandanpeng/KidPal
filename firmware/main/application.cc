@@ -21,6 +21,8 @@
 #include "display/voice_round.h"
 #include "display/kidpal_voice_states.h"
 #include "display/story_page.h"  /* K3: source_page 映射/引导态/回显/记录语境标志冻结缝 */
+#include "display/points_page.h" /* 261104-k2-points-device-ui: 积分子态 + selected_id
+                                  * 只读注入决策（详细账本语境 source_page 扩点） */
 #include "display/keybar.h"      /* 261022-p3-record-chrome-ghost-fix CG-A1: 键帽场景单源
                                   * 收尾沿复位 kidpal_keybar_scene_reset */
 
@@ -1314,9 +1316,24 @@ void Application::HandleStateChangedEvent() {
              * 音频处理器启动门之外无条件执行（门外 = 通道复用会话不短路漏发, notes
              * ②③; 调用恰一次, 发送失败降级普通会话不重试）。source_page 单点映射
              * 消费（notes ④: KEY 按经 REC_SESSION 消费位聆听入口与唤醒词双入口都
-             * 汇入本分支）。负锚: 本信号只住会话发起, 会话收尾/中断路径零 ctx。 */
-            protocol_->SendKidpalSessionCtx(
-                kidpal_story_ctx_source_page(kidpal_render_node_get_page()));
+             * 汇入本分支）。负锚: 本信号只住会话发起, 会话收尾/中断路径零 ctx。
+             * K2 additive（261104-k2-points-device-ui / D-08）: P3 详细账本子页把
+             * source_page 扩为 points_ledger 并附带 selected_id（只读、只来自最近
+             * 收到的 points_ledger items；设备不造 id）。积分主页/其余页保持原映射。 */
+            {
+                int pts_page = kidpal_render_node_get_page();
+                const char* source_page = kidpal_story_ctx_source_page(pts_page);
+                const char* selected_id = nullptr;
+                if (pts_page == KP_PAGE_POINTS_HOME &&
+                    kidpal_points_ui_substate() == KPTS_SUBSTATE_LEDGER) {
+                    source_page = "points_ledger";
+                    const char* cand = kidpal_points_ui_selected_id();
+                    if (cand != nullptr && cand[0] != '\0') {
+                        selected_id = cand;
+                    }
+                }
+                protocol_->SendKidpalSessionCtx(source_page, selected_id);
+            }
 
             // Make sure the audio processor is running
             if (!audio_service_.IsAudioProcessorRunning()) {

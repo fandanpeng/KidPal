@@ -913,3 +913,253 @@ int kidpal_points_ledger_apply(kidpal_points_ledger_view_t *v,
     v->has_more = f->has_more;
     return 0;
 }
+
+/* ========================================================================== *
+ * K2 正式积分本 additive seam 实现（TaskPackage 261104-k2-points-device-ui；
+ * seam 权威 = firmware/main/test/points_device_ui.acceptance.c [P1]-[P7]）。
+ * 上方 K0 [G2]/[G3] 实现零触碰——只增不改/移。
+ * ========================================================================== */
+
+/* ---- [P1] 积分主页四态（S-F6.1 AC1/AC4/AC5） ---- */
+int kidpal_points_home_state(const kidpal_points_home_t *frame)
+{
+    if (frame == NULL) {
+        /* 数据未达 = 设备从未收到权威帧（RAM 初态）。判据只落「有无权威帧」，
+         * 不落「断网与否」——不用伪造 0 / balance:null 混同确认空账。 */
+        return KPTS_HOME_STATE_NODATA;
+    }
+    if (frame->balance < 0) {
+        return KPTS_HOME_STATE_NEGATIVE;
+    }
+    if (frame->balance == 0 && frame->recent_count == 0) {
+        return KPTS_HOME_STATE_EMPTY;
+    }
+    return KPTS_HOME_STATE_NORMAL;
+}
+
+/* ---- [P2] 进度线画法数据面（S-F6.1 AC2/AC3/AC5） ---- */
+int kidpal_points_progress(const kidpal_points_home_t *frame,
+                           kidpal_points_progress_t *out)
+{
+    if (frame == NULL || out == NULL) {
+        return -1;
+    }
+    out->valid = 1;
+    out->target_points = frame->target_points;
+    if (frame->balance < 0) {
+        /* V9 points-home-negative.png：小伴钳位画在起点、全线虚线。数字的负值仍由
+         * frame.balance 如实承载——本函数只读 frame，绝不回写（不把负数藏成 0）。 */
+        out->pos = 0;
+        out->solid_len = 0;
+        out->overshoot = 0;
+    } else {
+        out->pos = frame->balance;
+        out->solid_len = frame->balance;
+        /* 超目标 = 线上位置关系（实线/小伴越场景标继续延伸），同页结构不换页。 */
+        out->overshoot = (frame->balance > frame->target_points) ? 1 : 0;
+    }
+    return 0;
+}
+
+/* ---- [P3] 键位决策表（§2.3 P3 积分主页行 / P3 详细账本行） ---- */
+int kidpal_points_home_key_action(int gesture)
+{
+    switch (gesture) {
+        case KPTS_GESTURE_KEY_SHORT:   return KPTS_ACT_VOICE_SESSION;
+        case KPTS_GESTURE_KEY_DOUBLE:  return KPTS_ACT_OPEN_LEDGER; /* S-F6.2 AC1 */
+        case KPTS_GESTURE_KEY_LONG:    return KPTS_ACT_BACK;
+        /* BOOT 页循环 = P1→P2→P3→P4 四页骨架，归 K0a 冻结域（four_page_skeleton），
+         * 不落本表——绝不零偏移接管。 */
+        case KPTS_GESTURE_BOOT_SHORT:
+        case KPTS_GESTURE_BOOT_DOUBLE:
+        case KPTS_GESTURE_BOOT_LONG:
+        default:
+            return KPTS_ACT_NONE;
+    }
+}
+
+int kidpal_points_ledger_key_action(int gesture)
+{
+    switch (gesture) {
+        case KPTS_GESTURE_KEY_SHORT:   return KPTS_ACT_VOICE_SESSION;
+        case KPTS_GESTURE_KEY_DOUBLE:  return KPTS_ACT_NONE; /* 账本无双击语义 */
+        case KPTS_GESTURE_KEY_LONG:    return KPTS_ACT_BACK; /* 回积分主页 */
+        case KPTS_GESTURE_BOOT_SHORT:  return KPTS_ACT_CURSOR_DOWN;
+        case KPTS_GESTURE_BOOT_DOUBLE: return KPTS_ACT_NEXT_SCREEN;
+        case KPTS_GESTURE_BOOT_LONG:   return KPTS_ACT_DELETE_ENTER;
+        default:                       return KPTS_ACT_NONE; /* BOOT 永不离页 */
+    }
+}
+
+/* [P3b] 消歧门：仅积分主页挂起（§2.3 消歧注记第二处）；故事域归 KSPV2 自己的门。 */
+int kidpal_points_debounce_gate(int page)
+{
+    return (page == KPTS_PAGE_POINTS_HOME) ? 1 : 0;
+}
+
+/* ---- [P4] 删除确认子态 + 隐式 ack（S-F6.2 AC3/AC4/AC5 + 契约 §四） ---- */
+int kidpal_points_delete_confirm_decide(int gesture)
+{
+    switch (gesture) {
+        case KPTS_DEL_GESTURE_KEY_SHORT:   return KPTS_DEL_ACT_CONFIRM;
+        case KPTS_DEL_GESTURE_BOOT_SHORT:
+        case KPTS_DEL_GESTURE_BOOT_DOUBLE:
+        case KPTS_DEL_GESTURE_BOOT_LONG:   return KPTS_DEL_ACT_CANCEL;
+        default:                           return KPTS_DEL_ACT_NONE; /* 其余不响应 */
+    }
+}
+
+int kidpal_points_delete_idle_step(unsigned long *idle_ms, unsigned long dt_ms)
+{
+    if (idle_ms == NULL) {
+        return -1;
+    }
+    *idle_ms += dt_ms;
+    return (*idle_ms >= KPTS_DELETE_IDLE_MS) ? 1 : 0;
+}
+
+int kidpal_points_delete_resend_due(int tries, uint32_t age_ms)
+{
+    if (tries >= KPTS_DELETE_RESEND_MAX) {
+        return 0; /* 上限后放弃，静默停发——不假删 */
+    }
+    return (age_ms >= KPTS_DELETE_RESEND_MS) ? 1 : 0;
+}
+
+int kidpal_points_delete_reconcile_hit(const char *pending_id,
+                                       const kidpal_points_ledger_t *frame)
+{
+    int i;
+
+    if (pending_id == NULL || frame == NULL) {
+        return -1;
+    }
+    if (pending_id[0] == '\0') {
+        return 0; /* 无 pending，无需冲销 */
+    }
+    for (i = 0; i < frame->item_count && i < KPTS_LEDGER_ITEMS_MAX; i++) {
+        if (strcmp(frame->items[i].id, pending_id) == 0) {
+            return 1; /* 权威重推仍含该分录 = 删除未生效，不冲销 */
+        }
+    }
+    /* 不在窗口（含 items 空 = 权威空账重推）-> 冲销 pending（隐式 ack）。
+     * 注意：缓存更新恒经 kidpal_points_ledger_state_apply 权威帧纪律；确认动作本身
+     * 绝不移除缓存分录（「未收到权威对账不假删」）。 */
+    return 0;
+}
+
+/* ---- [P5] keyset 全量分页客户端状态（S-F6.2 AC1 + 契约 §四） ---- */
+int kidpal_points_ledger_state_apply(kidpal_points_ledger_state_t *st,
+                                     const kidpal_points_ledger_t *f)
+{
+    if (st == NULL || f == NULL) {
+        return -1;
+    }
+    if (f->reset != 0) {
+        /* 版本变化或显式打开：先清旧分页再装首页（全字段随帧替换，不叠加）。 */
+        st->revision = f->revision;
+        st->cached_count = f->item_count;
+        st->has_more = f->has_more;
+        st->page_total = f->page_total;
+        kpt_copy_str(st->next_cursor, sizeof(st->next_cursor), f->next_cursor);
+        return 0;
+    }
+    if (f->revision != st->revision) {
+        /* 契约 §四「不得跨版本追加」：拒绝且缓存零扰动（K0 [G3] 同纪律）。 */
+        return -1;
+    }
+    st->cached_count += f->item_count;
+    st->has_more = f->has_more;
+    st->page_total = f->page_total;
+    kpt_copy_str(st->next_cursor, sizeof(st->next_cursor), f->next_cursor);
+    return 0;
+}
+
+int kidpal_points_ledger_next_request(const kidpal_points_ledger_state_t *st,
+                                      char *cursor_out, size_t cap,
+                                      int *known_revision_out, int *limit_out)
+{
+    size_t n;
+
+    if (st == NULL || cursor_out == NULL || cap == 0 ||
+        known_revision_out == NULL || limit_out == NULL) {
+        return -1;
+    }
+    if (st->has_more && st->next_cursor[0] != '\0') {
+        n = strlen(st->next_cursor);
+        if (n + 1 > cap) {
+            return -1; /* 游标缓冲不足：显式拒绝，绝不截断半游标 */
+        }
+        memcpy(cursor_out, st->next_cursor, n + 1);
+        *known_revision_out = st->revision;
+        *limit_out = KPTS_PAGE_REQ_LIMIT;
+        return 1; /* 有续页可取 */
+    }
+    cursor_out[0] = '\0'; /* 首页请求语义 */
+    *known_revision_out = (st->revision > 0) ? st->revision : -1; /* 无缓存不带版本键 */
+    *limit_out = KPTS_PAGE_REQ_LIMIT;
+    return 0;
+}
+
+int kidpal_points_ledger_screen_total(const kidpal_points_ledger_state_t *st,
+                                      int rows_per_screen)
+{
+    if (st == NULL || rows_per_screen <= 0) {
+        return -1;
+    }
+    if (st->page_total <= 0) {
+        return 0;
+    }
+    /* 以全量 page_total 为准（未取完的页也可见屏数），绝不以 cached_count 顶替。 */
+    return (st->page_total + rows_per_screen - 1) / rows_per_screen;
+}
+
+/* ---- [P6] selected_id 只读注入决策（D-08 + 契约 §四） ---- */
+int kidpal_points_selected_id_injectable(const kidpal_points_ledger_t *frame,
+                                         const char *selected_id)
+{
+    int i;
+
+    if (frame == NULL) {
+        return -1;
+    }
+    if (selected_id == NULL || selected_id[0] == '\0') {
+        return 0; /* 不附带 */
+    }
+    for (i = 0; i < frame->item_count && i < KPTS_LEDGER_ITEMS_MAX; i++) {
+        if (strcmp(frame->items[i].id, selected_id) == 0) {
+            return 1;
+        }
+    }
+    return 0; /* 设备不造 id——非权威值绝不上行 */
+}
+
+/* ---- 积分 UI 当前语境（RAM 单例） ---- */
+static int  s_points_ui_substate = KPTS_SUBSTATE_NONE;
+static char s_points_ui_selected_id[KPTS_ENTRY_ID_CAP] = {0};
+
+void kidpal_points_ui_set_substate(int substate)
+{
+    if (substate < KPTS_SUBSTATE_NONE || substate > KPTS_SUBSTATE_DELETE_CONFIRM) {
+        substate = KPTS_SUBSTATE_NONE; /* 越界防御：绝不画错键帽 */
+    }
+    s_points_ui_substate = substate;
+}
+
+int kidpal_points_ui_substate(void)
+{
+    return s_points_ui_substate;
+}
+
+void kidpal_points_ui_set_selected_id(const char *id)
+{
+    s_points_ui_selected_id[0] = '\0';
+    if (id != NULL && id[0] != '\0') {
+        kpt_copy_str(s_points_ui_selected_id, sizeof(s_points_ui_selected_id), id);
+    }
+}
+
+const char *kidpal_points_ui_selected_id(void)
+{
+    return s_points_ui_selected_id;
+}

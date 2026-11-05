@@ -109,6 +109,10 @@ _story_acc = None
 # ADR-003 kidpal_speak 同型内部消息。engine-patch 认领置/清记录语境标志 → chat()
 # depth==0 第三守卫抑制 LLM 派发（孩子讲着时 AI 默认闭嘴，切句只回显）。
 RECORD_CTX_SIGNAL_TYPE = "kidpal_record_context"
+# 积分语境有界摘要注入帧 type（TaskPackage 261104-k2-points-device-ui, K2D-A2；契约
+# §四 kidpal_session_ctx points 两值半）。沿 RECORD_CTX_SIGNAL_TYPE 同族引擎腿通道
+# _send_engine_leg_frames 注入；payload = {"type": ..., "summary": <str>}。
+POINTS_CTX_SIGNAL_TYPE = "kidpal_points_context"
 # 收尾统一下行信号（q2 = ⓒ 裁定；契约 §1.4 start_organizing 表行——front 机械下发
 # 单源经自推通路 self_push=True 放行，relay 路径恒拒）。
 START_ORGANIZING_PAYLOAD = {"view": "control", "data": {"action": "start_organizing"}}
@@ -647,6 +651,37 @@ async def _push_story_list(websocket, restore: bool = False) -> None:
     await _push_display_payload(websocket, payload)
 
 
+def _build_points_ctx_summary(source_page, selected_id=None) -> str:
+    """有界积分语境摘要（K2D-A2；契约 §四 kidpal_session_ctx points 两值半）。
+
+    单源 = points.py 当前权威状态（不另算余额、不读第二账本）：当前余额 + 激活目标
+    （名称与分值）+ 最近至多 HOME_RECENT_MAX(=3) 条分录；points_ledger 语境且
+    selected_id 命中现存分录时另附该分录摘要（原因 / delta / 变动前后余额）。
+    selected_id 未命中或畸形 -> 只给常规摘要，**不伪造分录**。
+    摘要为**有界注入**（超出 recent 窗口的旧分录不得进入摘要；模型不直接读状态文件）。
+    刻意不 hard-code 任何权威值：全部取 points.py 当前状态。
+    """
+    state = gw_points.read_state(POINTS_STATE_PATH)
+    target = gw_points.get_active_target(POINTS_STATE_PATH)
+    parts = [
+        f"当前积分 {int(state['balance'])} 分",
+        f"目标「{target['name']}」{int(target['points'])} 分",
+    ]
+    recent = state["entries"][:gw_points.HOME_RECENT_MAX]
+    if recent:
+        parts.append("最近记录：" + "；".join(
+            f"{entry['reason']} {int(entry['delta']):+d}" for entry in recent))
+    if isinstance(selected_id, str) and selected_id:
+        for entry in state["entries"]:
+            if entry.get("id") == selected_id:
+                parts.append(
+                    "被问分录："
+                    f"{entry['reason']} 变动 {int(entry['delta']):+d}，"
+                    f"{int(entry['balance_before'])}→{int(entry['balance_after'])}")
+                break
+    return "；".join(parts)
+
+
 def _expand_points_nav_intent(payload) -> "dict | None":
     """「打开积分本 / 打开详细账本」导航薄载荷 -> front 截获展开为完整帧。
 
@@ -881,7 +916,8 @@ async def _consume_kidpal_control(session_id, obj, websocket, upstream=None) -> 
         return False
     mtype = obj.get("type")
     if mtype == "kidpal_session_ctx":
-        if session_id and obj.get("source_page") == "story":
+        source_page = obj.get("source_page")
+        if session_id and source_page == "story":
             acc = _get_story_acc()
             # routing 沿自查在 acc.start 之前（routing() 查询不改状态, K1 冻结;
             # story.py 零改动）：chat -> accumulate 沿 = 首帧 ctx, 才条件推送①。
@@ -900,10 +936,63 @@ async def _consume_kidpal_control(session_id, obj, websocket, upstream=None) -> 
                 except Exception:  # noqa: BLE001 — 推送失败不阻断 ctx 拦截消费
                     log.warning("story_ctx_push failed session_id=%s (ctx 拦截语义优先)",
                                 session_id)
+        elif source_page in ("points_home", "points_ledger"):
+            # K2D-A2（契约 §四 points 两值）：普通问答语境——不切累积态、不推
+            # story_list、不注 record 信号；只经引擎腿注入有界摘要（points_ledger
+            # 语境可带只读 selected_id）。注入失败降级留痕、不阻断 ctx 拦截消费。
+            try:
+                summary = _build_points_ctx_summary(source_page, obj.get("selected_id"))
+                if upstream is not None:
+                    await _send_engine_leg_frames(upstream, [
+                        {"type": POINTS_CTX_SIGNAL_TYPE, "summary": summary}])
+            except Exception as e:  # noqa: BLE001 — 注入失败不阻断 ctx 拦截语义
+                log.warning("points_ctx_inject_err corr_id=%s err=%s",
+                            session_id, type(e).__name__)
+        elif source_page not in ("home", "schedule", "story_cover"):
+            # 契约 §四：未知 source_page 拒绝并记日志，**绝不回退成 story**（静默吞掉
+            # 会让新增取值（如 K5 story_cover 之外的新值）的接线缺陷不可见）。
+            log.warning("session_ctx unknown_source_page=%r corr_id=%s",
+                        source_page, session_id)
         return True
     if mtype == "kidpal_story_delete":
         gw_story.delete_story(STORIES_DIR, obj.get("id"), corr_id=session_id)
         await _push_story_list(websocket)  # 删除执行后重推对账（三时点③）
+        return True
+    if mtype == "kidpal_points_delete":
+        # 契约 §四 kidpal_points_delete（2026-11-04 LANDED；K2D-A1）：设备按键确认后
+        # 的私有上行 -> front 整条消费并拦截、不下透引擎；交 points.py 删除并按剩余
+        # 分录重算，随后以权威 points_home + points_ledger 首页 restore 重推作隐式
+        # ack 对账（重复/已不存在 id = 幂等 no-op 仍重推；非法 id 拒绝且零重推）。
+        raw_id = obj.get("id")
+        try:
+            receipt = gw_points.delete_entry(POINTS_STATE_PATH, raw_id)
+        except ValueError as exc:
+            # 非法 id（非 str / 空串 / 纯空白）：拒绝并审计，零重推，仍整条消费。
+            log.warning("points_delete rejected corr_id=%s id=%r detail=%s",
+                        session_id, raw_id, exc)
+            return True
+        except Exception as e:  # noqa: BLE001 — 执行器硬失败不外抛炸连接（失败可见于日志）
+            log.warning("points_delete failed corr_id=%s id=%r err=%s",
+                        session_id, raw_id, type(e).__name__)
+            return True
+        corr_id = gw_mcp.corr_id()
+        try:
+            home = gw_points.build_points_home(POINTS_STATE_PATH)
+            home["data"]["restore"] = True   # 删除重推恒后台更新、不抢前台（契约 §四）
+            await _push_display_payload(websocket, home)
+            # 首页完整帧（cursor 缺省 = 最新首页, page.reset=True）——设备据此丢弃
+            # 旧分页缓存再装首页（契约 §四 / §1.3⑧）。
+            page = gw_points.build_points_ledger_page(POINTS_STATE_PATH)
+            page["data"]["restore"] = True
+            await _push_display_payload(websocket, page)
+        except Exception as e:  # noqa: BLE001 — 推送失败不伪造成功；消费语义优先
+            log.warning("points_delete_push_err corr_id=%s err=%s",
+                        corr_id, type(e).__name__)
+            return True
+        log.info(
+            "points_delete consumed corr_id=%s id=%s deleted=%s revision=%s balance=%s",
+            corr_id, receipt.get("id"), receipt.get("deleted"),
+            receipt.get("revision"), receipt.get("balance"))
         return True
     if mtype == "kidpal_story_fetch":
         ids = obj.get("ids")

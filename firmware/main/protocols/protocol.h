@@ -84,8 +84,12 @@ public:
      * delete 原语同缝同族扩展）: 会话发起信号, 端→网关单向通知——front 收到后
      * 拦截消费（切累积态 + 条件推送 story_list）, 不下透引擎。首帧音频前
      * （server hello 之后）发送; 通道复用会话同样发送; 重复发送安全（front 幂等
-     * 承接）; 省略 = 普通会话向后兼容。source_page 闭集 story/schedule/home。 */
-    virtual void SendKidpalSessionCtx(const char* source_page);
+     * 承接）; 省略 = 普通会话向后兼容。source_page 闭集 home/schedule/points_home/
+     * points_ledger/story_cover/story。selected_id（K2 additive，缺省 nullptr = 不带）
+     * 只在 points_ledger 语境附带：值只能来自最近收到的 points_ledger items
+     * （设备不造 id），供 front 注入被问分录摘要；它不是删除或写入指令。 */
+    virtual void SendKidpalSessionCtx(const char* source_page,
+                                      const char* selected_id = nullptr);
     /* §四 kidpal_story_fetch（TaskPackage 261016-p3-story-body-sd-cache）: 设备发起
      * 的批量正文取回请求 —— 契约面首个 request → response 请求-应答环（应答 = 既有
      * story_text 帧，零新形状）。发送原语形态见本头末尾自由函数
@@ -100,6 +104,9 @@ public:
     /* §四 kidpal_points_page（TaskPackage 261104-k0-points-e2e-spike）: 无接收者发送
      * 原语同 fetch/discard——活动实例 = s_kidpal_active_（同一访问友元通道）。 */
     friend void SendKidpalPointsPage(const char *cursor, int known_revision, int limit);
+    /* §四 kidpal_points_delete（TaskPackage 261104-k2-points-device-ui）: 设备按键
+     * 确认删除后的私有上行；无接收者发送原语同 points_page。 */
+    friend void SendKidpalPointsDelete(const char *id);
 
 protected:
     std::function<void(const cJSON* root)> on_incoming_json_;
@@ -157,6 +164,18 @@ void SendKidpalStoryDiscard();
  * 无接收者形态同 fetch/discard：活动实例 = 最近构造且未析构的 Protocol
  * （s_kidpal_active_）；未就绪 = 静默 no-op（离线降级, 不产生半帧）。 */
 void SendKidpalPointsPage(const char *cursor, int known_revision, int limit);
+
+/* §四 kidpal_points_delete 发送原语（TaskPackage 261104-k2-points-device-ui;
+ * 逐字仿 SendKidpalStoryDelete / SendKidpalPointsPage 无接收者拼串形态）——设备
+ * 在详细账本删除确认子态 KEY 确认后发出；front 整条消费并拦截、以权威 points_home
+ * + points_ledger 首页 restore 重推作隐式 ack。
+ * 线形状（逐字）:
+ *   {"session_id":"<sid>","type":"kidpal_points_delete","id":"<points-entry-id>"}
+ * id 只能取最近收到的 points_ledger items 下发过的值（设备不造 id）；空 id = no-op
+ * （不发帧）。单向通知、无独立应答消息；未收到不含该 id 的对账帧可重发（重发上限
+ * 由调用方 K2PTS-DELETE_RESEND_* 决策表控制）。
+ * 无接收者形态同 points_page：活动实例 = s_kidpal_active_；未就绪 = 静默 no-op。 */
+void SendKidpalPointsDelete(const char *id);
 
 #endif // PROTOCOL_H
 

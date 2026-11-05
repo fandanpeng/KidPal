@@ -134,3 +134,20 @@ int kidpal_display_text_page_count(const char *text, int screen_lines)
         return (int)((line_count + screen_lines - 1) / screen_lines);
     }
 }
+
+/* K2 additive: points 视图 -> 设备渲染子态（TaskPackage 261104-k2-points-device-ui,
+ * K2PTS-P2/P6；子态常量单源 = points_page.h KPTS_SUBSTATE_*）。
+ * 纯函数、零副作用；只裁「当前 points 视图属于基层主页还是详细账本子页」。 */
+int kidpal_display_points_substate(const char *view)
+{
+    if (view == NULL) {
+        return -1;
+    }
+    if (strcmp(view, "points_ledger") == 0) {
+        return KPTS_SUBSTATE_LEDGER;
+    }
+    if (strcmp(view, "points_home") == 0) {
+        return KPTS_SUBSTATE_NONE;
+    }
+    return -1;
+}

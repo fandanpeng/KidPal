@@ -146,6 +146,22 @@ int kidpal_keybar_story_transition_slots(int story_sub, int last_known_sub,
 int kidpal_keybar_story_rec_slots(int guide_sub, const char **out_left,
                                   const char **out_right);
 
+/* -------------------------------------------------------------------------- *
+ * P3 星星积分本子态键帽槽裁决（TaskPackage 261104-k2-points-device-ui, K2PTS-P6;
+ * additive 追加——既有声明零触碰；additive 并行函数形态同 char_slots/story_slots）:
+ *   substate = KPTS_SUBSTATE_LEDGER         -> 左「问一问」右「下移」
+ *              （V9 points-ledger.png 冻结页级 ref 逐字）;
+ *   substate = KPTS_SUBSTATE_DELETE_CONFIRM -> 左「删掉」右「算了」
+ *              （V9 points-delete-confirm.png；WF-F2-05 同族、与 story
+ *              KSTORY_PAGE_DELETE 键帽同字）;
+ *   KPTS_SUBSTATE_NONE / 未知子态 -> -1（消费方回落基层页槽表，绝不画错键帽）。
+ *   防御: 任一输出指针 NULL -> -1; 成功返回 0。
+ * 值域单源 = docs/ui/V9 两张冻结页级 ref；substate 常量住 points_page.h（本函数
+ * 经 include 消费、零本地镜像）。覆盖层页点消失走既有 kidpal_keybar_dots
+ * overlay_top 语义，机制零新增。 */
+int kidpal_keybar_points_slots(int substate, const char **out_left,
+                               const char **out_right);
+
 #ifdef __cplusplus
 }
 #endif
