@@ -212,6 +212,19 @@ REVISION LOG
              front _observe_points_revision 缺席；A2/A7 及各 test 内 must-stay-green
              半在 K0 现状上即可绿，属回归守卫非空过——其变异点见
              taskpackage mutationEvidence.perAcceptance）。
+  2026-11-05 重冻（acceptance-author；planner 逐处对源码独立核验后指定的四处冻结件
+             内部缺陷最小修正，binding refs 与断言行为意图零变化，非语义放宽）：
+             ①A4 兑换拒绝路径 revision 断言由写死 2 改为「拒绝前后 revision 相等」
+             （原漏计 set_active_target 的 +1，与本文件 FROZEN 契约 A 段自相矛盾）；
+             ②_assert_chain_contiguous 第二循环由 balance_after 升序「承载分录」查找
+             改为 (occurred_at,id) 时间序前驱检查 + 首条 before==0（原 ±1 步长假设
+             只对并发用例成立，A4/A6 步长账本误红）；③A9 损坏 state 字节断言期望由
+             污染前 good_bytes 改为污染后现抓 corrupt_bytes（原断言照字面要求观察缝
+             修复文件，与 NFR-OFF-1 消息相反）；④A9 恢复后权威余额 7→2（+5 已删、
+             余额 0 后加 2）。
+             sha256 核销：3d92482474732cf414a189a86b06b57cc3442fe65f0e1f73c2aadd70456053a8
+             → 修正后重算值见交付报告。重冻后基线 = 实现面在盘全绿（本文件 10/10
+             passed），原设计态红基线记录由实现面在盘取代。
 """
 
 from __future__ import annotations
@@ -481,21 +494,40 @@ def _entry_keys_ok(entry) -> bool:
             and not isinstance(entry["balance_after"], bool))
 
 
+def _occurred_epoch(value) -> float:
+    """occurred_at -> epoch 秒（链检查用；解析失败保守 0.0 退化为按 id 排序）。"""
+    try:
+        dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return 0.0
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=dt_timezone.utc)
+    return dt.timestamp()
+
+
 def _assert_chain_contiguous(test, entries):
-    """逐条前后余额链连续：按 balance_after 升序，每条 before == 上一条 after。
-    （并发/重算后的链完整性判据；余额逐条递变时前后余额必连续。）"""
-    afters = sorted(e["balance_after"] for e in entries)
+    """逐条前后余额链连续：entries 按 (occurred_at, id) 时间序排好后，首条
+    balance_before == 0、其后每条 balance_before == 上一条 balance_after。
+    （并发/重算后的链完整性判据，对任意步长成立；第一循环另核
+    before == after − delta 逐条自洽。）"""
     for entry in entries:
         test.assertEqual(
             entry["balance_before"], entry["balance_after"] - entry["delta"],
             f"K1L RED: 分录前后余额与 delta 不自洽: {entry!r} —— balance_before/"
             "balance_after 必须由剩余分录派生（D-03），不得独立存储 stale 值。")
-    for prev, cur in zip(afters, afters[1:]):
-        test.assertTrue(
-            any(e["balance_after"] == cur and e["balance_before"] == prev
-                for e in entries),
-            f"K1L RED: 前后余额链断裂（{prev} -> {cur} 无承载分录）—— 逐条前后余额"
-            "必须按时间序连续派生（S-F6.2-AC2 数据半）。")
+    ordered = sorted(
+        entries,
+        key=lambda e: (_occurred_epoch(e.get("occurred_at")), str(e.get("id") or "")))
+    test.assertEqual(
+        ordered[0]["balance_before"], 0,
+        f"K1L RED: 时间序首分录 balance_before 非 0: {ordered[0]!r} —— 链必须从"
+        "零余额起点派生（D-03）。")
+    for prev, cur in zip(ordered, ordered[1:]):
+        test.assertEqual(
+            cur["balance_before"], prev["balance_after"],
+            f"K1L RED: 前后余额链断裂（{prev['balance_after']} -> "
+            f"{cur['balance_before']}）—— 逐条前后余额必须按时间序连续派生"
+            "（S-F6.2-AC2 数据半）。")
 
 
 # =========================================================================== #
@@ -800,16 +832,23 @@ class K1lRedeemQualificationAcceptance(unittest.TestCase):
             self.assertEqual(entry["balance_before"], 63, "K1L RED: 前余额非 63。")
             self.assertEqual(entry["balance_after"], 23, "K1L RED: 后余额非 23。")
             # 金额不匹配（余额 23 足够 20 但 20 != 激活目标 40）-> 拒。
+            rev_before_mismatch = pts.read_state(state)["revision"]
             with self.assertRaises(ValueError,
                                    msg="K1L RED: 兑换金额 != 激活目标分值未拒绝。"):
                 pts.redeem_points(state, 20, now=_t(4000))
+            self.assertEqual(
+                pts.read_state(state)["revision"], rev_before_mismatch,
+                "K1L RED: 金额不匹配拒绝递增了 revision —— 拒绝路径零落账零计数。")
             # 余额不足激活目标分值（23 < 40 场景已覆盖；再钉 23 < 50）。
             set_active_target(state, "preset-gift", now=_t(4100))
+            rev_before_short = pts.read_state(state)["revision"]
             with self.assertRaises(ValueError,
                                    msg="K1L RED: 余额 23 < 激活目标 50 未拒绝。"):
                 pts.redeem_points(state, 50, now=_t(4200))
-            self.assertEqual(pts.read_state(state)["revision"], 2,
-                             "K1L RED: 兑换拒绝路径动了 revision（拒绝零落账）。")
+            self.assertEqual(
+                pts.read_state(state)["revision"], rev_before_short,
+                "K1L RED: 余额不足拒绝递增了 revision —— 拒绝路径零落账零计数"
+                "（切目标自身的 revision+1 属配置写，已计入 rev_before_short）。")
             # 动态目标门：激活切到礼物 50 后，兑 40 拒、兑 50 成。
             pts.add_points(state, 60, "期末进步奖", now=_t(5000))   # 23+60=83
             with self.assertRaises(ValueError,
@@ -1401,6 +1440,7 @@ class K1lGap1ProducerRestoreAcceptance(unittest.TestCase):
                 asyncio.run(f._observe_points_revision(dev3))   # 建立基线
                 good_bytes = Path(sp).read_bytes()
                 Path(sp).write_bytes(b"{not-json")
+                corrupt_bytes = Path(sp).read_bytes()
                 try:
                     r = asyncio.run(f._observe_points_revision(dev3))
                 except Exception as e:  # noqa: BLE001
@@ -1411,9 +1451,9 @@ class K1lGap1ProducerRestoreAcceptance(unittest.TestCase):
                 self.assertEqual(_points_home_frames(dev3.sent_text), [],
                                  "K1L RED: state 损坏仍推送帧（伪造权威视图）。")
                 self.assertEqual(
-                    Path(sp).read_bytes(), good_bytes,
-                    "K1L RED: 观察缝改写了 state 文件 —— 失败路径不得本地补写/"
-                    "修复（NFR-OFF-1 数据面半）。")
+                    Path(sp).read_bytes(), corrupt_bytes,
+                    "K1L RED: 观察缝改写了（污染的）state 文件 —— 失败路径不得本地"
+                    "补写/修复/重建（NFR-OFF-1 数据面半；恢复由外部显式动作完成）。")
                 # ---- 恢复后：无陈旧补写、按当前权威状态观察 ------------------------
                 Path(sp).write_bytes(good_bytes)
                 r = asyncio.run(f._observe_points_revision(dev3))
@@ -1426,9 +1466,9 @@ class K1lGap1ProducerRestoreAcceptance(unittest.TestCase):
                 homes3 = _points_home_frames(dev3.sent_text)
                 self.assertEqual(len(homes3), 1, "K1L RED: 恢复后推送帧数 != 1。")
                 self.assertEqual(
-                    (homes3[0].get("data") or {}).get("balance"), 7,
-                    "K1L RED: 恢复后推送余额非当前权威值 7 —— 推送必须读当前真实"
-                    "状态，不消费失败期间的陈旧数据。")
+                    (homes3[0].get("data") or {}).get("balance"), 2,
+                    "K1L RED: 恢复后推送余额非当前权威值 2（删除后 0 + 加 2）—— "
+                    "推送必须读当前真实状态，不消费失败期间的陈旧数据。")
 
 
 # =========================================================================== #

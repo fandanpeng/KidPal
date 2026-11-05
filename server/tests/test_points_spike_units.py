@@ -8,13 +8,22 @@ state 损坏（非缺失）拒绝分支、limit 类型与边界（含 bool/字�
 DEFAULT_TARGET / 账本）、CLI 参数面与「失败零写入 / 单 state 文件」、display_schema
 points_ledger floor 分支（冻结件只钉 points_home 侧）。
 
+261104-k1-points-ledger-core 正式化对齐（manifest 扩单，planner ruling）：`points.py`
+在同一文件上补齐跨进程 `.lock`、短窗语义去重与删除/目标存储后，本文件两条 K0 期断言
+按冻结契约更新——① state 同目录恒有常驻 `.lock`（K1L-A1 的进程间锁机制锚，不是第二
+账本）；② 同额二次兑换在 10 分钟窗口内命中语义去重（CLI 返 0 + duplicate=true，
+S-F6.3-AC5「同一次兑换不重复扣分」），兑换资格门与余额门分别改由「错额兑换」与
+「窗口外兑换」钉住（不再靠时间巧合）。
+
 纯 stdlib + 按路径/包导入，零网络、零 ECS 依赖，任何 python3 可跑：
   cd server && python -m pytest -q tests/test_points_spike_units.py
 """
 
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import json
 import os
 import sys
@@ -215,11 +224,22 @@ class RedeemPointsTests(_StateDirMixin):
                 points.redeem_points(self.state, bad, now=_t(2))
 
     def test_second_redeem_blocked_by_insufficient_balance(self):
+        """窗口外二次兑换钉**余额门**（本用例的判别对象不是去重）。
+
+        两次兑换显式拉开到 DEDUP_WINDOW_SECONDS 之外：窗口内的同额二次兑换会返
+        duplicate 回执而非拒绝（S-F6.3-AC5 预期行为，见
+        test_redeem_requires_matching_target_and_balance），只有落在窗口外时才
+        真正走到「余额 < 激活目标分值」这道门。"""
         target = points.DEFAULT_TARGET["points"]
         self._fund(target)
-        points.redeem_points(self.state, target, now=_t(2))
+        first_at = _t(2)
+        second_at = first_at + timedelta(seconds=points.DEDUP_WINDOW_SECONDS + 1)
+        points.redeem_points(self.state, target, now=first_at)
+        before = points.read_state(self.state)
+        self.assertEqual(before["balance"], 0)
         with self.assertRaises(ValueError):
-            points.redeem_points(self.state, target, now=_t(3))
+            points.redeem_points(self.state, target, now=second_at)
+        self.assertEqual(points.read_state(self.state), before)
 
 
 # --------------------------------------------------------------------------- #
@@ -383,15 +403,29 @@ class PointsCliTests(_StateDirMixin):
     def test_add_success_writes_single_ledger(self):
         self.assertEqual(self._main(["add", "3", "canary"]), 0)
         self.assertEqual(points.read_state(self.state)["balance"], 3)
-        # 单源：同目录不产生第二账本文件。
+        # 单源：同目录不产生第二**账本**文件；`.lock` 是 K1 冻结契约的进程间锁机制锚
+        # （K1L-A1：state 同目录 `.lock` 文件在位，常驻不删——unlink-while-held 是经典
+        # 竞态），不属于第二账本，故按新布局直接钉住两条。
         siblings = sorted(p.name for p in Path(self._tmp.name).iterdir())
-        self.assertEqual(siblings, ["state.json"])
+        self.assertEqual(siblings, [".lock", "state.json"])
 
     def test_redeem_requires_matching_target_and_balance(self):
         self._main(["add", "50", "fund"])
         self.assertEqual(self._main(["redeem", str(points.DEFAULT_TARGET["points"])]), 0)
         self.assertEqual(points.read_state(self.state)["balance"], 10)
-        self.assertNotEqual(self._main(["redeem", str(points.DEFAULT_TARGET["points"])]), 0)
+        # 资格门（只认激活目标分值）：40 下兑 30 = 错额，必须非零退出且零落账。
+        before = points.read_state(self.state)
+        self.assertNotEqual(self._main(["redeem", "30"]), 0)
+        self.assertEqual(points.read_state(self.state), before)
+        # 短窗语义去重（K1L-A6 / S-F6.3-AC5）：同额二次兑换落在 10 分钟窗口内 ->
+        # 命中语义去重，CLI 返 0 且回执标 duplicate=true（**不重复扣分**，这是 K1
+        # 冻结语义的正确行为；去重检查先于余额门，窗口外的余额门由
+        # test_second_redeem_blocked_by_insufficient_balance 钉）。
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            rc_again = self._main(["redeem", str(points.DEFAULT_TARGET["points"])])
+        self.assertEqual(rc_again, 0, out.getvalue())
+        self.assertIn("duplicate=true", out.getvalue())
         self.assertEqual(points.read_state(self.state)["balance"], 10)
 
     def test_missing_env_refuses_and_writes_nothing(self):

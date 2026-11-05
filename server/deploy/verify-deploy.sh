@@ -214,6 +214,15 @@ sys.exit(1 if findings else 0)
 PYEOF
 VERIFY_RC=$?
 
+# ── 积分运行态面（261104-k1-points-ledger-core；arch §5.3.2）──
+# 部署漂移核验只覆盖**代码**（manifest 已登记 server/gateway/points.py → front/gateway/）；
+# 积分账本 state（/opt/kidpal/points/state.json）与同目录 `.lock` 是**运行态数据**，
+# 与 OpenClaw 运行态同纪律：不入清单、不做 md5 核验、本脚本不判其内容。
+# 路径单源 = env KIDPAL_POINTS_STATE（front_app.POINTS_STATE_PATH 与
+# `python -m gateway.points` CLI 同一名字）；未设 env 时代码缺省 =
+# /opt/kidpal/points/state.json。K0 live 旧位 /opt/kidpal/points.json 的搬迁是
+# 一次性运维动作（deploy.sh §2b 注记），本核验面不为旧路径留分支。
+
 # ── Honcho 记忆子系统核验段（261022-m5-k3 / K3-E1；arch §5.3.3 ③「记忆子系统
 #    api 18100 仅本机可达、五容器其余端口公网不可达」的机检承载）──
 # compose 声明面（published 端口全显式 127.0.0.1）+ 运行态双核验：

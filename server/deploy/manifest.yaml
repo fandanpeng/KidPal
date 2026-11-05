@@ -64,6 +64,19 @@ entries:
   - {src: server/gateway/story.py,
      dst: /opt/kidpal/front/gateway/story.py,
      owner: deploy.sh, verify: md5, restart: front}
+  # 积分确定性执行器（261104-k1-points-ledger-core）：front 薄意图截获与
+  # `python -m gateway.points` CLI **共用同一模块、同一 state 文件**（D-10 单 writer）。
+  # 运行态数据不入清单（runtime data，与 OpenClaw 运行态同纪律）：
+  #   state = /opt/kidpal/points/state.json（env KIDPAL_POINTS_STATE 单源覆盖口；
+  #           未设 env 时代码缺省 = 本路径 —— arch §5.3.2 权威布局）
+  #   lock  = /opt/kidpal/points/.lock（写入临界区的进程间文件锁，常驻不删）
+  # 迁移注记（K0 live 现状 /opt/kidpal/points.json）：本包不改 env 名，live 侧把
+  # KIDPAL_POINTS_STATE 指到 /opt/kidpal/points/state.json 并把既有 points.json
+  # 内容搬过去（一次性运维动作，归部署轮；代码不读第二路径、不留双账本分支）。
+  - {src: server/gateway/points.py,
+     dst: /opt/kidpal/front/gateway/points.py,
+     owner: deploy.sh, verify: md5, restart: front,
+     note: "积分唯一确定性 writer（front 薄意图 + CLI 共用）；state 运行态 = /opt/kidpal/points/{state.json,.lock}，env KIDPAL_POINTS_STATE 单源，不入清单"}
   # 两枚 request 级 system prompt 制品（front_app 每次回合现读 PROMPTS_DIR，无服务
   # 重启面——restart: none）。261024 换代：指令挪 system 后 live 指令全在制品里，
   # 缺位 = _load_prompt_artifact 返 "" -> 空制品回填包装形态兜底（最坏退回旧 live
