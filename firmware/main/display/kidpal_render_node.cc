@@ -1142,7 +1142,15 @@ static void rn_render_points_home_body_locked(void)
     }
     for (i = 0; i < s_points_home.recent_count && i < KPTS_RECENT_MAX; i++) {
         rn_render_points_entry_row(s_kidpal_scr, &s_points_home.recent[i],
-                                   170 + i * 30, 0, 64, 226, 300, 88);
+                                   166 + i * 26, 0, 64, 226, 300, 88);
+    }
+    /* 语音记账提示（V9 points-home*.png 底栏上方提示条；空账帧由上面的空账话术承载,
+     * 不重复出提示）。 */
+    if (s_points_home.recent_count > 0) {
+        lv_obj_t *tip = rn_points_label(s_kidpal_scr, "说「加5分」就能记账", 100, 246,
+                                        RNP_INK, &font_puhui_14_1);
+        lv_obj_set_width(tip, 200);
+        lv_obj_set_style_text_align(tip, LV_TEXT_ALIGN_CENTER, 0);
     }
 }
 
