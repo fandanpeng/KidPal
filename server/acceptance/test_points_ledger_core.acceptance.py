@@ -193,9 +193,8 @@ Coverage map (acceptanceRef -> test):
   K1L-A8 -> test_k1l_a8_target_config_storage_presets_custom_bounds_and_guards
   K1L-A9 -> test_k1l_a9_gap1_producer_side_restore_observation
   K1L-A10 -> test_k1l_a10_failure_paths_offline_boundary_no_local_queue
-  coverage: K1L-L1 —— live-manual 真实 QQ 写入 → 设备积分页原地刷新目击（载体
-        device-round-evidence.md / verifier-evidence，不落自动断言）。
-  coverage: K1L-L2 —— live-manual 观察缝活性接线目击（GAP-K1-1；同上不落自动断言）。
+  coverage: K1L-L1 —— live-manual GAP-1 活性接线真机复核（载体 device-round-evidence.md；QQ 落账后设备他页不抢前台缓存静默更新、积分页在屏原地刷新；设备行为面归 K2 复证）
+  coverage: K1L-L2 —— live-manual 真实消费端分页复核（载体 device-round-evidence.md；K0 通路消费端取页对账与权威状态一致性）
         两项均不落自动断言、不计入本文件通过面；离线测试不冒充真机终验（K1L-E6）。
 
 exitCriteria 映射：K1L-E1 → A1/A2/A3/A4；K1L-E2 → A5/A6；K1L-E3 → A7；K1L-E4 → A8；
@@ -223,8 +222,12 @@ REVISION LOG
              修复文件，与 NFR-OFF-1 消息相反）；④A9 恢复后权威余额 7→2（+5 已删、
              余额 0 后加 2）。
              sha256 核销：3d92482474732cf414a189a86b06b57cc3442fe65f0e1f73c2aadd70456053a8
-             → 修正后重算值见交付报告。重冻后基线 = 实现面在盘全绿（本文件 10/10
-             passed），原设计态红基线记录由实现面在盘取代。
+             → 四处修正后 e5fdcadb0a4cc16aa5506d2548be44b8daea2b2423c076286b5ab3583781811c
+             → coverage 标记行修订（K1L-L1/L2 逐字形态，acceptance-coverage 门放行
+             修正）后 61bf154628262f636439bdd5e3066f53bd3de56a7eb920360f76e3435356331e；
+             本簿记行自身不参与自指核销，终态 sha256 以 acceptance-author 交付报告
+             为准。重冻后基线 = 实现面在盘全绿（本文件 10/10 passed），原设计态红
+             基线记录由实现面在盘取代。
 """
 
 from __future__ import annotations

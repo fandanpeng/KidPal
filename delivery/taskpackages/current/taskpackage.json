@@ -16,6 +16,8 @@
   "sourceRefs": [
     "S-F6.2-AC1",
     "S-F6.2-AC4",
+    "S-F6.2-AC5",
+    "S-F6.2-AC2",
     "S-F6.3-AC3",
     "S-F6.3-AC4",
     "S-F6.3-AC5",
@@ -50,7 +52,7 @@
   ],
   "acceptance": [
     "K1L-A1: 单 writer 串行与原子写——8 线程 + 10 子进程并发写入零丢账（revision/分录数/前后余额链逐条核）、state 同目录 `.lock` 文件锁在位（跨进程互斥机制锚）、tmp+os.replace 原子替换失败时旧状态完整无半写、恢复后无幽灵补写。回引 D-10、arch §5.1.2/§5.3.2/§6.5、K1L-E1。设计态红 = delete_entry/command_id/目标配置/.lock/观察缝等冻结 seam 缺席 + 跨进程竞态丢账",
-    "K1L-A2: 余额与逐条前后余额全部由剩余分录派生——篡改磁盘 balance 副本仍按分录重算、entries 强制时间倒序、负和不钳位（−35 如实派生）、坏分录 ValueError 拒绝不当空账（must-stay-green 回归守卫半，K0 现状即绿、变异点在案）。回引 D-03、S-F6.2-AC1/AC2 数据半、K1L-E1",
+    "K1L-A2: 余额与逐条前后余额全部由剩余分录派生——篡改磁盘 balance 副本仍按分录重算、entries 强制时间倒序、负和不钳位（−35 如实派生）、坏分录 ValueError 拒绝不当空账（must-stay-green 回归守卫半，K0 现状即绿、变异点在案）。回引 D-03、S-F6.2-AC1、S-F6.2-AC2（均数据半：账本面派生语义，AC2 为分录单行口径的派生面）、K1L-E1",
     "K1L-A3: 删除重算与负余额（OQ-1）——删 +50 → 余额 −40、兑换分录 balance_before/after 全量重算 0→−40、其余分录保留不清零、重复/不存在 id 幂等 no-op（deleted=False、revision 不变）、空/None/数字 id ValueError 拒绝；负余额帧过 display floor（钳位禁令）。回引 S-F6.2-AC4、OQ-1、契约 §四 kidpal_points_delete、S-F6.1-AC5",
     "K1L-A4: 兑换资格与真实兑现——空账/金额不匹配/余额不足拒且零落账；63−40=23 真跑；激活目标切礼物 50 后兑 40 拒、兑 50 成（资格门动态跟随激活目标，非 DEFAULT_TARGET 常量）。回引 S-F6.3-AC3/AC4、OQ-1、K1L-E1",
     "K1L-A5: 传输幂等（command_id）——add/redeem 新增 keyword-only `command_id=None`；同 id 重放（含跨调用模拟重启）返首次分录 id、零新增分录、revision 不变；执行器 API 签名无 balance/revision/delta/entry_id/cursor/target_id 写入入口。回引 arch §6.5-1、D-10、K1L-E2",
@@ -58,9 +60,7 @@
     "K1L-A7: keyset 分页 producer——20 条（>story 16 窗口）默认 limit=6 分 6/6/6/2 页全量无重无漏；插入/删除致 revision 变化续页重置回最新首页（reset=True 含最新分录）、revision 一致续页不重置且不与首页重叠；非法游标回首页；空账 items=[]/total=0；API 签名禁 offset。回引 D-08、S-F6.2-AC1、契约 §四 kidpal_points_page、K1L-E3",
     "K1L-A8: 目标配置存储——四预置逐项值（巧克力20/看电影30/游乐场40默认/礼物50）+ 出厂激活游乐场 40；自定义 5/200 收、4/201/0/−5/True/2.5/字符串/空名拒且零落账；asset=sc-flag、id 执行器生成；切目标 revision+1、零分录、余额不动、历史兑换名目快照逐字段不改写；预置四 id 全部拒删；激活中自定义拒删、切换后删成功；build_points_home target 跟随激活目标。回引 S-F6.5-AC1/AC2/AC4、OQ-2/OQ-3、K1L-E4",
     "K1L-A9: GAP-1 producer 侧（front 观察缝）——新缝 `_observe_points_revision(websocket)->bool`：新连接只建基线零帧；QQ 外部写入（同一执行器路径）致 revision 变化后恰一帧 points_home restore=True 权威 revision/balance；删除后 home+ledger 首页（restore=True、page.reset=True、无 target 键、items=[]）；无变化零帧；state 损坏不抛不推不改文件；恢复后按当前权威状态推送无陈旧补写。回引 GAP-1（K0 §六.1）、arch §5.1.2 front 行/§5.2 场景⑥B、S-F6.4-AC5 数据半、K1L-E5",
-    "K1L-A10: 失败路径与离线边界——执行器硬失败注入→front 不推任何 points_home、磁盘零写入；恢复后仅真实一笔（无离线写队列幽灵）；state 损坏时消费缝不推帧（must-stay-green 回归守卫半）。回引 NFR-OFF-1、D-06、S-F6.3-AC6/S-F6.2-AC5 数据半、K1L-E5",
-    "K1L-L1 (live-manual): GAP-1 活性接线真机复核——真实 QQ 链落账后设备在他页不抢前台（缓存静默更新）、积分页在屏原地刷新（K0 第二笔 canary 顺延项的 K1 侧兑现；设备行为面归 K2 复证）。载体=device-round-evidence.md",
-    "K1L-L2 (live-manual): 真实消费端分页复核——K0 通路消费端取页对账与权威状态一致性（K1L-E3 真实消费端半）。载体=device-round-evidence.md"
+    "K1L-A10: 失败路径与离线边界——执行器硬失败注入→front 不推任何 points_home、磁盘零写入；恢复后仅真实一笔（无离线写队列幽灵）；state 损坏时消费缝不推帧（must-stay-green 回归守卫半）。回引 NFR-OFF-1、D-06、S-F6.3-AC6、S-F6.2-AC5（均数据半：AC5 为断网删除可见失败提示的云端数据面，显示面归 K2）、K1L-E5"
   ],
   "acceptanceTestsFile": [
     "server/acceptance/test_points_ledger_core.acceptance.py"
@@ -109,70 +109,70 @@
   "mutationEvidence": {
     "perAcceptance": [
       {
-        "acceptance": "K1L-A1: 单 writer 串行与原子写——8 线程 + 10 子进程并发写入零丢账（revision/分录数/前后余额链逐条核）、state 同目录 `.lock` 文件锁在位（跨进程互斥机制锚）、tmp+os.replace 原子替换失败时旧状态完整无半写、恢复后无幽灵补写。回引 D-10、arch §5.1.2/§5.3.2/§6.5、K1L-E1。设计态红 = delete_entry/command_id/目标配置/.lock/观察缝等冻结 seam 缺席 + 跨进程竞态丢账（草案，builder 落地后实放取证）",
+        "acceptance": "K1L-A1: 单 writer 串行与原子写——8 线程 + 10 子进程并发写入零丢账（revision/分录数/前后余额链逐条核）、state 同目录 `.lock` 文件锁在位（跨进程互斥机制锚）、tmp+os.replace 原子替换失败时旧状态完整无半写、恢复后无幽灵补写。回引 D-10、arch §5.1.2/§5.3.2/§6.5、K1L-E1。设计态红 = delete_entry/command_id/目标配置/.lock/观察缝等冻结 seam 缺席 + 跨进程竞态丢账（变异实放见 mutation 字段）",
         "turnedRed": true,
         "sensitive": true,
         "mutation": "实放（2026-11-05 builder，字节级 sha256 还原校验 = True）：去跨进程 `.lock`（仅 threading）→ RED「state 同目录无 .lock —— 进程间锁文件未落」",
         "affectedTest": "K1l*Acceptance::test_k1l_a1…"
       },
       {
-        "acceptance": "K1L-A2: 余额与逐条前后余额全部由剩余分录派生——篡改磁盘 balance 副本仍按分录重算、entries 强制时间倒序、负和不钳位（−35 如实派生）、坏分录 ValueError 拒绝不当空账（must-stay-green 回归守卫半，K0 现状即绿、变异点在案）。回引 D-03、S-F6.2-AC1/AC2 数据半、K1L-E1（草案，builder 落地后实放取证）",
+        "acceptance": "K1L-A2: 余额与逐条前后余额全部由剩余分录派生——篡改磁盘 balance 副本仍按分录重算、entries 强制时间倒序、负和不钳位（−35 如实派生）、坏分录 ValueError 拒绝不当空账（must-stay-green 回归守卫半，K0 现状即绿、变异点在案）。回引 D-03、S-F6.2-AC1、S-F6.2-AC2（均数据半：账本面派生语义，AC2 为分录单行口径的派生面）、K1L-E1（变异实放见 mutation 字段）",
         "turnedRed": true,
         "sensitive": true,
         "mutation": "实放（2026-11-05 builder，字节级 sha256 还原校验 = True）：read_state 改信磁盘 balance 副本 → RED「999 != 5 : 篡改 balance 副本后被读出」",
         "affectedTest": "K1l*Acceptance::test_k1l_a2…"
       },
       {
-        "acceptance": "K1L-A3: 删除重算与负余额（OQ-1）——删 +50 → 余额 −40、兑换分录 balance_before/after 全量重算 0→−40、其余分录保留不清零、重复/不存在 id 幂等 no-op（deleted=False、revision 不变）、空/None/数字 id ValueError 拒绝；负余额帧过 display floor（钳位禁令）。回引 S-F6.2-AC4、OQ-1、契约 §四 kidpal_points_delete、S-F6.1-AC5（草案，builder 落地后实放取证）",
+        "acceptance": "K1L-A3: 删除重算与负余额（OQ-1）——删 +50 → 余额 −40、兑换分录 balance_before/after 全量重算 0→−40、其余分录保留不清零、重复/不存在 id 幂等 no-op（deleted=False、revision 不变）、空/None/数字 id ValueError 拒绝；负余额帧过 display floor（钳位禁令）。回引 S-F6.2-AC4、OQ-1、契约 §四 kidpal_points_delete、S-F6.1-AC5（变异实放见 mutation 字段）",
         "turnedRed": true,
         "sensitive": false,
         "mutation": "实放（2026-11-05 builder，字节级 sha256 还原校验 = True）：删除不做全量重算（留 stale 链）→ RED「50 != 0 : 删除重算后兑换分录 balance_before 非 0」",
         "affectedTest": "K1l*Acceptance::test_k1l_a3…"
       },
       {
-        "acceptance": "K1L-A4: 兑换资格与真实兑现——空账/金额不匹配/余额不足拒且零落账；63−40=23 真跑；激活目标切礼物 50 后兑 40 拒、兑 50 成（资格门动态跟随激活目标，非 DEFAULT_TARGET 常量）。回引 S-F6.3-AC3/AC4、OQ-1、K1L-E1（草案，builder 落地后实放取证）",
+        "acceptance": "K1L-A4: 兑换资格与真实兑现——空账/金额不匹配/余额不足拒且零落账；63−40=23 真跑；激活目标切礼物 50 后兑 40 拒、兑 50 成（资格门动态跟随激活目标，非 DEFAULT_TARGET 常量）。回引 S-F6.3-AC3/AC4、OQ-1、K1L-E1（变异实放见 mutation 字段）",
         "turnedRed": true,
         "sensitive": false,
         "mutation": "实放（2026-11-05 builder，字节级 sha256 还原校验 = True）：资格门硬绑 DEFAULT_TARGET（不跟随激活目标）→ RED「ValueError not raised : 激活目标切 50 后兑 40 未拒绝」",
         "affectedTest": "K1l*Acceptance::test_k1l_a4…"
       },
       {
-        "acceptance": "K1L-A5: 传输幂等（command_id）——add/redeem 新增 keyword-only `command_id=None`；同 id 重放（含跨调用模拟重启）返首次分录 id、零新增分录、revision 不变；执行器 API 签名无 balance/revision/delta/entry_id/cursor/target_id 写入入口。回引 arch §6.5-1、D-10、K1L-E2（草案，builder 落地后实放取证）",
+        "acceptance": "K1L-A5: 传输幂等（command_id）——add/redeem 新增 keyword-only `command_id=None`；同 id 重放（含跨调用模拟重启）返首次分录 id、零新增分录、revision 不变；执行器 API 签名无 balance/revision/delta/entry_id/cursor/target_id 写入入口。回引 arch §6.5-1、D-10、K1L-E2（变异实放见 mutation 字段）",
         "turnedRed": true,
         "sensitive": false,
         "mutation": "实放（2026-11-05 builder，字节级 sha256 还原校验 = True）：不持久化回执 → RED「None != 'pt_...' : 同 command_id 重放未返首次结果」",
         "affectedTest": "K1l*Acceptance::test_k1l_a5…"
       },
       {
-        "acceptance": "K1L-A6: 短窗语义去重（注入时钟）——DEDUP_WINDOW_SECONDS==600；599s 同正负分值+保守归一化事由去重（返 duplicate 回执+当前权威余额）/601s 合法新命令；归一化=去空白/标点+全半角统一、不改时间前缀；不同事由或分值合法；已删除分录不参与匹配；传输幂等检查先于语义去重；兑换侧同规则。回引 D-04、S-F6.3-AC5、arch §6.5-2、K1L-E2（草案，builder 落地后实放取证）",
+        "acceptance": "K1L-A6: 短窗语义去重（注入时钟）——DEDUP_WINDOW_SECONDS==600；599s 同正负分值+保守归一化事由去重（返 duplicate 回执+当前权威余额）/601s 合法新命令；归一化=去空白/标点+全半角统一、不改时间前缀；不同事由或分值合法；已删除分录不参与匹配；传输幂等检查先于语义去重；兑换侧同规则。回引 D-04、S-F6.3-AC5、arch §6.5-2、K1L-E2（变异实放见 mutation 字段）",
         "turnedRed": true,
         "sensitive": true,
         "mutation": "实放（2026-11-05 builder，字节级 sha256 还原校验 = True）：去掉保守归一化（改精确匹配）→ RED「窗口内重复表达未返去重回执」",
         "affectedTest": "K1l*Acceptance::test_k1l_a6…"
       },
       {
-        "acceptance": "K1L-A7: keyset 分页 producer——20 条（>story 16 窗口）默认 limit=6 分 6/6/6/2 页全量无重无漏；插入/删除致 revision 变化续页重置回最新首页（reset=True 含最新分录）、revision 一致续页不重置且不与首页重叠；非法游标回首页；空账 items=[]/total=0；API 签名禁 offset。回引 D-08、S-F6.2-AC1、契约 §四 kidpal_points_page、K1L-E3（草案，builder 落地后实放取证）",
+        "acceptance": "K1L-A7: keyset 分页 producer——20 条（>story 16 窗口）默认 limit=6 分 6/6/6/2 页全量无重无漏；插入/删除致 revision 变化续页重置回最新首页（reset=True 含最新分录）、revision 一致续页不重置且不与首页重叠；非法游标回首页；空账 items=[]/total=0；API 签名禁 offset。回引 D-08、S-F6.2-AC1、契约 §四 kidpal_points_page、K1L-E3（变异实放见 mutation 字段）",
         "turnedRed": true,
         "sensitive": false,
         "mutation": "实放（2026-11-05 builder，字节级 sha256 还原校验 = True）：revision 不符时不重置 → RED「插入致 revision 变化后续页未重置」",
         "affectedTest": "K1l*Acceptance::test_k1l_a7…"
       },
       {
-        "acceptance": "K1L-A8: 目标配置存储——四预置逐项值（巧克力20/看电影30/游乐场40默认/礼物50）+ 出厂激活游乐场 40；自定义 5/200 收、4/201/0/−5/True/2.5/字符串/空名拒且零落账；asset=sc-flag、id 执行器生成；切目标 revision+1、零分录、余额不动、历史兑换名目快照逐字段不改写；预置四 id 全部拒删；激活中自定义拒删、切换后删成功；build_points_home target 跟随激活目标。回引 S-F6.5-AC1/AC2/AC4、OQ-2/OQ-3、K1L-E4（草案，builder 落地后实放取证）",
+        "acceptance": "K1L-A8: 目标配置存储——四预置逐项值（巧克力20/看电影30/游乐场40默认/礼物50）+ 出厂激活游乐场 40；自定义 5/200 收、4/201/0/−5/True/2.5/字符串/空名拒且零落账；asset=sc-flag、id 执行器生成；切目标 revision+1、零分录、余额不动、历史兑换名目快照逐字段不改写；预置四 id 全部拒删；激活中自定义拒删、切换后删成功；build_points_home target 跟随激活目标。回引 S-F6.5-AC1/AC2/AC4、OQ-2/OQ-3、K1L-E4（变异实放见 mutation 字段）",
         "turnedRed": true,
         "sensitive": true,
         "mutation": "实放（2026-11-05 builder，字节级 sha256 还原校验 = True）：激活禁删失效 → RED「ValueError not raised : 激活中自定义目标被直接删除」；边界收紧 6–199 → RED「points must be within 6-199, got 5」（预置不可删守卫为行为等价冗余——预置不在 custom_targets，删守卫走未知 id 拒绝，改取有判别力两变异）",
         "affectedTest": "K1l*Acceptance::test_k1l_a8…"
       },
       {
-        "acceptance": "K1L-A9: GAP-1 producer 侧（front 观察缝）——新缝 `_observe_points_revision(websocket)->bool`：新连接只建基线零帧；QQ 外部写入（同一执行器路径）致 revision 变化后恰一帧 points_home restore=True 权威 revision/balance；删除后 home+ledger 首页（restore=True、page.reset=True、无 target 键、items=[]）；无变化零帧；state 损坏不抛不推不改文件；恢复后按当前权威状态推送无陈旧补写。回引 GAP-1（K0 §六.1）、arch §5.1.2 front 行/§5.2 场景⑥B、S-F6.4-AC5 数据半、K1L-E5（草案，builder 落地后实放取证）",
+        "acceptance": "K1L-A9: GAP-1 producer 侧（front 观察缝）——新缝 `_observe_points_revision(websocket)->bool`：新连接只建基线零帧；QQ 外部写入（同一执行器路径）致 revision 变化后恰一帧 points_home restore=True 权威 revision/balance；删除后 home+ledger 首页（restore=True、page.reset=True、无 target 键、items=[]）；无变化零帧；state 损坏不抛不推不改文件；恢复后按当前权威状态推送无陈旧补写。回引 GAP-1（K0 §六.1）、arch §5.1.2 front 行/§5.2 场景⑥B、S-F6.4-AC5 数据半、K1L-E5（变异实放见 mutation 字段）",
         "turnedRed": true,
         "sensitive": true,
         "mutation": "实放（2026-11-05 builder，字节级 sha256 还原校验 = True）：去 restore=True → RED「None is not True : QQ 写入推送 restore 非 True」；删除不另推 ledger 首页 → RED「0 != 1 : 删除后 points_ledger 首页推送 0 帧」",
         "affectedTest": "K1l*Acceptance::test_k1l_a9…"
       },
       {
-        "acceptance": "K1L-A10: 失败路径与离线边界——执行器硬失败注入→front 不推任何 points_home、磁盘零写入；恢复后仅真实一笔（无离线写队列幽灵）；state 损坏时消费缝不推帧（must-stay-green 回归守卫半）。回引 NFR-OFF-1、D-06、S-F6.3-AC6/S-F6.2-AC5 数据半、K1L-E5（草案，builder 落地后实放取证）",
+        "acceptance": "K1L-A10: 失败路径与离线边界——执行器硬失败注入→front 不推任何 points_home、磁盘零写入；恢复后仅真实一笔（无离线写队列幽灵）；state 损坏时消费缝不推帧（must-stay-green 回归守卫半）。回引 NFR-OFF-1、D-06、S-F6.3-AC6、S-F6.2-AC5（均数据半：AC5 为断网删除可见失败提示的云端数据面，显示面归 K2）、K1L-E5（变异实放见 mutation 字段）",
         "turnedRed": true,
         "sensitive": true,
         "mutation": "实放（2026-11-05 builder，字节级 sha256 还原校验 = True）：失败路径落本地暂存/补写 → RED「True is not false : 执行器失败路径在磁盘留下 state 文件」",
