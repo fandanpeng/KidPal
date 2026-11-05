@@ -81,7 +81,6 @@ kidpal_points_ledger_view_t g_points_ledger_view = {};
  *   g_points_cursor = 详细账本当前页内选中行（0-based）；
  *   g_points_pending_delete_id / tries / sent_ms = 删除上行隐式 ack 重发记账。 */
 kidpal_points_ledger_state_t g_points_ledger_state = {};
-bool g_points_home_received = false;
 int g_points_cursor = 0;
 unsigned long g_points_delete_idle_ms = 0;
 char g_points_pending_delete_id[KPTS_ENTRY_ID_CAP] = {0};
@@ -2175,7 +2174,6 @@ void McpServer::AddCommonTools() {
                         break;
                     }
                     g_points_home = *p_home;
-                    g_points_home_received = true;
                     /* K2PTS-P1/P2: 四态判定 + 进度线画法数据面（消费接线）。
                      * NODATA 判据落「有无权威帧」——本处已收到，frame 非 NULL；
                      * 未收到时由渲染面 KP_POINTS_NODATA_HINT 占位（零数字）。 */
