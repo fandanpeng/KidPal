@@ -127,7 +127,9 @@
  *             本文件尾「KD-A6 终跑判读」段）
  *   coverage: KD-E1 范围纪律 -> test 4 tooth 2（2026-09-18 留痕修订：原「PAGE_P4 页枚举
  *             零触碰守卫——页循环 4->3 / 撤 P4 归 M2」随 260917-m2-k2-retract-p4-three-
- *             page 落地翻正为「PAGE_P4 已撤 + PAGE_COUNT == 3」同源判别）+ test 4
+ *             page 落地翻正为「PAGE_P4 已撤 + PAGE_COUNT == 3」同源判别；2026-11-04
+ *             随 261104-k0a-four-page-skeleton D-01 四页批准再翻正为「PAGE_P4 复活 +
+ *             PAGE_COUNT == 4」）+ test 4
  *             tooth 3（BOOT 长按故事翻屏接缝零触碰——
  *             P3 键位族 v1.47 归 M4 的在世证据之一）
  *   coverage: KD-E2 需求面零修订 -> test 5 tooth 3（requirements/契约 canary）
@@ -836,19 +838,24 @@ TEST_CASE("键位分层派发: 零回归守卫——HOME映射+P4页枚举+BOOT�
         "KLD-A3 RED(guard): 板级 GLOBAL_ACT_HOME -> show_home 映射丢失——主页面 KEY "
         "长按回首页路径被 layer-aware 改造误伤");
 
-    /* tooth 2 (KD-E1 guard, 2026-09-18 留痕修订随 M2-K2 撤 P4 语义翻正):
-     * 原齿（2026-09-15 冻结）正向断言 key_gesture_parser.h 含 PAGE_P4/PAGE_COUNT，其
-     * 自注「页循环 4->3 / 撤 P4 归 M2」= 260917-m2-k2-retract-p4-three-page，本包落地
-     * 后「零触碰」前提解除 -> 守卫翻正为钉「第 4 页位已撤」的正向事实（复活即红）。
-     * PAGE_COUNT == 3 的字面真值单点钉在 retract_p4_three_page.acceptance.c test 3，
-     * 本齿以同源判别复对账（不另立第二字面源）。 */
+    /* tooth 2 (KD-E1 guard, 2026-11-04 留痕修订随 261104-k0a-four-page-skeleton
+     * 四页重锚语义再翻正): 前次 2026-09-18 修订钉「PAGE_P4 已撤 + PAGE_COUNT == 3」；
+     * D-01 四页批准（PROPOSAL §3.1-D-01 + requirements v1.71 §2.4 四页循环）后前提
+     * 再度解除 -> 守卫翻正为钉「PAGE_P4 复活在世 + PAGE_COUNT == 4 + 第 4 页位为
+     * 尾页」的正向事实。PAGE_COUNT == 4 的字面真值单点钉在 retract_p4_three_page.
+     * acceptance.c test 3（2026-11-04 重锚后），本齿以同源判别复对账（不另立第二
+     * 字面源）; PAGE_P4 符号以 #ifndef 编译兜底消费（KIDPAL_LAYER_CHAR_WINDOW
+     * 先例, 落地值 = 3 与 retract test 3 字面钉点联动）。 */
+#ifndef PAGE_P4
+#define PAGE_P4 3 /* D-01 四页编译兜底（KLD 局部, 落地值 = retract test 3 字面联动） */
+#endif
     TEST_ASSERT_TRUE_MESSAGE(
-        kld_count_in_file("firmware/main/key_gesture_parser.h", "PAGE_P4") == 0 &&
-            (int)PAGE_COUNT == 3 && (int)PAGE_P3 == (int)PAGE_COUNT - 1,
-        kld_fm("KD-E1 RED: key_gesture_parser.h 页枚举不再等于三页集（PAGE_COUNT=%d, "
-               "PAGE_P3=%d, 头内 PAGE_P4 字面 %d 处）——M2-K2 已撤的 P4 页位被复活 / "
-               "页循环被改回 4 页（requirements §2.4 3 页循环 + 行 186）",
-               (int)PAGE_COUNT, (int)PAGE_P3,
+        kld_count_in_file("firmware/main/key_gesture_parser.h", "PAGE_P4") >= 1 &&
+            (int)PAGE_COUNT == 4 && (int)PAGE_P4 == (int)PAGE_COUNT - 1,
+        kld_fm("KD-E1 RED: key_gesture_parser.h 页枚举不再等于四页集（PAGE_COUNT=%d, "
+               "PAGE_P4=%d, 头内 PAGE_P4 字面 %d 处）——D-01 已批的四页页位未落 / "
+               "页循环被改回三页（requirements §2.4 四页循环 + §2.2 中 4 页点）",
+               (int)PAGE_COUNT, (int)PAGE_P4,
                kld_count_in_file("firmware/main/key_gesture_parser.h", "PAGE_P4")));
 
     /* tooth 3 (KD-E1 guard): BOOT 长按故事翻屏接缝在世（P3 页内特例; v1.47 P3 键位族
@@ -1004,4 +1011,20 @@ TEST_CASE("键位分层派发: 注册序守卫+需求契约canary+扫描器自�
  *               TaskPackage 明示的 A1/A2 冻结面。红态后果：三条新齿对未落查字窗列现状
  *               为设计态红（KEY 单击落 SESSION_TOGGLE），builder 落 M2-K3 实现后转绿；
  *               本文件其余全部齿（test 1 既有各行 / test 2/3/4/5）零改动、零新增红。
+ *   2026-11-04  KD-E1 四页重锚再翻正（acceptance-author 留痕修订，授权通道 =
+ *               TaskPackage 261104-k0a-four-page-skeleton impactedTestsSeed
+ *               frozen-rebaseline「KD-E1 钉 PAGE_COUNT==3；仅更新页集重锚，不改变
+ *               全局覆盖层 KEY 短按语义」+ decisionCoverage D-01〔PROPOSAL §3.1-D-01
+ *               四页批准, requirements v1.71 §2.4 已随批落〕）。改了什么：test 4
+ *               tooth 2 原钉「PAGE_P4 头内零残留 + PAGE_COUNT == 3 + PAGE_P3 ==
+ *               PAGE_COUNT-1」（2026-09-18 撤页语义），D-01 四页批准后前提解除 ->
+ *               翻正为「PAGE_P4 头内在世 >= 1 + PAGE_COUNT == 4 + PAGE_P4 ==
+ *               PAGE_COUNT-1」三条同源判别；PAGE_P4 以 #ifndef 编译兜底消费（落地
+ *               值 3, retract test 3 字面 4 单点联动）。为何属留痕通道而非绕闸：只随
+ *               已冻结的需求事实改守卫指向, 未放宽本包任何语义断言——test 1 全部
+ *               （覆盖层列/基层列/查字窗列）、test 2/3/5、test 4 tooth 1（HOME 映射）
+ *               与 tooth 3（BOOT 长按故事接缝）零改动 = 「只改页集、全局覆盖层 KEY
+ *               短按语义不动」的授权边界逐字保持。红态后果：本齿对三页现状
+ *               （PAGE_COUNT=3、头内零 PAGE_P4）为设计态红, builder 落 K0a 四页
+ *               实现后转绿；本文件其余全部齿现状绿（must-stay）。
  * --------------------------------------------------------------------------- */

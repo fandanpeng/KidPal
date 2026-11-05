@@ -23,34 +23,44 @@
  * 已入 runner 的纯逻辑实现; 「home =」为冻结落点）:
  *
  *   [1] key 路由页枚举（home = firmware/main/key_gesture_parser.h）:
- *       typedef enum { PAGE_P1 = 0, PAGE_P2, PAGE_P3, PAGE_COUNT } page_id_t;
- *         -- PAGE_P4 **整值撤出**（不留占位、不复用编号），PAGE_COUNT = 3。
+ *       typedef enum { PAGE_P1 = 0, PAGE_P2, PAGE_P3, PAGE_P4, PAGE_COUNT } page_id_t;
+ *         -- 【2026-11-04 重锚（TaskPackage 261104-k0a-four-page-skeleton; D-01 四页
+ *            批准）】PAGE_P4 **复活**（原撤值断言翻正为正向在世锚; 不复用旧查字页
+ *            语义——新 P4 = 故事列表页原地迁移），PAGE_COUNT = 4（字面 4 的唯一
+ *            钉点保持在本文件 test 3）。下方 2026-09-18 冻结相位的「整值撤出」历史
+ *            表述不改写（append-only），现役语义以本重锚注记为准。
  *       page_id_t key_page_next(page_id_t pg);
- *         -- 步进 = (pg + 1) % PAGE_COUNT（基数同源，撤页后自动塌成 mod 3）；
+ *         -- 步进 = (pg + 1) % PAGE_COUNT（基数同源，四页自动 mod 4）；
  *            非法页（pg >= PAGE_COUNT，含负值/越界 id）回 PAGE_P1（防御语义零改动）。
  *
  *   [2] 渲染节点页枚举（home = firmware/main/display/kidpal_render_node.h）:
- *       与 [1] 逐项同序、同值：KP_PAGE_HOME = 0 / KP_PAGE_SCHEDULE = 1 /
- *       KP_PAGE_STORY = 2 / KP_PAGE_COUNT = 3；**KP_PAGE_CHAR 整值撤出**（CHAR 退出
- *       本地浏览页循环；查字的前台归属由 M2-K3 改窗决定，本包不钉其枚举最终形态，
- *       只钉「不再是循环停靠页」——见 [3]）。
+ *       【2026-11-04 重锚】与 [1] 逐项同序、同值：KP_PAGE_HOME = 0 /
+ *       KP_PAGE_SCHEDULE = 1 / KP_PAGE_POINTS_HOME = 2 / KP_PAGE_STORY = 3 /
+ *       KP_PAGE_COUNT = 4（P3 = 积分主页新入列、P4 = 故事列表原地迁移; 数值语义
+ *       由 four_page_skeleton.acceptance.c K0A-A5/A6 消费）。**KP_PAGE_CHAR 整值
+ *       撤出保持**（CHAR 退出本地浏览页循环; 查字的前台归属归 M2-K3 改窗）。
  *       两枚举数值逐项相等 => lcd_display.cc 的 KP_PAGE_* -> PAGE_Pn 索引映射
- *       塌成恒等（HOME→P1 / SCHEDULE→P2 / STORY→P3）；映射的**实现形状不钉**（switch
- *       保留或化简为直传皆可），本齿以枚举数值等式钉语义（shape-independent）。
+ *       塌成恒等（HOME→P1 / SCHEDULE→P2 / POINTS_HOME→P3 / STORY→P4）；映射的
+ *       **实现形状不钉**（switch 保留或化简为直传皆可），本齿以枚举数值等式钉语义
+ *       （shape-independent）。
  *
  *   [3] 翻页循环与页面渲染权威（home = firmware/main/display/kidpal_render_node.cc）:
  *       kidpal_render_node_cycle_next() 步进基数仍写 `KP_PAGE_COUNT`（同源，不写死
  *       数字），函数区内不再出现 KP_PAGE_CHAR 字面（不得靠「先跳 CHAR 再 +1」之类
  *       旁路把撤掉的页位塞回循环）。
  *       rn_render_kidpal_page_locked()（cycle_next 与 dismiss_front_overlay 共用的
- *       单一页面渲染权威）内 **零 KP_PAGE_CHAR** —— CHAR 不再是可停靠页；P1/P2/P3
- *       三条 case 全在世（撤 CHAR 不得连带拆掉三页渲染）。
+ *       单一页面渲染权威）内 **零 KP_PAGE_CHAR** —— CHAR 不再是可停靠页；P1/P2/
+ *       P3 积分/P4 故事四条 case 全在世（四页化不得连带拆掉既有页渲染; P3 积分
+ *       占位的口径齿 = four_page_skeleton.acceptance.c K0A-A4）。
  *
  *   [4] 键帽条纯逻辑单源（home = firmware/main/display/keybar.c）:
- *       页点总数同源 = PAGE_COUNT（[1] 撤页后自动 4→3，本模块零新数字面）；
- *       页槽表的 `case PAGE_P4:` 兜底分支随枚举撤出而消解（M1-K2 KB-E1 deviation
- *       的对账收回点）；page >= PAGE_COUNT（含原 P4 索引 3）由防御列一律返回 -1，
- *       kidpal_keybar_slots 不再为第 4 页槽位提供存在性兜底。
+ *       页点总数同源 = PAGE_COUNT（【2026-11-04 重锚】四页 = 4 点, 本模块零新数字
+ *       面）；页槽表四行（P3 = 积分「问一问/下一页」、P4 = 故事「说话·双击看/下移」
+ *       ——值域字面住 keybar_three_slot.acceptance.c KKB-A3 重锚齿）; page >=
+ *       PAGE_COUNT（四页态下 = 索引 4）由防御列一律返回 -1。
+ *       【2026-09-18 冻结相位历史表述保留】撤页时 `case PAGE_P4:` 兜底分支曾随
+ *       枚举撤出消解; 2026-11-04 D-01 四页批准后页槽表第 4 行以新页语义（故事列表
+ *       原地迁移）回世——keybar.c PAGE_P4 字面由「零残留」翻正为「case PAGE_P4: 在世」。
  *
  *   [5] 查字数据通路保留面（M2K2-E3 越包红线的对偶，本包零触碰）:
  *       firmware/main/mcp_server.cc 的 `case 3:` 路由块（块注释自标 VRT_ROUTE_CHAR）
@@ -162,6 +172,26 @@
 #define RTP_CMAKELISTS    "firmware/main/test/host_app/main/CMakeLists.txt"
 #define RTP_REQUIREMENTS  "docs/requirements.md"
 #define RTP_CONTRACT      "docs/contracts/interface-contract.md"
+
+/* -------------------------------------------------------------------------- *
+ * D-01 四页重锚编译兜底（2026-11-04, TaskPackage 261104-k0a-four-page-skeleton）:
+ * PAGE_P4 / KP_PAGE_POINTS_HOME 枚举成员在 builder 落地四页枚举前不存在（C 类冻结
+ * 验收实编纪律 = 本文件冻结相位必须可编译），按 key_layer_dispatch 的
+ * KIDPAL_LAYER_CHAR_WINDOW #ifndef fallback 先例给编译兜底——落地值 = 3 / 2, 与
+ * four_page_skeleton.acceptance.c 的 K0A_* 数值镜像同值；落地后枚举成员与宏同名
+ * 同值（C 枚举成员非预处理宏, #ifndef 恒触发、宏展开值 == 枚举值, 语义一致）。
+ * 枚举漂移时 PAGE_COUNT-1 / KP_PAGE_STORY 等同源齿先红（本文件 test 3 字面 4
+ * 单点钉死）。
+ * （留痕统一注记：本块前身为同批早稿的 RTP_PAGE_P4 / RTP_KP_PAGE_POINTS_HOME
+ * 镜像宏, 随重锚齿改用裸符号 + fallback 形态翻正, 镜像名退役——同值同语义,
+ * 防两套镜像并存漂移。）
+ * ------------------------------------------------------------------------ */
+#ifndef PAGE_P4
+#define PAGE_P4 3 /* PAGE_P4 落地值兜底（= PAGE_COUNT-1, 四页态） */
+#endif
+#ifndef KP_PAGE_POINTS_HOME
+#define KP_PAGE_POINTS_HOME 2 /* KP_PAGE_POINTS_HOME 落地值兜底（P3 积分主页） */
+#endif
 
 /* -------------------------------------------------------------------------- *
  * Repo-tree scanning helpers（host 侧结构齿，key_layer_dispatch / keybar_three_slot
@@ -473,45 +503,53 @@ static const char *rtp_fm(const char *fmt, ...)
 }
 
 /* -------------------------------------------------------------------------- *
- * TEST 1 — M2K2-A1 行为半：key_page_next 三页回绕（behavioral，真实现源
- * key_gesture_parser.cc 已在 host runner 在册；现状 4 页基数 -> P3 落在第 4 页必红）。
+ * TEST 1 — M2K2-A1 行为半：key_page_next 回绕（behavioral，真实现源
+ * key_gesture_parser.cc 已在 host runner 在册；【2026-11-04 重锚】三页环 → 四页环,
+ * 逐齿见下; 现状三页实现为设计态红）。
  * ------------------------------------------------------------------------ */
-/* coverage: M2K2-A1 -- 三页循环行为半：P1→P2→P3→P1 回绕（spec §2.4 3 页循环图逐边）+ 三步环 + 非法页/越界一律回 P1 */
-TEST_CASE("撤 P4 三页循环: key_page_next 三页回绕——P3 回 P1 + 非法页防御 (M2K2-A1)",
+/* coverage: M2K2-A1 -- 页循环行为半（2026-11-04 重锚为四页）：P1→P2→P3→P4→P1 回绕（spec §2.4 四页循环图逐边）+ 四步环 + 非法页/越界一律回 P1 */
+TEST_CASE("撤 P4 四页重锚: key_page_next 四页回绕——P4 回 P1 + 非法页防御 (M2K2-A1)",
           "[retract_p4_three_page][M2K2-A1][behavior]")
 {
     int p, i;
 
-    /* tooth 1/2 (must-stay green): 前两跳 = spec P1→P2→P3，撤页零回归。 */
+    /* tooth 1/2 (must-stay green): 前两跳 = spec P1→P2→P3，页集扩到四页零回归。 */
     TEST_ASSERT_TRUE_MESSAGE((int)key_page_next(PAGE_P1) == (int)PAGE_P2,
         rtp_fm("M2K2-A1 RED(guard): key_page_next(P1) = %d 期望 PAGE_P2(1)——首页→课表"
                "第一跳被本包误伤（requirements §2.4 页序）",
                (int)key_page_next(PAGE_P1)));
     TEST_ASSERT_TRUE_MESSAGE((int)key_page_next(PAGE_P2) == (int)PAGE_P3,
-        rtp_fm("M2K2-A1 RED(guard): key_page_next(P2) = %d 期望 PAGE_P3(2)——课表→记录"
-               "第二跳被本包误伤（requirements §2.4 页序）",
+        rtp_fm("M2K2-A1 RED(guard): key_page_next(P2) = %d 期望 PAGE_P3(2)——课表→"
+               "积分第二跳被本包误伤（requirements §2.4 四页序）",
                (int)key_page_next(PAGE_P2)));
 
-    /* tooth 3: 第三跳必须回绕到 P1 —— 本包核心行为齿。现状 PAGE_COUNT = 4，
-     * P3 的下一跳落在第 4 页停靠位（查字页），页循环仍 4 页 = 真实缺失行为。 */
-    TEST_ASSERT_TRUE_MESSAGE((int)key_page_next(PAGE_P3) == (int)PAGE_P1,
-        rtp_fm("M2K2-A1 RED: key_page_next(P3) = %d 期望回绕 PAGE_P1(0)——页循环仍含"
-               "第 4 页停靠位（撤 P4 / 页循环 4→3 未落地; requirements §2.4「BOOT 单击 "
-               "→ 切下一页（3 页循环）」+ 行 186「P4 查字页已撤销」）",
+    /* tooth 3 (本包红齿, 2026-11-04 重锚): 第三跳 = P3 积分 → P4 故事（新第 4 页
+     * 停靠位入循环）。现状三页实现 P3 直回 P1 = 真实缺失行为。 */
+    TEST_ASSERT_TRUE_MESSAGE((int)key_page_next(PAGE_P3) == (int)PAGE_P4,
+        rtp_fm("M2K2-A1 RED: key_page_next(P3) = %d 期望 PAGE_P4(3)——P3 积分主页的"
+               "下一跳未落第 4 页停靠位（D-01 四页骨架未落地; requirements §2.4 "
+               "「BOOT 单击 → 切下一页（4 页循环）」P3 积分→P4 故事边）",
                (int)key_page_next(PAGE_P3)));
 
-    /* tooth 4: 从首页起按三步 = 回到首页（循环停靠页恰三页，与 §2.4 图逐字对账）。 */
+    /* tooth 4 (本包红齿): 第四跳回绕 P1（四页环闭合）。 */
+    TEST_ASSERT_TRUE_MESSAGE((int)key_page_next(PAGE_P4) == (int)PAGE_P1,
+        rtp_fm("M2K2-A1 RED: key_page_next(P4) = %d 期望回绕 PAGE_P1(0)——四页环未"
+               "闭合（现状 PAGE_COUNT = %d）",
+               (int)key_page_next(PAGE_P4), (int)PAGE_COUNT));
+
+    /* tooth 5: 从首页起按四步 = 回到首页（循环停靠页恰四页，与 §2.4 四页图逐字
+     * 对账; 2026-09-18 三步环齿随重锚翻正为四步）。 */
     p = (int)PAGE_P1;
-    for (i = 0; i < 3; i++) {
+    for (i = 0; i < 4; i++) {
         p = (int)key_page_next((page_id_t)p);
     }
     TEST_ASSERT_TRUE_MESSAGE(p == (int)PAGE_P1,
-        rtp_fm("M2K2-A1 RED: 首页起连翻 3 步落在页 %d 期望回 P1(0)——三步走不完一轮循环"
-               "（现循环步数 = %d，非 3; BOOT 翻页手感 = roadmap「4 页变 3 页循环」）",
+        rtp_fm("M2K2-A1 RED: 首页起连翻 4 步落在页 %d 期望回 P1(0)——四步走不完一轮"
+               "循环（现循环步数 = %d，非 4; BOOT 翻页手感 = §2.4 四页循环）",
                p, (int)PAGE_COUNT));
 
-    /* tooth 5 (同源判别, must-stay green): PAGE_COUNT 步必回原点——基数与页数同源，
-     * 撤页后本齿自动跟随，不钉字面 3（字面 3 的唯一钉点在 test 3）。 */
+    /* tooth 6 (同源判别, must-stay green): PAGE_COUNT 步必回原点——基数与页数同源，
+     * 本齿自动跟随，不钉字面（字面 4 的唯一钉点在 test 3）。 */
     p = (int)PAGE_P1;
     for (i = 0; i < (int)PAGE_COUNT; i++) {
         p = (int)key_page_next((page_id_t)p);
@@ -521,15 +559,15 @@ TEST_CASE("撤 P4 三页循环: key_page_next 三页回绕——P3 回 P1 + 非�
                "与页数不同源（key_page_next 必须 (pg+1) %% PAGE_COUNT）",
                (int)PAGE_COUNT, p));
 
-    /* tooth 6 (错误/边界路径): 非法页一律回 P1，防御语义零改动（撤页不得把越界
-     * 变成未定义行为，也不得把 P4 旧索引当成合法页继续步进）。 */
+    /* tooth 7 (错误/边界路径): 非法页一律回 P1，防御语义零改动（四页化不得把越界
+     * 变成未定义行为，也不得把越界索引当成合法页继续步进）。 */
     TEST_ASSERT_TRUE_MESSAGE(
         (int)key_page_next((page_id_t)PAGE_COUNT) == (int)PAGE_P1 &&
         (int)key_page_next((page_id_t)(PAGE_COUNT + 1)) == (int)PAGE_P1 &&
         (int)key_page_next((page_id_t)99) == (int)PAGE_P1 &&
         (int)key_page_next((page_id_t)-1) == (int)PAGE_P1,
         rtp_fm("M2K2-A1 RED: 非法页未回 PAGE_P1（PAGE_COUNT=%d -> %d, +1 -> %d, "
-               "99 -> %d, -1 -> %d）——越界防御面被撤页改动",
+               "99 -> %d, -1 -> %d）——越界防御面被页集改动",
                (int)PAGE_COUNT, (int)key_page_next((page_id_t)PAGE_COUNT),
                (int)key_page_next((page_id_t)(PAGE_COUNT + 1)),
                (int)key_page_next((page_id_t)99),
@@ -584,76 +622,87 @@ TEST_CASE("撤 P4 三页循环: render_node 循环基数+CHAR 停靠页拆除 (M
                "requirements §2.4 行 186「P4 查字页已撤销」冲突",
                rtp_count_in_slice(render, "KP_PAGE_CHAR")));
 
-    /* tooth 4 (guard): 三页渲染 case 全在世——撤 CHAR 不得连带拆掉 P1/P2/P3 渲染
-     * （「撤一页」不是「重建渲染面」）。 */
+    /* tooth 4 (guard, 2026-11-04 重锚为四页): 四页渲染 case 全在世——四页化不得
+     * 连带拆掉既有页渲染（「扩页」不是「重建渲染面」; P3 积分占位口径齿 =
+     * four_page_skeleton K0A-A4）。 */
     TEST_ASSERT_TRUE_MESSAGE(rtp_count_in_slice(render, "case KP_PAGE_HOME") >= 1 &&
                                  rtp_count_in_slice(render, "case KP_PAGE_SCHEDULE") >= 1 &&
+                                 rtp_count_in_slice(render, "case KP_PAGE_POINTS_HOME") >= 1 &&
                                  rtp_count_in_slice(render, "case KP_PAGE_STORY") >= 1,
-        "M2K2-A1 RED(guard): 页面渲染权威区内三页 case 不全——撤 P4 连带拆掉了首页/"
-        "课表/记录的渲染分支（应是零删除的减法面）");
+        "M2K2-A1 RED(guard): 页面渲染权威区内四页 case 不全——四页化连带拆掉了首页/"
+        "课表/积分/故事的渲染分支（P3 积分 case 缺失 = BOOT 翻到 P3 落 default, "
+        "循环面缺失）");
     free(render);
 }
 
 /* -------------------------------------------------------------------------- *
  * TEST 3 — M2K2-A2 枚举对齐齿（behavioral/编译期可见 + 两 header 文本齿）
- * 两页枚举与 spec P1→P2→P3 逐项同序；字面「3」在整个冻结面上的唯一钉点在此。
- * RED today: PAGE_COUNT=4 且 KP_PAGE_* 漂移序（HOME=0/CHAR=1/SCHEDULE=2/STORY=3）。
+ * 【2026-11-04 重锚】两页枚举与 spec P1→P2→P3→P4 逐项同序; 字面「4」在整个冻结面上
+ * 的唯一钉点仍在此处（2026-09-18 冻结相位的字面 3 钉点随 D-01 四页批准翻正）。
+ * RED today: PAGE_COUNT=3 且无 KP_PAGE_POINTS_HOME/PAGE_P4。
  * ------------------------------------------------------------------------ */
-/* coverage: M2K2-A2 -- 枚举对齐齿：PAGE_P1=0/P2=1/P3=2/PAGE_COUNT=3 逐项 + KP_PAGE_HOME=0/SCHEDULE=1/STORY=2/COUNT=3 逐项 + 两枚举逐项等值（= lcd 映射塌成恒等的形状无关前提）+ 最后合法页 P3 + key_gesture_parser.h 的 PAGE_P4 撤出 / kidpal_render_node.h 枚举区 KP_PAGE_CHAR 撤出 + 页序漂移 prose 对账 */
-TEST_CASE("撤 P4 三页循环: 两页枚举对齐 spec P1→P2→P3（字面 3 单点钉死） (M2K2-A2)",
+/* coverage: M2K2-A2 -- 枚举对齐齿（2026-11-04 重锚为四页）：PAGE_P1=0/P2=1/P3=2/P4=3/PAGE_COUNT=4 逐项 + KP_PAGE_HOME=0/SCHEDULE=1/POINTS_HOME=2/STORY=3/COUNT=4 逐项 + 两枚举逐项等值（= lcd 映射塌成恒等的形状无关前提）+ 最后合法页 P4 + key_gesture_parser.h 的 PAGE_P4 复活在世 / kidpal_render_node.h 枚举区 KP_PAGE_POINTS_HOME 在世 + KP_PAGE_CHAR 撤出保持 + 页序漂移 prose 对账 */
+TEST_CASE("撤 P4 四页重锚: 两页枚举对齐 spec P1→P2→P3→P4（字面 4 单点钉死） (M2K2-A2)",
           "[retract_p4_three_page][M2K2-A2][behavior]")
 {
     char *enum_region;
 
     RTP_REQUIRE_ROOT();
 
-    /* tooth 1: 键路由页枚举 = spec 三页序。**全冻结面唯一的「3」字面钉点**——
-     * keybar_three_slot.acceptance.c KKB-E1 齿已随本包改为同源判别（total ==
-     * PAGE_COUNT），页点数量的字面真值只在本处出现一次，两处并存会互相遮蔽。 */
+    /* tooth 1: 键路由页枚举 = spec 四页序。**全冻结面唯一的「4」字面钉点**——
+     * keybar_three_slot.acceptance.c KKB-E1 齿为同源判别（total == PAGE_COUNT），
+     * 页点数量的字面真值只在本处出现一次，两处并存会互相遮蔽。 */
     TEST_ASSERT_TRUE_MESSAGE((int)PAGE_P1 == 0 && (int)PAGE_P2 == 1 &&
-                                 (int)PAGE_P3 == 2 && (int)PAGE_COUNT == 3,
+                                 (int)PAGE_P3 == 2 && (int)PAGE_P4 == 3 &&
+                                 (int)PAGE_COUNT == 4,
         rtp_fm("M2K2-A2 RED: key_gesture_parser.h 页枚举 = (P1=%d, P2=%d, P3=%d, "
-               "COUNT=%d) 期望 (0, 1, 2, 3)——页循环仍 4 页 / P4 位未撤 "
-               "(requirements §2.4 3 页循环 + §2.2「中 3 页点」)",
-               (int)PAGE_P1, (int)PAGE_P2, (int)PAGE_P3, (int)PAGE_COUNT));
+               "P4=%d, COUNT=%d) 期望 (0, 1, 2, 3, 4)——页循环仍 3 页 / P4 位未复活 "
+               "(requirements §2.4 四页循环 + §2.2「中 4 页点」; D-01)",
+               (int)PAGE_P1, (int)PAGE_P2, (int)PAGE_P3, (int)PAGE_P4,
+               (int)PAGE_COUNT));
 
-    /* tooth 2: 最后合法停靠页 = P3（不允许存在第 4 个合法页索引）。 */
-    TEST_ASSERT_TRUE_MESSAGE((int)PAGE_P3 == (int)PAGE_COUNT - 1,
-        rtp_fm("M2K2-A2 RED: PAGE_P3(%d) != PAGE_COUNT-1(%d)——枚举尾后仍有页位 "
-               "（P4 整值撤出的判别式）", (int)PAGE_P3, (int)PAGE_COUNT - 1));
+    /* tooth 2: 最后合法停靠页 = P4（不允许存在第 5 个合法页索引）。 */
+    TEST_ASSERT_TRUE_MESSAGE((int)PAGE_P4 == (int)PAGE_COUNT - 1,
+        rtp_fm("M2K2-A2 RED: PAGE_P4(%d) != PAGE_COUNT-1(%d)——枚举尾后仍有页位 "
+               "（四页闭包判别式）", (int)PAGE_P4, (int)PAGE_COUNT - 1));
 
-    /* tooth 3: 渲染节点页枚举同序（requirements §2.3 对账 ②「页序漂移……撤 P4 改
-     * 3 页时一并理顺」的正向半）。 */
-    TEST_ASSERT_TRUE_MESSAGE((int)KP_PAGE_HOME == 0 && (int)KP_PAGE_SCHEDULE == 1 &&
-                                 (int)KP_PAGE_STORY == 2 && (int)KP_PAGE_COUNT == 3,
+    /* tooth 3: 渲染节点页枚举同序（requirements §2.3 对账 ②「页序漂移」的正向半,
+     * 2026-09-18 三页理顺齿随四页批准重锚; P3 = 积分主页插入、P4 = 故事原地迁移）。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        (int)KP_PAGE_HOME == 0 && (int)KP_PAGE_SCHEDULE == 1 &&
+            (int)KP_PAGE_POINTS_HOME == 2 && (int)KP_PAGE_STORY == 3 &&
+            (int)KP_PAGE_COUNT == 4,
         rtp_fm("M2K2-A2 RED: kidpal_render_node.h 页枚举 = (HOME=%d, SCHEDULE=%d, "
-               "STORY=%d, COUNT=%d) 期望 (0, 1, 2, 3)——真机翻页序仍为"
-               "首页→查字→课表→故事（§2.3 对账 ② 页序漂移未理顺）",
-               (int)KP_PAGE_HOME, (int)KP_PAGE_SCHEDULE, (int)KP_PAGE_STORY,
-               (int)KP_PAGE_COUNT));
+               "POINTS_HOME=%d, STORY=%d, COUNT=%d) 期望 (0, 1, 2, 3, 4)——四页枚举"
+               "未落（P3 积分主页未入列 / 故事未迁 P4; §2.4 四页循环 + D-01）",
+               (int)KP_PAGE_HOME, (int)KP_PAGE_SCHEDULE, (int)KP_PAGE_POINTS_HOME,
+               (int)KP_PAGE_STORY, (int)KP_PAGE_COUNT));
 
     /* tooth 4: 两枚举逐项等值 => 设备侧 KP_PAGE_* -> PAGE_Pn 索引映射塌成恒等的
      * 语义前提（映射的实现形状不钉，见 test 3 tooth 6 的形状无关邻接齿）。 */
     TEST_ASSERT_TRUE_MESSAGE((int)KP_PAGE_HOME == (int)PAGE_P1 &&
                                  (int)KP_PAGE_SCHEDULE == (int)PAGE_P2 &&
-                                 (int)KP_PAGE_STORY == (int)PAGE_P3 &&
+                                 (int)KP_PAGE_POINTS_HOME == (int)PAGE_P3 &&
+                                 (int)KP_PAGE_STORY == (int)PAGE_P4 &&
                                  (int)KP_PAGE_COUNT == (int)PAGE_COUNT,
-        rtp_fm("M2K2-A2 RED: 两页枚举未逐项同序（KP: %d/%d/%d/%d vs PAGE: %d/%d/%d/%d"
-               "）——渲染页与键路由页仍需映射表换算，页序漂移在世（§2.3 对账 ②）",
-               (int)KP_PAGE_HOME, (int)KP_PAGE_SCHEDULE, (int)KP_PAGE_STORY,
-               (int)KP_PAGE_COUNT, (int)PAGE_P1, (int)PAGE_P2, (int)PAGE_P3,
+        rtp_fm("M2K2-A2 RED: 两页枚举未逐项同序（KP: %d/%d/%d/%d/%d vs PAGE: "
+               "%d/%d/%d/%d/%d）——渲染页与键路由页仍需映射表换算，页序漂移在世"
+               "（§2.3 对账 ②）",
+               (int)KP_PAGE_HOME, (int)KP_PAGE_SCHEDULE, (int)KP_PAGE_POINTS_HOME,
+               (int)KP_PAGE_STORY, (int)KP_PAGE_COUNT,
+               (int)PAGE_P1, (int)PAGE_P2, (int)PAGE_P3, (int)PAGE_P4,
                (int)PAGE_COUNT));
 
-    /* tooth 5 (结构半): key_gesture_parser.h 内 PAGE_P4 字面零残留（枚举撤值 + 注释
-     * 不复活该标识符；prose 里的「P1→P2→P3」不受本齿约束）。 */
-    TEST_ASSERT_TRUE_MESSAGE(rtp_count_in_file(RTP_KEY_H, "PAGE_P4") == 0,
-        rtp_fm("M2K2-A2 RED: key_gesture_parser.h 仍出现 PAGE_P4 标识符 %d 处——P4 页位"
-               "未整值撤出（不留占位、不复用编号）",
-               rtp_count_in_file(RTP_KEY_H, "PAGE_P4")));
+    /* tooth 5 (结构半, 2026-09-18 撤页齿随 D-01 翻正): key_gesture_parser.h 内
+     * PAGE_P4 字面在世（正向锚——枚举复活; 2026-09-18 的「零残留」历史表述见
+     * REVISION LOG, 不改写）。 */
+    TEST_ASSERT_TRUE_MESSAGE(rtp_count_in_file(RTP_KEY_H, "PAGE_P4") >= 1,
+        rtp_fm("M2K2-A2 RED: key_gesture_parser.h 零 PAGE_P4 标识符——第 4 页位未"
+               "复活（D-01 四页骨架; PAGE_COUNT=%d）", (int)PAGE_COUNT));
 
     /* tooth 6 (结构半, 形状无关邻接): lcd_display.cc 的页索引映射仍按语义逐对钉
-     * （撤页后塌成恒等：SCHEDULE→P2 / STORY→P3；不钉空格对齐、不钉 switch 是否被
-     * 化简为直传——只钉「若还写这一页，就必须映到这一点」）。 */
+     * （四页化后塌成恒等：POINTS_HOME→P3 / STORY→P4；不钉空格对齐、不钉 switch
+     * 是否被化简为直传——只钉「若还写这一页，就必须映到这一点」）。 */
     {
         char *lcd = rtp_read(RTP_LCD_CC, NULL);
         TEST_ASSERT_NOT_NULL_MESSAGE(lcd,
@@ -665,39 +714,42 @@ TEST_CASE("撤 P4 三页循环: 两页枚举对齐 spec P1→P2→P3（字面 3 
             "课表页的页点索引映射漂移");
         TEST_ASSERT_TRUE_MESSAGE(
             rtp_count_in_slice(lcd, "KP_PAGE_STORY") == 0 ||
-                rtp_maps_within(lcd, "KP_PAGE_STORY", "PAGE_P3", 40),
-            "M2K2-A2 RED: lcd_display.cc 出现 KP_PAGE_STORY 但邻接不到 PAGE_P3——记录页"
-            "的页点索引映射漂移");
-        /* 撤页后设备侧不得再有 CHAR/P4 页位入映射（枚举整值撤出 -> 引用即编译失败；
-         * 含注释里的 "PAGE_P1..PAGE_P4" 区间描述，须随撤页对账）。 */
+                rtp_maps_within(lcd, "KP_PAGE_STORY", "PAGE_P4", 40),
+            "M2K2-A2 RED: lcd_display.cc 出现 KP_PAGE_STORY 但邻接不到 PAGE_P4——"
+            "故事页（P4 原地迁移）的页点索引映射漂移（2026-09-18 的 STORY→P3 邻接"
+            "随四页批准重锚为 STORY→P4）");
+        TEST_ASSERT_TRUE_MESSAGE(
+            rtp_count_in_slice(lcd, "KP_PAGE_POINTS_HOME") == 0 ||
+                rtp_maps_within(lcd, "KP_PAGE_POINTS_HOME", "PAGE_P3", 40),
+            "M2K2-A2 RED: lcd_display.cc 出现 KP_PAGE_POINTS_HOME 但邻接不到 "
+            "PAGE_P3——积分主页的页点索引映射漂移");
+        /* 设备侧不得再有 CHAR 页位入映射（枚举整值撤出 -> 引用即编译失败）。 */
         TEST_ASSERT_TRUE_MESSAGE(rtp_count_in_slice(lcd, "KP_PAGE_CHAR") == 0,
             rtp_fm("M2K2-A2 RED: lcd_display.cc 仍出现 KP_PAGE_CHAR %d 处——设备侧页"
                    "映射仍把查字页当常驻页", rtp_count_in_slice(lcd, "KP_PAGE_CHAR")));
-        TEST_ASSERT_TRUE_MESSAGE(rtp_count_in_slice(lcd, "PAGE_P4") == 0,
-            rtp_fm("M2K2-A2 RED: lcd_display.cc 仍出现 PAGE_P4 %d 处——键路由页序第 4"
-                   "页索引在设备侧仍在世", rtp_count_in_slice(lcd, "PAGE_P4")));
         free(lcd);
     }
     /* 事实源不变：设备侧仍从渲染节点读当前页（不得另立第二页真相源）。 */
     TEST_ASSERT_TRUE_MESSAGE(rtp_file_contains(RTP_LCD_CC, "kidpal_render_node_get_page("),
         "M2K2-A2 RED(guard): lcd_display.cc 不再消费 kidpal_render_node_get_page——"
-        "页点当前位来源被撤页顺手改掉（应只撤 CHAR、不改取数链）");
+        "页点当前位来源被页集改动顺手改掉（应只改页集、不改取数链）");
 
-    /* tooth 7 (结构半): kidpal_render_node.h 枚举区内零 KP_PAGE_CHAR（枚举声明的
-     * 冻结落点）+ 三页与 COUNT 四标识符全在世。 */
+    /* tooth 7 (结构半): kidpal_render_node.h 枚举区内零 KP_PAGE_CHAR（撤出保持）
+     * + 四页与 COUNT 标识符全在世。 */
     enum_region = rtp_region_between(RTP_RN_H, "typedef enum {", "} kidpal_page_id_t;");
     TEST_ASSERT_NOT_NULL_MESSAGE(enum_region,
         "M2K2-A2 RED(infra): kidpal_render_node.h 的页枚举区切取失败（typedef enum / "
         "kidpal_page_id_t 锚漂移——须复核本齿锚）");
     TEST_ASSERT_TRUE_MESSAGE(rtp_count_in_slice(enum_region, "KP_PAGE_CHAR") == 0,
         "M2K2-A2 RED: kidpal_render_node.h 页枚举内仍有 KP_PAGE_CHAR——CHAR 仍占枚举位"
-        "（本包只保证撤出循环；K3 改窗若需窗层标识，届时按新包重新钉形）");
+        "（查字窗语义归 M2-K3 面不变）");
     TEST_ASSERT_TRUE_MESSAGE(rtp_contains(enum_region, "KP_PAGE_HOME") &&
                                  rtp_contains(enum_region, "KP_PAGE_SCHEDULE") &&
+                                 rtp_contains(enum_region, "KP_PAGE_POINTS_HOME") &&
                                  rtp_contains(enum_region, "KP_PAGE_STORY") &&
                                  rtp_contains(enum_region, "KP_PAGE_COUNT"),
-        "M2K2-A2 RED(guard): kidpal_render_node.h 页枚举三页 + COUNT 不全——撤 CHAR 连带"
-        "拆掉了三页枚举（减法面，不是重建面）");
+        "M2K2-A2 RED(guard): kidpal_render_node.h 页枚举四页 + COUNT 不全——四页化"
+        "连带拆掉了既有页枚举（扩页面, 不是重建面）");
     free(enum_region);
 
     /* tooth 8 (对账齿, §2.3 行 166 ②): 头注释里描述翻页序的 prose 不得继续声称
@@ -708,85 +760,107 @@ TEST_CASE("撤 P4 三页循环: 两页枚举对齐 spec P1→P2→P3（字面 3 
                "story」描述翻页序 %d 处——枚举已改（或将改）而页序自述未理顺，"
                "§2.3 对账 ② 的漂移在文档面复发",
                rtp_count_in_file(RTP_RN_H, "home→char→schedule→story")));
+    /* tooth 9 (prose 退役, 2026-11-04 重锚追加): 三页时代的页序自述同理退役——
+     * 「home→schedule→story→home」/「三页循环」prose 与四页枚举并存 = 漂移复发
+     * （four_page_skeleton K0A-A2 tooth 5 同族, 本文件承载字面钉点侧）。 */
+    TEST_ASSERT_TRUE_MESSAGE(rtp_count_in_file(RTP_RN_H, "home→schedule→story→home") == 0 &&
+                                 rtp_count_in_file(RTP_RN_H, "三页循环") == 0,
+        rtp_fm("M2K2-A2 RED(drift): kidpal_render_node.h 仍用三页时代自述（"
+               "home→schedule→story→home %d 处 / 三页循环 %d 处）——页集已批 3→4 "
+               "而页序自述未随动（§2.3 对账 ② 漂移在文档面复发）",
+               rtp_count_in_file(RTP_RN_H, "home→schedule→story→home"),
+               rtp_count_in_file(RTP_RN_H, "三页循环")));
 }
 
 /* -------------------------------------------------------------------------- *
- * TEST 4 — M2K2-A2② 页点 3 点齿（behavioral，真实现源 display/keybar.c 已在册）
- * 三页各自基层 total 同源 PAGE_COUNT（不钉字面，字面 3 的唯一钉点在 test 3）+
- * 覆盖层隐藏不抹状态 + 原 P4 索引（PAGE_P3+1）落越界防御。
- * RED today: 索引 3 仍是合法页（dots/slots 返回 0、槽表兜底 case 在世）。
+ * TEST 4 — M2K2-A2② 页点齿（behavioral，真实现源 display/keybar.c 已在册）
+ * 各页基层 total 同源 PAGE_COUNT（不钉字面，字面 4 的唯一钉点在 test 3）+
+ * 覆盖层隐藏不抹状态 + 越界索引（PAGE_COUNT）防御。
+ * 【2026-11-04 重锚】原「原 P4 索引（PAGE_P3+1）越界防御」齿随四页批准翻正：
+ * 索引 3 复活为合法 P4, 越界哨兵平移为 PAGE_COUNT（四页态下 = 4）; P3 页槽随
+ * 积分主页入列改点（值域字面单源住 keybar_three_slot KKB-A3, 本齿同值复对账）。
+ * RED today: dots/slots(PAGE_COUNT=3) 现返回 0/文案（越界哨兵未平移）。
  * ------------------------------------------------------------------------ */
-/* coverage: M2K2-A2 -- 页点齿：三页各自 overlay_top=0 -> visible=1 / total==PAGE_COUNT（同源，随本包 4→3）/ active=当前页 + 覆盖层隐藏不抹状态 + 原第 4 页索引越界防御 -1（dots 与 slots 两径）+ keybar.c PAGE_P4 槽表兜底 case 零残留 */
-TEST_CASE("撤 P4 三页循环: 键帽条页点同源 3 点 + 第 4 页槽位撤除 (M2K2-A2)",
+/* coverage: M2K2-A2 -- 页点齿（2026-11-04 重锚为四页）：各页 overlay_top=0 -> visible=1 / total==PAGE_COUNT（同源）/ active=当前页 + 覆盖层隐藏不抹状态 + 越界索引 PAGE_COUNT 落防御 -1（dots 与 slots 两径）+ P3 积分页槽值复对账 */
+TEST_CASE("撤 P4 四页重锚: 键帽条页点同源 + 越界哨兵 PAGE_COUNT 防御 (M2K2-A2)",
           "[retract_p4_three_page][M2K2-A2][behavior]")
 {
     kidpal_keybar_dots_t d;
     const char *left = NULL, *right = NULL;
     int page, rc;
 
-    /* tooth 1: 三页基层列——页点显示、总数与现行页循环同源、当前页实心。 */
-    for (page = (int)PAGE_P1; page <= (int)PAGE_P3; page++) {
+    /* tooth 1: 各页基层列——页点显示、总数与现行页循环同源、当前页实心。 */
+    for (page = (int)PAGE_P1; page <= (int)PAGE_P4; page++) {
         memset(&d, 0, sizeof(d));
         rc = kidpal_keybar_dots(page, 0, &d);
         TEST_ASSERT_TRUE_MESSAGE(rc == 0,
             rtp_fm("M2K2-A2 RED: kidpal_keybar_dots(page=%d, base) rc=%d 期望 0——"
-                   "三页中的合法主页被拒（撤页把保留页一起撤掉了）", page, rc));
+                   "四页中的合法主页被拒（页集扩到四页把保留页一起拒掉了）", page, rc));
         TEST_ASSERT_TRUE_MESSAGE(d.visible == 1,
             rtp_fm("M2K2-A2 RED: 主页面基层 page=%d visible=%d 期望 1——页点仅主页面"
                    "显示的基层半被破坏（requirements §2.2 comp-keybar）", page, d.visible));
         TEST_ASSERT_TRUE_MESSAGE(d.total == (int)PAGE_COUNT,
             rtp_fm("M2K2-A2 RED: page=%d 页点总数 %d != PAGE_COUNT(%d)——页点数量与现行"
-                   "页循环脱钩（M1-K2 KB-E1 deviation 的对账收回 = 数量随枚举走，"
-                   "本包撤页后应为 3 点，字面真值由 test 3 单点钉死）",
+                   "页循环脱钩（数量随枚举走，四页态应为 4 点，字面真值由 test 3 "
+                   "单点钉死）",
                    page, d.total, (int)PAGE_COUNT));
         TEST_ASSERT_TRUE_MESSAGE(d.active == page,
             rtp_fm("M2K2-A2 RED: page=%d 实心页点下标 %d != %d——当前页实心机制漂移",
                    page, d.active, page));
     }
 
-    /* tooth 2: 覆盖层列——隐藏不抹机制状态（撤页零触碰该语义；查字窗窗内无页点
-     * 由这条同源机制承载，窗语义本身归 M2-K3，本齿只钉「撤页没改掉隐藏语义」）。 */
+    /* tooth 2: 覆盖层列——隐藏不抹机制状态（页集改动零触碰该语义; 查字窗窗内无
+     * 页点由这条同源机制承载）。 */
     memset(&d, 0, sizeof(d));
-    rc = kidpal_keybar_dots((int)PAGE_P3, 1, &d);
+    rc = kidpal_keybar_dots((int)PAGE_P4, 1, &d);
     TEST_ASSERT_TRUE_MESSAGE(rc == 0 && d.visible == 0 &&
-                                 d.total == (int)PAGE_COUNT && d.active == (int)PAGE_P3,
-        rtp_fm("M2K2-A2 RED(guard): 覆盖层列 dots(P3, overlay) rc=%d 三件套 = (%d, %d, "
+                                 d.total == (int)PAGE_COUNT && d.active == (int)PAGE_P4,
+        rtp_fm("M2K2-A2 RED(guard): 覆盖层列 dots(P4, overlay) rc=%d 三件套 = (%d, %d, "
                "%d) 期望 (0, 隐藏, total==PAGE_COUNT, active==%d)——页点隐藏语义或"
-               "「隐藏不抹状态」被撤页改动 (§2.2「覆盖层不显示页点」)",
-               rc, d.visible, d.total, d.active, (int)PAGE_P3));
+               "「隐藏不抹状态」被页集改动 (§2.2「覆盖层不显示页点」)",
+               rc, d.visible, d.total, d.active, (int)PAGE_P4));
 
-    /* tooth 3 (本包红齿 + 边界路径): 原第 4 页索引（= PAGE_P3 + 1）不再是合法页，
-     * dots 与 slots 两径一律越界防御 -1。今日 PAGE_COUNT=4 -> 索引 3 合法、返回 0
-     * （slots 还由 `case PAGE_P4:` 兜底给一套 P4 槽文案）= 撤页缺失的真实行为。 */
+    /* tooth 3 (本包红齿 + 边界路径, 2026-11-04 重锚): 越界哨兵 = PAGE_COUNT（三页
+     * 态下 = 3、四页态下 = 4, 恒为「合法页集之外第一格」）——dots 与 slots 两径
+     * 一律越界防御 -1。今日三页实现下 PAGE_COUNT=3, 索引 3 = 旧 P4 位仍可渲染
+     * 页点/槽文案 = 越界哨兵未随枚举语义平移的真实行为（四页落地后本齿语义不变
+     * ——PAGE_COUNT 恒越界）。 */
     memset(&d, 0, sizeof(d));
-    rc = kidpal_keybar_dots((int)PAGE_P3 + 1, 0, &d);
+    rc = kidpal_keybar_dots((int)PAGE_COUNT, 0, &d);
     TEST_ASSERT_TRUE_MESSAGE(rc == -1,
-        rtp_fm("M2K2-A2 RED: kidpal_keybar_dots(page=%d) rc=%d 期望 -1——第 4 页位仍可"
-               "渲染页点（页点应随页循环 4→3; requirements §2.2「中 3 页点 / 页点随之 "
-               "4→3」，M1-K2 KB-E1 deviation 本包收回）", (int)PAGE_P3 + 1, rc));
+        rtp_fm("M2K2-A2 RED: kidpal_keybar_dots(page=PAGE_COUNT=%d) rc=%d 期望 -1——"
+               "越界哨兵索引仍可渲染页点（页点防御列必须恒以 PAGE_COUNT 为界; "
+               "requirements §2.2 页点随页循环同源）", (int)PAGE_COUNT, rc));
 
     left = NULL;
     right = NULL;
-    rc = kidpal_keybar_slots((int)PAGE_P3 + 1, 0, 0, &left, &right);
+    rc = kidpal_keybar_slots((int)PAGE_COUNT, 0, 0, &left, &right);
     TEST_ASSERT_TRUE_MESSAGE(rc == -1,
-        rtp_fm("M2K2-A2 RED: kidpal_keybar_slots(page=%d, base) rc=%d 期望 -1——撤页后"
-               "第 4 页槽位仍由兜底 case 提供文案（keybar.c 的 `case PAGE_P4:` 兜底分支"
-               "应随枚举消解，越界页交防御列）", (int)PAGE_P3 + 1, rc));
+        rtp_fm("M2K2-A2 RED: kidpal_keybar_slots(page=PAGE_COUNT=%d, base) rc=%d "
+               "期望 -1——越界哨兵索引仍由页槽表提供文案（keybar.c 页槽表之外无"
+               "兜底行）", (int)PAGE_COUNT, rc));
 
-    /* tooth 4: 三页槽表文案在世（撤 P4 只减一行，P1/P2/P3 逐字不动）。 */
+    /* tooth 4: P3 积分主页页槽值复对账（2026-11-04 重锚——原「P3 故事列表槽逐字」
+     * 随积分主页插入 P3 翻正; 值域字面单源住 keybar_three_slot KKB-A3 重锚齿,
+     * 本齿同值复对账防两文件漂移）。 */
     left = NULL;
     right = NULL;
     rc = kidpal_keybar_slots((int)PAGE_P3, 0, 0, &left, &right);
     TEST_ASSERT_TRUE_MESSAGE(rc == 0 && left != NULL && right != NULL &&
-                                 strcmp(left, "说话·双击看") == 0 &&
-                                 strcmp(right, "下移") == 0,
-        "M2K2-A2 RED(guard): P3 页槽 (左, 右) 不再是 (说话·双击看, 下移)——撤页连带改"
-        "了保留页的槽文案（requirements §2.2 线框行逐字，KB-A3 冻结映射）");
+                                 strcmp(left, "问一问") == 0 &&
+                                 strcmp(right, "下一页") == 0,
+        rtp_fm("M2K2-A2 RED(guard): P3 页槽 (左=%s, 右=%s) 不再是 (问一问, 下一页)——积分"
+               "主页页槽未随四页化入列（S-F6.1 AC6 键帽行 + points-home-nodata.png; "
+               "keybar_three_slot KKB-A3 重锚齿同值）",
+               left ? left : "(null)", right ? right : "(null)"));
 
-    /* tooth 5 (结构半): keybar.c 内 PAGE_P4 字面零残留。 */
-    TEST_ASSERT_TRUE_MESSAGE(rtp_count_in_file(RTP_KEYBAR_C, "PAGE_P4") == 0,
-        rtp_fm("M2K2-A2 RED: keybar.c 仍出现 PAGE_P4 %d 处——页槽表第 4 行兜底未消解 "
-               "（M1-K2 登记的 deviation 面尚未收回）",
+    /* tooth 5 (结构半, 2026-09-18 撤页齿随 D-01 翻正): keybar.c 内 PAGE_P4 字面
+     * 在世（页槽表第 4 行以故事列表语义回世; 原撤页「零残留」历史表述见
+     * REVISION LOG, 不改写）。 */
+    TEST_ASSERT_TRUE_MESSAGE(rtp_count_in_file(RTP_KEYBAR_C, "PAGE_P4") >= 1,
+        rtp_fm("M2K2-A2 RED: keybar.c 零 PAGE_P4 字面（现计 %d 处）——页槽表第 4 行"
+               "（P4 故事列表「说话·双击看/下移」）未随四页化回世（D-01; 值域权威 = "
+               "keybar_three_slot KKB-A3）",
                rtp_count_in_file(RTP_KEYBAR_C, "PAGE_P4")));
 }
 
@@ -833,26 +907,28 @@ TEST_CASE("撤 P4 三页循环: 键路由回归靶——BOOT 翻页动作+覆盖
         "M2K2-A3 RED: 基层列 BOOT 长按与全局表不等价——layer-aware 表被页集改动破坏");
 
     /* tooth 3: 路由动作 -> 页序 的复合环（入口动作 = GLOBAL_ACT_PAGE_NEXT，此后每次
-     * 动作恰好推进一页，三步跑完 spec §2.4 图的三页环并回首页）。与 test 1 tooth 4
-     * 有意交叉：本齿是「键路由回归靶」的复合半（动作与落点一起看），test 1 是页序
-     * 纯逻辑半。 */
+     * 动作恰好推进一页，四步跑完 spec §2.4 图的四页环并回首页; 2026-09-18 三步环
+     * 随 2026-11-04 四页重锚翻正）。与 test 1 tooth 5 有意交叉：本齿是「键路由回归
+     * 靶」的复合半（动作与落点一起看），test 1 是页序纯逻辑半。 */
     {
-        int seq[4];
+        int seq[5];
         TEST_ASSERT_TRUE_MESSAGE(
             (int)key_route_global(KEY_ID_BOOT, KEY_GESTURE_CLICK) ==
                 (int)GLOBAL_ACT_PAGE_NEXT,
             "M2K2-A3 RED(infra): 复合环入口路由动作漂移");
         p = (int)PAGE_P1;
-        for (i = 0; i < 3; i++) {
+        for (i = 0; i < 4; i++) {
             seq[i] = p;
             p = (int)key_page_next((page_id_t)p);
         }
-        seq[3] = p;
+        seq[4] = p;
         TEST_ASSERT_TRUE_MESSAGE(seq[0] == (int)PAGE_P1 && seq[1] == (int)PAGE_P2 &&
-                                     seq[2] == (int)PAGE_P3 && seq[3] == (int)PAGE_P1,
-            rtp_fm("M2K2-A3 RED: 连翻三步页序 = (%d, %d, %d -> %d) 期望 "
-                   "(P1, P2, P3 -> P1)——BOOT 翻页手感（3 页循环）在撤页后仍非三页环",
-                   seq[0], seq[1], seq[2], seq[3]));
+                                     seq[2] == (int)PAGE_P3 &&
+                                     seq[3] == (int)PAGE_P4 && seq[4] == (int)PAGE_P1,
+            rtp_fm("M2K2-A3 RED: 连翻四步页序 = (%d, %d, %d, %d -> %d) 期望 "
+                   "(P1, P2, P3, P4 -> P1)——BOOT 翻页手感（四页循环）在页集改动后"
+                   "仍非四页环",
+                   seq[0], seq[1], seq[2], seq[3], seq[4]));
     }
 
     /* tooth 4 (边界, must-stay green): 每个合法页的下一跳都落在合法页集内——撤页
@@ -990,19 +1066,23 @@ TEST_CASE("撤 P4 三页循环: 注册序守卫+需求契约canary+扫描器自�
     }
     free(mk);
 
-    /* tooth 2 (M2K2-E2 canary): 需求面三锚在世且未被修订——本包是「需求先行后的实现
-     * 对账」，零 docs 面改动（TaskPackage docsSyncRequired=false）。 */
+    /* tooth 2 (M2K2-E2 canary, 2026-11-04 重锚): 需求面锚随 requirements v1.71
+     * 换新——四页节标题 + 四点页点句 + 查字页撤销历史行（本包零 docs 修订的机械
+     * 证据; 锚全部选在「四页化后仍成立」的稳定句）。 */
     TEST_ASSERT_TRUE_MESSAGE(rtp_exists(RTP_REQUIREMENTS),
         "M2K2-E2 RED(infra): docs/requirements.md 丢失——需求面被触碰（零修订红线）");
-    TEST_ASSERT_TRUE_MESSAGE(rtp_file_contains(RTP_REQUIREMENTS, "页面结构（3 页循环）"),
-        "M2K2-E2 RED: requirements §2.4「页面结构（3 页循环）」节标题锚丢失——需求面被"
-        "修订（本包零 spec 触碰；发现冲突走 spec-lane 逃生门，不预先改需求）");
-    TEST_ASSERT_TRUE_MESSAGE(rtp_file_contains(RTP_REQUIREMENTS, "中 3 页点") &&
-                                 rtp_file_contains(RTP_REQUIREMENTS, "页点随之 4→3"),
-        "M2K2-E2 RED: requirements §2.2 comp-keybar 的「中 3 页点 / 页点随之 4→3」锚"
-        "丢失——页点 4→3 的需求权威被改动（M1-K2 deviation 的收回依据即此句）");
+    TEST_ASSERT_TRUE_MESSAGE(rtp_file_contains(RTP_REQUIREMENTS, "页面结构（4 页循环，本批 3→4）"),
+        "M2K2-E2 RED: requirements §2.4「页面结构（4 页循环，本批 3→4）」节标题锚"
+        "丢失——需求面被修订（本包零 spec 触碰；发现冲突走 spec-lane 逃生门，不预先"
+        "改需求）");
+    TEST_ASSERT_TRUE_MESSAGE(rtp_file_contains(RTP_REQUIREMENTS, "中 4 页点") &&
+                                 rtp_file_contains(RTP_REQUIREMENTS, "页点随之 3→4"),
+        "M2K2-E2 RED: requirements §2.2 comp-keybar 的「中 4 页点 / 页点随之 3→4」锚"
+        "丢失——页点 3→4 的需求权威被改动（2026-09-18 的「中 3 页点 / 页点随之 4→3」"
+        "锚随 v1.71 换新, 见 REVISION LOG）");
     TEST_ASSERT_TRUE_MESSAGE(rtp_file_contains(RTP_REQUIREMENTS, "P4 查字页已撤销"),
-        "M2K2-E2 RED: requirements 行 186「P4 查字页已撤销」锚丢失——撤页需求事实被改");
+        "M2K2-E2 RED: requirements「P4 查字页已撤销」锚丢失——查字页撤销的历史事实"
+        "被改（查字能力 = 窗语义, 不随四页化回潮为常驻页）");
 
     /* tooth 3 (M2K2-E2 canary): 契约面在世且 char view 在白名单内（A4 通路保留的
      * 契约侧证据；本包零契约触碰）。 */
@@ -1137,4 +1217,36 @@ TEST_CASE("撤 P4 三页循环: 注册序守卫+需求契约canary+扫描器自�
  *               本文件其余全部齿（test 1–5、test 6 tooth 1/3/4、test 7）零改动。
  *               红态后果：两齿对「收拢未落」现状为设计态红, builder 落 M2-K3 收拢后
  *               转绿。
+ *   2026-11-04  四页重锚（acceptance-author 留痕修订，授权通道 = TaskPackage
+ *               261104-k0a-four-page-skeleton impactedTestsSeed frozen-rebaseline +
+ *               decisionCoverage D-01-skeleton〔PROPOSAL §3.1-D-01 已批 3→4, requirements
+ *               v1.71 §2.2/§2.4 已随批落〕）。改了什么：
+ *               ① test 1（M2K2-A1）三页环齿整体重锚为四页环（P3→P4 新边 + P4→P1 回
+ *               绕 + 四步环）; tooth 1/2（前两跳）、tooth 6（同源环）、tooth 7（非法
+ *               页防御）语义零变化。
+ *               ② test 2 tooth 4「三页渲染 case 全在世」扩为四页 case 全在世（含
+ *               case KP_PAGE_POINTS_HOME）。
+ *               ③ test 3（M2K2-A2）字面钉点由 3 翻正为 4（PAGE_P1..P4=0..3 +
+ *               PAGE_COUNT=4; KP_PAGE_* 同序含 KP_PAGE_POINTS_HOME=2/STORY=3）;
+ *               tooth 5 由「PAGE_P4 头内零残留」翻正为「PAGE_P4 在世」; tooth 6 的
+ *               STORY→P3 邻接翻正为 STORY→P4 + 新增 POINTS_HOME→P3 邻接 + PAGE_P4-in-
+ *               lcd 负齿退役（PAGE_P4 已是合法页, 负锚失去对象）; tooth 7 护四页 +
+ *               COUNT 标识齐全; 新增 tooth 9 三页 prose 退役（home→schedule→story→home
+ *               / 三页循环零残留）。
+ *               ④ test 4（M2K2-A2②）越界哨兵由「PAGE_P3+1」平移为「PAGE_COUNT」（四页
+ *               态下 = 4; 撤页前后恒为合法页集外第一格）; P3 页槽由故事槽逐字翻正为
+ *               积分槽逐字（问一问/下一页, 与 keybar_three_slot KKB-A3 同值复对账）;
+ *               tooth 5 由「keybar.c PAGE_P4 零残留」翻正为「PAGE_P4 在世」。
+ *               ⑤ test 5（M2K2-A3）复合环三步翻正为四步。
+ *               ⑥ test 7 canary 随 requirements v1.71 换新（页面结构（4 页循环，本批
+ *               3→4）/ 中 4 页点 / 页点随之 3→4; P4 查字页已撤销锚保留）。
+ *               为何属留痕通道而非绕闸：全部改动随已冻结的需求事实（requirements
+ *               v1.71 四页 + PROPOSAL D-01 human 过目 2026-11-04）把守卫指向从三页
+ *               翻到四页，未放宽任何语义断言——既有 must-stay 齿（前两跳、同源环、
+ *               防御列、KP_PAGE_CHAR 零残留、canary 自检）逐条保留。test 6（查字通路
+ *               保留靶）零改动。红态后果：test 1/2/3/4/5 对三页现状为设计态红
+ *               （四页缺失 = 真实缺失行为）, builder 落 K0a 四页实现后转绿; test 6/7
+ *               现状绿（must-stay）。上方 2026-09-18 冻结相位的「本包义务红」与
+ *               「RED baseline 判读口径」历史记录不改写（append-only）; 现役红基线
+ *               以 four_page_skeleton.acceptance.c 文件尾 + 本批交付报告为准。
  * --------------------------------------------------------------------------- */

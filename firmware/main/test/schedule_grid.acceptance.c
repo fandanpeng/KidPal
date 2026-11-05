@@ -1400,17 +1400,27 @@ TEST_CASE("home upcoming: 注入接线结构 + home_p1 seam 零改 canary (M3K2-
 
 /* -------------------------------------------------------------------------- *
  * M3K2-A6 — 页循环/键帽条回归靶（回归齿非修订面, 既有齿零偏移）。冻结时点必须
- * 全绿（守卫）: 三页循环 PAGE_COUNT=3、schedule/home 路由续接、cycle 模步在世、
+ * 全绿（守卫）: 页循环 PAGE_COUNT、schedule/home 路由续接、cycle 模步在世、
  * 键帽条刷新接线在世、key_layer_dispatch 冻结齿接线在世、keybar P2 槽表在世。
+ * 【2026-11-04 四页重锚（TaskPackage 261104-k0a-four-page-skeleton; planner 授权
+ * 补入 impactedTestsSeed）】本回归靶对页集只做**存在性/同源守卫**、不钉页数——
+ * 原字面 `PAGE_COUNT == 3`（M2-K2 撤页期口径）随 D-01 四页批准改为同源判别
+ * `PAGE_P2 < PAGE_COUNT - 1`（课表页不是尾页、schedule 之后仍有续页 = 本回归靶
+ * 真正守护的「路由续接」性质, 三页/四页两态皆绿; 页数字面单点钉住 retract test 3,
+ * 四页化不放宽本靶——cycle 模步/键帽条/路由续接各齿零触碰）。P4 撤页期「P3 故事
+ * 尾页」的历史口径随积分主页插入 P3 消解。
  * ------------------------------------------------------------------------ */
-TEST_CASE("schedule grid: 回归靶——三页循环/键帽条/路由续接 (M3K2-A6)",
+TEST_CASE("schedule grid: 回归靶——页循环/键帽条/路由续接 (M3K2-A6)",
           "[schedule_grid][M3K2-A6][guards]")
 {
     KSG_REQUIRE_ROOT();
 
-    /* 三页循环 HOME→SCHEDULE→STORY（M2-K2 既定, P4 撤页后枚举=3） */
-    TEST_ASSERT_TRUE_MESSAGE(PAGE_COUNT == 3,
-        "KSG-A6 RED: PAGE_COUNT != 3 — 三页循环枚举被本包改动（回归靶非修订面）");
+    /* 页循环守卫（2026-11-04 同源化重锚: 不钉页数, 钉课表页不是尾页——两态皆绿
+     * 的同源判别, 三页/四页世界同性质） */
+    TEST_ASSERT_TRUE_MESSAGE((int)PAGE_P2 < (int)PAGE_COUNT - 1,
+        "KSG-A6 RED: 课表页成了页循环尾页——「schedule 之后仍有续页」的路由续接"
+        "性质被破坏（判别式 PAGE_P2 < PAGE_COUNT - 1 不成立; 同源判别, 页数字面"
+        "钉住 retract test 3）");
 
     /* 路由续接不回退（host-runner-only: 独立 stub 未链接 view_router.c 时跳过） */
     if (kidpal_display_route != NULL) {
@@ -1428,7 +1438,7 @@ TEST_CASE("schedule grid: 回归靶——三页循环/键帽条/路由续接 (M3
     TEST_ASSERT_TRUE_MESSAGE(ksg_file_contains("firmware/main/display/kidpal_render_node.cc",
                                                "% KP_PAGE_COUNT"),
         "KSG-A6 RED: cycle_next modulo step (% KP_PAGE_COUNT) absent — "
-        "三页回绕载体被改动（回归靶非修订面）");
+        "页回绕载体被改动（回归靶非修订面）");
 
     /* 键帽条刷新接线在世（页面渲染权威每页落屏后驱动三槽刷新, KB-A1） */
     TEST_ASSERT_TRUE_MESSAGE(ksg_count_in_file("firmware/main/display/kidpal_render_node.cc",
@@ -1917,4 +1927,15 @@ TEST_CASE("schedule grid: 临时标记/星标标记真帧 (M3K2-A3 render)",
  *                  acceptance.c SG16-A4），容量面对本文件零触碰。
  *               ③ 零触碰面不变：KSG_COURSE_CAP=84、越带负锚、星标断言、解析矩阵、
  *                  A5/A6 族、restore 交叉锚。
+ *   2026-11-04  KSG-A6 页集同源化重锚（acceptance-author 留痕修订, TaskPackage
+ *               261104-k0a-four-page-skeleton; planner 授权补入 impactedTestsSeed——
+ *               seed 外相邻锚反查发现, D-01 四页落地后字面 PAGE_COUNT==3 必假红）。
+ *               改了什么：TEST_CASE 名「三页循环」→「页循环」+ KSG-A6 首齿由字面
+ *               `PAGE_COUNT == 3` 改为同源判别 `PAGE_P2 < PAGE_COUNT - 1`（课表页
+ *               非尾页、schedule 之后仍有续页 = 本回归靶守护的「路由续接」性质;
+ *               页数字面单点钉住 retract test 3 重锚齿）。为何属留痕通道而非绕闸：
+ *               回归靶对页集只做存在性守卫, 同源化不放宽任何语义（cycle 模步、
+ *               键帽条接线、路由续接、key_layer_dispatch 冻结齿各齿零触碰）。
+ *               红态后果：本齿三页/四页两态皆绿（守卫齿性质保持, 不转设计态红）;
+ *               其余齿红基线零变化。
  * --------------------------------------------------------------------------- */

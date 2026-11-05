@@ -277,9 +277,11 @@ int kidpal_story_text_seq(const char *data_json);
  * 不一致 = 行为齿红即实现偏移。 */
 #define KSTORY_ECHO_MAX_LINES 4
 
-/* [S1] source_page 映射单点（契约 §四闭集 story/schedule/home 一次做全）: KP_PAGE_*
- * 数值镜像（M2K2-A2 冻结等值: HOME=0/SCHEDULE=1/STORY=2）; 越界/未知 -> "home"
- * （闭集缺省兜底, 绝不外溢第四取值）。返回静态串字面指针, 永不 NULL。 */
+/* [S1] source_page 映射单点（契约 §四闭集主页四值一次做全:
+ * home / schedule / points_home / story; 枚举驱动 = 按 kidpal_render_node.h 的
+ * KP_PAGE_* **符号**分流，2026-11-04 261104-k0a-four-page-skeleton / D-08 重写——
+ * 数值 case 页位耦合已废除）; 越界/未知/KP_PAGE_COUNT -> "home"（闭集缺省兜底,
+ * 绝不外溢新取值、绝不回退 story）。返回静态串字面指针, 永不 NULL。 */
 const char *kidpal_story_ctx_source_page(int page);
 
 /* [S2] 引导态纯逻辑二缝: 气泡逐字单源（S-F2.2-AC1「需要我帮你记点什么？」; lcd

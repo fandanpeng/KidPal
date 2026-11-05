@@ -1,9 +1,10 @@
 /*
  * kidpal_render_node.h — 设备渲染节点（包 260911-screen-unification 归一屏收口）
  *
- * 把 KidPal 首页 P1（400×300 ARGB 帧）推至 RLCD，并提供 3 页 BOOT 双按翻页驱动。
- * 阶段 B：BOOT 双按 → home→schedule→story→home 三页循环（P4 查字常驻页已撤销，
- * 包 260917-m2-k2-retract-p4-three-page；页序对齐 spec P1→P2→P3）。
+ * 把 KidPal 首页 P1（400×300 ARGB 帧）推至 RLCD，并提供 4 页 BOOT 双按翻页驱动。
+ * 阶段 B：BOOT 双按 → P1 首页 → P2 课表 → P3 星星积分本 → P4 星星记录本 → 回 P1
+ * （四页循环，TaskPackage 261104-k0a-four-page-skeleton / D-01；此前 260917-m2-k2
+ * 撤 P4 的三页态随 D-01 四页骨架退役，查字仍是覆盖窗、非常驻页）。
  * 前台归属 = kidpal_layer 前台 layer 栈管理单一权威（取代原三散标志 + 1s tick 对账）：
  * 语音轮页(3) / 服务端推送页(4) / 查字窗(5) / 删除确认弹窗(6) / 本地浏览页(2) / 提醒弹窗(7) / 配网(8)
  * 按优先级表由 layer 栈 push/pop 事件驱动进出；聊天 layer(1) 常驻非栈成员。
@@ -26,15 +27,33 @@ extern "C" {
 #endif
 
 /* 页枚举（与 cycle_next() 的步进顺序对应；记录「本地浏览层当前画哪一页」）。
- * 2026-09-17 M2-K2 撤 P4：查生字页枚举位整值撤出（CHAR 退出本地浏览页循环），
- * 三页重排为 spec 页序 KP_PAGE_HOME → KP_PAGE_SCHEDULE → KP_PAGE_STORY，
- * 与 key_gesture_parser.h 的 PAGE_P1/P2/P3 逐项同序同值。 */
+ * 2026-09-17 M2-K2 撤 P4：查生字页枚举位整值撤出（CHAR 退出本地浏览页循环）；
+ * 2026-11-04 261104-k0a-four-page-skeleton 随 D-01 四页骨架重排为 spec 页序
+ * KP_PAGE_HOME → KP_PAGE_SCHEDULE → KP_PAGE_POINTS_HOME → KP_PAGE_STORY，
+ * 与 key_gesture_parser.h 的 PAGE_P1/P2/P3/P4 逐项同序同值（P3 = 星星积分本，
+ * P4 = 星星记录本原地迁移；查字仍是覆盖窗、非常驻页）。 */
 typedef enum {
-    KP_PAGE_HOME     = 0,  /* P1 首页常显（400×300 XRGB8888 → RLCD）*/
-    KP_PAGE_SCHEDULE = 1,  /* P2 课表页 */
-    KP_PAGE_STORY    = 2,  /* P3 故事列表页 */
-    KP_PAGE_COUNT    = 3
+    KP_PAGE_HOME        = 0,  /* P1 首页常显（400×300 XRGB8888 → RLCD）*/
+    KP_PAGE_SCHEDULE    = 1,  /* P2 课表页（一周总览网格）*/
+    KP_PAGE_POINTS_HOME = 2,  /* P3 星星积分本（本包 = 数据未达静态占位）*/
+    KP_PAGE_STORY       = 3,  /* P4 星星记录本列表页（原 P3 原地迁移）*/
+    KP_PAGE_COUNT       = 4
 } kidpal_page_id_t;
+
+/*
+ * P3 星星积分本「数据未达」等待话术**单源**（TaskPackage 261104-k0a-four-page-skeleton,
+ * seam [4]; requirements S-F6.1-AC4 静态占位半 + docs/ui/V9/points-home-nodata.png 逐字）。
+ *
+ * 口径 = **纯等待**，不暗示故障或打不开（human 2026-11-03 终拍裁定）；判据落在「有无
+ * 账本数据」而非「断网与否」。本包只做数据未达占位——**不伪造 0 余额、不画进度线**
+ * （S-F6.1-AC2 进度线归 K2 正式积分主页, decisionCoverage D-01-skeleton）。
+ *
+ * 文案单源纪律 = KSTORY_EMPTY_HINT 先例同款：定义只住本头, 渲染处经符号消费、零重抄。
+ * 消费方 = kidpal_render_node.cc 的 rn_render_kidpal_page_locked 积分分支（本包）;
+ * K0 的 points_page.c 经同一宏继承消费（接管缝, 不改文案来源）。与故事空态宏
+ * KSTORY_EMPTY_HINT* 必须可区分（S-F6.1-AC4 与 S-F2.1-AC5/AC6 话术各归各单源）。
+ */
+#define KP_POINTS_NODATA_HINT "积分数据还在路上，等一等再来看"
 
 /*
  * 初始化渲染节点。必须在 CustomLcdDisplay 构造完成后（LVGL 已初始化）、且聊天 chrome
@@ -132,9 +151,9 @@ void kidpal_render_node_begin_provision(void);
 void kidpal_render_node_end_provision(void);
 
 /*
- * BOOT 双按翻页。依次推进 home→schedule→story→home（本地浏览层生命周期，
- * 出掉一切 transient 上层）。P4 查字常驻页已撤销（M2-K2，页序对齐 spec P1→P2→P3）；
- * 查字渲染面保留，其前台归属归 M2-K3 改窗决定。
+ * BOOT 双按翻页。依次推进 P1 首页 → P2 课表 → P3 星星积分本 → P4 星星记录本 → 回 P1
+ * （四页循环，本地浏览层生命周期，出掉一切 transient 上层；D-01 四页骨架）。
+ * 查字渲染面保留在覆盖窗（2026-09-19 M2-K3 页→窗改造），不占常驻页位。
  */
 void kidpal_render_node_cycle_next(void);
 
@@ -302,10 +321,15 @@ void kidpal_render_node_refresh_story(void);
 void kidpal_render_node_story_local_front(void);
 
 /*
- * P3 子态查询（键帽随态变 getter，TaskPackage 260924-m4-k2-p3-star-notebook-ui）：
+ * 故事页子态查询（键帽随态变 getter，TaskPackage 260924-m4-k2-p3-star-notebook-ui；
+ * 故事页随 D-01 四页骨架迁 P4，语义不变）：
  * 删除确认覆盖层为前台（STORY_DELETE 层 top）-> KSTORY_PAGE_DELETE；
  * 本地基层当前页 = STORY -> 缓存视图的页态（LIST/READER/RECORDING/STAMP）；
- * 其余（非 P3 页 / 前台为其它覆盖层）-> -1（消费方回落既有键帽路径）。
+ * **例外一支**（TECH-261028 阅读态归属断链环补口, planner 2026-11-05 裁定 B）：
+ * SERVER_PAGE 前台 + 本地页 = STORY + 缓存页态 = READER -> KSTORY_PAGE_READER
+ * （阅读正文画在云端夹钳上, 归属判据必须仍能取到 READER；只此页态放开）；
+ * 其余（非故事页 / 前台为其它覆盖层 / 其它页态在覆盖层下）-> -1
+ * （消费方回落既有键帽路径与 CG-A2「最后已知子态」过渡窗兜底）。
  * 无锁整数读，可跨任务调用。
  */
 int kidpal_render_node_story_substate(void);

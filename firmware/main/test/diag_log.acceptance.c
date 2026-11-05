@@ -74,8 +74,10 @@
  *            -- key_gesture_t 0..3 -> "none" / "click" / "double_click" /
  *               "long_press"; 其余 -> "ges_<n>"。
  *          const char *kidpal_log_page_name(int page);
- *            -- kidpal_page_id_t（kidpal_render_node.h）0..2 -> "home" /
- *               "schedule" / "story"; 其余 -> "page_<n>"。
+ *            -- kidpal_page_id_t（kidpal_render_node.h）0..3 -> "home" /
+ *               "schedule" / "points_home" / "story"（【2026-11-04 四页重锚】原
+ *               0..2 "home/schedule/story" 随 D-01 积分主页入列 P3、故事迁移 P4
+ *               平移, 见 REVISION LOG 2026-11-04 条）; 其余 -> "page_<n>"。
  *          const char *kidpal_log_trigger_name(int trg);
  *            -- PAGE_SWITCH 触发源 0..2 -> "key" / "timer" / "net"（plan 改动点 5）;
  *               其余 -> "trg_<n>"。
@@ -884,16 +886,29 @@ TEST_CASE("diag log: semantic name mapping closed sets + fallback for unknown (D
     TEST_ASSERT_EQUAL_STRING_MESSAGE("ges_-1", kidpal_log_gesture_name(-1),
         "DLG-A2 RED: gesture 负值 fallback 错。");
 
-    /* ---- kidpal_page_id_t（kidpal_render_node.h）0..2 ----------------------- */
+    /* ---- kidpal_page_id_t（kidpal_render_node.h）0..3 -----------------------
+     * 【2026-11-04 四页重锚（TaskPackage 261104-k0a-four-page-skeleton; planner
+     * 授权补入 impactedTestsSeed——seed 外相邻锚反查发现）】页名闭集随 D-01 四页
+     * 平移: 原「page 2 = story 闭集端点 / page 3 = 非法 fallback」随积分主页插入
+     * P3、故事页迁移 P4 翻正为「page 2 = points_home（新页入列）/ page 3 = story
+     * 闭集端点 / page 4 = 非法 fallback」。删了什么：page 2 = "story" 与 page 3 =
+     * "page_3" 两条旧断言; 为什么：页身份随 D-01 改变, 保留即四页落地假红; 新钉
+     * 什么：points_home 入列 + story 端点平移 + fallback 哨兵同步外移一格（fallback
+     * 防「新增页不取名就翻页」的静默漏项义务不变）。 */
     TEST_ASSERT_EQUAL_STRING_MESSAGE("home", kidpal_log_page_name(0),
         "DLG-A2 RED: page 0 (KP_PAGE_HOME) 名错。");
     TEST_ASSERT_EQUAL_STRING_MESSAGE("schedule", kidpal_log_page_name(1),
         "DLG-A2 RED: page 1 (KP_PAGE_SCHEDULE) 名错。");
-    TEST_ASSERT_EQUAL_STRING_MESSAGE("story", kidpal_log_page_name(2),
-        "DLG-A2 RED: page 2 (KP_PAGE_STORY) 名错——闭集端点（P4 已撤，3 页闭集）。");
-    TEST_ASSERT_EQUAL_STRING_MESSAGE("page_3", kidpal_log_page_name(3),
-        "DLG-A2 RED: page 3 fallback 错——撤 P4 后 page 3 是非法页，绝不能映射出"
-        "伪语义名。");
+    TEST_ASSERT_EQUAL_STRING_MESSAGE("points_home", kidpal_log_page_name(2),
+        "DLG-A2 RED: page 2 (KP_PAGE_POINTS_HOME) 名错——P3 积分主页页名未入 "
+        "PAGE_SWITCH 日志闭集（D-01 四页; kidpal_log_page_name 映射表漏项 = 日志"
+        "降级伪名, EQ-3）。");
+    TEST_ASSERT_EQUAL_STRING_MESSAGE("story", kidpal_log_page_name(3),
+        "DLG-A2 RED: page 3 (KP_PAGE_STORY) 名错——故事页迁 P4 后的闭集端点"
+        "（D-01 原地迁移; 2026-09-22 的「page 2 = story 端点」口径随四页平移）。");
+    TEST_ASSERT_EQUAL_STRING_MESSAGE("page_4", kidpal_log_page_name(4),
+        "DLG-A2 RED: page 4 fallback 错——四页闭集外首格是非法页，绝不能映射出"
+        "伪语义名（新增页必须过本验收修订窗口取名, 防映射表漏项静默）。");
     TEST_ASSERT_EQUAL_STRING_MESSAGE("page_-1", kidpal_log_page_name(-1),
         "DLG-A2 RED: page 负值 fallback 错（kidpal_render_node_story_substate 用 "
         "-1 表「非 P3」，page 面同样可能收到负值）。");
@@ -1282,4 +1297,16 @@ TEST_CASE("diag log: regression net registration guards — trio present, order,
  *               实跑（5 Tests 5 Failures, 零 warning，红名逐条 = 设计态缺失面）
  *               + 双向可满足性以 /tmp 合成树（KIDPAL_REPO_ROOT 注入）一次性参考
  *               实现取证，不写入工作树。
+ *   2026-11-04  DLG-A2 页名闭集四页重锚（acceptance-author 留痕修订, TaskPackage
+ *               261104-k0a-four-page-skeleton; planner 授权补入 impactedTestsSeed——
+ *               seed 外相邻锚反查发现, D-01 落地后旧闭集必假红）。改了什么：仅
+ *               kidpal_log_page_name 决策表面（头注 [DLG-C2] 行 + DLG-A2 页名区）:
+ *               page 2 "story"→"points_home"（新页入列）、page 3 fallback→"story"
+ *               闭集端点（故事迁 P4）、新增 page 4 fallback 哨兵（闭集外首格外移
+ *               一格, 「新增页不取名即翻页」的静默漏项防线上移）。为何属留痕通道
+ *               而非绕闸：页名闭集随已冻结的页身份事实（D-01/requirements v1.71）
+ *               平移, fallback 义务零放宽; key/gesture/trigger 三个闭集与其余全部
+ *               齿零改动。红态后果：page 2/3/4 三齿对现役三页实现（page 2 = "story"、
+ *               page 3/4 = fallback）为设计态红, builder 落 log_semantics.c 四页
+ *               闭集后转绿; 其余齿现状绿（must-stay）。
  * --------------------------------------------------------------------------- */

@@ -19,7 +19,8 @@
  *       整屏不透明背景 container_ 留在原默认首屏（该屏此后不再加载、不再渲染）。
  *     - s_kidpal_scr（lv_obj_create(NULL)）= KidPal 各类内容页的唯一天花板，也是
  *       display/ 下唯一被 lv_screen_load 的顶层屏（真单物理屏不变式）。
- *  4. 阶段 B：BOOT 双按翻页（home→schedule→story→home 三页循环，M2-K2 撤 P4 常驻页），
+ *  4. 阶段 B：BOOT 双按翻页（P1 首页 → P2 课表 → P3 星星积分本 → P4 星星记录本 → 回 P1
+ *     四页循环，TaskPackage 261104-k0a-four-page-skeleton / D-01），
  *     翻页 = 本地浏览层生命周期（清 transient，回 LOCAL_PAGE 基层）。
  *  5. 崩溃修复（包 260829-hardware-validation）语义保留：服务端推送页面渲染必须经
  *     begin_page()/end_page() 夹钳——begin_page 把 SERVER_PAGE(或 REMINDER) 推入
@@ -950,6 +951,36 @@ static void rn_render_kidpal_page_locked(kidpal_page_id_t page)
                      s_grid_n, s_rtc_wday);
             break;
         }
+        case KP_PAGE_POINTS_HOME: {
+            /* P3 星星积分本「数据未达」静态占位（TaskPackage 261104-k0a-four-page-skeleton,
+             * seam [4]；S-F6.1-AC4 数据未达半 + decisionCoverage D-01-skeleton）。
+             * 本包只落纯等待口径：页名 + 居中等待话术（话术单源 = kidpal_render_node.h
+             * 的 KP_POINTS_NODATA_HINT，本处零字面重抄——文案单源纪律与故事空态话术同款）。
+             * **负锚三条**：不显示任何数字（数据未达显数会误导，不伪造 0 余额）、
+             * 不画进度线（进度线归 K2 正式积分主页 S-F6.1-AC2）、不借故事空态宏
+             * （S-F6.1-AC4 与 S-F2.1-AC5/AC6 话术各归各单源、须可区分）。
+             * 接管缝（K0A-E2）：K0 的 points_page.c 以同一宏 + 本 case 落点接入，
+             * 数据到达后的原地刷新（S-F6.1 补充规则「只填数据不抢前台」）归 K0/K2。 */
+            lv_screen_load(s_kidpal_scr);
+            lv_obj_t *pts_title = lv_label_create(s_kidpal_scr);
+            lv_label_set_text(pts_title, "星星积分本");
+            lv_obj_set_style_text_font(pts_title, kidpal_render_node_title_font(), 0);
+            lv_obj_set_style_text_color(pts_title, lv_color_black(), 0);
+            lv_obj_set_pos(pts_title, 12, 6);
+            lv_obj_t *pts_hint = lv_label_create(s_kidpal_scr);
+            lv_label_set_text(pts_hint, KP_POINTS_NODATA_HINT);
+            lv_obj_set_style_text_font(pts_hint, kidpal_render_node_body_font(), 0);
+            lv_obj_set_style_text_color(pts_hint, lv_color_black(), 0);
+            lv_obj_set_style_text_align(pts_hint, LV_TEXT_ALIGN_CENTER, 0);
+            lv_obj_set_width(pts_hint, 380);
+            lv_label_set_long_mode(pts_hint, LV_LABEL_LONG_WRAP);
+            lv_obj_center(pts_hint);
+            s_local_page = KP_PAGE_POINTS_HOME;
+            /* 诊断行不带数值格式化——占位分支「零数字」口径同样覆盖日志面
+             * （K6 结构化日志的 correlationId 归 tick/事件面，本行只标页身份）。 */
+            ESP_LOGI(RN_TAG, "render page POINTS_HOME (P3) nodata placeholder");
+            break;
+        }
         case KP_PAGE_STORY: {
             lv_screen_load(s_kidpal_scr);
             if (s_story_list.count <= 0) {
@@ -990,7 +1021,7 @@ static void rn_render_kidpal_page_locked(kidpal_page_id_t page)
                 kidpal_story_page_render(&s_story_view, &s_story_list, &s_story_text);
             }
             s_local_page = KP_PAGE_STORY;
-            ESP_LOGI(RN_TAG, "render page STORY (P3) count=%d", s_story_list.count);
+            ESP_LOGI(RN_TAG, "render page STORY (P4) count=%d", s_story_list.count);
             break;
         }
         default:
@@ -1248,6 +1279,27 @@ int kidpal_render_node_story_substate(void)
     /* 删除确认覆盖层为前台 -> 删除子态（覆盖层身份与 front_is_overlay 同源）。 */
     if (kidpal_layer_top(&s_layer_stack) == KIDPAL_LAYER_STORY_DELETE) {
         return KSTORY_PAGE_DELETE;
+    }
+    /* TECH-261028 阅读态归属的「断链环」补口（planner 2026-11-05 裁断, 裁定 B）。
+     *
+     * 缺陷环：阅读正文画在云端渲染夹钳 SERVER_PAGE(4) 上（mcp_server VRT_ROUTE_STORY_
+     * TEXT 收口只 begin_page/end_page、不调 story_local_front, 阅读期前台停 SERVER_PAGE
+     * ——与 TECH-261028 的 KPLOG「chrome_front layer_top=4」一致）。归属判据
+     * kidpal_story_key_owns 的 page_state 入参就是本 getter, 而下方通用规则在该窗恒报
+     * -1 —— 故事页新增的「READER + SERVER_PAGE 归故事页」支永远拿不到 READER, KEY 短按
+     * 照旧漏到 key_route_layer 通用覆盖层列 -> SESSION_TOGGLE 误开会话。
+     *
+     * 补口范围（**只对 READER 放开**）：本地基层页仍是故事页、且缓存页态确为阅读态时,
+     * 把 READER 如实报出。LIST/RECORDING/STAMP/DELETE 等仍走下方 -1 ——CG-A2 过渡窗
+     * 语义（「覆盖层/夹钳前台时缓存页态不可见」）在其余页态上零改动, 「最后已知子态」
+     * 兜底链照旧生效。副作用面（预期内）：阅读态键帽因此取到 kidpal_keybar_story_slots
+     * 的 READER 行「长按退出 / 翻屏」（TECH-261028 症状②的值域半）。
+     *
+     * 值域零新增：返回的是既有 KSTORY_PAGE_* 闭集成员, 消费方无新增分支。 */
+    if (kidpal_layer_top(&s_layer_stack) == KIDPAL_LAYER_SERVER_PAGE &&
+        s_local_page == KP_PAGE_STORY &&
+        s_story_view.page == KSTORY_PAGE_READER) {
+        return KSTORY_PAGE_READER;
     }
     /* 本地基层当前页 = STORY -> 缓存视图的页态（LIST/READER/RECORDING/STAMP）。
      * 前台为其它覆盖层（VOICE/SERVER_PAGE/REMINDER/CHAR_WINDOW）时缓存页态不可

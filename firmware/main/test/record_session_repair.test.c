@@ -8,8 +8,10 @@
 #include "../display/story_page.h"
 #include "../display/kidpal_layer.h"
 
-/* 冻结数值镜像（与 story_page.h / kidpal_render_node.h 等值; 漂移由既有冻结齿先红）。 */
-#define UT_KP_PAGE_STORY 2 /* KP_PAGE_STORY */
+/* 冻结数值镜像（与 story_page.h / kidpal_render_node.h 等值; 漂移由既有冻结齿先红）。
+ * 2026-11-05 随 261104-k0a-four-page-skeleton D-01 四页骨架重锚：KP_PAGE_STORY 2→3
+ * （P3 = 星星积分本插入、故事原地迁移 P4；字面真值单点钉 retract test 3）。 */
+#define UT_KP_PAGE_STORY 3 /* KP_PAGE_STORY（D-01 四页镜像，落地值 3） */
 #define UT_KP_PAGE_HOME  0 /* KP_PAGE_HOME */
 
 /* ---- [R1] kidpal_story_key_owns 决策表补强 ---- */

@@ -1,0 +1,21 @@
+# test-scope-final.txt — 261104-k0a-four-page-skeleton final verify 影响面圈定清单
+# 圈定方法（integrator Step 4，2026-11-05）：
+#   ① diff 圈定 = git diff 22b30654 --stat（base ref 口径）——28 文件 = changeManifest 21 路径
+#      （20 跟踪修改 + 1 新增 four_page_skeleton.acceptance.c）+ 7 件 delivery/** 制品，零出界。
+#   ② detect_changes（C-AI-KidPal @ 22b30654）= 机械辅证，命中 0 种子符号——图索引只反映已提交态，
+#      工作树未提交 firmware 改动不进 seed（降级如实留痕）；trace_path 抽查可用：
+#      kidpal_render_node_cycle_next inbound → boards 层 InitializeButtons / keya_dispatch_global_action；
+#      kidpal_story_ctx_source_page inbound=0 = 已记档图解析缺口（application.cc:1313-1320 实读补录）。
+#   ③ 范围 = 本包 9 件验收文件（acceptanceTestsFile）∪ impactedTestsSeed 单测面（record_session_repair.test.c
+#      UT 数值镜像 2→3）∪ 共享 seam（keybar / source_page / 页循环——全部由上列验收文件覆盖）。
+# 全量回归 = 人工触发位，不进本 scope；scope 下限 floor：本包 9 件冻结验收一件不缺。
+firmware/main/test/four_page_skeleton.acceptance.c
+firmware/main/test/retract_p4_three_page.acceptance.c
+firmware/main/test/key_layer_dispatch.acceptance.c
+firmware/main/test/keybar_three_slot.acceptance.c
+firmware/main/test/record_session_live.acceptance.c
+firmware/main/test/record_session_repair.acceptance.c
+firmware/main/test/record_session_repair.test.c
+firmware/main/test/schedule_grid.acceptance.c
+firmware/main/test/diag_log.acceptance.c
+firmware/main/test/story_page_v2.acceptance.c

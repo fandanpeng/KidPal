@@ -350,6 +350,13 @@ set(HOST_ACCEPTANCE_SRCS
     # **必须置于 host smoke acceptance 之前**（smoke 末位 = 最先执行）。
     "../../story_typography.acceptance.c"
 
+    # 包 261104-k0a-four-page-skeleton（四页骨架：P3 积分占位 / P4 故事原地迁移 /
+    # source_page 枚举驱动 / TECH-261028 阅读键修复）冻结验收。本清单 = 261104
+    # K0a∥K0 两包唯一共享构建清单：K0a 先落本行，K0 等 K0a merged、重取基线后
+    # 追加自己的登记行，不改 K0a 其余登记。**必须置于 host smoke acceptance
+    # 之前**（smoke 末位 = 最先执行, 包 0 boundary 齿注册序守卫）。
+    "../../four_page_skeleton.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

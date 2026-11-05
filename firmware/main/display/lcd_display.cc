@@ -1369,7 +1369,7 @@ static void kidpal_keybar_sync_locked(void)
      * 键帽槽子态裁决与页点有效 overlay 判据同源。 */
     int story_sub = kidpal_render_node_story_substate();
     /* CG-A2 过渡窗（261022-p3-record-chrome-ghost-fix）: 「本地页仍是故事页」判据 =
-     * 渲染节点页 KP_PAGE_STORY（== PAGE_P3 恒等, M2K2-A2 两枚举逐项同序）——覆盖层 /
+     * 渲染节点页 KP_PAGE_STORY（== PAGE_P4 恒等, M2K2-A2 两枚举逐项同序）——覆盖层 /
      * 夹钳前台时它仍报基层页。故事子态缓存可见时记「最后已知子态」（缓存值本身在过渡
      * 窗里仍有效）；本地页已不是故事页时一律停用该线索——陈旧值不得跨页接管键帽。 */
     const int on_story_local_page = (rn_page == KP_PAGE_STORY) ? 1 : 0;
@@ -1399,7 +1399,7 @@ static void kidpal_keybar_sync_locked(void)
                         story_sub == KSTORY_PAGE_ORGANIZING ||
                         story_sub == KSTORY_PAGE_STAMP) ? 1 : 0;
 
-    /* 渲染节点页 (KP_PAGE_*) 与键路由页序 (PAGE_P1..PAGE_P3) 撤 P4 后逐项同序同值，
+    /* 渲染节点页 (KP_PAGE_*) 与键路由页序 (PAGE_P1..PAGE_P4) 四页态下逐项同序同值，
      * 页索引映射塌成恒等——直取即为「当前画的是哪一页」，无需换算表（实心页点与页槽
      * 表按当前页定格）。越界页一律回落首页（防御语义零改动）。 */
     int page = (rn_page >= 0 && rn_page < (int)PAGE_COUNT) ? rn_page : PAGE_P1;

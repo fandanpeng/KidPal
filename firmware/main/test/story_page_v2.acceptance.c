@@ -2548,6 +2548,97 @@ TEST_CASE("story_page_v2: AC5 两入口颜色统一 KSY_COLOR_INK 单源 (SLP-TB
                  "——计数画法被改形（「画法照常」零偏移义务破）", n));
 }
 
+/* -------------------------------------------------------------------------- *
+ * TEST 21 — SPV2-RK1: 阅读键归属收紧（2026-11-04 additive, TaskPackage
+ * 261104-k0a-four-page-skeleton; TECH-261028 承接 + 业务目的 8 前移）。
+ *
+ * 缺陷链（docs/debt/tech/TECH-261028 逐事件还原）: 阅读态正文画在 SERVER_PAGE
+ * （层值 4），kidpal_story_key_owns 三支判据无一命中（(c) 支要求 front_layer ==
+ * NONE）-> 板级 keya_story_page_wants 放行 -> key_route_layer 通用覆盖层列把
+ * KEY 短按映 SESSION_TOGGLE -> 误开语音会话（违反 S-F2.3 AC2「不响应」逐字 +
+ * 「无会话/问答入口」补充规则）。修法甲（TECH-261028 修法候选, 本包采纳）:
+ * key_owns 增一支——page_state == READER && front_layer == SERVER_PAGE -> 归故事页;
+ * 输入函数 READER 态本就把 KEY CLICK 映 KSPV2_ACT_NONE（SPV2-A6 tooth 1 既有齿
+ * 承载, 零改动）、KEY LONG_PRESS 仍 READER_EXIT（SPV2-A6 tooth 5 既有齿）——
+ * 本 TEST 只钉**归属判据新增支**与**对照面**（修复不得改全局覆盖层表）。
+ *
+ * Nature: 行为级（kidpal_story_key_owns / kidpal_keybar_story_slots / key_route_
+ * layer 强符号直调——story_page.c / keybar.c / key_gesture_parser.cc 均已在 host
+ * runner 在册; 强符号直调先例 = retract_p4「无未实现 seam 不设 weak 哨兵」）。
+ * kidpal_page 入参以 D-01 四页镜像 3 消费（KP_PAGE_STORY 落地值, 数值权威 =
+ * retract test 3 重锚齿; 本文件不 include 设备头, RSL/RSR 镜像先例同款）。
+ * ------------------------------------------------------------------------ */
+/* coverage: TECH-261028 -- 阅读键归属收紧四齿：① READER+SERVER_PAGE 归属新增支（现状 0 = 缺陷根, 设计态红）② ③ 修复不得整层吞的负锚（VOICE 前台/LIST 态仍交回全局）④ 对照面（查字窗列 CHAR_REPLAY + 通用覆盖层列 SESSION_TOGGLE 保留——全局覆盖层表零改动）+ 阅读键帽单源复核（现状绿） */
+/* coverage: S-F2.3-AC2 -- 「When 按 KEY 短按, Then 不响应」的归属半（输入表 NONE 半 = SPV2-A6 tooth 1 既有齿; 两半合壁 = 短按到手即被故事页消费且映射为无副作用, 绝不外泄开 会话） */
+extern int kidpal_story_key_owns(int front_layer, int kidpal_page, int page_state,
+                                 int ctx_active);
+extern int kidpal_keybar_story_slots(int substate, const char **out_left,
+                                     const char **out_right);
+TEST_CASE("story_page_v2: 阅读键归属收紧——READER 短按不开会话+对照面保留 (SPV2-RK1)",
+          "[story_page_v2][SPV2-RK1][TECH-261028][behavior]")
+{
+    const char *left = NULL, *right = NULL;
+
+#ifndef KSPV2_KP_PAGE_STORY_MIRROR
+#define KSPV2_KP_PAGE_STORY_MIRROR 3 /* D-01 四页镜像（KP_PAGE_STORY 落地值 = 3） */
+#endif
+
+    /* tooth 1 (本包红齿 · TECH-261028 修法甲新增支): 阅读态（正文渲染于云端夹钳
+     * SERVER_PAGE 前台）+ READER 页态必须归故事页——现状三支判据无一命中返回 0 =
+     * 真机缺陷根（KEY 短按漏全局路由误开会话）; 归属判据不归位, 本齿持续红。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        kidpal_story_key_owns(KIDPAL_LAYER_SERVER_PAGE, KSPV2_KP_PAGE_STORY_MIRROR,
+                              KSPV2_PAGE_READER, 0) == 1,
+        "SPV2-RK1 RED: kidpal_story_key_owns(SERVER_PAGE, STORY, READER, 0) != 1——"
+        "阅读态归属判据未认 SERVER_PAGE 前台（TECH-261028 根因: (c) 支要求 "
+        "front_layer == NONE 而阅读态正文画在 SERVER_PAGE; KEY 短按漏 key_route_layer "
+        "通用覆盖层列 SESSION_TOGGLE 误开语音会话, 违反 S-F2.3 AC2「不响应」+ 补充"
+        "规则「无会话/问答入口」; 修法甲 = 归属判据新增 READER+SERVER_PAGE 支）");
+
+    /* tooth 2 (负锚 · must-stay): 修复不得整层吞——VOICE 前台（非记录语境）的
+     * READER 页态仍交回全局路由（0）; LIST 态在云端夹钳前台同样不归故事页（列表
+     * 冷浏览渲染走云端夹钳, 不拥有 KEY）。两支漏网即归属判据越权。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        kidpal_story_key_owns(KIDPAL_LAYER_VOICE, KSPV2_KP_PAGE_STORY_MIRROR,
+                              KSPV2_PAGE_READER, 0) == 0 &&
+            kidpal_story_key_owns(KIDPAL_LAYER_SERVER_PAGE,
+                                  KSPV2_KP_PAGE_STORY_MIRROR, KSPV2_PAGE_LIST,
+                                  0) == 0,
+        "SPV2-RK1 RED(负锚): kidpal_story_key_owns 越权——VOICE 前台非记录语境 "
+        "READER / SERVER_PAGE 前台 LIST 态被归属判据吞掉（修法甲授权面只有 "
+        "READER+SERVER_PAGE 一支; 越权 = 其它覆盖层语义被连带改写）");
+
+    /* tooth 3 (对照面 · must-stay-green): 全局覆盖层表零改动——查字窗列 KEY 短按
+     * 仍 = CHAR_REPLAY(5, 非 SESSION_TOGGLE)、通用覆盖层列 KEY 短按仍 =
+     * SESSION_TOGGLE（查字/课表答案页等覆盖层的既定会话入口保留; TECH-261028
+     * 修法「不选」项 = 改 key_route_layer 全局表吞短按——本齿钉死该不选面）。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        (int)key_route_layer(KEY_ID_KEY, KEY_GESTURE_CLICK,
+                             KIDPAL_LAYER_CHAR_WINDOW) == 5 &&
+            (int)key_route_layer(KEY_ID_KEY, KEY_GESTURE_CLICK,
+                                 KIDPAL_LAYER_CHAR_WINDOW) !=
+                (int)GLOBAL_ACT_SESSION_TOGGLE,
+        "SPV2-RK1 RED(对照面): 查字窗列 KEY 短按 != CHAR_REPLAY(5)——全局覆盖层表"
+        "被 TECH-261028 修复顺手改动（修法「不选」项: 改全局表吞短按会打死查字/"
+        "课表答案页既定会话入口）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        (int)key_route_layer(KEY_ID_KEY, KEY_GESTURE_CLICK, 1) ==
+            (int)GLOBAL_ACT_SESSION_TOGGLE,
+        "SPV2-RK1 RED(对照面): 通用覆盖层列 KEY 短按 != SESSION_TOGGLE——查字/"
+        "课表答案页等覆盖层的既定会话入口被修复改动（KD-A1 会话主轴零回归红线）");
+
+    /* tooth 4 (键帽 · must-stay-green): 阅读态键帽单源 = 「长按退出 / 翻屏」
+     * （WF-F2-04, v1.52 朗读已砍——旧「念给我听」退役; TECH-261028 症状②键帽缺位
+     * 的值域半, 设备侧接线半 = K0A-E3 真机轮）。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        kidpal_keybar_story_slots(KSPV2_PAGE_READER, &left, &right) == 0 &&
+            left != NULL && right != NULL &&
+            strcmp(left, "长按退出") == 0 && strcmp(right, "翻屏") == 0,
+        kspv2_fm("SPV2-RK1 RED: 阅读态键帽 (左=%s, 右=%s) 期望 (长按退出, 翻屏)——"
+                 "阅读键帽单源漂移（WF-F2-04; TECH-261028 症状②的值域半）",
+                 left ? left : "(null)", right ? right : "(null)"));
+}
+
 /* ---------------------------------------------------------------------------
  * RED baseline 判读口径（freeze 相位, acceptance-author; SPV2 全套设计态红清单）:
  *
@@ -2745,6 +2836,20 @@ TEST_CASE("story_page_v2: AC5 两入口颜色统一 KSY_COLOR_INK 单源 (SLP-TB
  *        hunk 仅 tooth 1 一处替换 + 本条 REVISION LOG; 输入表/计数/分屏/云端形状
  *        断言零撤——impactedTestsSeed 纪律）。SPV2-B2 红基线转为设计态红（builder
  *        落 story_page.c 句柄消费后转绿）; 其余既有齿红基线零变化。
+ *   2026-11-04  revision 6 (additive 收紧, TaskPackage 261104-k0a-four-page-skeleton;
+ *               授权链 = impactedTestsSeed「story_page_v2.acceptance.c kind=regression:
+ *               故事列表、阅读、删除与盖章既有断言为零回归基线；阅读键归属缺陷按
+ *               TECH-261028 收紧」+ docs/debt/tech/TECH-261028（修法甲）+ PROPOSAL
+ *               §1 目的 8 前移裁定):
+ *     R11 纯 additive: 新增 TEST 21 SPV2-RK1（阅读键归属收紧四齿——① READER+
+ *        SERVER_PAGE 归属新增支现状红 = TECH-261028 缺陷根; ② 越权负锚 VOICE/LIST
+ *        仍交回全局; ③ 对照面查字窗列 CHAR_REPLAY(5) + 通用覆盖层列 SESSION_TOGGLE
+ *        保留（修复不得改全局覆盖层表 = 修法「不选」项钉死）; ④ 阅读键帽单源
+ *        「长按退出/翻屏」现状绿）。既有 TEST 1-20 断言零触碰（本包语义不动:
+ *        三 story 行为零回归基线原样保留——S-F2.1/S-F2.2/S-F2.3 全套既有齿即回归
+ *        判据）。本文件对 PAGE_COUNT 不取字面、不对页集表态（页集重锚归 retract/
+ *        four_page_skeleton; kidpal_page 入参以 KSPV2_KP_PAGE_STORY_MIRROR=3 数值
+ *        镜像消费, RSL/RSR 先例）。
  * --------------------------------------------------------------------------- */
 
 
