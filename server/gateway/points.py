@@ -1,55 +1,89 @@
-"""KidPal 星星积分确定性执行器 — 最小写账 / 权威载荷生产 / keyset 分页
-(TaskPackage 261104-k0-points-e2e-spike；契约 §1.3⑦⑧ / §1.4 add_points·redeem_points /
-§1.5-7 积分面机械职责 / §四 kidpal_points_page)。
+"""KidPal 星星积分确定性执行器 — 唯一 writer / 原子写与重算 / 两类幂等 / 目标存储 / keyset 分页
+(TaskPackage 261104-k1-points-ledger-core；在同一文件上正式化 K0 最小路径)。
 
-语义权威 = 冻结验收 server/acceptance/test_points_e2e_spike.acceptance.py 文件头
+语义权威 = 冻结验收 server/acceptance/test_points_ledger_core.acceptance.py 文件头
 FROZEN OFFLINE CONTRACT 节（A 段）——本模块的模块级常量、函数名、参数形状与拒绝语义
-逐条对齐该节，偏离即红。
+逐条对齐该节，偏离即红；K0 冻结件 server/acceptance/test_points_e2e_spike.acceptance.py
+（14 断言）保持全绿（add/redeem 既有调用形态零放宽，command_id 为 keyword-only 可选）。
 
 D-10（模型只产薄意图，确定性模块写账）的本包落地：LLM 只发
 `control/add_points {points, reason}` / `control/redeem_points {points}`；余额、分录 id、
-前后余额与 revision 全部由本模块计算并持久化，模型 API 形状上不存在这些入口。
+前后余额、revision、激活目标、游标全部由本模块计算并持久化，模型 API 形状上不存在这些入口。
 
-归属边界（K1/K2/K3）：
-  - K1（261104-k1-points-ledger-core）在同一 `points.py` 上正式化单 writer——跨进程锁、
-    幂等、余额重算与删除重推。本包只做最小可靠写（进程内锁 + tmp+replace），不另起
-    第二账本、第二余额算法。
-  - K2 = 完整积分 UI / 详细账本交互；K3 = 正式 QQ 家长通道（skill / 稳定定位）。
+归属边界（K1/K2/K3/K4）：
+  - K1（本包）在同一 `points.py` 上正式化单 writer——进程间 `.lock` 文件锁、tmp+os.replace
+    原子替换、余额与逐条前后余额全量重算、删除重推、两类幂等、目标配置存储、keyset 分页。
+    不另起第二账本、第二余额算法。
+  - K2 = 完整积分 UI / 详细账本交互；K3 = 正式 QQ 家长通道（CLI / 稳定 command_id）；
+    K4 = 目标配置的 QQ 交互与设备刻度联动。本包只提供执行器面与回执形状。
   - 本模块**零 fastapi / 零 gateway-front 依赖**：纯 stdlib，任何位置可离线导入
     （story.py / schedule.py / display_schema.py 同款先例）。
 
-state 文件形状（本包最小形态；K1 在同一形状上补齐不变量）：
-    {"revision": int, "balance": int, "entries": [<六键分录>, ...]}
+state 文件形状（本包正式形态；K0 三键形态为其子集，向后兼容）：
+    {"revision": int, "balance": int, "entries": [<六键分录>, ...]
+     [, "targets": [<四键自定义目标>, ...]      # 仅当存在自定义目标时落盘
+      , "active_target": "<目标 id>"            # 仅当非出厂默认时落盘
+      , "receipts": {"<command_id>": <六键分录>}]}  # 仅当有回执时落盘
 `entries` 恒为 (occurred_at, id) 时间倒序；`balance` 恒等于全部 delta 之和
-（read_state 从分录重算，不信任磁盘上的 balance 副本）。
+（read_state 从分录重算，不信任磁盘上的 balance 副本）；逐条 balance_before/
+balance_after 由写入路径按**时间序**全量重算（删除亦然，允许负余额 —— OQ-1）。
 """
 
 from __future__ import annotations
 
 import base64
+import contextlib
 import json
 import logging
 import os
 import re
 import sys
 import threading
+import unicodedata
 import uuid
 from datetime import datetime, timezone
+
+# 进程间文件锁：POSIX = fcntl.flock，Windows = msvcrt.locking（stdlib，无第三方位依赖）。
+try:  # pragma: no cover — 平台分支
+    import fcntl
+except ImportError:  # pragma: no cover — Windows
+    fcntl = None
+try:  # pragma: no cover — 平台分支
+    import msvcrt
+except ImportError:  # pragma: no cover — POSIX
+    msvcrt = None
 
 log = logging.getLogger("kidpal-gateway.points")
 
 # --------------------------------------------------------------------------- #
-# 冻结常量（FROZEN OFFLINE CONTRACT A 段；spike 只读，不提供配置入口）          #
+# 冻结常量（FROZEN OFFLINE CONTRACT A 段；K1 正式化面）                          #
 # --------------------------------------------------------------------------- #
 
-# 当前唯一激活目标（出厂默认 = 游乐场 40，requirements S-F6.5 AC1）。
-# 形状与值冻结；target 配置管理归 K3/K4，spike 只读此常量。
+# 短窗语义去重窗口（S-F6.3-AC5：起步 10 分钟；真机调优定数后由后续包回填）。
+DEDUP_WINDOW_SECONDS = 600
+
+# 四预置奖励场景（requirements S-F6.5-AC1 / arch §5.3.2「预置四场景为实现内不可删常量」；
+# id 命名沿契约 §1.3⑦ 示例 "preset-playground" 的 preset-* 形态扩展冻结）。
+PRESET_TARGETS = (
+    {"id": "preset-choco", "name": "巧克力", "points": 20, "asset": "sc-choco"},
+    {"id": "preset-movie", "name": "看电影", "points": 30, "asset": "sc-movie"},
+    {"id": "preset-playground", "name": "游乐场", "points": 40, "asset": "sc-wheel"},
+    {"id": "preset-gift", "name": "礼物", "points": 50, "asset": "sc-gift"},
+)
+
+# 出厂激活目标（出厂默认 = 游乐场 40，requirements S-F6.5 AC1）。形状与值冻结
+# （K0 冻结件依赖）；激活目标可经 set_active_target 切换，本常量仍是出厂态事实。
 DEFAULT_TARGET = {
     "id": "preset-playground",
     "name": "游乐场",
     "points": 40,
     "asset": "sc-wheel",
 }
+
+# 自定义目标边界（OQ-3：5–200 正整数，含端点）与通用标记图（契约 §1.3⑦ asset 闭集）。
+CUSTOM_TARGET_MIN_POINTS = 5
+CUSTOM_TARGET_MAX_POINTS = 200
+CUSTOM_TARGET_ASSET = "sc-flag"
 
 # state 文件路径 env 名单源（front_app.POINTS_STATE_PATH 与 CLI 共用同一个名字）。
 POINTS_STATE_ENV = "KIDPAL_POINTS_STATE"
@@ -65,8 +99,10 @@ PAGE_LIMIT_MAX = 50
 # 分录六键统一形状（契约 §1.3⑦⑧ 共用；写盘/校验/形状自检同一处单源）。
 ENTRY_KEYS = frozenset(
     {"id", "delta", "reason", "occurred_at", "balance_before", "balance_after"})
+# 目标四键统一形状（契约 §1.3⑦ target 形状）。
+TARGET_KEYS = ("id", "name", "points", "asset")
 
-# 进程内串行化（最小形态；跨进程锁 / 幂等 / 删后重算归 K1）。
+# 进程内串行化（跨进程互斥另由 state 同目录 `.lock` 文件锁承载——两层都在，见 _critical）。
 _STATE_LOCK = threading.Lock()
 
 _CLI_INT_RE = re.compile(r"^[0-9]+$")
@@ -77,9 +113,14 @@ _CLI_INT_RE = re.compile(r"^[0-9]+$")
 # --------------------------------------------------------------------------- #
 
 
+def _is_int(value) -> bool:
+    """整数判定——bool 是 int 子类（JSON 布尔不得冒充整数余额/版本号/分值）。"""
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
 def _is_positive_int(value) -> bool:
     """正整数判定——bool 是 int 子类，必须显式排除（契约 §1.4：points 为正整数）。"""
-    return isinstance(value, int) and not isinstance(value, bool) and value > 0
+    return _is_int(value) and value > 0
 
 
 def _occurred_seconds(value) -> float:
@@ -88,15 +129,21 @@ def _occurred_seconds(value) -> float:
     生产侧只写 `datetime.isoformat()`（带时区）；解析失败保守取 0.0（退化为按 id 排序），
     绝不让一条脏时间炸掉分页。
     """
-    if isinstance(value, str):
-        try:
-            dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
-        except ValueError:
-            return 0.0
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        return dt.timestamp()
-    return 0.0
+    dt = _occurred_datetime(value)
+    return 0.0 if dt is None else dt.timestamp()
+
+
+def _occurred_datetime(value):
+    """occurred_at -> 带时区 datetime；不可解析 -> None。"""
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt
 
 
 def _entry_sort_key(entry: dict) -> tuple:
@@ -117,7 +164,7 @@ def _entry_shape_error(entry) -> "str | None":
     if not isinstance(entry["id"], str) or not entry["id"]:
         return "entry.id must be a non-empty string"
     for key in ("delta", "balance_before", "balance_after"):
-        if not isinstance(entry[key], int) or isinstance(entry[key], bool):
+        if not _is_int(entry[key]):
             return f"entry.{key} must be an integer"
     if not isinstance(entry["reason"], str):
         return "entry.reason must be a string"
@@ -126,20 +173,110 @@ def _entry_shape_error(entry) -> "str | None":
     return None
 
 
+def _target_shape_error(target) -> "str | None":
+    """校验一个目标是否满足四键冻结形状（契约 §1.3⑦ target 形状）。"""
+    if not isinstance(target, dict):
+        return "target must be an object"
+    if set(target.keys()) != set(TARGET_KEYS):
+        return f"target keys must be exactly {list(TARGET_KEYS)}"
+    for key in ("id", "name", "asset"):
+        if not isinstance(target[key], str) or not target[key].strip():
+            return f"target.{key} must be a non-empty string"
+    if not _is_int(target["points"]) or target["points"] <= 0:
+        return "target.points must be a positive integer"
+    return None
+
+
 def _new_entry_id() -> str:
     """分录 id 唯一由执行器生成（模型不产——D-10）。"""
     return "pt_" + uuid.uuid4().hex
 
 
-def _now_iso(now) -> str:
-    """occurred_at 生成：带时区 ISO8601（注入 now 供验收；None = UTC 墙钟）。"""
+def _new_target_id() -> str:
+    """自定义目标 id 由执行器生成（模型不产 id —— FROZEN CONTRACT A 段）。"""
+    return "target-" + uuid.uuid4().hex[:16]
+
+
+def _coerce_now(now) -> datetime:
+    """注入时钟归一：None = UTC 墙钟；naive 视为 UTC；非 datetime 拒绝（不写账）。"""
     if now is None:
-        now = datetime.now(timezone.utc)
+        return datetime.now(timezone.utc)
     if not isinstance(now, datetime):
         raise ValueError("now must be a datetime when provided")
     if now.tzinfo is None:
-        now = now.replace(tzinfo=timezone.utc)
-    return now.isoformat()
+        return now.replace(tzinfo=timezone.utc)
+    return now
+
+
+def _coerce_command_id(command_id):
+    """传输幂等载体：None = 无传输幂等语义（K0 兼容）；在场须非空 str。"""
+    if command_id is None:
+        return None
+    if not isinstance(command_id, str) or not command_id.strip():
+        raise ValueError("command_id must be a non-empty string when provided")
+    return command_id
+
+
+def _normalize_reason(reason: str) -> str:
+    """短窗去重的保守归一化（arch §6.5-2）：NFKC 全半角统一 + 去全部空白 + 去标点。
+
+    不改时间前缀、不引入模型相似分或模糊阈值——归一化后**逐字相等**才算同事由。
+    """
+    text = unicodedata.normalize("NFKC", reason)
+    return "".join(
+        ch for ch in text
+        if not ch.isspace() and not unicodedata.category(ch).startswith("P"))
+
+
+# --------------------------------------------------------------------------- #
+# 进程间锁（state 同目录 `.lock`；arch §5.1.2 / §5.3.2 / §6.5）                  #
+# --------------------------------------------------------------------------- #
+
+
+def _lock_path(path: str) -> str:
+    """锁文件恒在 state 同目录（部署形态 = /opt/kidpal/points/{state.json,.lock}）。"""
+    parent = os.path.dirname(os.path.abspath(path))
+    return os.path.join(parent, ".lock") if parent else ".lock"
+
+
+@contextlib.contextmanager
+def _file_lock(path: str):
+    """跨进程互斥：`<state 同目录>/.lock` 上的排他文件锁（POSIX flock / Windows locking）。
+
+    锁文件常驻不删（unlink-while-held 是经典竞态；K1L-A1 亦以「.lock 在位」作机制锚）。
+    本进程内层仍由 `_STATE_LOCK` 串行化——文件锁只兜跨进程覆盖面（front API 与 QQ CLI）。
+    """
+    lock_path = _lock_path(path)
+    parent = os.path.dirname(lock_path)
+    if parent:
+        os.makedirs(parent, exist_ok=True)
+    fd = os.open(lock_path, os.O_RDWR | os.O_CREAT, 0o644)
+    try:
+        if fcntl is not None:  # POSIX
+            fcntl.flock(fd, fcntl.LOCK_EX)
+        elif msvcrt is not None:  # Windows
+            os.lseek(fd, 0, os.SEEK_SET)
+            msvcrt.locking(fd, msvcrt.LK_LOCK, 1)
+        yield
+    finally:
+        try:
+            if fcntl is not None:
+                fcntl.flock(fd, fcntl.LOCK_UN)
+            elif msvcrt is not None:
+                os.lseek(fd, 0, os.SEEK_SET)
+                msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+        except OSError:  # pragma: no cover — 解锁失败不掩盖主写入结果
+            pass
+        finally:
+            os.close(fd)
+
+
+@contextlib.contextmanager
+def _critical(path: str):
+    """写入临界区：进程内锁 + 跨进程文件锁（读最新状态→校验→重算→原子替换→存回执）。"""
+    with _STATE_LOCK:
+        with _file_lock(path):
+            yield
 
 
 # --------------------------------------------------------------------------- #
@@ -147,16 +284,81 @@ def _now_iso(now) -> str:
 # --------------------------------------------------------------------------- #
 
 
-def _empty_state() -> dict:
-    return {"revision": 0, "balance": 0, "entries": []}
+def _default_active_id() -> str:
+    return DEFAULT_TARGET["id"]
 
 
-def read_state(path) -> dict:
-    """读取账本状态：{"revision", "balance", "entries"}（entries 时间倒序）。
+def _preset_targets() -> list:
+    """四预置的防御性副本（返回值可被调用方改写而不污染模块常量）。"""
+    return [dict(t) for t in PRESET_TARGETS]
 
-    文件不存在 -> 零状态（revision 0 / balance 0 / entries []）。
+
+def _all_targets(full: dict) -> list:
+    """预置四项恒在 + 自定义目标（顺序：预置按冻结序、自定义按登记序）。"""
+    return _preset_targets() + [dict(t) for t in full["custom_targets"]]
+
+
+def _resolve_active(full: dict) -> dict:
+    """当前激活目标（四键副本）；state 校验期已保证 id 落在预置/自定义集合内。"""
+    active_id = full["active_target"]
+    for target in _all_targets(full):
+        if target["id"] == active_id:
+            return target
+    # _load_full 已拒绝未知 id；此处为不可能分支的保守回退（出厂默认恒在）。
+    return dict(DEFAULT_TARGET)  # pragma: no cover
+
+
+def _empty_full() -> dict:
+    return {
+        "revision": 0,
+        "balance": 0,
+        "entries": [],
+        "custom_targets": [],
+        "active_target": _default_active_id(),
+        "receipts": {},
+    }
+
+
+def _load_custom_targets(raw: dict) -> list:
+    """校验并返回自定义目标列表（缺省 = 无自定义）。"""
+    targets = raw.get("targets", [])
+    if targets is None:
+        targets = []
+    if not isinstance(targets, list):
+        raise ValueError("points state targets must be a list")
+    preset_ids = {t["id"] for t in PRESET_TARGETS}
+    seen = set()
+    out = []
+    for target in targets:
+        problem = _target_shape_error(target)
+        if problem is not None:
+            raise ValueError(f"points state corrupt target: {problem}")
+        if target["id"] in preset_ids or target["id"] in seen:
+            raise ValueError(f"points state duplicate/reserved target id {target['id']!r}")
+        seen.add(target["id"])
+        out.append(dict(target))
+    return out
+
+
+def _load_receipts(raw: dict) -> dict:
+    """命令回执（传输幂等，arch §6.5-1）：缺省空表；形状违约 -> ValueError。"""
+    receipts = raw.get("receipts", {})
+    if receipts is None:
+        receipts = {}
+    if not isinstance(receipts, dict):
+        raise ValueError("points state receipts must be an object")
+    for key, value in receipts.items():
+        if not isinstance(key, str) or not key:
+            raise ValueError("points state receipt key must be a non-empty string")
+        if not isinstance(value, dict) or not isinstance(value.get("id"), str):
+            raise ValueError("points state receipt value must carry an entry id")
+    return {key: dict(value) for key, value in receipts.items()}
+
+
+def _load_full(path) -> dict:
+    """读取并校验完整状态（含目标/回执）；文件不存在 = 出厂零状态。
+
     文件存在但不可解析 / 形状违约 -> ValueError（绝不静默当空账覆盖真账本——数据丢失面）。
-    `balance` 恒由分录重算（磁盘上的 balance 只是副本，不是权威）。
     """
     if not isinstance(path, str) or not path:
         raise ValueError("points state path must be a non-empty string")
@@ -164,7 +366,7 @@ def read_state(path) -> dict:
         with open(path, "r", encoding="utf-8") as handle:
             raw = json.load(handle)
     except FileNotFoundError:
-        return _empty_state()
+        return _empty_full()
     except (OSError, ValueError) as exc:
         raise ValueError(f"points state file unreadable/corrupt: {exc!r}") from exc
 
@@ -178,29 +380,61 @@ def read_state(path) -> dict:
         if problem is not None:
             raise ValueError(f"points state corrupt entry: {problem}")
     revision = raw.get("revision", 0)
-    if not isinstance(revision, int) or isinstance(revision, bool) or revision < 0:
+    if not _is_int(revision) or revision < 0:
         raise ValueError("points state revision must be a non-negative integer")
+
+    custom_targets = _load_custom_targets(raw)
+    active_target = raw.get("active_target", _default_active_id())
+    if not isinstance(active_target, str) or not active_target:
+        raise ValueError("points state active_target must be a non-empty string")
+    known_ids = {t["id"] for t in PRESET_TARGETS} | {t["id"] for t in custom_targets}
+    if active_target not in known_ids:
+        raise ValueError(f"points state active_target {active_target!r} is unknown")
+    receipts = _load_receipts(raw)
 
     ordered = _sorted_desc(entries)
     return {
-        "revision": revision,
-        "balance": sum(int(entry["delta"]) for entry in ordered),
-        "entries": ordered,
-    }
-
-
-def _write_state(path: str, revision: int, entries) -> None:
-    """落盘最小可靠写：先写同目录临时文件再 os.replace（跨进程锁 / 幂等归 K1）。
-
-    `minimal:` 本包只保证「不写半截账本」；K1 在同一文件上补跨进程锁、原子语义与
-    余额重算不变量，不另起第二账本。
-    """
-    ordered = _sorted_desc(entries)
-    payload = {
         "revision": int(revision),
         "balance": sum(int(entry["delta"]) for entry in ordered),
         "entries": ordered,
+        "custom_targets": custom_targets,
+        "active_target": active_target,
+        "receipts": receipts,
     }
+
+
+def read_state(path) -> dict:
+    """读取账本状态：{"revision", "balance", "entries"}（entries 时间倒序）。
+
+    文件不存在 -> 零状态（revision 0 / balance 0 / entries []）。
+    文件存在但不可解析 / 形状违约 -> ValueError（绝不静默当空账覆盖真账本——数据丢失面）。
+    `balance` 恒由分录重算（磁盘上的 balance 只是副本，不是权威）。逐条前后余额按持久值
+    返回（写入路径负责重算；读取侧不在读时「修正」陈旧链，以免掩盖写入缺陷）。
+    """
+    full = _load_full(path)
+    return {
+        "revision": full["revision"],
+        "balance": full["balance"],
+        "entries": full["entries"],
+    }
+
+
+def _write_state(path: str, full: dict) -> None:
+    """落盘：先写同目录临时文件再 os.replace（原子替换；失败上抛、旧状态完整）。"""
+    ordered = _sorted_desc(full["entries"])
+    payload = {
+        "revision": int(full["revision"]),
+        "balance": sum(int(entry["delta"]) for entry in ordered),
+        "entries": ordered,
+    }
+    # 可选键只在非出厂默认时落盘（K0 三键形态是子集，旧 state 继续可读）。
+    if full["custom_targets"]:
+        payload["targets"] = [dict(t) for t in full["custom_targets"]]
+    if full["active_target"] != _default_active_id():
+        payload["active_target"] = full["active_target"]
+    if full["receipts"]:
+        payload["receipts"] = {key: dict(value) for key, value in full["receipts"].items()}
+
     parent = os.path.dirname(os.path.abspath(path))
     if parent:
         os.makedirs(parent, exist_ok=True)
@@ -219,26 +453,74 @@ def _write_state(path: str, revision: int, entries) -> None:
             pass
 
 
-def _append_entry(path: str, delta: int, reason: str, now) -> dict:
-    """统一写账路径（add_points / redeem_points 共用；先校验后落账，拒绝零写入）。"""
-    occurred_at = _now_iso(now)
-    with _STATE_LOCK:
-        state = read_state(path)
-        balance_before = int(state["balance"])
-        entry = {
-            "id": _new_entry_id(),
-            "delta": int(delta),
-            "reason": reason,
-            "occurred_at": occurred_at,
-            "balance_before": balance_before,
-            "balance_after": balance_before + int(delta),
-        }
-        revision = int(state["revision"]) + 1
-        _write_state(path, revision, list(state["entries"]) + [entry])
-    log.info(
-        "points_entry corr_id=%s entry_id=%s delta=%+d balance_after=%d revision=%d",
-        uuid.uuid4().hex, entry["id"], entry["delta"], entry["balance_after"], revision)
-    return dict(entry)
+def _recompute_chain(entries) -> list:
+    """按**时间序**全量重算逐条 balance_before / balance_after（允许负余额，OQ-1）。
+
+    返回时间倒序的新列表（每条都是新 dict，不就地改写入参）。余额 = 剩余分录之和：
+    写入路径（追加 / 删除 / 兑换）恒过本函数，因此删除后可负、其余分录保留不清零。
+    """
+    running = 0
+    out = []
+    for entry in sorted(entries, key=_entry_sort_key):
+        delta = int(entry["delta"])
+        out.append({
+            "id": entry["id"],
+            "delta": delta,
+            "reason": entry["reason"],
+            "occurred_at": entry["occurred_at"],
+            "balance_before": running,
+            "balance_after": running + delta,
+        })
+        running += delta
+    return _sorted_desc(out)
+
+
+def _find_entry(entries, entry_id):
+    for entry in entries:
+        if entry["id"] == entry_id:
+            return entry
+    return None
+
+
+def _replay_receipt(full: dict, command_id: str):
+    """同 command_id 重放 -> 首次结果（优先返账本里该分录的当前派生值）。"""
+    stored = full["receipts"].get(command_id)
+    if not isinstance(stored, dict):
+        return None
+    live = _find_entry(full["entries"], stored.get("id"))
+    return dict(live if live is not None else stored)
+
+
+def _find_duplicate(full: dict, delta: int, reason: str, now_dt: datetime):
+    """短窗语义去重（arch §6.5-2）：同正负号分值 + 归一化事由相等 + 窗口内。
+
+    匹配对象 = 当前账本**现存**分录（已删除分录不参与——D-03「分录为事实」）。
+    窗口以注入 now 判定（禁 wall-clock 依赖验收）。
+    """
+    if DEDUP_WINDOW_SECONDS <= 0:  # 退化配置 = 关闭去重（变异敏感点）
+        return None
+    target_norm = _normalize_reason(reason)
+    for entry in full["entries"]:
+        if int(entry["delta"]) != int(delta):
+            continue
+        if _normalize_reason(str(entry["reason"])) != target_norm:
+            continue
+        occurred = _occurred_datetime(entry["occurred_at"])
+        if occurred is None:
+            continue
+        if abs((now_dt - occurred).total_seconds()) <= DEDUP_WINDOW_SECONDS:
+            return entry
+    return None
+
+
+def _duplicate_receipt(full: dict, hit: dict) -> dict:
+    """去重命中回执（契约 A 段：{"duplicate": True, "balance": <当前权威余额>}）。"""
+    return {
+        "duplicate": True,
+        "balance": int(full["balance"]),
+        "entry_id": hit["id"],
+        "revision": int(full["revision"]),
+    }
 
 
 # --------------------------------------------------------------------------- #
@@ -246,39 +528,270 @@ def _append_entry(path: str, delta: int, reason: str, now) -> dict:
 # --------------------------------------------------------------------------- #
 
 
-def add_points(path, points, reason, *, now=None) -> dict:
+def add_points(path, points, reason, *, now=None, command_id=None) -> dict:
     """追加一条加分分录并持久化，返回新分录（六键冻结形状）。
 
     拒绝（ValueError，**不写账**）：points 非正整数（bool 不算整数）/ reason 非非空 str。
+    command_id（keyword-only, 缺省 None = 无传输幂等语义，K0 兼容）：同 id 重放返首次
+    结果——不新增分录、不递增 revision（arch §6.5-1）；传输幂等检查先于短窗语义去重。
+    短窗去重命中 -> 不落账，返回 {"duplicate": True, "balance": <当前权威余额>}（+附加键）。
     """
     if not _is_positive_int(points):
         raise ValueError(
             f"add_points points must be a positive integer, got {points!r} (bool excluded)")
     if not isinstance(reason, str) or not reason.strip():
         raise ValueError("add_points reason must be a non-empty string")
-    return _append_entry(path, int(points), reason, now)
+    now_dt = _coerce_now(now)
+    command_id = _coerce_command_id(command_id)
+
+    with _critical(path):
+        full = _load_full(path)
+        if command_id is not None:
+            replayed = _replay_receipt(full, command_id)
+            if replayed is not None:
+                log.info(
+                    "points_replay corr_id=%s command_id=%s entry_id=%s revision=%d",
+                    uuid.uuid4().hex, command_id, replayed.get("id"), full["revision"])
+                return replayed
+        hit = _find_duplicate(full, int(points), reason, now_dt)
+        if hit is not None:
+            receipt = _duplicate_receipt(full, hit)
+            log.info(
+                "points_dedup corr_id=%s delta=%+d balance=%d revision=%d hit=%s",
+                uuid.uuid4().hex, int(points), receipt["balance"],
+                receipt["revision"], hit["id"])
+            return receipt
+        entry = {
+            "id": _new_entry_id(),
+            "delta": int(points),
+            "reason": reason,
+            "occurred_at": now_dt.isoformat(),
+            "balance_before": 0,
+            "balance_after": int(points),
+        }
+        full["entries"] = _recompute_chain(full["entries"] + [entry])
+        stored = _find_entry(full["entries"], entry["id"])
+        full["revision"] = int(full["revision"]) + 1
+        if command_id is not None:
+            full["receipts"][command_id] = dict(stored)
+        _write_state(path, full)
+        revision = full["revision"]
+
+    log.info(
+        "points_entry corr_id=%s entry_id=%s delta=%+d balance_after=%d revision=%d",
+        uuid.uuid4().hex, stored["id"], stored["delta"], stored["balance_after"], revision)
+    return dict(stored)
 
 
-def redeem_points(path, points, *, now=None) -> dict:
+def redeem_points(path, points, *, now=None, command_id=None) -> dict:
     """兑换落一条负向分录，返回新分录。
 
-    事由统一取 `兑换<当前目标名>`（模型不提供 target id / 负 delta）；
-    拒绝（ValueError，**不写账**）：points != 当前激活目标分值，或余额不足。
+    事由统一取 `兑换<当前激活目标名>`（模型不提供 target id / 负 delta / 事由）；
+    拒绝（ValueError，**不写账**）：points != 当前激活目标分值（动态资格门，
+    S-F6.3-AC3），或当前 balance < points。command_id / 短窗去重语义与 add_points 同型
+    （同一次兑换不重复扣分——S-F6.3-AC5 兑换侧同此）。
     """
     if not _is_positive_int(points):
         raise ValueError(
             f"redeem_points points must be a positive integer, got {points!r} (bool excluded)")
-    target_points = int(DEFAULT_TARGET["points"])
-    if int(points) != target_points:
+    now_dt = _coerce_now(now)
+    command_id = _coerce_command_id(command_id)
+
+    with _critical(path):
+        full = _load_full(path)
+        if command_id is not None:
+            replayed = _replay_receipt(full, command_id)
+            if replayed is not None:
+                log.info(
+                    "points_replay corr_id=%s command_id=%s entry_id=%s revision=%d",
+                    uuid.uuid4().hex, command_id, replayed.get("id"), full["revision"])
+                return replayed
+        active = _resolve_active(full)
+        target_points = int(active["points"])
+        if int(points) != target_points:
+            raise ValueError(
+                f"redeem_points only accepts the active target value {target_points}, "
+                f"got {points}")
+        reason = f"兑换{active['name']}"
+        hit = _find_duplicate(full, -int(points), reason, now_dt)
+        if hit is not None:
+            receipt = _duplicate_receipt(full, hit)
+            log.info(
+                "points_dedup corr_id=%s delta=%+d balance=%d revision=%d hit=%s",
+                uuid.uuid4().hex, -int(points), receipt["balance"],
+                receipt["revision"], hit["id"])
+            return receipt
+        if int(full["balance"]) < int(points):
+            raise ValueError(
+                f"redeem_points insufficient balance {full['balance']} < {points}")
+        entry = {
+            "id": _new_entry_id(),
+            "delta": -int(points),
+            "reason": reason,
+            "occurred_at": now_dt.isoformat(),
+            "balance_before": 0,
+            "balance_after": -int(points),
+        }
+        full["entries"] = _recompute_chain(full["entries"] + [entry])
+        stored = _find_entry(full["entries"], entry["id"])
+        full["revision"] = int(full["revision"]) + 1
+        if command_id is not None:
+            full["receipts"][command_id] = dict(stored)
+        _write_state(path, full)
+        revision = full["revision"]
+
+    log.info(
+        "points_entry corr_id=%s entry_id=%s delta=%+d balance_after=%d revision=%d "
+        "kind=redeem",
+        uuid.uuid4().hex, stored["id"], stored["delta"], stored["balance_after"], revision)
+    return dict(stored)
+
+
+def delete_entry(path, entry_id) -> dict:
+    """删除一条误记分录并按时间序重算全部前后余额（契约 §四 kidpal_points_delete）。
+
+    - 形状合法且存在 -> 移除该分录、全量重算、revision +1，返回回执
+      {"id", "deleted": True, "revision", "balance"}（允许负余额 —— OQ-1）；
+    - 形状合法但不存在 -> 幂等 no-op：**不写账**、revision 不变、回执 "deleted": False
+      （front 据此仍重推对账帧）；
+    - 非法 id（非 str / 空串 / 纯空白）-> ValueError（拒绝并审计）。
+    """
+    if not isinstance(entry_id, str) or not entry_id.strip():
         raise ValueError(
-            f"redeem_points only accepts the active target value {target_points}, "
-            f"got {points}")
-    state = read_state(path)
-    if int(state["balance"]) < int(points):
+            f"delete_entry entry_id must be a non-empty string, got {entry_id!r}")
+    with _critical(path):
+        full = _load_full(path)
+        if _find_entry(full["entries"], entry_id) is None:
+            log.info(
+                "points_delete corr_id=%s entry_id=%s deleted=false revision=%d balance=%d",
+                uuid.uuid4().hex, entry_id, full["revision"], full["balance"])
+            return {
+                "id": entry_id,
+                "deleted": False,
+                "revision": int(full["revision"]),
+                "balance": int(full["balance"]),
+            }
+        full["entries"] = _recompute_chain(
+            [entry for entry in full["entries"] if entry["id"] != entry_id])
+        full["revision"] = int(full["revision"]) + 1
+        _write_state(path, full)
+        revision = int(full["revision"])
+        balance = sum(int(entry["delta"]) for entry in full["entries"])
+
+    log.info(
+        "points_delete corr_id=%s entry_id=%s deleted=true revision=%d balance=%d",
+        uuid.uuid4().hex, entry_id, revision, balance)
+    return {"id": entry_id, "deleted": True, "revision": revision, "balance": balance}
+
+
+# --------------------------------------------------------------------------- #
+# 目标配置存储（S-F6.5 AC1/AC2/AC4 存储半；OQ-2/OQ-3）                           #
+# --------------------------------------------------------------------------- #
+
+
+def get_active_target(path) -> dict:
+    """当前激活目标（id/name/points/asset 四键）；出厂态（无 state 文件）= 游乐场 40。"""
+    full = _load_full(path)
+    return _resolve_active(full)
+
+
+def list_targets(path) -> list:
+    """预置四项恒在 + 自定义目标（元素为含 id/name/points/asset 的 dict）。"""
+    full = _load_full(path)
+    return _all_targets(full)
+
+
+def add_custom_target(path, name, points, *, now=None) -> dict:
+    """新增自定义奖励目标（OQ-3：name 非空 str；points 为 5–200 正整数）。
+
+    id 由执行器生成（模型不产）、asset 恒 "sc-flag"（通用标记图）、revision +1。
+    越界 / 畸形 raise ValueError 且**不写账**。
+    """
+    if not isinstance(name, str) or not name.strip():
+        raise ValueError("add_custom_target name must be a non-empty string")
+    if not _is_int(points):
         raise ValueError(
-            f"redeem_points insufficient balance {state['balance']} < {points}")
-    return _append_entry(
-        path, -int(points), f"兑换{DEFAULT_TARGET['name']}", now)
+            f"add_custom_target points must be an integer, got {points!r} (bool excluded)")
+    if points < CUSTOM_TARGET_MIN_POINTS or points > CUSTOM_TARGET_MAX_POINTS:
+        raise ValueError(
+            f"add_custom_target points must be within "
+            f"{CUSTOM_TARGET_MIN_POINTS}-{CUSTOM_TARGET_MAX_POINTS}, got {points}")
+    _coerce_now(now)
+
+    with _critical(path):
+        full = _load_full(path)
+        target = {
+            "id": _new_target_id(),
+            "name": name.strip(),
+            "points": int(points),
+            "asset": CUSTOM_TARGET_ASSET,
+        }
+        full["custom_targets"] = list(full["custom_targets"]) + [target]
+        full["revision"] = int(full["revision"]) + 1
+        _write_state(path, full)
+        revision = int(full["revision"])
+
+    log.info(
+        "points_target_added corr_id=%s target_id=%s points=%d revision=%d",
+        uuid.uuid4().hex, target["id"], target["points"], revision)
+    return dict(target)
+
+
+def set_active_target(path, target_id, *, now=None) -> dict:
+    """切换激活目标：revision +1、不产生任何分录（切目标不自动扣分）；未知 id 拒绝。
+
+    历史兑换分录的 reason 快照是既有事实，切换不改写（arch 场景⑥E / K1L-E4）。
+    """
+    if not isinstance(target_id, str) or not target_id.strip():
+        raise ValueError(
+            f"set_active_target target_id must be a non-empty string, got {target_id!r}")
+    _coerce_now(now)
+
+    with _critical(path):
+        full = _load_full(path)
+        known_ids = {t["id"] for t in _all_targets(full)}
+        if target_id not in known_ids:
+            raise ValueError(f"set_active_target unknown target id {target_id!r}")
+        full["active_target"] = target_id
+        full["revision"] = int(full["revision"]) + 1
+        _write_state(path, full)
+        revision = int(full["revision"])
+        active = _resolve_active(full)
+
+    log.info(
+        "points_target_active corr_id=%s target_id=%s revision=%d",
+        uuid.uuid4().hex, target_id, revision)
+    return active
+
+
+def delete_target(path, target_id, *, now=None) -> dict:
+    """删除自定义目标（非激活）：revision +1；预置 / 激活中 / 未知 id 一律拒绝（OQ-2）。"""
+    if not isinstance(target_id, str) or not target_id.strip():
+        raise ValueError(
+            f"delete_target target_id must be a non-empty string, got {target_id!r}")
+    _coerce_now(now)
+
+    with _critical(path):
+        full = _load_full(path)
+        if target_id in {t["id"] for t in PRESET_TARGETS}:
+            raise ValueError(
+                f"delete_target refuses preset target {target_id!r} (presets are constants)")
+        if target_id == full["active_target"]:
+            raise ValueError(
+                f"delete_target refuses active target {target_id!r} "
+                "(switch to another target first)")
+        remaining = [t for t in full["custom_targets"] if t["id"] != target_id]
+        if len(remaining) == len(full["custom_targets"]):
+            raise ValueError(f"delete_target unknown target id {target_id!r}")
+        full["custom_targets"] = remaining
+        full["revision"] = int(full["revision"]) + 1
+        _write_state(path, full)
+        revision = int(full["revision"])
+
+    log.info(
+        "points_target_deleted corr_id=%s target_id=%s revision=%d",
+        uuid.uuid4().hex, target_id, revision)
+    return {"id": target_id, "deleted": True, "revision": revision}
 
 
 # --------------------------------------------------------------------------- #
@@ -287,15 +800,18 @@ def redeem_points(path, points, *, now=None) -> dict:
 
 
 def build_points_home(path) -> dict:
-    """契约 §1.3⑦ 完整 points_home 载荷（**不含 restore 键**——restore 归 front 按通道加）。"""
-    state = read_state(path)
+    """契约 §1.3⑦ 完整 points_home 载荷（**不含 restore 键**——restore 归 front 按通道加）。
+
+    target = 当前激活目标（动态；出厂态 == DEFAULT_TARGET 四键，K0 语义零偏移）。
+    """
+    full = _load_full(path)
     return {
         "view": "points_home",
         "data": {
-            "revision": int(state["revision"]),
-            "balance": int(state["balance"]),
-            "target": dict(DEFAULT_TARGET),
-            "recent": [dict(entry) for entry in state["entries"][:HOME_RECENT_MAX]],
+            "revision": int(full["revision"]),
+            "balance": int(full["balance"]),
+            "target": _resolve_active(full),
+            "recent": [dict(entry) for entry in full["entries"][:HOME_RECENT_MAX]],
         },
     }
 
@@ -327,7 +843,7 @@ def _decode_cursor(cursor) -> "dict | None":
 
 
 def _validate_limit(limit) -> int:
-    if not isinstance(limit, int) or isinstance(limit, bool):
+    if not _is_int(limit):
         raise ValueError(f"points page limit must be an integer, got {limit!r}")
     if limit < PAGE_LIMIT_MIN or limit > PAGE_LIMIT_MAX:
         raise ValueError(
@@ -340,9 +856,11 @@ def build_points_ledger_page(path, cursor=None, known_revision=None, limit=None)
 
     - cursor 缺省/None = 最新首页（page.reset=True）；
     - 续页按 (occurred_at, id) 时间倒序 keyset 定位，正常续页 page.reset=False；
-    - 游标非法/过期，或 known_revision 与当前 revision 不一致 -> 回最新首页且 reset=True；
+    - 游标非法/过期，或 known_revision 与当前 revision 不一致 -> 回最新首页且 reset=True
+      （插入 / 删除致 revision 变化时设备不得跨版本拼接缓存）；
     - page.total = 全量分录数（不用 items.length 代替）；limit 允许 1–50，越界 ValueError；
     - 空账 -> items=[], page.total=0, balance=0（权威空账，不伪造分录）。
+    - 载荷**无 target 字段**（K0 ruling：仅 points_home 强制 target 四键）。
     """
     if limit is None:
         limit = PAGE_LIMIT_DEFAULT
@@ -356,16 +874,13 @@ def build_points_ledger_page(path, cursor=None, known_revision=None, limit=None)
 
     reset = True
     start = 0
-    boundary = None
     if cursor is not None:
         decoded = _decode_cursor(cursor)
         if decoded is not None:
             boundary = (
                 _occurred_seconds(decoded.get("occurred_at")), str(decoded.get("id")))
             version_ok = (known_revision is None
-                          or (isinstance(known_revision, int)
-                              and not isinstance(known_revision, bool)
-                              and int(known_revision) == revision))
+                          or (_is_int(known_revision) and int(known_revision) == revision))
             if version_ok:
                 reset = False
                 # keyset 续页：严格小于游标键（时间倒序）的第一条即起点。
@@ -435,11 +950,21 @@ def _cli_usage(stream) -> None:
         f"env: {POINTS_STATE_ENV} = points state file path (required)")
 
 
+def _entry_receipt_line(command: str, entry: dict) -> str:
+    """成功回执行（K3/K4 交接面：entry_id / delta / 权威余额 / 事由 / revision）。"""
+    if entry.get("duplicate") is True:
+        return (f"points {command} duplicate=true balance={entry.get('balance')} "
+                f"reason=already_recorded")
+    return (f"points {command} ok entry_id={entry['id']} delta={entry['delta']:+d} "
+            f"balance={entry['balance_after']} reason={entry['reason']}")
+
+
 def main(argv=None) -> int:
     """`python -m gateway.points add|redeem` 入口。
 
     state 路径单源 = os.environ[POINTS_STATE_ENV]（与 front 同一 env 名，无第二账本）。
-    成功 exit 0；非法 / 拒绝 exit 非 0、不写账、说明写 stderr、不伪造成功回执。
+    成功（含短窗去重回执）exit 0；非法 / 拒绝 exit 非 0、不写账、说明写 stderr、不伪造
+    成功回执。删除 / 目标配置子命令与 QQ skill 接线归 K3/K4（本包只提供执行器面）。
     """
     args = list(sys.argv[1:] if argv is None else argv)
     state_path = os.environ.get(POINTS_STATE_ENV)
@@ -471,10 +996,7 @@ def main(argv=None) -> int:
         return 1
 
     # 成功回执只陈述执行器真实落账结果（不宣称「已告知家长」等未发生的事）。
-    _emit(
-        sys.stdout,
-        f"points {command} ok entry_id={entry['id']} delta={entry['delta']:+d} "
-        f"balance={entry['balance_after']} reason={entry['reason']}")
+    _emit(sys.stdout, _entry_receipt_line(command, entry))
     return 0
 
 

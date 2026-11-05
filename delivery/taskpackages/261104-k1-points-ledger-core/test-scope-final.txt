@@ -1,0 +1,45 @@
+# test-scope-final — 261104-k1-points-ledger-core（integrator 范围圈定终验，2026-11-05）
+
+范围 = 本包 acceptanceTestsFile ∪ taskpackage impactedTestsSeed ∪ changeManifest 全部
+测试面（含 K0 units 回归重锚件）∪ 部署面（manifest/deploy.sh/verify-deploy.sh 无 pytest
+可执行面，按圈定核对不计入跑测）。display_schema.py = 0 改动（planner ruling3 认可的
+申报，diff 实核零行），其消费回归由 record_dialogue_guide（决定类门禁）+ 冻结验收 A3
+（display floor 过帧）覆盖。全量回归 = 人工触发位，不跑（server 全量基线锚 =
+401 passed / 0 failed / 33 subtests @ 85cc3747，pod-events baseline-anchor 事件）。
+
+## 圈定清单
+
+server 本包新件/主改（changeManifest 1/2/4/5 项）：
+  server/acceptance/test_points_ledger_core.acceptance.py   （冻结验收 K1L-A1..A10，sha256 bd9dec61）
+  server/tests/test_points_ledger_units.py                  （K1 units 48 条）
+server 清单内回归重锚（changeManifest 第 9 项，planner 扩单 ruling2）：
+  server/tests/test_points_spike_units.py                   （K0 units 51 条，:387/:394/:396 三处重锚）
+server 回归子集（impactedTestsSeed 全部三条）：
+  server/tests/test_story_units.py                          （故事 seq 账本独立数据域零串扰回归）
+  server/acceptance/test_m4k1_story_cloud_link.acceptance.py（story_list/story_text 语义不变 + 积分帧不落故事分支）
+  server/acceptance/test_record_dialogue_guide.acceptance.py（gateway 决定类/forwardable 分叉保持，积分动作 front 截获）
+server 实现面（被上列测试承载，不单独跑测）：server/gateway/points.py、
+  server/gateway/front/front_app.py（_observe_points_revision 观察缝 GAP-1）
+server 部署面（无测试可执行面，圈定核对项）：server/deploy/manifest.yaml、
+  server/deploy/deploy.sh、server/deploy/verify-deploy.sh
+
+## 终验实测（2026-11-05，integrator 在本树实跑）
+
+$ python -m pytest -q --import-mode=importlib -m "not live" \
+    server/acceptance/test_points_ledger_core.acceptance.py \
+    server/tests/test_points_ledger_units.py \
+    server/tests/test_points_spike_units.py \
+    server/tests/test_story_units.py \
+    server/acceptance/test_m4k1_story_cloud_link.acceptance.py \
+    server/acceptance/test_record_dialogue_guide.acceptance.py
+→ 末行逐字：202 passed, 1 warning, 3 subtests passed in 15.25s（分件：冻结验收
+  10 passed；units 三件 139 passed = ledger 48 + spike 51 + story 40；种子回归两件
+  53 passed / 3 subtests passed；合计 202 passed / 0 failed，零误伤）
+
+## 圈定判定
+
+- 范围 = 影响面圈定清单（非全量、非缩到只剩本包档）：本包新件 2 + 扩单重锚件 1 +
+  种子回归 3，覆盖 changeManifest 全部 9 项（8 项有 diff 由测试承载核对、1 项
+  display_schema.py 零 diff 申报）与全部 impactedTestsSeed。
+- live-manual 两条（K1L-L1 语音链真机记账 / K1L-L2 观察缝活性接线真机目击）不在本
+  终验范围（human 在场轮，诚实挂起，不伪造）。

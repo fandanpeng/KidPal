@@ -36,6 +36,7 @@ import re
 import threading
 import time
 import uuid
+import weakref
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
@@ -77,7 +78,11 @@ _STORY_SINGLE_SOURCE_VIEWS = frozenset({"story_list", "story_text"})
 
 # --- 积分面（TaskPackage 261104-k0-points-e2e-spike；契约 §1.3⑦⑧ / §1.4 / §四）--------
 # state 文件路径单源（env 名与 `python -m gateway.points` 同一名字，无第二账本）。
-POINTS_STATE_PATH = os.environ.get("KIDPAL_POINTS_STATE", "/opt/kidpal/points.json")
+# 部署缺省对齐 arch §5.3.2 权威布局 = /opt/kidpal/points/{state.json,.lock}（K1）；
+# env KIDPAL_POINTS_STATE 仍是单源覆盖口（live 旧路径 /opt/kidpal/points.json 由部署面
+# 迁移注记承载，本模块不为旧路径留第二分支）。
+POINTS_STATE_PATH = os.environ.get(
+    "KIDPAL_POINTS_STATE", "/opt/kidpal/points/state.json")
 # 积分来源门禁（契约 §1.5）：完整 points 帧只能由 front 依据 points.py 当前状态自推；
 # 引擎侧完整帧在 relay 沿降级为友好 text（story 单源先例同型）。空 data 导航薄载荷
 # 由 _expand_points_nav_intent 展开为完整帧——展开结果不再降级（front 机械产物）。
@@ -707,17 +712,131 @@ async def _consume_points_intent(websocket, payload, *, restore: bool = False) -
         log.warning("points_intent rejected corr_id=%s action=%s detail=%s",
                     corr_id, action, exc)
         return True
+    except Exception as exc:  # noqa: BLE001 — 持久化层硬失败同样不得外抛炸连接
+        # 失败面（NFR-OFF-1 / D-06 数据面半）：不推成功视图、不本地排队补写——
+        # 失败即失败，由用户重试；异常形态不改变「已消费」语义（控制帧不透传）。
+        log.warning("points_intent failed corr_id=%s action=%s err=%s",
+                    corr_id, action, type(exc).__name__)
+        return True
 
-    log.info("points_intent executed corr_id=%s action=%s entry_id=%s delta=%+d balance=%d",
-             corr_id, action, entry["id"], entry["delta"], entry["balance_after"])
+    if entry.get("duplicate") is True:
+        # 短窗语义去重回执（S-F6.3-AC5）：不落新账、不递增 revision——仍推恰一帧
+        # 当前权威 points_home（回执携带的 balance 与实时状态同源）。
+        log.info("points_intent dedup corr_id=%s action=%s balance=%s revision=%s",
+                 corr_id, action, entry.get("balance"), entry.get("revision"))
+    else:
+        log.info(
+            "points_intent executed corr_id=%s action=%s entry_id=%s delta=%+d balance=%d",
+            corr_id, action, entry["id"], entry["delta"], entry["balance_after"])
     try:
         home = gw_points.build_points_home(POINTS_STATE_PATH)
         if restore:
             home["data"]["restore"] = True   # QQ/恢复通道：只填缓存不抢前台（D-07）
         await _push_display_payload(websocket, home)
+        # 本连接已看到该 revision：更新观察基线，避免观察缝把同一变更再推一遍。
+        _points_observed_set(websocket, _points_snapshot_or_none())
     except Exception as e:  # noqa: BLE001 — 推送失败不改变「已消费」语义（控制帧仍不透传）
         log.warning("points_home_push_err corr_id=%s err=%s", corr_id, type(e).__name__)
     return True
+
+
+# --------------------------------------------------------------------------- #
+# GAP-1 producer 侧：front 观察 points.py revision 变化并推权威 restore 帧         #
+# （arch §5.1.2 front 行 / §5.2 场景⑥B；K1L-A9 冻结缝）                          #
+# --------------------------------------------------------------------------- #
+
+# 观察态按连接（websocket 对象粒度）跟踪最近一次观察到的 (revision, entry_count)。
+# WeakKeyDictionary = 连接对象被回收即自动摘除（常驻网关下不攒僵尸基线）；不可弱引用
+# 的替身对象退回属性面（离线桩同款能力）。
+_POINTS_OBSERVED = weakref.WeakKeyDictionary()
+
+
+def _points_snapshot_or_none():
+    """当前权威 (revision, 分录数)；state 不可读/损坏 -> None（不抛、不补写）。"""
+    try:
+        state = gw_points.read_state(POINTS_STATE_PATH)
+    except Exception:  # noqa: BLE001 — 损坏账本显式失败可见于返回值，不炸连接
+        return None
+    return (int(state["revision"]), len(state["entries"]))
+
+
+def _points_observed_get(websocket):
+    try:
+        return _POINTS_OBSERVED.get(websocket)
+    except TypeError:  # 不可弱引用的对象 -> 属性面回退
+        return getattr(websocket, "_kidpal_points_observed", None)
+
+
+def _points_observed_set(websocket, snapshot) -> None:
+    try:
+        _POINTS_OBSERVED[websocket] = snapshot
+        return
+    except TypeError:
+        pass
+    try:
+        setattr(websocket, "_kidpal_points_observed", snapshot)
+    except Exception:  # noqa: BLE001 — 基线登记失败不阻断推送面
+        pass
+
+
+async def _observe_points_revision(websocket) -> bool:
+    """观察缝（GAP-1 producer 侧）：points.py 权威 revision 变化 -> 恰一帧 restore 推送。
+
+    - 未观察过的新连接 -> 只建立基线、推 0 帧、返回 False（冷启动初推归 K2/live）；
+    - revision 变化且分录数未减（QQ 加分/兑换/切目标等外部写入）-> 经
+      `_push_display_payload` 恰推一帧权威 points_home（data.restore=True，revision/
+      balance 取当前权威值），返回 True；
+    - revision 变化且分录数减少（删除）-> 在 points_home 之外另推恰一帧权威
+      points_ledger 首页（data.restore=True、page.reset=True、无 target 键），返回 True；
+    - 无变化 -> 推 0 帧、返回 False；
+    - state 不可读/损坏 -> 不抛异常、推 0 帧、返回 False、不改写 state 文件
+      （失败可见、不伪造、不本地补写 —— NFR-OFF-1 数据面半）。
+
+    框架/循环侧的真实接线（谁、以什么周期调用本缝）= GAP-K1-1，落 `run_points_observe_once`
+    （reminder 每分钟轮询 piggyback，只打已登记在线设备腿）。"""
+    current = _points_snapshot_or_none()
+    if current is None:
+        log.warning("points_observe err corr_id=%s reason=state_unreadable",
+                    gw_mcp.corr_id())
+        return False
+    previous = _points_observed_get(websocket)
+    if previous is None:
+        _points_observed_set(websocket, current)
+        return False
+    if previous == current:
+        return False
+    _points_observed_set(websocket, current)
+    deleted = current[1] < previous[1]
+    corr_id = gw_mcp.corr_id()
+    try:
+        home = gw_points.build_points_home(POINTS_STATE_PATH)
+        home["data"]["restore"] = True   # 外部写入恒后台更新：不抢前台（S-F6.4-AC5）
+        await _push_display_payload(websocket, home)
+        if deleted:
+            page = gw_points.build_points_ledger_page(POINTS_STATE_PATH)
+            page["data"]["restore"] = True
+            await _push_display_payload(websocket, page)
+    except Exception as e:  # noqa: BLE001 — 推送失败不伪造成功；下轮按当前权威重观察
+        log.warning("points_observe_push_err corr_id=%s err=%s", corr_id, type(e).__name__)
+        return False
+    log.info("points_observe pushed corr_id=%s revision=%s entries=%d deleted=%s",
+             corr_id, current[0], current[1], deleted)
+    return True
+
+
+async def run_points_observe_once() -> int:
+    """一轮观察缝消费：对全部已登记在线设备腿各查一次（无设备腿 = 空转）。
+
+    返回本轮推送过的连接数（K6 归因）；单腿异常不连坐其它腿。"""
+    pushed = 0
+    for device_ws, _engine_ws in list(_alert_legs):
+        try:
+            if await _observe_points_revision(device_ws):
+                pushed += 1
+        except Exception as e:  # noqa: BLE001 — 观察缝不得因单腿异常停摆
+            log.warning("points_observe_err corr_id=%s err=%s",
+                        gw_mcp.corr_id(), type(e).__name__)
+    return pushed
 
 
 async def _consume_kidpal_control(session_id, obj, websocket, upstream=None) -> bool:
@@ -2040,11 +2159,15 @@ async def run_alert_poll_once(now_epoch=None) -> dict:
 
 
 async def reminder_poll_loop() -> None:
-    """每分钟轮询到点推送 + 课表 piggyback（触发②每日零点/③录入即时 marker）。
+    """每分钟轮询到点推送 + 课表 piggyback（触发②每日零点/③录入即时 marker）+ 积分观察缝。
 
     节拍对齐整分钟；单轮异常绝不杀死循环。提醒投递与课表推送同节拍，两路各自容错。
     故事卡壳 sweep 已摘出到独立短节拍（_story_sweep_loop；261022-p3-record-front-polish-fix
-    ——原同节拍使 8s 阈值最坏 60s+ 迟到，且 sweep 的 LLM 在途会阻塞提醒投递）。"""
+    ——原同节拍使 8s 阈值最坏 60s+ 迟到，且 sweep 的 LLM 在途会阻塞提醒投递）。
+
+    积分观察缝（261104-k1-points-ledger-core / GAP-1 活性接线）：QQ 侧写入走 CLI 直写同一
+    points.py state，不经 front——本节拍对已登记在线设备腿查 revision 变化并推 restore 帧
+    （`run_points_observe_once`）。单腿/单轮异常不连坐提醒与课表两路。"""
     try:
         await run_alert_poll_once()          # 起轮先跑一次：避免刚连上就错过整分钟点
     except Exception as e:  # noqa: BLE001
@@ -2053,11 +2176,16 @@ async def reminder_poll_loop() -> None:
         await run_schedule_poll_once()       # 课表 piggyback：同一循环，容错不连坐
     except Exception as e:  # noqa: BLE001
         log.warning("schedule_poll_error err=%s", type(e).__name__)
+    try:
+        await run_points_observe_once()      # 积分观察缝：QQ 写入 -> restore 推送（GAP-1）
+    except Exception as e:  # noqa: BLE001
+        log.warning("points_observe_poll_error err=%s", type(e).__name__)
     while True:
         try:
             await asyncio.sleep(gw_reminders.next_poll_delay(time.time()))
             await run_alert_poll_once()
             await run_schedule_poll_once()
+            await run_points_observe_once()
         except asyncio.CancelledError:
             raise
         except Exception as e:  # noqa: BLE001 — 提醒投递不得因单轮异常停摆

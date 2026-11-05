@@ -2,6 +2,17 @@
 
 > 拆包顺序链与 launch 面事实的家。设计权威 = [PROPOSAL.md](PROPOSAL.md)（FROZEN v1.0）；评审 = [review.md](review.md)；顺序链 = [task_plan.md](task_plan.md)。
 
+## 2026-11-05 · K1 launch 面准备（pod-m2 树复用，planner 本会话内联）
+
+**调度判定**：K1（261104-k1-points-ledger-core，mergeOrder 72）dependsOn = [K0a, K0] 均 merged（board 实查 + main 提交 3306abac / ace646e3），WIP 已回 1，串行链下一包 = K1；复用池树 `C:/AI/KidPal-pod-m2`（上一包 K0a 已 merged，常驻分支 dev/pod-m2 已 ff 到 main=85cc3747）。planner 以本会话内联形式跑（human 指示，非 headless；VS Code 扩展会话形态，降级申报见 K1 pod-events settings-presence）。check-launch blocking 空（--base-ref main）；LP9 判定 satisfied：K0a/K0 merged 双证 + K0 spike 真实消费端证据在位（spike-evidence.md §二/三/四），第二笔 QQ canary 已按 2026-11-05 human 修正判据降级顺延 K1/K2，其 K1 侧义务（restore=True 推送接线 + 真实消费端复核）归入本包验收面。**上一包留根**：K0 §六.1 GAP-1（QQ 落账后设备缓存同步推送缺位）交 K1 producer 正式化时一并接线——planner intake 判定为吸收（进 acceptance-author 冻结范围），非 blocking；树交接卫生核过（tracked 净；`sdkconfig.pre-launch-bak-20261104` 为 K0a 前备份残留，现役 `host_app/sdkconfig` 已在、K1 全 server 不涉固件构建，留待 K2 换包交接时清理）。
+
+**基线锚（带锚引用三件齐）**：
+
+- server 面 = **401 passed / 0 failed / 33 subtests passed / 9 deselected** @ SHA `85cc3747`（2026-11-05 实测；命令 = `python -m pytest -q --import-mode=importlib -m "not live" "C:/AI/KidPal-pod-m2/server/acceptance"`（仓根执行）；量测时 HEAD = 85cc3747；面域 = `server`）。旧锚 6ce77123（395/0）因 K0 改 server/ 判停失效，本行取代。
+- firmware host 面：K1 changeManifest 全 server、零固件文件，本包验证不涉 host build；host 面已知红基线沿用 K0 收尾留痕（host 基线 278/3 @ K0a merged 后，见 261104-k0-points-e2e-spike taskpackage K0S-E4 行），K1 verifier 若见 host 红按该留痕判新增红。
+
+**human 遗留项**：无新增（K0 的 gov 登记尾差与远程发布仍归主线程/human，与本包 launch 无涉）。
+
 ## 2026-11-04 · 拆包与首批 launch 面（K0a ∥ K0 并行对）
 
 **调度判定**：K0a（261104-k0a-four-page-skeleton，mergeOrder 70）与 K0（261104-k0-points-e2e-spike，71）无互相依赖（dependsOn 均 []），按 human 2026-11-04 对齐的并行对同时 launch；merge 序钉死 K0a 先合，K0 的共享 CMake 追加 / host build / device build / 真机终验 / ready-to-merge 全部后置到 K0a merged 后（LP8）。K0a/K0 合并后回 WIP=1：K1→K2→K3→K4→K5。树分配：K0a → 池树 `C:/AI/KidPal-pod-m2`（host 构建热缓存，固件骨架最合适）；K0 → 池树 `C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch`（server 为主）。两树 2026-11-04 交接卫生完成：tracked 净、常驻分支复位到 main=22b30654（旧分叉均为已 merged 包的树本地历史，board 在案）、`firmware/main/test/host_app/sdkconfig` 改名 `sdkconfig.pre-launch-bak-20261104`（可逆，防 TECH-261014 陈旧假红；确认重生成无误后可删）。专属图索引随树复用：`C-AI-KidPal-pod-m2` / `C-AI-KidPal-pod-m1-k1a-key-layer-dispatch` 均在册（list_projects 实查 2026-11-04）。
