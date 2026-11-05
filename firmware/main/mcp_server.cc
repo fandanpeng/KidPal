@@ -1883,6 +1883,16 @@ void McpServer::AddCommonTools() {
                         kidpal_story_view_t reader_view = g_story_view;
                         (void)kidpal_story_open_reader(&reader_view, parsed.get(),
                                                        KSTORY_READER_LINES_PER_SCREEN);
+                        /* K0A-E3-F2 真机缺陷修复（261104-k0a-four-page-skeleton fixer 轮,
+                         * 约束版 C1b, architect 2026-11-05 裁定）：云端阅读路径此前只把
+                         * READER 落在栈上快照 reader_view，从不提交回 mcp 权威视图
+                         * g_story_view —— 于是键归属闸（读渲染节点，已由 F1 报 READER）
+                         * 放行 KEY，但 HandleStoryKey 的输入决策表读 g_story_view=LIST，
+                         * 把 KEY 短按判成 REC_SESSION 误开录音会话（真机 :114
+                         * story_key rec_session_slot page=0）。此处把阅读开态提交回
+                         * 权威视图，令 input 表见 READER（KEY 短/双=NONE、长=READER_EXIT、
+                         * BOOT=翻屏）。 */
+                        g_story_view = reader_view;
                         cJSON_AddNumberToObject(ack, "screens", reader_view.screens);
                         ESP_LOGI(TAG, "story_text_dispatch corr_id=%s screens=%d degrade=false",
                                  corr_id, reader_view.screens);
@@ -1892,6 +1902,12 @@ void McpServer::AddCommonTools() {
                             kidpal_render_node_begin_page();
                             kidpal_story_page_render(&reader_view, list_snapshot.get(),
                                                      reader_text.get());
+                            /* K0A-E3-F2（约束版 C1b）：阅读页落屏后把渲染节点缓存也同步到
+                             * READER（deferred_flush / 本地重渲见真页态），与上方
+                             * g_story_view 提交配对，消除「两结构半分裂」。缓存取**执行期**
+                             * g_story_* 当前值（R2-F4 防时序倒挂纪律：不回写入队时的
+                             * reader_view/list_snapshot/reader_text 旧快照）。 */
+                            kidpal_render_node_cache_story(&g_story_view, &g_story_list, &g_story_text);
                             kidpal_render_node_end_page();
                         });
                     }
