@@ -1,0 +1,1001 @@
+[2026-11-05 10:40:52] I (88122) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:40:52] I (88122) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:40:52] I (88132) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:40:52] I (88142) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:40:52] I (88142) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:40:52] I (88152) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:40:52] I (88162) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:40:52] I (88172) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:40:52] I (88192) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:40:52] I (88522) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-28-s6db51543.txt bytes=414
+[2026-11-05 10:40:52] I (88522) MCP: story_fetch_prefetch_cached corr_id=kdp-88512 id=2026-10-28-s6db51543
+[2026-11-05 10:40:54] I (88912) waveshare_rlcd_4_2: key_edge corr_id=kdp-88912 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:40:54] I (89092) waveshare_rlcd_4_2: key_edge corr_id=kdp-89092 key=1(boot) edge=up hold_ms=180
+[2026-11-05 10:40:54] I (89092) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-89092 key=1(boot) gesture=1(click)
+[2026-11-05 10:40:54] I (89282) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-89282 key=1(boot) gesture=click hold_ms=370 overlay=0
+[2026-11-05 10:40:54] I (89642) MCP: story_prefetch_armed screen=0 missing=4
+[2026-11-05 10:40:54] I (89642) MCP: story_prefetch_send id=2026-10-28-s6db51543 remaining=3
+[2026-11-05 10:40:54] I (89642) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:40:54] I (89642) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:40:54] I (89652) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:40:54] I (89662) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:40:54] I (89662) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:40:54] I (89672) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:40:54] I (89682) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:40:54] I (89692) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:40:54] I (89702) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:40:54] I (89812) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-28-s6db51543.txt bytes=414
+[2026-11-05 10:40:54] I (89832) MCP: story_fetch_prefetch_cached corr_id=kdp-89742 id=2026-10-28-s6db51543
+[2026-11-05 10:40:55] I (90512) waveshare_rlcd_4_2: key_edge corr_id=kdp-90512 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:40:55] I (90682) waveshare_rlcd_4_2: key_edge corr_id=kdp-90682 key=1(boot) edge=up hold_ms=170
+[2026-11-05 10:40:55] I (90682) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-90682 key=1(boot) gesture=1(click)
+[2026-11-05 10:40:55] I (90862) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-90862 key=1(boot) gesture=click hold_ms=350 overlay=0
+[2026-11-05 10:40:55] I (91172) MCP: story_prefetch_armed screen=1 missing=4
+[2026-11-05 10:40:55] I (91172) MCP: story_prefetch_send id=2026-10-23-s9c3d989b remaining=3
+[2026-11-05 10:40:55] I (91172) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:40:55] I (91172) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:40:55] I (91182) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:40:55] I (91192) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:40:55] I (91192) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:40:55] I (91202) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:40:55] I (91212) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:40:55] I (91222) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:40:55] I (91242) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:40:55] I (91432) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-23-s9c3d989b.txt bytes=265
+[2026-11-05 10:40:55] I (91432) MCP: story_fetch_prefetch_cached corr_id=kdp-91272 id=2026-10-23-s9c3d989b
+[2026-11-05 10:40:57] I (92062) waveshare_rlcd_4_2: key_edge corr_id=kdp-92062 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:40:57] I (92252) waveshare_rlcd_4_2: key_edge corr_id=kdp-92252 key=1(boot) edge=up hold_ms=190
+[2026-11-05 10:40:57] I (92252) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-92252 key=1(boot) gesture=1(click)
+[2026-11-05 10:40:57] I (92442) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-92442 key=1(boot) gesture=click hold_ms=380 overlay=0
+[2026-11-05 10:40:57] I (92802) MCP: story_prefetch_armed screen=1 missing=4
+[2026-11-05 10:40:57] I (92802) MCP: story_prefetch_send id=2026-10-23-s9c3d989b remaining=3
+[2026-11-05 10:40:57] I (92802) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:40:57] I (92802) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:40:57] I (92812) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:40:57] I (92822) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:40:57] I (92822) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:40:57] I (92832) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:40:57] I (92842) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:40:57] I (92852) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:40:57] I (92872) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:40:57] I (93132) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-23-s9c3d989b.txt bytes=265
+[2026-11-05 10:40:57] I (93132) MCP: story_fetch_prefetch_cached corr_id=kdp-92902 id=2026-10-23-s9c3d989b
+[2026-11-05 10:40:58] I (93652) waveshare_rlcd_4_2: key_edge corr_id=kdp-93652 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:40:58] I (93862) waveshare_rlcd_4_2: key_edge corr_id=kdp-93862 key=1(boot) edge=up hold_ms=210
+[2026-11-05 10:40:58] I (93862) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-93862 key=1(boot) gesture=1(click)
+[2026-11-05 10:40:58] I (94052) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-94052 key=1(boot) gesture=click hold_ms=400 overlay=0
+[2026-11-05 10:40:58] I (94382) MCP: story_prefetch_armed screen=1 missing=4
+[2026-11-05 10:40:58] I (94382) MCP: story_prefetch_send id=2026-10-23-s9c3d989b remaining=3
+[2026-11-05 10:40:58] I (94382) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:40:58] I (94382) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:40:58] I (94392) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:40:58] I (94402) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:40:58] I (94402) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:40:58] I (94412) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:40:58] I (94422) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:40:58] I (94432) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:40:58] I (94442) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:40:59] I (94832) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-23-s9c3d989b.txt bytes=265
+[2026-11-05 10:40:59] I (94832) MCP: story_fetch_prefetch_cached corr_id=kdp-94822 id=2026-10-23-s9c3d989b
+[2026-11-05 10:40:59] I (95202) waveshare_rlcd_4_2: key_edge corr_id=kdp-95202 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:40:59] I (95372) waveshare_rlcd_4_2: key_edge corr_id=kdp-95372 key=1(boot) edge=up hold_ms=170
+[2026-11-05 10:40:59] I (95372) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-95372 key=1(boot) gesture=1(click)
+[2026-11-05 10:41:00] I (95562) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-95562 key=1(boot) gesture=click hold_ms=360 overlay=0
+[2026-11-05 10:41:00] I (95902) MCP: story_prefetch_armed screen=1 missing=4
+[2026-11-05 10:41:00] I (95902) MCP: story_prefetch_send id=2026-10-23-s9c3d989b remaining=3
+[2026-11-05 10:41:00] I (95902) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:41:00] I (95902) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:41:00] I (95912) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:41:00] I (95922) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:41:00] I (95922) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:41:00] I (95932) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:41:00] I (95942) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:41:00] I (95952) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:41:00] I (95972) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:41:00] I (96422) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-23-s9c3d989b.txt bytes=265
+[2026-11-05 10:41:00] I (96422) MCP: story_fetch_prefetch_cached corr_id=kdp-96002 id=2026-10-23-s9c3d989b
+[2026-11-05 10:41:01] I (96622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-96622 rtc=10:41 date=11-05 wday=3
+[2026-11-05 10:41:01] I (96742) waveshare_rlcd_4_2: key_edge corr_id=kdp-96742 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:41:01] I (96922) waveshare_rlcd_4_2: key_edge corr_id=kdp-96922 key=1(boot) edge=up hold_ms=180
+[2026-11-05 10:41:01] I (96922) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-96922 key=1(boot) gesture=1(click)
+[2026-11-05 10:41:01] I (97102) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-97102 key=1(boot) gesture=click hold_ms=360 overlay=0
+[2026-11-05 10:41:01] I (97422) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:41:01] I (97422) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:41:01] I (97422) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:41:01] I (97432) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:41:01] I (97432) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:41:01] I (97442) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:41:01] I (97452) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:41:01] I (97462) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:41:01] I (97482) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:41:03] I (98912) waveshare_rlcd_4_2: key_edge corr_id=kdp-98912 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:41:03] I (99122) waveshare_rlcd_4_2: key_edge corr_id=kdp-99122 key=1(boot) edge=up hold_ms=210
+[2026-11-05 10:41:03] I (99122) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-99122 key=1(boot) gesture=1(click)
+[2026-11-05 10:41:03] I (99302) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-99302 key=1(boot) gesture=click hold_ms=390 overlay=0
+[2026-11-05 10:41:04] I (99922) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:41:04] I (99922) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:41:04] I (99932) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:41:04] I (99932) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:41:04] I (99942) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:41:04] I (99952) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:41:04] I (99952) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:41:04] I (99962) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:41:04] I (99982) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:41:14] I (109612) waveshare_rlcd_4_2: key_edge corr_id=kdp-109612 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:41:14] I (109812) waveshare_rlcd_4_2: key_edge corr_id=kdp-109812 key=1(boot) edge=up hold_ms=200
+[2026-11-05 10:41:14] I (109812) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-109812 key=1(boot) gesture=1(click)
+[2026-11-05 10:41:14] I (109992) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-109992 key=1(boot) gesture=click hold_ms=380 overlay=0
+[2026-11-05 10:41:14] I (110312) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:41:14] I (110312) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:41:14] I (110312) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:41:14] I (110322) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:41:14] I (110322) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:41:14] I (110332) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:41:14] I (110342) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:41:14] I (110352) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:41:14] I (110372) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:41:16] I (111782) waveshare_rlcd_4_2: key_edge corr_id=kdp-111782 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:41:16] I (112002) waveshare_rlcd_4_2: key_edge corr_id=kdp-112002 key=1(boot) edge=up hold_ms=220
+[2026-11-05 10:41:16] I (112002) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-112002 key=1(boot) gesture=1(click)
+[2026-11-05 10:41:16] I (112192) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-112192 key=1(boot) gesture=click hold_ms=410 overlay=0
+[2026-11-05 10:41:17] I (113102) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:41:17] I (113102) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:41:17] I (113102) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:41:17] I (113112) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:41:17] I (113112) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:41:17] I (113122) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:41:17] I (113132) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:41:17] I (113142) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:41:17] I (113162) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:41:25] I (120422) SystemInfo: free sram: 52259 minimal sram: 26051
+[2026-11-05 10:41:46] I (141892) waveshare_rlcd_4_2: key_edge corr_id=kdp-141892 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:41:46] I (142072) waveshare_rlcd_4_2: key_edge corr_id=kdp-142072 key=1(boot) edge=up hold_ms=180
+[2026-11-05 10:41:46] I (142072) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-142072 key=1(boot) gesture=1(click)
+[2026-11-05 10:41:46] I (142262) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-142262 key=1(boot) gesture=click hold_ms=370 overlay=0
+[2026-11-05 10:41:47] I (142572) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:41:47] I (142572) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:41:47] I (142572) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:41:47] I (142582) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:41:47] I (142582) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:41:47] I (142592) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:41:47] I (142602) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:41:47] I (142612) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:41:47] I (142632) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:41:49] I (144572) waveshare_rlcd_4_2: key_edge corr_id=kdp-144572 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:41:49] I (144772) waveshare_rlcd_4_2: key_edge corr_id=kdp-144772 key=1(boot) edge=up hold_ms=200
+[2026-11-05 10:41:49] I (144772) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-144772 key=1(boot) gesture=1(click)
+[2026-11-05 10:41:49] I (144952) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-144952 key=1(boot) gesture=click hold_ms=380 overlay=0
+[2026-11-05 10:41:49] I (145362) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:41:49] I (145362) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:41:49] I (145372) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:41:49] I (145372) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:41:49] I (145382) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:41:49] I (145392) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:41:49] I (145392) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:41:49] I (145402) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:41:49] I (145422) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:41:52] I (147142) waveshare_rlcd_4_2: key_edge corr_id=kdp-147142 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:41:52] I (147332) waveshare_rlcd_4_2: key_edge corr_id=kdp-147332 key=1(boot) edge=up hold_ms=190
+[2026-11-05 10:41:52] I (147332) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-147332 key=1(boot) gesture=1(click)
+[2026-11-05 10:41:52] I (147512) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-147512 key=1(boot) gesture=click hold_ms=370 overlay=0
+[2026-11-05 10:41:52] I (148402) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:41:52] I (148402) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:41:52] I (148412) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:41:52] I (148412) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:41:52] I (148422) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:41:52] I (148432) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:41:52] I (148432) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:41:52] I (148442) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:41:52] I (148462) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:41:55] I (149862) waveshare_rlcd_4_2: key_edge corr_id=kdp-149862 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:41:55] I (150082) waveshare_rlcd_4_2: key_edge corr_id=kdp-150082 key=1(boot) edge=up hold_ms=220
+[2026-11-05 10:41:55] I (150082) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-150082 key=1(boot) gesture=1(click)
+[2026-11-05 10:41:55] I (150272) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-150272 key=1(boot) gesture=click hold_ms=410 overlay=0
+[2026-11-05 10:41:55] I (150612) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:41:55] I (150612) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:41:55] I (150622) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:41:55] I (150622) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:41:55] I (150632) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:41:55] I (150642) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:41:55] I (150642) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:41:55] I (150652) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:41:55] I (150672) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:41:57] I (152152) waveshare_rlcd_4_2: key_edge corr_id=kdp-152152 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:41:57] I (152352) waveshare_rlcd_4_2: key_edge corr_id=kdp-152352 key=1(boot) edge=up hold_ms=200
+[2026-11-05 10:41:57] I (152352) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-152352 key=1(boot) gesture=1(click)
+[2026-11-05 10:41:57] I (152542) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-152542 key=1(boot) gesture=click hold_ms=390 overlay=0
+[2026-11-05 10:41:58] I (153452) MCP: story_prefetch_armed screen=0 missing=4
+[2026-11-05 10:41:58] I (153452) MCP: story_prefetch_send id=2026-10-28-s6db51543 remaining=3
+[2026-11-05 10:41:58] I (153452) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:41:58] I (153452) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:41:58] I (153462) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:41:58] I (153472) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:41:58] I (153472) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:41:58] I (153482) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:41:58] I (153492) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:41:58] I (153502) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:41:58] I (153512) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:41:58] I (153982) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-28-s6db51543.txt bytes=414
+[2026-11-05 10:41:58] I (153982) MCP: story_fetch_prefetch_cached corr_id=kdp-153552 id=2026-10-28-s6db51543
+[2026-11-05 10:41:59] I (154632) waveshare_rlcd_4_2: key_edge corr_id=kdp-154632 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:41:59] I (154872) waveshare_rlcd_4_2: key_edge corr_id=kdp-154872 key=1(boot) edge=up hold_ms=240
+[2026-11-05 10:41:59] I (154872) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-154872 key=1(boot) gesture=1(click)
+[2026-11-05 10:41:59] I (155052) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-155052 key=1(boot) gesture=click hold_ms=420 overlay=0
+[2026-11-05 10:41:59] I (155412) MCP: story_prefetch_armed screen=0 missing=4
+[2026-11-05 10:41:59] I (155412) MCP: story_prefetch_send id=2026-10-28-s6db51543 remaining=3
+[2026-11-05 10:41:59] I (155412) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:41:59] I (155412) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:41:59] I (155422) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:41:59] I (155432) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:41:59] I (155432) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:41:59] I (155442) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:41:59] I (155452) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:41:59] I (155462) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:41:59] I (155882) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:42:01] I (156242) waveshare_rlcd_4_2: key_edge corr_id=kdp-156242 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:42:01] I (156302) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-28-s6db51543.txt bytes=414
+[2026-11-05 10:42:01] I (156302) MCP: story_fetch_prefetch_cached corr_id=kdp-155912 id=2026-10-28-s6db51543
+[2026-11-05 10:42:01] I (156442) waveshare_rlcd_4_2: key_edge corr_id=kdp-156442 key=1(boot) edge=up hold_ms=200
+[2026-11-05 10:42:01] I (156442) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-156442 key=1(boot) gesture=1(click)
+[2026-11-05 10:42:01] I (156622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-156622 rtc=10:42 date=11-05 wday=3
+[2026-11-05 10:42:01] I (156622) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-156622 key=1(boot) gesture=click hold_ms=380 overlay=0
+[2026-11-05 10:42:01] I (156982) MCP: story_prefetch_armed screen=0 missing=4
+[2026-11-05 10:42:01] I (156982) MCP: story_prefetch_send id=2026-10-28-s6db51543 remaining=3
+[2026-11-05 10:42:01] I (156982) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:42:01] I (156982) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:42:01] I (156992) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:42:01] I (157002) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:42:01] I (157002) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:42:01] I (157012) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:42:01] I (157022) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:42:01] I (157032) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:42:01] I (157052) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:42:01] I (157512) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-28-s6db51543.txt bytes=414
+[2026-11-05 10:42:01] I (157512) MCP: story_fetch_prefetch_cached corr_id=kdp-157082 id=2026-10-28-s6db51543
+[2026-11-05 10:42:02] I (157802) waveshare_rlcd_4_2: key_edge corr_id=kdp-157802 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:42:02] I (157992) waveshare_rlcd_4_2: key_edge corr_id=kdp-157992 key=1(boot) edge=up hold_ms=190
+[2026-11-05 10:42:02] I (157992) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-157992 key=1(boot) gesture=1(click)
+[2026-11-05 10:42:02] I (158182) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-158182 key=1(boot) gesture=click hold_ms=380 overlay=0
+[2026-11-05 10:42:03] I (158492) MCP: story_prefetch_armed screen=0 missing=4
+[2026-11-05 10:42:03] I (158492) MCP: story_prefetch_send id=2026-10-28-s6db51543 remaining=3
+[2026-11-05 10:42:03] I (158492) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:42:03] I (158492) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:42:03] I (158502) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:42:03] I (158512) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:42:03] I (158512) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:42:03] I (158522) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:42:03] I (158532) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:42:03] I (158542) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:42:03] I (158572) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:42:03] I (158822) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-28-s6db51543.txt bytes=414
+[2026-11-05 10:42:03] I (158822) MCP: story_fetch_prefetch_cached corr_id=kdp-158592 id=2026-10-28-s6db51543
+[2026-11-05 10:42:04] I (159482) waveshare_rlcd_4_2: key_edge corr_id=kdp-159482 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:42:04] I (159692) waveshare_rlcd_4_2: key_edge corr_id=kdp-159692 key=1(boot) edge=up hold_ms=210
+[2026-11-05 10:42:04] I (159692) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-159692 key=1(boot) gesture=1(click)
+[2026-11-05 10:42:04] I (159882) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-159882 key=1(boot) gesture=click hold_ms=400 overlay=0
+[2026-11-05 10:42:04] I (160232) MCP: story_prefetch_armed screen=1 missing=4
+[2026-11-05 10:42:04] I (160232) MCP: story_prefetch_send id=2026-10-23-s9c3d989b remaining=3
+[2026-11-05 10:42:04] I (160232) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:42:04] I (160232) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:42:04] I (160242) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:42:04] I (160252) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:42:04] I (160252) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:42:04] I (160262) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:42:04] I (160272) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:42:04] I (160282) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:42:04] I (160302) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:42:04] I (160332) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-23-s9c3d989b.txt bytes=265
+[2026-11-05 10:42:04] I (160332) MCP: story_fetch_prefetch_cached corr_id=kdp-160322 id=2026-10-23-s9c3d989b
+[2026-11-05 10:42:06] I (161372) waveshare_rlcd_4_2: key_edge corr_id=kdp-161372 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:42:06] I (161532) waveshare_rlcd_4_2: key_edge corr_id=kdp-161532 key=1(boot) edge=up hold_ms=160
+[2026-11-05 10:42:06] I (161532) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-161532 key=1(boot) gesture=1(click)
+[2026-11-05 10:42:06] I (161712) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-161712 key=1(boot) gesture=click hold_ms=340 overlay=0
+[2026-11-05 10:42:06] I (161972) MCP: story_prefetch_armed screen=1 missing=4
+[2026-11-05 10:42:06] I (161972) MCP: story_prefetch_send id=2026-10-23-s9c3d989b remaining=3
+[2026-11-05 10:42:06] I (161972) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:42:06] I (161972) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:42:06] I (161982) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:42:06] I (161992) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:42:06] I (161992) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:42:06] I (162002) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:42:06] I (162012) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:42:06] I (162022) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:42:06] I (162042) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:42:06] I (162492) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-23-s9c3d989b.txt bytes=265
+[2026-11-05 10:42:06] I (162492) MCP: story_fetch_prefetch_cached corr_id=kdp-162072 id=2026-10-23-s9c3d989b
+[2026-11-05 10:42:11] I (166972) MCP: story_prefetch_send id=2026-10-23-se1a1c443 remaining=2
+[2026-11-05 10:42:11] I (167022) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-23-se1a1c443.txt bytes=348
+[2026-11-05 10:42:11] I (167022) MCP: story_fetch_prefetch_cached corr_id=kdp-167002 id=2026-10-23-se1a1c443
+[2026-11-05 10:42:16] I (172052) MCP: story_prefetch_send id=2026-10-23-s0b648bca remaining=1
+[2026-11-05 10:42:16] I (172102) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-23-s0b648bca.txt bytes=273
+[2026-11-05 10:42:16] I (172102) MCP: story_fetch_prefetch_cached corr_id=kdp-172082 id=2026-10-23-s0b648bca
+[2026-11-05 10:42:21] I (177082) MCP: story_prefetch_send id=2026-10-23-se2afcd23 remaining=0
+[2026-11-05 10:42:21] I (177132) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-23-se2afcd23.txt bytes=270
+[2026-11-05 10:42:21] I (177132) MCP: story_fetch_prefetch_cached corr_id=kdp-177112 id=2026-10-23-se2afcd23
+[2026-11-05 10:42:25] I (180422) SystemInfo: free sram: 51731 minimal sram: 26051
+[2026-11-05 10:42:59] I (214692) MCP: display_dispatch view=schedule corr_id=kdp-214692 courses=37 degrade=false
+[2026-11-05 10:42:59] I (214692) MCP: display_dispatch view=home corr_id=kdp-214692 upcoming_apply ok
+[2026-11-05 10:42:59] I (214702) MCP: schedule_grid_restore corr_id=kdp-214692 courses=37 cached=37
+[2026-11-05 10:43:01] I (216622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-216622 rtc=10:43 date=11-05 wday=3
+[2026-11-05 10:43:25] I (240422) SystemInfo: free sram: 51731 minimal sram: 26051
+[2026-11-05 10:44:01] I (276622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-276622 rtc=10:44 date=11-05 wday=3
+[2026-11-05 10:44:25] I (300422) SystemInfo: free sram: 52247 minimal sram: 26051
+[2026-11-05 10:45:01] I (336622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-336622 rtc=10:45 date=11-05 wday=3
+[2026-11-05 10:45:20] I (355782) waveshare_rlcd_4_2: key_edge corr_id=kdp-355782 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:45:20] I (355942) waveshare_rlcd_4_2: key_edge corr_id=kdp-355942 key=1(boot) edge=up hold_ms=160
+[2026-11-05 10:45:20] I (355942) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-355942 key=1(boot) gesture=1(click)
+[2026-11-05 10:45:20] I (356122) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-356122 key=1(boot) gesture=click hold_ms=340 overlay=0
+[2026-11-05 10:45:21] I (356442) MCP: story_prefetch_armed screen=1 missing=4
+[2026-11-05 10:45:21] I (356442) MCP: story_prefetch_send id=2026-10-23-s9c3d989b remaining=3
+[2026-11-05 10:45:21] I (356442) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:45:21] I (356442) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:45:21] I (356452) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:45:21] I (356462) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:45:21] I (356462) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:45:21] I (356472) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:45:21] I (356482) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:45:21] I (356492) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:45:21] I (356512) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:45:21] I (356902) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-23-s9c3d989b.txt bytes=265
+[2026-11-05 10:45:21] I (356902) MCP: story_fetch_prefetch_cached corr_id=kdp-356862 id=2026-10-23-s9c3d989b
+[2026-11-05 10:45:22] I (358172) waveshare_rlcd_4_2: key_edge corr_id=kdp-358172 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:45:22] I (358312) waveshare_rlcd_4_2: key_edge corr_id=kdp-358312 key=1(boot) edge=up hold_ms=140
+[2026-11-05 10:45:22] I (358312) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-358312 key=1(boot) gesture=1(click)
+[2026-11-05 10:45:23] I (358502) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-358502 key=1(boot) gesture=click hold_ms=330 overlay=0
+[2026-11-05 10:45:23] I (358862) MCP: story_prefetch_armed screen=1 missing=4
+[2026-11-05 10:45:23] I (358862) MCP: story_prefetch_send id=2026-10-23-s9c3d989b remaining=3
+[2026-11-05 10:45:23] I (358862) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:45:23] I (358862) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:45:23] I (358872) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:45:23] I (358882) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:45:23] I (358882) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:45:23] I (358892) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:45:23] I (358902) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:45:23] I (358912) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:45:23] I (358922) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:45:23] I (359022) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-23-s9c3d989b.txt bytes=265
+[2026-11-05 10:45:23] I (359022) MCP: story_fetch_prefetch_cached corr_id=kdp-359012 id=2026-10-23-s9c3d989b
+[2026-11-05 10:45:24] I (359962) waveshare_rlcd_4_2: key_edge corr_id=kdp-359962 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:45:24] I (360142) waveshare_rlcd_4_2: key_edge corr_id=kdp-360142 key=1(boot) edge=up hold_ms=180
+[2026-11-05 10:45:24] I (360142) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-360142 key=1(boot) gesture=1(click)
+[2026-11-05 10:45:24] I (360332) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-360332 key=1(boot) gesture=click hold_ms=370 overlay=0
+[2026-11-05 10:45:25] I (360422) SystemInfo: free sram: 51719 minimal sram: 26051
+[2026-11-05 10:45:25] I (360712) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:45:25] I (360712) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:45:25] I (360712) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:45:25] I (360722) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:45:25] I (360722) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:45:25] I (360732) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:45:25] I (360742) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:45:25] I (360752) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:45:25] I (360772) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:45:27] I (363052) waveshare_rlcd_4_2: key_edge corr_id=kdp-363052 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:45:27] I (363292) waveshare_rlcd_4_2: key_edge corr_id=kdp-363292 key=1(boot) edge=up hold_ms=240
+[2026-11-05 10:45:27] I (363292) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-363292 key=1(boot) gesture=1(click)
+[2026-11-05 10:45:28] I (363472) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-363472 key=1(boot) gesture=click hold_ms=420 overlay=0
+[2026-11-05 10:45:29] I (364862) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:45:29] I (364862) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:45:29] I (364872) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:45:29] I (364872) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:45:29] I (364882) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:45:29] I (364892) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:45:29] I (364892) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:45:29] I (364902) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:45:29] I (364932) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:45:30] I (366262) waveshare_rlcd_4_2: key_edge corr_id=kdp-366262 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:45:30] I (366422) waveshare_rlcd_4_2: key_edge corr_id=kdp-366422 key=1(boot) edge=up hold_ms=160
+[2026-11-05 10:45:30] I (366422) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-366422 key=1(boot) gesture=1(click)
+[2026-11-05 10:45:31] I (366612) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-366612 key=1(boot) gesture=click hold_ms=350 overlay=0
+[2026-11-05 10:45:32] I (367552) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:45:32] I (367552) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:45:32] I (367552) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:45:32] I (367562) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:45:32] I (367562) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:45:32] I (367572) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:45:32] I (367582) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:45:32] I (367592) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:45:32] I (367612) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:45:33] I (369372) waveshare_rlcd_4_2: key_edge corr_id=kdp-369372 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:45:34] I (369562) waveshare_rlcd_4_2: key_edge corr_id=kdp-369562 key=1(boot) edge=up hold_ms=190
+[2026-11-05 10:45:34] I (369562) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-369562 key=1(boot) gesture=1(click)
+[2026-11-05 10:45:34] I (369742) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-369742 key=1(boot) gesture=click hold_ms=370 overlay=0
+[2026-11-05 10:45:35] I (370552) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:45:35] I (370552) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:45:35] I (370562) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:45:35] I (370562) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:45:35] I (370572) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:45:35] I (370582) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:45:35] I (370592) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:45:35] I (370592) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:45:35] I (370622) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:45:36] I (372352) waveshare_rlcd_4_2: key_edge corr_id=kdp-372352 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:45:37] I (372512) waveshare_rlcd_4_2: key_edge corr_id=kdp-372512 key=1(boot) edge=up hold_ms=160
+[2026-11-05 10:45:37] I (372512) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-372512 key=1(boot) gesture=1(click)
+[2026-11-05 10:45:37] I (372702) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-372702 key=1(boot) gesture=click hold_ms=350 overlay=0
+[2026-11-05 10:45:38] I (373542) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:45:38] I (373542) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:45:38] I (373542) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:45:38] I (373552) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:45:38] I (373552) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:45:38] I (373562) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:45:38] I (373572) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:45:38] I (373582) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:45:38] I (373602) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:45:42] I (378322) waveshare_rlcd_4_2: key_edge corr_id=kdp-378322 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:45:43] I (378512) waveshare_rlcd_4_2: key_edge corr_id=kdp-378512 key=1(boot) edge=up hold_ms=190
+[2026-11-05 10:45:43] I (378512) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-378512 key=1(boot) gesture=1(click)
+[2026-11-05 10:45:43] I (378702) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-378702 key=1(boot) gesture=click hold_ms=380 overlay=0
+[2026-11-05 10:45:44] I (379572) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:45:44] I (379572) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:45:44] I (379582) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:45:44] I (379582) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:45:44] I (379592) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:45:44] I (379602) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:45:44] I (379602) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:45:44] I (379612) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:45:44] I (379632) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:45:46] I (381492) waveshare_rlcd_4_2: key_edge corr_id=kdp-381492 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:45:46] I (381672) waveshare_rlcd_4_2: key_edge corr_id=kdp-381672 key=1(boot) edge=up hold_ms=180
+[2026-11-05 10:45:46] I (381672) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-381672 key=1(boot) gesture=1(click)
+[2026-11-05 10:45:46] I (381862) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-381862 key=1(boot) gesture=click hold_ms=370 overlay=0
+[2026-11-05 10:45:47] I (382612) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:45:47] I (382612) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:45:47] I (382622) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:45:47] I (382622) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:45:47] I (382632) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:45:47] I (382642) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:45:47] I (382652) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:45:47] I (382652) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:45:47] I (382672) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:45:48] I (384372) waveshare_rlcd_4_2: key_edge corr_id=kdp-384372 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:45:49] I (384582) waveshare_rlcd_4_2: key_edge corr_id=kdp-384582 key=1(boot) edge=up hold_ms=210
+[2026-11-05 10:45:49] I (384582) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-384582 key=1(boot) gesture=1(click)
+[2026-11-05 10:45:49] I (384772) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-384772 key=1(boot) gesture=click hold_ms=400 overlay=0
+[2026-11-05 10:45:49] I (385132) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:45:49] I (385132) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:45:49] I (385132) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:45:49] I (385142) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:45:49] I (385142) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:45:49] I (385152) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:45:49] I (385162) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:45:49] I (385172) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:45:49] I (385192) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:45:50] I (386152) waveshare_rlcd_4_2: key_edge corr_id=kdp-386152 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:45:50] I (386342) waveshare_rlcd_4_2: key_edge corr_id=kdp-386342 key=1(boot) edge=up hold_ms=190
+[2026-11-05 10:45:50] I (386342) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-386342 key=1(boot) gesture=1(click)
+[2026-11-05 10:45:51] I (386532) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-386532 key=1(boot) gesture=click hold_ms=380 overlay=0
+[2026-11-05 10:45:51] I (386882) MCP: story_prefetch_armed screen=0 missing=4
+[2026-11-05 10:45:51] I (386882) MCP: story_prefetch_send id=2026-10-28-s6db51543 remaining=3
+[2026-11-05 10:45:51] I (386882) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:45:51] I (386882) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:45:51] I (386892) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:45:51] I (386902) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:45:51] I (386902) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:45:51] I (386912) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:45:51] I (386922) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:45:51] I (386932) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:45:51] I (386952) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:45:51] I (387402) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-28-s6db51543.txt bytes=414
+[2026-11-05 10:45:51] I (387402) MCP: story_fetch_prefetch_cached corr_id=kdp-387022 id=2026-10-28-s6db51543
+[2026-11-05 10:45:55] I (391302) waveshare_rlcd_4_2: key_edge corr_id=kdp-391302 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:45:56] I (391522) waveshare_rlcd_4_2: key_edge corr_id=kdp-391522 key=1(boot) edge=up hold_ms=220
+[2026-11-05 10:45:56] I (391522) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-391522 key=1(boot) gesture=1(click)
+[2026-11-05 10:45:56] I (391712) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-391712 key=1(boot) gesture=click hold_ms=410 overlay=0
+[2026-11-05 10:45:56] I (391882) MCP: story_prefetch_send id=2026-10-27-s4195dc45 remaining=2
+[2026-11-05 10:45:56] I (391982) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-27-s4195dc45.txt bytes=260
+[2026-11-05 10:45:56] I (391992) MCP: story_prefetch_armed screen=0 missing=4
+[2026-11-05 10:45:56] I (391992) MCP: story_prefetch_send id=2026-10-28-s6db51543 remaining=3
+[2026-11-05 10:45:56] I (391982) MCP: story_fetch_prefetch_cached corr_id=kdp-391972 id=2026-10-27-s4195dc45
+[2026-11-05 10:45:56] I (392002) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:45:56] I (392012) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:45:56] I (392012) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:45:56] I (392022) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:45:56] I (392032) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:45:56] I (392032) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:45:56] I (392042) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:45:56] I (392052) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:45:56] I (392072) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:45:56] I (392332) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-28-s6db51543.txt bytes=414
+[2026-11-05 10:45:56] I (392332) MCP: story_fetch_prefetch_cached corr_id=kdp-392112 id=2026-10-28-s6db51543
+[2026-11-05 10:45:57] I (392852) waveshare_rlcd_4_2: key_edge corr_id=kdp-392852 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:45:57] I (393042) waveshare_rlcd_4_2: key_edge corr_id=kdp-393042 key=1(boot) edge=up hold_ms=190
+[2026-11-05 10:45:57] I (393042) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-393042 key=1(boot) gesture=1(click)
+[2026-11-05 10:45:57] I (393222) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-393222 key=1(boot) gesture=click hold_ms=370 overlay=0
+[2026-11-05 10:45:58] I (393592) MCP: story_prefetch_armed screen=0 missing=4
+[2026-11-05 10:45:58] I (393592) MCP: story_prefetch_send id=2026-10-28-s6db51543 remaining=3
+[2026-11-05 10:45:58] I (393592) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:45:58] I (393592) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:45:58] I (393602) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:45:58] I (393612) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:45:58] I (393612) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:45:58] I (393622) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:45:58] I (393632) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:45:58] I (393642) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:45:58] I (393672) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:45:58] I (394112) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-28-s6db51543.txt bytes=414
+[2026-11-05 10:45:58] I (394112) MCP: story_fetch_prefetch_cached corr_id=kdp-393692 id=2026-10-28-s6db51543
+[2026-11-05 10:45:59] I (394452) waveshare_rlcd_4_2: key_edge corr_id=kdp-394452 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:45:59] I (394682) waveshare_rlcd_4_2: key_edge corr_id=kdp-394682 key=1(boot) edge=up hold_ms=230
+[2026-11-05 10:45:59] I (394682) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-394682 key=1(boot) gesture=1(click)
+[2026-11-05 10:45:59] I (394862) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-394862 key=1(boot) gesture=click hold_ms=410 overlay=0
+[2026-11-05 10:45:59] I (395212) MCP: story_prefetch_armed screen=0 missing=4
+[2026-11-05 10:45:59] I (395212) MCP: story_prefetch_send id=2026-10-28-s6db51543 remaining=3
+[2026-11-05 10:45:59] I (395212) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:45:59] I (395212) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:45:59] I (395222) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:45:59] I (395232) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:45:59] I (395232) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:45:59] I (395242) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:45:59] I (395252) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:45:59] I (395262) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:45:59] I (395282) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:45:59] I (395662) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-28-s6db51543.txt bytes=414
+[2026-11-05 10:45:59] I (395662) MCP: story_fetch_prefetch_cached corr_id=kdp-395312 id=2026-10-28-s6db51543
+[2026-11-05 10:46:01] I (396142) waveshare_rlcd_4_2: key_edge corr_id=kdp-396142 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:46:01] I (396362) waveshare_rlcd_4_2: key_edge corr_id=kdp-396362 key=1(boot) edge=up hold_ms=220
+[2026-11-05 10:46:01] I (396362) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-396362 key=1(boot) gesture=1(click)
+[2026-11-05 10:46:01] I (396552) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-396552 key=1(boot) gesture=click hold_ms=410 overlay=0
+[2026-11-05 10:46:01] I (396622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-396622 rtc=10:46 date=11-05 wday=3
+[2026-11-05 10:46:01] I (396842) MCP: story_prefetch_armed screen=1 missing=4
+[2026-11-05 10:46:01] I (396842) MCP: story_prefetch_send id=2026-10-23-s9c3d989b remaining=3
+[2026-11-05 10:46:01] I (396842) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:46:01] I (396842) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:46:01] I (396852) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:46:01] I (396862) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:46:01] I (396862) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:46:01] I (396872) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:46:01] I (396882) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:46:01] I (396892) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:46:01] I (396902) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:46:01] I (397372) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-23-s9c3d989b.txt bytes=265
+[2026-11-05 10:46:01] I (397372) MCP: story_fetch_prefetch_cached corr_id=kdp-397352 id=2026-10-23-s9c3d989b
+[2026-11-05 10:46:02] I (398222) waveshare_rlcd_4_2: key_edge corr_id=kdp-398222 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:46:03] I (398432) waveshare_rlcd_4_2: key_edge corr_id=kdp-398432 key=1(boot) edge=up hold_ms=210
+[2026-11-05 10:46:03] I (398432) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-398432 key=1(boot) gesture=1(click)
+[2026-11-05 10:46:03] I (398622) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-398622 key=1(boot) gesture=click hold_ms=400 overlay=0
+[2026-11-05 10:46:03] I (398972) MCP: story_prefetch_armed screen=1 missing=4
+[2026-11-05 10:46:03] I (398972) MCP: story_prefetch_send id=2026-10-23-s9c3d989b remaining=3
+[2026-11-05 10:46:03] I (398972) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:46:03] I (398972) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:46:03] I (398982) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:46:03] I (398992) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:46:03] I (398992) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:46:03] I (399002) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:46:03] I (399012) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:46:03] I (399022) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:46:03] I (399042) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:46:03] I (399492) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-23-s9c3d989b.txt bytes=265
+[2026-11-05 10:46:03] I (399492) MCP: story_fetch_prefetch_cached corr_id=kdp-399472 id=2026-10-23-s9c3d989b
+[2026-11-05 10:46:04] I (399772) waveshare_rlcd_4_2: key_edge corr_id=kdp-399772 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:46:04] I (399962) waveshare_rlcd_4_2: key_edge corr_id=kdp-399962 key=1(boot) edge=up hold_ms=190
+[2026-11-05 10:46:04] I (399962) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-399962 key=1(boot) gesture=1(click)
+[2026-11-05 10:46:04] I (400152) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-400152 key=1(boot) gesture=click hold_ms=380 overlay=0
+[2026-11-05 10:46:05] I (400482) MCP: story_prefetch_armed screen=1 missing=4
+[2026-11-05 10:46:05] I (400482) MCP: story_prefetch_send id=2026-10-23-s9c3d989b remaining=3
+[2026-11-05 10:46:05] I (400482) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:46:05] I (400482) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:46:05] I (400492) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:46:05] I (400502) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:46:05] I (400502) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:46:05] I (400512) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:46:05] I (400522) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:46:05] I (400532) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:46:05] I (400552) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:46:05] I (400992) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-23-s9c3d989b.txt bytes=265
+[2026-11-05 10:46:05] I (400992) MCP: story_fetch_prefetch_cached corr_id=kdp-400582 id=2026-10-23-s9c3d989b
+[2026-11-05 10:46:05] I (401412) waveshare_rlcd_4_2: key_edge corr_id=kdp-401412 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:46:06] I (401602) waveshare_rlcd_4_2: key_edge corr_id=kdp-401602 key=1(boot) edge=up hold_ms=190
+[2026-11-05 10:46:06] I (401602) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-401602 key=1(boot) gesture=1(click)
+[2026-11-05 10:46:06] I (401792) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-401792 key=1(boot) gesture=click hold_ms=380 overlay=0
+[2026-11-05 10:46:06] I (402122) MCP: story_prefetch_armed screen=1 missing=4
+[2026-11-05 10:46:06] I (402122) MCP: story_prefetch_send id=2026-10-23-s9c3d989b remaining=3
+[2026-11-05 10:46:06] I (402122) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:46:06] I (402122) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:46:06] I (402132) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:46:06] I (402142) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:46:06] I (402142) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:46:06] I (402152) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:46:06] I (402162) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:46:06] I (402172) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:46:06] I (402182) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:46:06] I (402642) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-23-s9c3d989b.txt bytes=265
+[2026-11-05 10:46:06] I (402642) MCP: story_fetch_prefetch_cached corr_id=kdp-402222 id=2026-10-23-s9c3d989b
+[2026-11-05 10:46:08] I (403052) waveshare_rlcd_4_2: key_edge corr_id=kdp-403052 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:46:08] I (403252) waveshare_rlcd_4_2: key_edge corr_id=kdp-403252 key=1(boot) edge=up hold_ms=200
+[2026-11-05 10:46:08] I (403252) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-403252 key=1(boot) gesture=1(click)
+[2026-11-05 10:46:08] I (403442) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-403442 key=1(boot) gesture=click hold_ms=390 overlay=0
+[2026-11-05 10:46:08] I (403752) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:46:08] I (403752) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:46:08] I (403752) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:46:08] I (403762) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:46:08] I (403762) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:46:08] I (403772) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:46:08] I (403782) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:46:08] I (403792) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:46:08] I (403812) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:46:10] I (405962) waveshare_rlcd_4_2: key_edge corr_id=kdp-405962 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:46:10] I (406182) waveshare_rlcd_4_2: key_edge corr_id=kdp-406182 key=1(boot) edge=up hold_ms=220
+[2026-11-05 10:46:10] I (406182) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-406182 key=1(boot) gesture=1(click)
+[2026-11-05 10:46:10] I (406372) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-406372 key=1(boot) gesture=click hold_ms=410 overlay=0
+[2026-11-05 10:46:11] I (406762) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:46:11] I (406762) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:46:11] I (406762) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:46:11] I (406772) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:46:11] I (406772) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:46:11] I (406782) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:46:11] I (406792) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:46:11] I (406802) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:46:11] I (406822) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:46:13] I (408442) waveshare_rlcd_4_2: key_edge corr_id=kdp-408442 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:46:13] I (408632) waveshare_rlcd_4_2: key_edge corr_id=kdp-408632 key=1(boot) edge=up hold_ms=190
+[2026-11-05 10:46:13] I (408632) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-408632 key=1(boot) gesture=1(click)
+[2026-11-05 10:46:13] I (408822) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-408822 key=1(boot) gesture=click hold_ms=380 overlay=0
+[2026-11-05 10:46:14] I (409712) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:46:14] I (409712) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:46:14] I (409712) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:46:14] I (409722) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:46:14] I (409722) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:46:14] I (409732) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:46:14] I (409742) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:46:14] I (409752) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:46:14] I (409772) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:46:16] I (411632) waveshare_rlcd_4_2: key_edge corr_id=kdp-411632 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:46:16] I (411832) waveshare_rlcd_4_2: key_edge corr_id=kdp-411832 key=1(boot) edge=up hold_ms=200
+[2026-11-05 10:46:16] I (411832) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-411832 key=1(boot) gesture=1(click)
+[2026-11-05 10:46:16] I (412022) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-412022 key=1(boot) gesture=click hold_ms=390 overlay=0
+[2026-11-05 10:46:17] I (412752) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:46:17] I (412752) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:46:17] I (412752) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:46:17] I (412762) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:46:17] I (412762) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:46:17] I (412772) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:46:17] I (412782) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:46:17] I (412792) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:46:17] I (412812) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:46:21] I (416502) waveshare_rlcd_4_2: key_edge corr_id=kdp-416502 key=0(key) edge=down hold_ms=0
+[2026-11-05 10:46:21] I (416652) waveshare_rlcd_4_2: key_edge corr_id=kdp-416652 key=0(key) edge=up hold_ms=150
+[2026-11-05 10:46:21] I (416792) waveshare_rlcd_4_2: key_edge corr_id=kdp-416792 key=0(key) edge=down hold_ms=0
+[2026-11-05 10:46:21] I (416902) waveshare_rlcd_4_2: key_edge corr_id=kdp-416902 key=0(key) edge=up hold_ms=110
+[2026-11-05 10:46:21] I (416902) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-416902 key=0(key) gesture=2(double_click)
+[2026-11-05 10:46:21] I (417092) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-417092 key=0(key) gesture=double hold_ms=300 overlay=0
+[2026-11-05 10:46:21] I (417092) MCP: story_open_hit_card id=2026-10-22-s9074aa51 (zero network frame)
+[2026-11-05 10:46:21] I (417092) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:46:21] I (417102) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:46:21] I (417112) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:46:21] I (417112) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:46:21] I (417122) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:46:21] I (417132) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:46:21] I (417142) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:46:21] I (417142) story_page: STORY_RENDER page=1 vcount=16 lcount=16 rec=0
+[2026-11-05 10:46:21] I (417162) LcdDisplay: KEYBAR ovl=1 page=3 substate=1 last_known=1 left=长按退出 right=翻屏
+[2026-11-05 10:46:21] I (417162) LcdDisplay: KEYBAR ovl=0 page=3 substate=1 last_known=-1 left=长按退出 right=翻屏
+[2026-11-05 10:46:25] I (420422) SystemInfo: free sram: 55279 minimal sram: 26051
+[2026-11-05 10:46:33] I (428972) waveshare_rlcd_4_2: key_edge corr_id=kdp-428972 key=0(key) edge=down hold_ms=0
+[2026-11-05 10:46:33] I (429112) waveshare_rlcd_4_2: key_edge corr_id=kdp-429112 key=0(key) edge=up hold_ms=140
+[2026-11-05 10:46:33] I (429292) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-429292 key=0(key) gesture=click hold_ms=320 overlay=0
+[2026-11-05 10:46:39] I (434922) waveshare_rlcd_4_2: key_edge corr_id=kdp-434922 key=0(key) edge=down hold_ms=0
+[2026-11-05 10:46:39] I (435062) waveshare_rlcd_4_2: key_edge corr_id=kdp-435062 key=0(key) edge=up hold_ms=140
+[2026-11-05 10:46:39] I (435062) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-435062 key=0(key) gesture=1(click)
+[2026-11-05 10:46:39] I (435252) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-435252 key=0(key) gesture=click hold_ms=330 overlay=0
+[2026-11-05 10:46:44] I (439682) waveshare_rlcd_4_2: key_edge corr_id=kdp-439682 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:46:44] I (439852) waveshare_rlcd_4_2: key_edge corr_id=kdp-439852 key=1(boot) edge=up hold_ms=170
+[2026-11-05 10:46:44] I (439852) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-439852 key=1(boot) gesture=1(click)
+[2026-11-05 10:46:44] I (440042) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-440042 key=1(boot) gesture=click hold_ms=360 overlay=0
+[2026-11-05 10:46:44] I (440042) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:46:44] I (440042) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:46:44] I (440052) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:46:44] I (440062) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:46:44] I (440062) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:46:44] I (440072) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:46:44] I (440082) LcdDisplay: KEYBAR ovl=1 page=3 substate=1 last_known=1 left=长按退出 right=翻屏
+[2026-11-05 10:46:44] I (440092) story_page: STORY_RENDER page=1 vcount=16 lcount=16 rec=0
+[2026-11-05 10:46:44] I (440102) LcdDisplay: KEYBAR ovl=1 page=3 substate=1 last_known=1 left=长按退出 right=翻屏
+[2026-11-05 10:46:44] I (440102) LcdDisplay: KEYBAR ovl=0 page=3 substate=1 last_known=-1 left=长按退出 right=翻屏
+[2026-11-05 10:46:48] I (443462) waveshare_rlcd_4_2: key_edge corr_id=kdp-443462 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:46:48] I (443652) waveshare_rlcd_4_2: key_edge corr_id=kdp-443652 key=1(boot) edge=up hold_ms=190
+[2026-11-05 10:46:48] I (443652) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-443652 key=1(boot) gesture=1(click)
+[2026-11-05 10:46:48] I (443842) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-443842 key=1(boot) gesture=click hold_ms=380 overlay=0
+[2026-11-05 10:46:48] I (443842) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:46:48] I (443842) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:46:48] I (443852) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:46:48] I (443862) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:46:48] I (443862) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:46:48] I (443872) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:46:48] I (443882) LcdDisplay: KEYBAR ovl=1 page=3 substate=1 last_known=1 left=长按退出 right=翻屏
+[2026-11-05 10:46:48] I (443892) story_page: STORY_RENDER page=1 vcount=16 lcount=16 rec=0
+[2026-11-05 10:46:48] I (443902) LcdDisplay: KEYBAR ovl=1 page=3 substate=1 last_known=1 left=长按退出 right=翻屏
+[2026-11-05 10:46:48] I (443912) LcdDisplay: KEYBAR ovl=0 page=3 substate=1 last_known=-1 left=长按退出 right=翻屏
+[2026-11-05 10:46:51] I (447052) waveshare_rlcd_4_2: key_edge corr_id=kdp-447052 key=0(key) edge=down hold_ms=0
+[2026-11-05 10:46:53] I (448552) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-448552 key=0(key) gesture=long hold_ms=1500 overlay=0
+[2026-11-05 10:46:53] I (448552) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:46:53] I (448562) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:46:53] I (448572) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:46:53] I (448572) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:46:53] I (448582) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:46:53] I (448592) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:46:53] I (448592) LcdDisplay: KEYBAR ovl=1 page=3 substate=1 last_known=1 left=长按退出 right=翻屏
+[2026-11-05 10:46:53] I (448602) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:46:53] I (448622) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:46:54] I (449712) waveshare_rlcd_4_2: key_edge corr_id=kdp-449712 key=0(key) edge=up hold_ms=2660
+[2026-11-05 10:46:54] I (449712) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-449712 key=0(key) gesture=3(long_press)
+[2026-11-05 10:46:55] I (450682) waveshare_rlcd_4_2: key_edge corr_id=kdp-450682 key=0(key) edge=down hold_ms=0
+[2026-11-05 10:46:56] I (452182) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-452182 key=0(key) gesture=long hold_ms=1500 overlay=0
+[2026-11-05 10:46:56] I (452182) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-452182 action=2(home)
+[2026-11-05 10:46:56] I (452732) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=452026
+[2026-11-05 10:46:56] I (452732) LcdDisplay: KEYBAR ovl=0 page=0 substate=-1 last_known=-1 left=说话 right=翻页
+[2026-11-05 10:46:56] I (452732) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:46:56] I (452742) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:46:56] I (452752) kidpal_rn: chrome_front layer_top=2 force_hide=0 front=0
+[2026-11-05 10:46:56] I (452752) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:46:56] I (452762) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:46:56] I (452772) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:46:56] I (452772) LcdDisplay: KEYBAR ovl=0 page=0 substate=-1 last_known=-1 left=说话 right=翻页
+[2026-11-05 10:46:56] I (452782) kidpal_rn: show_home: LOCAL_PAGE front (layer top=2)
+[2026-11-05 10:46:59] I (454102) waveshare_rlcd_4_2: key_edge corr_id=kdp-454102 key=0(key) edge=up hold_ms=3420
+[2026-11-05 10:46:59] I (454102) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-454102 key=0(key) gesture=3(long_press)
+[2026-11-05 10:47:01] I (456622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-456622 rtc=10:47 date=11-05 wday=3
+[2026-11-05 10:47:26] I (481102) SystemInfo: free sram: 56003 minimal sram: 26051
+[2026-11-05 10:48:01] I (516622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-516622 rtc=10:48 date=11-05 wday=3
+[2026-11-05 10:48:26] I (541442) SystemInfo: free sram: 55995 minimal sram: 26051
+[2026-11-05 10:49:01] I (576622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-576622 rtc=10:49 date=11-05 wday=3
+[2026-11-05 10:49:27] I (602032) SystemInfo: free sram: 55775 minimal sram: 26051
+[2026-11-05 10:50:01] I (636622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-636622 rtc=10:50 date=11-05 wday=3
+[2026-11-05 10:50:27] I (662172) SystemInfo: free sram: 56535 minimal sram: 26051
+[2026-11-05 10:51:01] I (696622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-696622 rtc=10:51 date=11-05 wday=3
+[2026-11-05 10:51:27] I (722422) SystemInfo: free sram: 56535 minimal sram: 26051
+[2026-11-05 10:52:01] I (756622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-756622 rtc=10:52 date=11-05 wday=3
+[2026-11-05 10:52:28] I (783142) SystemInfo: free sram: 56535 minimal sram: 26051
+[2026-11-05 10:53:01] I (816622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-816622 rtc=10:53 date=11-05 wday=3
+[2026-11-05 10:53:28] I (843422) SystemInfo: free sram: 56539 minimal sram: 26051
+[2026-11-05 10:54:01] I (876622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-876622 rtc=10:54 date=11-05 wday=3
+[2026-11-05 10:54:29] I (903972) SystemInfo: free sram: 56539 minimal sram: 26051
+[2026-11-05 10:55:01] I (936622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-936622 rtc=10:55 date=11-05 wday=3
+[2026-11-05 10:55:29] I (964502) SystemInfo: free sram: 56531 minimal sram: 26051
+[2026-11-05 10:56:01] I (996622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-996622 rtc=10:56 date=11-05 wday=3
+[2026-11-05 10:56:30] I (1025422) SystemInfo: free sram: 56023 minimal sram: 26051
+[2026-11-05 10:57:01] I (1056622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1056622 rtc=10:57 date=11-05 wday=3
+[2026-11-05 10:57:31] I (1085732) SystemInfo: free sram: 56531 minimal sram: 26051
+[2026-11-05 10:58:00] I (1114982) MCP: display_dispatch view=schedule corr_id=kdp-1114982 courses=37 degrade=false
+[2026-11-05 10:58:00] I (1114982) MCP: display_dispatch view=home corr_id=kdp-1114972 upcoming_apply ok
+[2026-11-05 10:58:00] I (1115472) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=1114819
+[2026-11-05 10:58:00] I (1115472) LcdDisplay: KEYBAR ovl=0 page=0 substate=-1 last_known=-1 left=说话 right=翻页
+[2026-11-05 10:58:00] I (1115482) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:58:00] I (1115492) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:58:00] I (1115492) kidpal_rn: chrome_front layer_top=2 force_hide=0 front=0
+[2026-11-05 10:58:00] I (1115502) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:58:00] I (1115512) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:58:00] I (1115512) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:58:00] I (1115522) LcdDisplay: KEYBAR ovl=0 page=0 substate=-1 last_known=-1 left=说话 right=翻页
+[2026-11-05 10:58:00] I (1115562) kidpal_rn: show_home: LOCAL_PAGE front (layer top=2)
+[2026-11-05 10:58:00] I (1116332) MCP: schedule_grid_restore corr_id=kdp-1114982 courses=37 cached=37
+[2026-11-05 10:58:01] I (1116622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1116622 rtc=10:58 date=11-05 wday=3
+[2026-11-05 10:58:32] I (1146702) SystemInfo: free sram: 56027 minimal sram: 26051
+[2026-11-05 10:59:01] I (1176622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1176622 rtc=10:59 date=11-05 wday=3
+[2026-11-05 10:59:19] I (1194952) waveshare_rlcd_4_2: key_edge corr_id=kdp-1194952 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:59:19] I (1195172) waveshare_rlcd_4_2: key_edge corr_id=kdp-1195172 key=1(boot) edge=up hold_ms=220
+[2026-11-05 10:59:19] I (1195172) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-1195172 key=1(boot) gesture=1(click)
+[2026-11-05 10:59:19] I (1195352) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-1195352 key=1(boot) gesture=click hold_ms=400 overlay=0
+[2026-11-05 10:59:19] I (1195352) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-1195352 action=3(page_next)
+[2026-11-05 10:59:19] I (1195362) kidpal_rn: PAGE_SWITCH from=home to=schedule trigger=key local_from=0 local_to=1
+[2026-11-05 10:59:19] I (1195372) kidpal_rn: PAGE_RENDER in=1 local=0 sview=0 ssess=0 active_ok=1
+[2026-11-05 10:59:19] I (1195422) kidpal_rn: render page SCHEDULE (P2 grid) courses=37 wday=3
+[2026-11-05 10:59:19] I (1195422) LcdDisplay: KEYBAR ovl=0 page=1 substate=-1 last_known=-1 left=问课程 right=翻页
+[2026-11-05 10:59:19] I (1195422) kidpal_rn: PAGE_RENDER out=1 local=1 sview=0 ssess=0
+[2026-11-05 10:59:19] I (1195432) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:59:19] I (1195442) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:59:19] I (1195442) kidpal_rn: chrome_front layer_top=2 force_hide=0 front=0
+[2026-11-05 10:59:19] I (1195452) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:59:19] I (1195462) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:59:19] I (1195462) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:59:19] I (1195472) LcdDisplay: KEYBAR ovl=0 page=1 substate=-1 last_known=-1 left=问课程 right=翻页
+[2026-11-05 10:59:21] I (1196302) waveshare_rlcd_4_2: key_edge corr_id=kdp-1196302 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:59:21] I (1196482) waveshare_rlcd_4_2: key_edge corr_id=kdp-1196482 key=1(boot) edge=up hold_ms=180
+[2026-11-05 10:59:21] I (1196482) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-1196482 key=1(boot) gesture=1(click)
+[2026-11-05 10:59:21] I (1196672) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-1196672 key=1(boot) gesture=click hold_ms=370 overlay=0
+[2026-11-05 10:59:21] I (1196672) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-1196672 action=3(page_next)
+[2026-11-05 10:59:21] I (1196672) kidpal_rn: PAGE_SWITCH from=schedule to=points_home trigger=key local_from=1 local_to=2
+[2026-11-05 10:59:21] I (1196682) kidpal_rn: PAGE_RENDER in=2 local=1 sview=0 ssess=0 active_ok=1
+[2026-11-05 10:59:21] I (1196702) kidpal_rn: render page POINTS_HOME (P3) nodata placeholder
+[2026-11-05 10:59:21] I (1196702) LcdDisplay: KEYBAR ovl=0 page=2 substate=-1 last_known=-1 left=问一问 right=下一页
+[2026-11-05 10:59:21] I (1196702) kidpal_rn: PAGE_RENDER out=2 local=2 sview=0 ssess=0
+[2026-11-05 10:59:21] I (1196712) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:59:21] I (1196722) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:59:21] I (1196732) kidpal_rn: chrome_front layer_top=2 force_hide=0 front=0
+[2026-11-05 10:59:21] I (1196732) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:59:21] I (1196742) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:59:21] I (1196752) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:59:21] I (1196752) LcdDisplay: KEYBAR ovl=0 page=2 substate=-1 last_known=-1 left=问一问 right=下一页
+[2026-11-05 10:59:23] I (1198532) waveshare_rlcd_4_2: key_edge corr_id=kdp-1198532 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:59:23] I (1198722) waveshare_rlcd_4_2: key_edge corr_id=kdp-1198722 key=1(boot) edge=up hold_ms=190
+[2026-11-05 10:59:23] I (1198722) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-1198722 key=1(boot) gesture=1(click)
+[2026-11-05 10:59:23] I (1198902) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-1198902 key=1(boot) gesture=click hold_ms=370 overlay=0
+[2026-11-05 10:59:23] I (1198902) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-1198902 action=3(page_next)
+[2026-11-05 10:59:23] I (1198912) kidpal_rn: PAGE_SWITCH from=points_home to=story trigger=key local_from=2 local_to=3
+[2026-11-05 10:59:23] I (1198922) kidpal_rn: PAGE_RENDER in=3 local=2 sview=0 ssess=0 active_ok=1
+[2026-11-05 10:59:23] I (1198922) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:59:23] I (1198952) kidpal_rn: render page STORY (P4) count=16
+[2026-11-05 10:59:23] I (1198952) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:59:23] I (1198952) kidpal_rn: PAGE_RENDER out=3 local=3 sview=0 ssess=0
+[2026-11-05 10:59:23] I (1198952) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:59:23] I (1198962) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:59:23] I (1198972) kidpal_rn: chrome_front layer_top=2 force_hide=0 front=0
+[2026-11-05 10:59:23] I (1198982) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:59:23] I (1198982) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:59:23] I (1198992) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:59:23] I (1199002) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:59:28] I (1203622) waveshare_rlcd_4_2: key_edge corr_id=kdp-1203622 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:59:28] I (1203812) waveshare_rlcd_4_2: key_edge corr_id=kdp-1203812 key=1(boot) edge=up hold_ms=190
+[2026-11-05 10:59:28] I (1203812) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-1203812 key=1(boot) gesture=1(click)
+[2026-11-05 10:59:28] I (1203992) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-1203992 key=1(boot) gesture=click hold_ms=370 overlay=0
+[2026-11-05 10:59:29] I (1204582) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:59:29] I (1204582) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:59:29] I (1204582) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:59:29] I (1204592) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:59:29] I (1204592) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:59:29] I (1204602) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:59:29] I (1204612) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:59:29] I (1204622) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:59:29] I (1204642) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:59:32] I (1207422) SystemInfo: free sram: 51807 minimal sram: 25535
+[2026-11-05 10:59:33] I (1208652) waveshare_rlcd_4_2: key_edge corr_id=kdp-1208652 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:59:33] I (1208862) waveshare_rlcd_4_2: key_edge corr_id=kdp-1208862 key=1(boot) edge=up hold_ms=210
+[2026-11-05 10:59:33] I (1208862) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-1208862 key=1(boot) gesture=1(click)
+[2026-11-05 10:59:33] I (1209042) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-1209042 key=1(boot) gesture=click hold_ms=390 overlay=0
+[2026-11-05 10:59:34] I (1209652) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:59:34] I (1209652) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:59:34] I (1209662) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:59:34] I (1209662) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:59:34] I (1209672) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:59:34] I (1209682) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:59:34] I (1209692) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:59:34] I (1209692) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:59:34] I (1209712) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:59:35] I (1210972) waveshare_rlcd_4_2: key_edge corr_id=kdp-1210972 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:59:35] I (1211282) waveshare_rlcd_4_2: key_edge corr_id=kdp-1211282 key=1(boot) edge=up hold_ms=310
+[2026-11-05 10:59:35] I (1211282) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-1211282 key=1(boot) gesture=1(click)
+[2026-11-05 10:59:36] I (1211462) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-1211462 key=1(boot) gesture=click hold_ms=490 overlay=0
+[2026-11-05 10:59:36] I (1211742) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:59:36] I (1211742) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:59:36] I (1211742) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:59:36] I (1211752) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:59:36] I (1211752) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:59:36] I (1211762) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:59:36] I (1211772) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:59:36] I (1211782) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:59:36] I (1211792) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:59:37] I (1213412) waveshare_rlcd_4_2: key_edge corr_id=kdp-1213412 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:59:38] I (1213602) waveshare_rlcd_4_2: key_edge corr_id=kdp-1213602 key=1(boot) edge=up hold_ms=190
+[2026-11-05 10:59:38] I (1213602) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-1213602 key=1(boot) gesture=1(click)
+[2026-11-05 10:59:38] I (1213782) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-1213782 key=1(boot) gesture=click hold_ms=370 overlay=0
+[2026-11-05 10:59:39] I (1214642) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:59:39] I (1214642) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:59:39] I (1214652) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:59:39] I (1214652) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:59:39] I (1214662) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:59:39] I (1214672) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:59:39] I (1214682) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:59:39] I (1214682) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:59:39] I (1214702) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:59:41] I (1216432) waveshare_rlcd_4_2: key_edge corr_id=kdp-1216432 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:59:41] I (1216592) waveshare_rlcd_4_2: key_edge corr_id=kdp-1216592 key=1(boot) edge=up hold_ms=160
+[2026-11-05 10:59:41] I (1216592) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-1216592 key=1(boot) gesture=1(click)
+[2026-11-05 10:59:41] I (1216782) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-1216782 key=1(boot) gesture=click hold_ms=350 overlay=0
+[2026-11-05 10:59:42] I (1217682) MCP: story_prefetch_armed screen=0 missing=4
+[2026-11-05 10:59:42] I (1217682) MCP: story_prefetch_send id=2026-10-28-s6db51543 remaining=3
+[2026-11-05 10:59:42] I (1217682) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:59:42] I (1217682) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:59:42] I (1217692) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:59:42] I (1217702) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:59:42] I (1217702) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:59:42] I (1217712) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:59:42] I (1217722) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:59:42] I (1217732) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:59:42] I (1217752) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:59:42] I (1218202) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-28-s6db51543.txt bytes=414
+[2026-11-05 10:59:42] I (1218202) MCP: story_fetch_prefetch_cached corr_id=kdp-1218182 id=2026-10-28-s6db51543
+[2026-11-05 10:59:47] I (1222762) MCP: story_prefetch_send id=2026-10-27-s4195dc45 remaining=2
+[2026-11-05 10:59:47] I (1222802) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-27-s4195dc45.txt bytes=260
+[2026-11-05 10:59:47] I (1222802) MCP: story_fetch_prefetch_cached corr_id=kdp-1222782 id=2026-10-27-s4195dc45
+[2026-11-05 10:59:52] I (1227762) MCP: story_prefetch_send id=2026-10-24-sc16cfba5 remaining=1
+[2026-11-05 10:59:52] I (1227812) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-24-sc16cfba5.txt bytes=371
+[2026-11-05 10:59:52] I (1227812) MCP: story_fetch_prefetch_cached corr_id=kdp-1227792 id=2026-10-24-sc16cfba5
+[2026-11-05 10:59:54] I (1229702) waveshare_rlcd_4_2: key_edge corr_id=kdp-1229702 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:59:54] I (1229952) waveshare_rlcd_4_2: key_edge corr_id=kdp-1229952 key=1(boot) edge=up hold_ms=250
+[2026-11-05 10:59:54] I (1229952) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-1229952 key=1(boot) gesture=1(click)
+[2026-11-05 10:59:54] I (1230132) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-1230132 key=1(boot) gesture=click hold_ms=430 overlay=0
+[2026-11-05 10:59:54] I (1230422) MCP: story_prefetch_armed screen=0 missing=4
+[2026-11-05 10:59:54] I (1230422) MCP: story_prefetch_send id=2026-10-28-s6db51543 remaining=3
+[2026-11-05 10:59:54] I (1230422) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:59:54] I (1230422) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:59:54] I (1230432) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:59:54] I (1230442) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:59:54] I (1230442) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:59:54] I (1230452) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:59:54] I (1230462) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:59:54] I (1230472) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:59:54] I (1230492) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:59:55] I (1230932) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-28-s6db51543.txt bytes=414
+[2026-11-05 10:59:55] I (1230932) MCP: story_fetch_prefetch_cached corr_id=kdp-1230572 id=2026-10-28-s6db51543
+[2026-11-05 10:59:55] I (1231392) waveshare_rlcd_4_2: key_edge corr_id=kdp-1231392 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:59:56] I (1231622) waveshare_rlcd_4_2: key_edge corr_id=kdp-1231622 key=1(boot) edge=up hold_ms=230
+[2026-11-05 10:59:56] I (1231622) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-1231622 key=1(boot) gesture=1(click)
+[2026-11-05 10:59:56] I (1231812) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-1231812 key=1(boot) gesture=click hold_ms=420 overlay=0
+[2026-11-05 10:59:56] I (1232152) MCP: story_prefetch_armed screen=0 missing=4
+[2026-11-05 10:59:56] I (1232152) MCP: story_prefetch_send id=2026-10-28-s6db51543 remaining=3
+[2026-11-05 10:59:56] I (1232152) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:59:56] I (1232152) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:59:56] I (1232162) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:59:56] I (1232172) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:59:56] I (1232172) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:59:56] I (1232182) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:59:56] I (1232192) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:59:56] I (1232202) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:59:56] I (1232222) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:59:56] I (1232662) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-28-s6db51543.txt bytes=414
+[2026-11-05 10:59:56] I (1232662) MCP: story_fetch_prefetch_cached corr_id=kdp-1232262 id=2026-10-28-s6db51543
+[2026-11-05 10:59:58] I (1233182) waveshare_rlcd_4_2: key_edge corr_id=kdp-1233182 key=1(boot) edge=down hold_ms=0
+[2026-11-05 10:59:58] I (1233412) waveshare_rlcd_4_2: key_edge corr_id=kdp-1233412 key=1(boot) edge=up hold_ms=230
+[2026-11-05 10:59:58] I (1233412) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-1233412 key=1(boot) gesture=1(click)
+[2026-11-05 10:59:58] I (1233602) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-1233602 key=1(boot) gesture=click hold_ms=420 overlay=0
+[2026-11-05 10:59:58] I (1233892) MCP: story_prefetch_armed screen=0 missing=4
+[2026-11-05 10:59:58] I (1233892) MCP: story_prefetch_send id=2026-10-28-s6db51543 remaining=3
+[2026-11-05 10:59:58] I (1233892) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:59:58] I (1233892) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:59:58] I (1233902) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 10:59:58] I (1233912) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 10:59:58] I (1233912) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 10:59:58] I (1233922) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 10:59:58] I (1233932) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 10:59:58] I (1233942) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 10:59:58] I (1234352) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 10:59:58] I (1234732) waveshare_rlcd_4_2: key_edge corr_id=kdp-1234732 key=1(boot) edge=down hold_ms=0
+[2026-11-05 11:00:00] I (1234782) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-28-s6db51543.txt bytes=414
+[2026-11-05 11:00:00] I (1234782) MCP: story_fetch_prefetch_cached corr_id=kdp-1234762 id=2026-10-28-s6db51543
+[2026-11-05 11:00:00] I (1234952) waveshare_rlcd_4_2: key_edge corr_id=kdp-1234952 key=1(boot) edge=up hold_ms=220
+[2026-11-05 11:00:00] I (1234952) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-1234952 key=1(boot) gesture=1(click)
+[2026-11-05 11:00:00] I (1235132) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-1235132 key=1(boot) gesture=click hold_ms=400 overlay=0
+[2026-11-05 11:00:00] I (1235452) MCP: story_prefetch_armed screen=1 missing=4
+[2026-11-05 11:00:00] I (1235452) MCP: story_prefetch_send id=2026-10-23-s9c3d989b remaining=3
+[2026-11-05 11:00:00] I (1235452) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 11:00:00] I (1235452) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 11:00:00] I (1235462) kidpal_rn: chrome_front layer_top=4 force_hide=0 front=0
+[2026-11-05 11:00:00] I (1235472) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-05 11:00:00] I (1235472) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-05 11:00:00] I (1235482) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-05 11:00:00] I (1235492) LcdDisplay: KEYBAR ovl=1 page=3 substate=-1 last_known=0 left=(null) right=(null)
+[2026-11-05 11:00:00] I (1235502) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=0
+[2026-11-05 11:00:00] I (1235522) LcdDisplay: KEYBAR ovl=0 page=3 substate=0 last_known=-1 left=说话·双击看 right=下移
+[2026-11-05 11:00:00] I (1235602) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-23-s9c3d989b.txt bytes=265
+[2026-11-05 11:00:00] I (1235742) MCP: story_fetch_prefetch_cached corr_id=kdp-1235582 id=2026-10-23-s9c3d989b
+[2026-11-05 11:00:01] I (1236622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1236622 rtc=11:00 date=11-05 wday=3
+[2026-11-05 11:00:05] I (1240512) MCP: story_prefetch_send id=2026-10-23-se1a1c443 remaining=2
+[2026-11-05 11:00:05] I (1240552) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-23-se1a1c443.txt bytes=348
+[2026-11-05 11:00:05] I (1240552) MCP: story_fetch_prefetch_cached corr_id=kdp-1240532 id=2026-10-23-se1a1c443
+[2026-11-05 11:00:10] I (1245542) MCP: story_prefetch_send id=2026-10-23-s0b648bca remaining=1
+[2026-11-05 11:00:10] I (1245582) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-23-s0b648bca.txt bytes=273
+[2026-11-05 11:00:10] I (1245582) MCP: story_fetch_prefetch_cached corr_id=kdp-1245572 id=2026-10-23-s0b648bca
+[2026-11-05 11:00:15] I (1250572) MCP: story_prefetch_send id=2026-10-23-se2afcd23 remaining=0
+[2026-11-05 11:00:15] I (1250602) StorySdIo: story_sd_write ok path=/sdcard/story/2026-10-23-se2afcd23.txt bytes=270
+[2026-11-05 11:00:15] I (1250602) MCP: story_fetch_prefetch_cached corr_id=kdp-1250592 id=2026-10-23-se2afcd23
+[2026-11-05 11:00:32] I (1267422) SystemInfo: free sram: 51799 minimal sram: 25535
+[2026-11-05 11:01:01] I (1296622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1296622 rtc=11:01 date=11-05 wday=3
+[2026-11-05 11:01:32] I (1327422) SystemInfo: free sram: 52315 minimal sram: 25535
+[2026-11-05 11:02:01] I (1356622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1356622 rtc=11:02 date=11-05 wday=3
+[2026-11-05 11:02:32] I (1387422) SystemInfo: free sram: 51787 minimal sram: 25535
+[2026-11-05 11:03:01] I (1416622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1416622 rtc=11:03 date=11-05 wday=3
+[2026-11-05 11:03:32] I (1447422) SystemInfo: free sram: 51799 minimal sram: 25535
+[2026-11-05 11:04:01] I (1476622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1476622 rtc=11:04 date=11-05 wday=3
+[2026-11-05 11:04:32] I (1507422) SystemInfo: free sram: 52303 minimal sram: 25535
+[2026-11-05 11:05:01] I (1536622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1536622 rtc=11:05 date=11-05 wday=3
+[2026-11-05 11:05:32] I (1567422) SystemInfo: free sram: 51799 minimal sram: 25535
+[2026-11-05 11:06:01] I (1596622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1596622 rtc=11:06 date=11-05 wday=3
+[2026-11-05 11:06:32] I (1627422) SystemInfo: free sram: 51787 minimal sram: 25535
+[2026-11-05 11:07:01] I (1656622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1656622 rtc=11:07 date=11-05 wday=3
+[2026-11-05 11:07:32] I (1687422) SystemInfo: free sram: 52315 minimal sram: 25535
+[2026-11-05 11:08:01] I (1716622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1716622 rtc=11:08 date=11-05 wday=3
+[2026-11-05 11:08:32] I (1747422) SystemInfo: free sram: 51787 minimal sram: 25535
+[2026-11-05 11:09:01] I (1776622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1776622 rtc=11:09 date=11-05 wday=3
+[2026-11-05 11:09:32] I (1807422) SystemInfo: free sram: 52315 minimal sram: 25535
+[2026-11-05 11:10:01] I (1836622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1836622 rtc=11:10 date=11-05 wday=3
+[2026-11-05 11:10:32] I (1867422) SystemInfo: free sram: 52303 minimal sram: 25535
+I (1896622) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1896622 rtc=11:11 date=11-05 wday=3

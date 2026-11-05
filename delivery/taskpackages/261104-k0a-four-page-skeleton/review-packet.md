@@ -113,3 +113,19 @@ none（deviceOutcome 未触发；E3 真机轮 pending，见 exitCriteria 表与�
 - 承重 fact：`verifier-evidence/rounds/r4.json`（final，ok:true，checker PASS）——closeout 判断来源。
 - 投影：`verdict.json`（本包目录晋升件，= current/verdict.json r4 投影，program fs-write 产出）；`verification.json` 本版 verify.mjs 不产出（closeout-check advisory-only，缺失不红）。
 - 不产 session-digest.md / loop-health.md / loop-metrics.json / pod-journal（post-cutoff ≥ 250725）；pod-events.jsonl 在案（advisory 检查通过）。
+
+## 真机轮补章（2026-11-05，integrator 收口后追加；writer = planner）
+
+K0A-E3 真机轮经三轮完成（每轮一缺陷一修复，全部闭合）：
+
+- **轮 1**（binary 9500f57f）：四页推进 / P3 占位 / 逐页语境 / 长按退出全过；发现 F1 = 阅读态键帽取列表态旧值（KPLOG :175 进阅读 sync 时刻 substate=-1）。
+- **F1 修复**（33809aa2）：rendered-page 旁路 + 落屏 READER 补 keybar sync；**轮 2 复测键帽修复生效**（KPLOG round2 :108），但暴露 **F2** = 阅读态 KEY 短按误开录音会话（`rec_session_slot page=0`——双真相源分歧：归属闸读渲染节点=READER、HandleStoryKey 决策表读 g_story_view=LIST）。
+- **F2 修复**（35b1958f，human 指令流程 fixer 分析 → architect 评审 → 实施 = 约束版 C1b）：mcp_server.cc 两处一行（open_reader 后提交 g_story_view + 闭包内 cache_story 执行期 g_story_*）+ record_session_repair.test.c 结构齿双变异自验；host 274/3、扩面回归 11 族全绿。
+- **轮 3 终验**（binary 35b1958f）：**四项核验全过**（结构化目击 = device-round-evidence.md，human-visual + KPLOG022 摘录哈希双通道；零 `listening`/`session_toggle`/`rec_session_slot` 命中 = F2 闭环日志面）。
+
+**附带发现（human 裁「记 debt 后收口」，不随本包闭合）**：
+
+1. K0A-E3-F3 列表分屏指示 y=262 撞键帽条上沿被裁（预存缺陷）→ `docs/debt/tech/TECH-261105-p3-list-screen-label-clipped.md`。
+2. story_list 16 条窗口外旧篇不可见（契约 §1.3③ 既定口径；「全量可及」设计在积分详细账本 S-F6.2/K2）→ `docs/debt/requirement/REQ-261105-story-list-beyond-window-visibility.md`（是否延伸到故事列表待 human 裁）。
+
+**C3 技术债候选**（architect F2 评审提出）：open_reader 提交语义单点化 / mcp 权威视图与渲染节点缓存双真相源收敛——已由 F2 的 C1b 部分收敛（fetch 路径补提交），剩余面 = 本地/云端两 open_reader 入口统一为单一提交助手 + 评估撤 rendered-page 旁路，随下个触 mcp_server/story 渲染链的包评估；条目登记归主线程收口后。
