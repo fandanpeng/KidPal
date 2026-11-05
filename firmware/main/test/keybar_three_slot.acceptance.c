@@ -576,12 +576,34 @@ TEST_CASE("键帽条三槽: 左右槽随态文案——页槽表+闭集单源+BO
         kkb_fm("KKB-A3 RED: P2 页槽 (左=%s, 右=%s) 期望 (问课程, 翻页)——WF-F1-02 "
                "键帽条行漂移 (v1.20)", left ? left : "(null)", right ? right : "(null)"));
 
+    /* P3 页槽齿（2026-11-04 留痕修订随 261104-k0a-four-page-skeleton D-01 四页重锚）:
+     * 原齿钉「P3 = 故事列表 (说话·双击看, 下移)」（260915-m4-k2 期 P3 = 星星记录本）；
+     * D-01 四页批准后 P3 = 星星积分本（数据未达静态占位）、故事列表原地迁移 P4——
+     * 原故事槽对断言**迁往 P4 行**（下方新增齿），本齿翻正为钉 P3 积分槽对。
+     * 值域权威 = requirements S-F6.1 AC6 键帽行「问一问 / 下一页」逐字 +
+     * docs/ui/V9/points-home-nodata.png 底栏。删了什么：P3 (说话·双击看, 下移) 逐字
+     * 断言；为什么：P3 页身份随四页化改变，保留即假红；新钉什么：P3 (问一问, 下一页)
+     * 逐字 + P4 故事槽对在世。 */
     rc = kidpal_keybar_slots(2, 0, 0, &left, &right);
+    TEST_ASSERT_TRUE_MESSAGE(rc == 0 && left != NULL && right != NULL &&
+                             strcmp(left, "问一问") == 0 &&
+                             strcmp(right, "下一页") == 0,
+        kkb_fm("KKB-A3 RED: P3 页槽 (左=%s, 右=%s) 期望 (问一问, 下一页)——P3 积分"
+               "主页键帽漂移 (S-F6.1 AC6 键帽行 + points-home-nodata.png; D-01 四页"
+               "重锚: 原故事槽对已迁 P4)",
+               left ? left : "(null)", right ? right : "(null)"));
+
+    /* P4 页槽齿（2026-11-04 additive 随 D-01 四页重锚）: 故事列表键帽对原地迁移
+     * P4（索引 = PAGE_P3+1 = 3）——原 P3 逐字断言平移至此, 值零偏移（S-F2.1 列表
+     * 态键帽零回归; keybar.c 页槽表加 case PAGE_P4 行）。 */
+    left = NULL;
+    right = NULL;
+    rc = kidpal_keybar_slots((int)PAGE_P3 + 1, 0, 0, &left, &right);
     TEST_ASSERT_TRUE_MESSAGE(rc == 0 && left != NULL && right != NULL &&
                              strcmp(left, "说话·双击看") == 0 &&
                              strcmp(right, "下移") == 0,
-        kkb_fm("KKB-A3 RED: P3 页槽 (左=%s, 右=%s) 期望 (说话·双击看, 下移)——P3 列表"
-               "态线框漂移 (BOOT 短按=光标下移, §2.4 P3 行)",
+        kkb_fm("KKB-A3 RED: P4 页槽 (左=%s, 右=%s) 期望 (说话·双击看, 下移)——故事"
+               "列表键帽对未随四页化迁至 P4（D-01 原地迁移; S-F2.1 零回归面）",
                left ? left : "(null)", right ? right : "(null)"));
 
     /* 第 4 页槽位齿（KB-E1 deviation 面 —— 2026-09-18 随 260917-m2-k2-retract-p4-
@@ -590,13 +612,16 @@ TEST_CASE("键帽条三槽: 左右槽随态文案——页槽表+闭集单源+BO
      * 后 keybar.c 的 `case PAGE_P4:` 兜底分支随枚举整值消解，原齿的字面 index 3 恰好
      * 等于新的 PAGE_COUNT -> 会变成「要求已撤页位仍存在」的假红。现按同源形态翻正为
      * **越界防御齿**: page = PAGE_COUNT（撤页前后皆为不存在的第 4 页索引）一律 -1;
-     * human 待裁定的 P4 槽值 ADV 随 deviation 收回一并消解（不再有该页位）。 */
+     * human 待裁定的 P4 槽值 ADV 随 deviation 收回一并消解（不再有该页位）。
+     * 【2026-11-04 随 D-01 四页重锚留痕】P4 页位以故事列表语义回世（见上方 P4 页槽
+     * 齿——ADV 由 requirements S-F2.1/S-F6.1 AC6 + 设计帧权威消解, 不再悬置）; 本齿
+     * 语义不变（PAGE_COUNT 恒为合法页集外第一格, 四页态下 = 4）, 越界防御零放宽。 */
     left = NULL;
     right = NULL;
     rc = kidpal_keybar_slots((int)PAGE_COUNT, 0, 0, &left, &right);
     TEST_ASSERT_TRUE_MESSAGE(rc == -1,
         kkb_fm("KKB-A3 RED: slots(page=PAGE_COUNT=%d) rc=%d left=%s right=%s 期望 -1——"
-               "不存在的页索引被当成合法页给槽文案（撤页后页槽表只三行, 越界页交防御列）",
+               "不存在的页索引被当成合法页给槽文案（页槽表之外无兜底行, 越界页交防御列）",
                (int)PAGE_COUNT, rc, left ? left : "(null)", right ? right : "(null)"));
 
     /* 基层列 scene 入参被忽略（主页面无语音场景语境, 任意 int 合法——[1] 契约）。 */
@@ -1064,4 +1089,20 @@ TEST_CASE("键帽条三槽: 查字窗键帽随态——未起播「播报」/起
  *               （既有接线）, 零新增接线。本包义务红（设计态红, builder 落地后转绿）
  *               = test 6 全部（weak 哨兵 + keybar.h 零声明）; MUST-STAY-GREEN =
  *               本文件其余全部既有齿（值域 additive 不破）。
+ *   2026-11-04  KKB-A3 页槽表四页重锚（acceptance-author 留痕修订，授权通道 =
+ *               TaskPackage 261104-k0a-four-page-skeleton impactedTestsSeed
+ *               frozen-rebaseline「页槽表现钉 P3 故事；需重排 P3 积分与 P4 故事，
+ *               覆盖层页点隐藏和闭集单源不变」+ decisionCoverage D-01〔PROPOSAL
+ *               §3.1-D-01 四页批准, requirements v1.71 §2.2/§2.3/S-F6.1 AC6 已随批
+ *               落〕）。改了什么：① 原 P3 页槽逐字齿（说话·双击看, 下移）翻正为
+ *               P3 积分槽对（问一问, 下一页）——值域权威 = S-F6.1 AC6 键帽行 +
+ *               points-home-nodata.png 底栏; ② additive 新增 P4 页槽齿（说话·双击看,
+ *               下移 @ PAGE_P3+1）——原 P3 故事槽对平移, 值零偏移（S-F2.1 零回归）;
+ *               ③ 「第 4 页槽位齿」注释补 2026-11-04 留痕（P4 槽值 ADV 由需求/设计
+ *               帧权威消解, 越界防御齿语义零变化）。为何属留痕通道而非绕闸：页槽表
+ *               值域随已冻结的页身份事实翻正, 未放宽任何断言——覆盖层随态列（闭集
+ *               单源）、防御列、TEST 1 页点齿、TEST 3-6 全部零改动; 四点页点由
+ *               TEST 1 同源判别自动跟随 PAGE_COUNT, 本文件零新字面。红态后果：
+ *               P3/P4 两齿对三页现状为设计态红（P3 现返回故事对、P4 现返回 -1），
+ *               builder 落 K0a 页槽表后转绿；其余齿现状绿（must-stay）。
  * --------------------------------------------------------------------------- */

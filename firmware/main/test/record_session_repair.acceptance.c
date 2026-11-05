@@ -53,7 +53,7 @@
  *               (b) front_layer == KIDPAL_LAYER_STORY_DELETE(6) -> 1（既有: 删除
  *                   覆盖层吞全手势，任何漏网手势会被通用覆盖层列误映射 SESSION_TOGGLE）;
  *               (c) front_layer == KIDPAL_LAYER_NONE(0) &&
- *                   kidpal_page == KP_PAGE_STORY(2) -> 1（既有 keya_story_page_wants
+ *                   kidpal_page == KP_PAGE_STORY(3)（2026-11-04 四页重锚; 原 2） -> 1（既有 keya_story_page_wants
  *                   基层语义零偏移）;
  *               其余 -> 0（含：VOICE/其它覆盖层前台且非记录语境 / 基层非 P3 /
  *                   记录语境标志未置——K2/K3 主页面路径零回归）。
@@ -76,7 +76,7 @@
  *                                               int page_state);
  *            -- 返回 1 = 以 g_story_list 最新缓存重渲 P3 前台（defer 分支的缓存
  *               被消费）: voice_front == 0（VOICE 层已弹出/前台回落基层）&&
- *               kidpal_page == KP_PAGE_STORY(2) && page_state == KSTORY_PAGE_LIST(0);
+ *               kidpal_page == KP_PAGE_STORY(3)（2026-11-04 四页重锚; 原 2） && page_state == KSTORY_PAGE_LIST(0);
  *               其余 -> 0（VOICE 仍前台不抢推 / 本地页非 P3 / 已入子态不覆盖）。
  *            -- 消费点（home = 前台回落路径: kidpal_render_node_voice_end 或 Idle
  *               分支——「VOICE 弹出 / 前台回落 LOCAL_PAGE 且本地页 == P3」时以缓存重渲,
@@ -248,11 +248,17 @@
 #define RSR_PAGE_RECORDING 2 /* KSTORY_PAGE_RECORDING */
 #define RSR_PAGE_STAMP     3 /* KSTORY_PAGE_STAMP */
 #define RSR_PAGE_DELETE    4 /* KSTORY_PAGE_DELETE */
-/* KP_PAGE_* = kidpal_render_node.h 冻结枚举（M2K2-A2 齿钉等值: HOME=0/SCHEDULE=1/
- * STORY=2; 本文件镜像消费, 漂移由 M2K2-A2 先红）。 */
+/* KP_PAGE_* = kidpal_render_node.h 冻结枚举（M2K2-A2 齿钉等值, 2026-11-04 四页重锚:
+ * HOME=0/SCHEDULE=1/POINTS_HOME=2/STORY=3; 本文件镜像消费, 漂移由 M2K2-A2 先红）。
+ * 【2026-11-04 重锚留痕（TaskPackage 261104-k0a-four-page-skeleton; planner 授权
+ * 补入 impactedTestsSeed）】RSR_KP_PAGE_STORY 由 2 改 3——D-01 故事页原地迁移 P4,
+ * 原数值 2 现属积分主页; 本文件 [R1]/[R3] 各齿的 kidpal_page 入参随镜像自动改喂
+ * 四页故事值, 语义零变化（判据 (c)/(R3) 消费 KP_PAGE_STORY 符号, 数值权威 =
+ * retract test 3 重锚齿）。不改则四页落地后 rule (c) 对入参 2（= 积分页）恒 0,
+ * tooth 2/4 基层正锚假红。 */
 #define RSR_KP_PAGE_HOME     0
 #define RSR_KP_PAGE_SCHEDULE 1
-#define RSR_KP_PAGE_STORY    2
+#define RSR_KP_PAGE_STORY    3
 /* KIDPAL_LAYER_* = display/kidpal_layer.h 冻结数值码（M2-K3 + M2-K2 [K10] 留痕修订;
  * 全仓消费点均符号常量引用）。 */
 #define RSR_LAYER_NONE         0 /* KIDPAL_LAYER_NONE */
@@ -944,5 +950,18 @@ TEST_CASE("record_session_repair: D2 voice_end 渲染页态同步 [R5] (RSR-A7)"
  *     的形态无关代理齿。seam [R1]-[R3] 语义零偏移; 新增 [R4]/[R5] 为纯追加。
  *     红基线: 通道 A 8 Tests 6 Failures（RUN_EXIT=6）; 通道 B 147 Tests 2 Failures
  *     （新增 2 齿红, 既有 145 齿零回归）。
- *   （前冻结时点无修订。）
+ *   2026-11-04  四页镜像重锚（acceptance-author 留痕修订, TaskPackage
+ *               261104-k0a-four-page-skeleton; planner 授权把本件补入
+ *               impactedTestsSeed——seed 外相邻锚反查发现, D-01 落地后本件必假红）。
+ *               改了什么：仅 RSR_KP_PAGE_STORY 镜像 2→3（D-01 故事页原地迁移 P4;
+ *               数值权威 = retract_p4_three_page test 3 重锚齿 + four_page_skeleton
+ *               K0A-A2）。为何属留痕通道而非绕闸：判据消费的是 kidpal_page 入参的
+ *               故事页身份, 镜像只随枚举事实平移, 全部齿语义零变化（[R1] rule (c)
+ *               基层正锚 / [R3] deferred_flush 正锚在四页落地后须以 KP_PAGE_STORY=3
+ *               喂入才成立, 不改则对积分页 2 恒 0 = 假红）。红态后果：本件全部齿
+ *               在三页现状树上的红绿与 2026-10-01 冻结相位基本一致, 惟两条基层判据
+ *               齿因镜像改喂 3（三页树下 ≠ KP_PAGE_STORY 现值 2）转为设计态红:
+ *               RSR-A1 tooth 4 基层半（key_owns(NONE,3,LIST,0)==1）与 RSR-A3
+ *               deferred_flush 正锚（==1）——与 K0a 四页义务红同族, builder 落四页
+ *               后转绿; 判读按名对表, 不计「新增红」违约）。
  * --------------------------------------------------------------------------- */
