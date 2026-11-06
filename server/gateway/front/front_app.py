@@ -112,6 +112,11 @@ RECORD_CTX_SIGNAL_TYPE = "kidpal_record_context"
 # §四 kidpal_session_ctx points 两值半）。沿 RECORD_CTX_SIGNAL_TYPE 同族引擎腿通道
 # _send_engine_leg_frames 注入；payload = {"type": ..., "summary": <str>}。
 POINTS_CTX_SIGNAL_TYPE = "kidpal_points_context"
+# 短窗去重命中语音反馈话术（F9 修复轮 / 261104-k2-points-device-ui 真机轮；2026-11-06
+# 09:49:30/09:49:47 实证 dedup 命中只推 home 帧、孩子听不到任何反馈）。话术单源 =
+# 本常量；帧形状由 gw_reminders.build_speech_injection 单源构造（ADR-003 kidpal_speak
+# 既有音频链，引擎补丁已认领该类型），front 不另造注入格式。
+POINTS_DEDUP_SPEECH = "这条刚记过啦"
 # 收尾统一下行信号（q2 = ⓒ 裁定；契约 §1.4 start_organizing 表行——front 机械下发
 # 单源经自推通路 self_push=True 放行，relay 路径恒拒）。
 START_ORGANIZING_PAYLOAD = {"view": "control", "data": {"action": "start_organizing"}}
@@ -707,7 +712,8 @@ def _expand_points_nav_intent(payload) -> "dict | None":
         return None
 
 
-async def _consume_points_intent(websocket, payload, *, restore: bool = False) -> bool:
+async def _consume_points_intent(websocket, payload, *, restore: bool = False,
+                                 upstream=None) -> bool:
     """薄意图截获执行缝（K0PTS-A1/A2/A4；契约 §1.4 add_points/redeem_points）。
 
     payload 为 control/{add_points, redeem_points} 薄意图 -> 校验（add：points 正整数
@@ -717,6 +723,11 @@ async def _consume_points_intent(websocket, payload, *, restore: bool = False) -
     restore（keyword-only，缺省 False；D-07 / S-F6.4-AC5 数据面）：
       True  = QQ/恢复通道（后台更新，帧 data 带 `restore: true`，设备只填缓存不抢前台）；
       False = 语音成功路径（帧不带 restore，设备接管前台跳积分页）。
+    upstream（keyword-only，缺省 None；F9 修复轮）：
+      引擎腿（泵传入 upstream，缺省 None = 直调/离线装载零注入）。短窗重复命中
+      （entry.duplicate is True）时经该腿注入 `kidpal_speak` 语音反馈
+      （POINTS_DEDUP_SPEECH），复用提醒注入同一条既有音频链；未知/不可用腿 =
+      丢弃不阻断（注入失败降级留痕）。
     拒绝（畸形 / 执行器 ValueError）-> **不写账、不推 points_home**、返回 True（已消费，
     控制帧绝不透传给任何一端）。非 points 控制帧 -> 返回 False（既有路由零偏移）。
     """
@@ -758,6 +769,21 @@ async def _consume_points_intent(websocket, payload, *, restore: bool = False) -
         # 当前权威 points_home（回执携带的 balance 与实时状态同源）。
         log.info("points_intent dedup corr_id=%s action=%s balance=%s revision=%s",
                  corr_id, action, entry.get("balance"), entry.get("revision"))
+        # F9 修复轮（2026-11-06 真机轮 F9）：去重命中补一句语音反馈——孩子听得到
+        # 「这条刚记过啦」，不止屏上跳页。帧形状单源 = gw_reminders 的 kidpal_speak
+        # 构造器（ADR-003 既有音频链）；无引擎腿（直调/离线）/ 注入失败 = 降级留痕，
+        # **绝不阻断**拦截消费与 home 帧推送（提醒注入同款纪律）。
+        if upstream is not None:
+            injection = gw_reminders.build_speech_injection(
+                {"speech": POINTS_DEDUP_SPEECH})
+            if injection is not None:
+                try:
+                    sent = await _send_engine_leg_frames(upstream, [injection])
+                    if not sent:
+                        log.warning("points_dedup_speech_degraded corr_id=%s", corr_id)
+                except Exception as e:  # noqa: BLE001 — 语音是增强，不阻断去重回执
+                    log.warning("points_dedup_speech_err corr_id=%s err=%s",
+                                corr_id, type(e).__name__)
     else:
         log.info(
             "points_intent executed corr_id=%s action=%s entry_id=%s delta=%+d balance=%d",
@@ -871,6 +897,69 @@ async def run_points_observe_once() -> int:
             log.warning("points_observe_err corr_id=%s err=%s",
                         gw_mcp.corr_id(), type(e).__name__)
     return pushed
+
+
+async def _push_points_connect(websocket) -> bool:
+    """WS 建连积分恢复推送（F11 修复轮 / 261104-k2-points-device-ui 真机轮）。
+
+    病灶（2026-11-06 真机 10:29:36 / 10:30:04 实证）：设备重启后积分 RAM 缓存掉电即失
+    （K1 权威账本只在云端，设备不持久化），WS 建连恢复推送点此前只有 story_list /
+    schedule 两族，积分面零请求零推送——设备进积分页停留 K0a「数据未达」占位。landed
+    架构积分面行明列「WS 建连」恢复推送。
+
+    本缝在 WS 建连恢复推送点（story_list 建连初推同位）恰推**一帧**权威 points_home，
+    data.restore=True（板端 restore 分流：只填 RAM 缓存、不抢前台——D-07 /
+    S-F6.4-AC5 同口径），推送成功后同步置观察基线（`_points_observed_set`，取当前
+    权威 revision/分录数）——观察缝（`_observe_points_revision`）随后看到的是同一
+    revision，不会把这次初推的变更再推一遍（观察缝「未观察过的新连接只建基线推 0 帧」
+    的分支被本缝提前消化，建连首帧稳定为恰一帧）。
+
+    幂等语义：基线按**连接对象**登记（WeakKeyDictionary，不可弱引用时退属性面）。建连
+    点每连接只调用本缝一次；重连 = 新 websocket 对象 = 新基线，所以重连必推（恢复语义
+    要求）。同一连接对象上重复调用（「重复建连事件」）= 基线已在位 = 本连接已收过权威
+    初推 -> 直接返回 False、零帧（本缝开头按基线短路）；同一连接内的其余消费路径（ctx /
+    删除 / 意图）不经本缝，不存在重推放大。
+
+    护栏（NFR-OFF-1 失败可见、不伪造，且不炸建连）：
+      - state 文件**缺席** -> 推 0 帧、WARNING 留痕、返回 False。缺席不当作权威零账本
+        呈现（路径错配/账本文件丢失时不得让孩子看到「0 分」假象；设备停留未达占位 =
+        诚实失败可见）。注意：points.py `_load_full` 对缺席返回出厂零态，本缝在此
+        **刻意比读侧严格**，把「不存在」与「确有零余额」区分开。
+      - state 不可读/损坏（形状违约、IO 错）-> build_points_home 抛 ValueError/OSError，
+        同一降级：推 0 帧、WARNING 留痕、返回 False。
+      - 推送失败（连接已断等）-> 记 WARNING、返回 False（建连推送增强不得拒服务，
+        story connect push / schedule connect push 同位 try/except 先例）。
+    返回是否已推送（供调用点日志与本地验证记账）。
+    """
+    corr_id = gw_mcp.corr_id()
+    if _points_observed_get(websocket) is not None:
+        # 重复建连事件（同连接对象二次调用）：基线已在位 = 本连接已收过权威初推，
+        # 幂等不重推（基线语义天然保证；零帧、零日志噪音）。
+        return False
+    path = POINTS_STATE_PATH
+    if not isinstance(path, str) or not path or not os.path.exists(path):
+        log.warning("points_connect_push skipped corr_id=%s reason=state_absent path=%s",
+                    corr_id, path)
+        return False
+    try:
+        home = gw_points.build_points_home(POINTS_STATE_PATH)
+    except Exception as e:  # noqa: BLE001 — 失败可见不伪造、推 0 帧、不炸建连
+        log.warning("points_connect_push skipped corr_id=%s reason=state_unreadable err=%s",
+                    corr_id, type(e).__name__)
+        return False
+    home["data"]["restore"] = True   # 建连恢复 = 只填缓存不抢前台（D-07）
+    try:
+        await _push_display_payload(websocket, home)
+    except Exception as e:  # noqa: BLE001 — 建连推送增强，不因它拒服务
+        log.warning("points_connect_push_err corr_id=%s err=%s",
+                    corr_id, type(e).__name__)
+        return False
+    # 观察基线置位（防观察缝把同一 revision 再推一遍：这是我们刚替设备看到的状态）。
+    _points_observed_set(websocket, _points_snapshot_or_none())
+    data = home.get("data") or {}
+    log.info("points_connect pushed corr_id=%s balance=%s revision=%s entries=%d",
+             corr_id, data.get("balance"), data.get("revision"), len(data.get("recent") or []))
+    return True
 
 
 async def _consume_kidpal_control(session_id, obj, websocket, upstream=None) -> bool:
@@ -1404,7 +1493,8 @@ def build_display_tool_calls(blocks: list) -> list:
     return calls
 
 
-async def _relay_display_blocks_to_device(blocks: list, websocket, session_id=None) -> bool:
+async def _relay_display_blocks_to_device(blocks: list, websocket, session_id=None,
+                                          upstream=None) -> bool:
     """Send each display relay envelope toward the device as its OWN
     {"type":"mcp","payload":<envelope>} frame (firmware application.cc:492 routes ONLY
     type=mcp into McpServer::ParseMessage; :532 drops every other type — the deprecated
@@ -1412,6 +1502,9 @@ async def _relay_display_blocks_to_device(blocks: list, websocket, session_id=No
 
     session_id (additive, P3-A4): 若给定，旁路消费 control/start_recording 把该会话切
     累积态（契约 §1.4）；wire 输出不变（决策23: front 只消费不重发）。
+    upstream (additive, F9 修复轮): 引擎腿（泵路径传入）——积分短窗去重命中的
+    kidpal_speak 语音反馈经它注入（_consume_points_intent 的 upstream 形参透传）；
+    缺省 None = 直调/旁路路径零注入（与达标回执 home 帧同一消费语义）。
     返回 True = 本批块中有「进入记录语境」沿（control/start_recording 首次消费，
     261019-p3-record-dialogue-guide：调用方沿此向引擎腿注入 active=true 等价信号）。"""
     enter_edge = False
@@ -1427,7 +1520,7 @@ async def _relay_display_blocks_to_device(blocks: list, websocket, session_id=No
         # 积分薄意图截获执行缝（K0PTS-A1/A2/A4；契约 §1.4 网关决定类，2026-11-04）：
         # **两侧 relay 路径收敛于此**（side-channel 与 fence 两路都过本函数）——消费即
         # continue，控制帧绝不透传给设备；拒绝路径同样已消费（不落账、不推送、不透传）。
-        if await _consume_points_intent(websocket, parsed):
+        if await _consume_points_intent(websocket, parsed, upstream=upstream):
             continue
         if session_id is not None and _story_route_display_payload(session_id, parsed):
             enter_edge = True
@@ -1489,7 +1582,7 @@ async def pump_upstream_to_client(upstream, websocket, session_id=None) -> None:
                 # verbatim — the device must not see the engine transport frame), drive the
                 # raw blocks through the same relay chain.
                 if await _relay_display_blocks_to_device(obj.get("blocks") or [], websocket,
-                                                         session_id):
+                                                         session_id, upstream):
                     await _inject_record_context_enter(upstream)
                 continue
             text_field = obj.get("text") if isinstance(obj, dict) else None
@@ -1503,7 +1596,8 @@ async def pump_upstream_to_client(upstream, websocket, session_id=None) -> None:
                 relay["text"] = speech
                 await websocket.send_text(json.dumps(relay, ensure_ascii=False))
                 # …and each display envelope to the device as its own mcp frame.
-                if await _relay_display_blocks_to_device(blocks, websocket, session_id):
+                if await _relay_display_blocks_to_device(blocks, websocket, session_id,
+                                                         upstream):
                     await _inject_record_context_enter(upstream)
             else:
                 await websocket.send_text(frame)  # no text field (hello/state): verbatim
@@ -2359,6 +2453,16 @@ async def ws_gateway(websocket: WebSocket):
                     await _push_story_list(websocket, restore=True)
                 except Exception as e:  # noqa: BLE001 — 建连推送增强，不因它拒服务
                     log.warning("story_connect_push_err err=%s", type(e).__name__)
+            # 积分建连恢复推送（F11 修复轮 / 261104-k2-points-device-ui 真机轮）：设备
+            # 重启后积分 RAM 缓存掉电即失，建连即推恰一帧权威 points_home
+            # （data.restore=True 只填缓存不抢前台）+ 置观察基线（防观察缝重复推）。
+            # 与 story_list 建连初推同位、同为恢复语义；state 缺席/不可读 -> 静默跳过
+            # 只留 WARNING（NFR-OFF-1 失败可见、不伪造 0），失败不阻断建连
+            # （story / schedule 建连推送同位 try/except 先例）。
+            try:
+                await _push_points_connect(websocket)
+            except Exception as e:  # noqa: BLE001 — 建连推送增强，不因它拒服务
+                log.warning("points_connect_dispatch_err err=%s", type(e).__name__)
             # both proxy legs now run through the takeover pumps (text-face interception):
             # engine->device strips ```display fences + relays kidpal/display tools/call;
             # device->engine forwards receipts unchanged and consumes them as delivery acks.
