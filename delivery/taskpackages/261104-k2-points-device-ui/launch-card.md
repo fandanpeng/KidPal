@@ -12,7 +12,7 @@
 - **固件严格模式默认开**：`VERIFY_FW_BUILD_REQUIRED=1`（无关闭留痕即开；本包 diff 触 firmware 设备面，device build 闸必须真编译）。
 - **验证形态申报**（机器消费行，闸按顶格前缀解析）：
 
-验证形态申报（JSON）：{"schemaVersion":1,"precedents":{},"deviceOutcome":{"userVisible":true,"acceptanceRefs":["S-F6.1","S-F6.2","S-F6.3"],"hostUncompilablePaths":["firmware/main/mcp_server.cc","firmware/main/application.cc","firmware/main/protocols/protocol.cc"],"reason":"launch 预估：语音记账/删除确认/冷启动恢复为设备可见行为（K2D-E3 真机轮核验）；mcp_server.cc 与 application.cc 为设备专属 TU（K0a 先例在册），protocol.cc 为上行帧构造面——Pod intake 按实际 diff 收窄，points_page.c 沿 K0 先例 host 可编不预列"}}
+验证形态申报（JSON）：{"schemaVersion":1,"precedents":{},"deviceOutcome":{"userVisible":true,"acceptanceRefs":["S-F6.1","S-F6.2","S-F6.3"],"hostUncompilablePaths":["firmware/main/mcp_server.cc","firmware/main/application.cc","firmware/main/display/lcd_display.cc","firmware/main/display/kidpal_render_node.cc"],"reason":"Pod intake 按实际 diff 收窄（2026-11-06 planner ruling 6，launch 预估申报的 protocol.cc 实测不在 verify-gates 登记集、收口闸 device-outcome-host-path-unregistered 抓出；实际 touched host-uncompilable 实集 = mcp_server.cc / application.cc / lcd_display.cc / kidpal_render_node.cc 四路径；protocol.cc 沿 K0 先例归 host 可编面、story_page.c 键路由扩点经 host 冻结件合跑覆盖不预列；语音记账/删除确认/冷启动恢复仍为设备可见行为，K2D-E3 真机轮核验"}}
 
 - **跨包交接面**：K2 建立 restore/原地刷新与进度线消费缝——K3（QQ 到账不抢前台复证）与 K4（目标切换刻度更新复证）复用，两包不另写设备渲染分支；积分数字与故事星星独立，不合并两套 total（K5 收口对表）。
 - **环境事实**：复用池树 `C:/AI/KidPal-pod-m2`（上一包 K1 已 merged，常驻分支 dev/pod-m2=b96b978d）；专属图索引 `C-AI-KidPal-pod-m2` ready（2026-11-05 实查，21740 节点/64106 边，K1 points 面在图）；host_app 现役 `sdkconfig` 在位，`sdkconfig.pre-launch-bak-20261104` 残留已按 K1 卡预告清理。

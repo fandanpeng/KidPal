@@ -243,7 +243,16 @@
     "firmware/main/display/kidpal_render_node.cc",
     "firmware/main/display/kidpal_render_node.h",
     "firmware/main/display/lcd_display.cc",
-    "server/acceptance/test_points_e2e_spike.acceptance.py"
+    "server/acceptance/test_points_e2e_spike.acceptance.py",
+    "server/deploy/engine-patch/connection.py",
+    "server/deploy/kidpal-agent-prompt.txt",
+    "tools/asset-pipeline/gen_art_spiffs.mjs",
+    "tools/simulator/LvglWindowsSimulator/assets/assets.c",
+    "firmware/main/assets/spiffs_root/pt_cat_34_28.bin",
+    "firmware/main/assets/spiffs_root/sc_wheel_42_42.bin",
+    "firmware/main/assets/spiffs_root/ic_coin_24_24.bin",
+    "firmware/main/test/ui_art_integration.acceptance.c",
+    "firmware/main/test/retract_p4_three_page.acceptance.c"
   ],
   "impactedTestsSeed": [
     {
