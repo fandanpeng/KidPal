@@ -412,11 +412,15 @@ bool PointsDispatchKey(key_id_t key, key_gesture_t g)
         switch (act) {
             case KPTS_ACT_VOICE_SESSION:
                 /* 积分语境（source_page=points_ledger + selected_id）由
-                 * application.cc 会话发起点按 kidpal_points_ui_substate() 取。 */
+                 * application.cc 会话发起点按 kidpal_points_ui_substate() 取。
+                 * K2 真机轮 F10：入口走 ToggleChatState（= 对话开关，与课表「问课程」
+                 * 同语义）而非 StartListening——后者在 Idle 非故事语境恒 ManualStop，
+                 * 点按开启后永不 stop、零 ASR。ToggleChatState 走 HandleToggleChatEvent
+                 * Idle 分支恒 AutoStop/Realtime（真机 mode=auto 实证可转写）。 */
                 Application::GetInstance().Schedule([]() {
                     kidpal_render_node_show_chat();
                 });
-                Application::GetInstance().StartListening();
+                Application::GetInstance().ToggleChatState();
                 return true;
             case KPTS_ACT_BACK:
                 kidpal_points_ui_set_substate(KPTS_SUBSTATE_NONE);
@@ -455,10 +459,12 @@ bool PointsDispatchKey(key_id_t key, key_gesture_t g)
     /* KPTS_SUBSTATE_NONE = 基层 P3 积分主页（§2.3 P3 积分主页行）。 */
     switch (kidpal_points_home_key_action(PointsGestureCode(key, g))) {
         case KPTS_ACT_VOICE_SESSION:
+            /* K2 真机轮 F10：同详细账本分支——ToggleChatState 对话开关（Idle 恒
+             * AutoStop/Realtime），不再走 StartListening（非故事恒 ManualStop）。 */
             Application::GetInstance().Schedule([]() {
                 kidpal_render_node_show_chat();
             });
-            Application::GetInstance().StartListening();
+            Application::GetInstance().ToggleChatState();
             return true;
         case KPTS_ACT_OPEN_LEDGER:
             PointsEnterLedger();

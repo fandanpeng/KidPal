@@ -599,13 +599,20 @@ TEST_CASE("键帽条三槽: 左右槽随态文案——页槽表+闭集单源+BO
      * 值域权威 = requirements S-F6.1 AC6 键帽行「问一问 / 下一页」逐字 +
      * docs/ui/V9/points-home-nodata.png 底栏。删了什么：P3 (说话·双击看, 下移) 逐字
      * 断言；为什么：P3 页身份随四页化改变，保留即假红；新钉什么：P3 (问一问, 下一页)
-     * 逐字 + P4 故事槽对在世。 */
+     * 逐字 + P4 故事槽对在世。
+     * 【2026-11-06 frozen-rebaseline 随 261104-k2-points-device-ui planner ruling 11】
+     * 真机轮 F4：主页「详细·双击看」胶囊移入键帽（页面胶囊删除；语音提示离开键帽
+     * = human 明知选择）。human 三选一裁定 = 左键帽改「详·双击」。左槽期望翻正
+     * 问一问 -> 详·双击；右槽「下一页」不动；断言实质（rc=0 + 左右槽逐字 strcmp）
+     * 零变化，只换期望字面。值域权威更新 = 2026-11-06 human 现场裁定（F4 胶囊移入
+     * 键帽语义）为准，原 S-F6.1 AC6 键帽行「问一问」字面随裁定退役。同值复对账齿
+     * retract_p4_three_page M2K2-A2 tooth 4 已同步翻正（防两文件漂移）。 */
     rc = kidpal_keybar_slots(2, 0, 0, &left, &right);
     TEST_ASSERT_TRUE_MESSAGE(rc == 0 && left != NULL && right != NULL &&
-                             strcmp(left, "问一问") == 0 &&
+                             strcmp(left, "详·双击") == 0 &&
                              strcmp(right, "下一页") == 0,
-        kkb_fm("KKB-A3 RED: P3 页槽 (左=%s, 右=%s) 期望 (问一问, 下一页)——P3 积分"
-               "主页键帽漂移 (S-F6.1 AC6 键帽行 + points-home-nodata.png; D-01 四页"
+        kkb_fm("KKB-A3 RED: P3 页槽 (左=%s, 右=%s) 期望 (详·双击, 下一页)——P3 积分"
+               "主页键帽漂移 (2026-11-06 human 裁定: F4 胶囊移入键帽; D-01 四页"
                "重锚: 原故事槽对已迁 P4)",
                left ? left : "(null)", right ? right : "(null)"));
 
@@ -1214,4 +1221,16 @@ TEST_CASE("键帽条三槽: 积分子态键帽槽——账本「问一问/下移
  *               由 TEST 1 既有齿承载（零重复）。既有 TEST 1-6 断言集合零变化;
  *               本包义务红（独立红跑通道哨兵红）= TEST 7 哨兵半; host runner 中
  *               keybar.c 强符号已落地 = 全绿（builder 轮 1 实现）。
+ *   2026-11-06  KKB-A3 P3 左键帽 frozen-rebaseline（acceptance-author, TaskPackage
+ *               261104-k2-points-device-ui; 授权 = human 现场裁定（真机轮 F4 三选一
+ *               裁定左键帽改「详·双击」）+ planner ruling 11; 触发 = F4 主页「详细·
+ *               双击看」胶囊移入键帽、页面胶囊删除——语音提示离开键帽为 human 明知
+ *               选择）: P3 主页基础槽左键帽期望 问一问 -> 详·双击, 右槽「下一页」
+ *               不动。断言实质（rc=0 + 左右槽逐字 strcmp）零变化, 只换期望字面——
+ *               语义保持修订, 非放宽。同值复对账齿 retract_p4_three_page M2K2-A2
+ *               tooth 4 同步翻正（防两文件漂移）。红态后果：本齿对 keybar.c 未改
+ *               现状为设计态红（P3 现返回「问一问」）, builder 小增量落键帽翻正后
+ *               转绿；其余齿零改动（基线 287/3 -> 287/5: KKB-A3 主齿 + retract
+ *               tooth 4 同值复对账齿两处红, 同一根因 = keybar.c P3 左键帽未跟上
+ *               重锚）。
  * --------------------------------------------------------------------------- */

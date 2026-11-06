@@ -46,8 +46,9 @@ int kidpal_keybar_slots(int page, int scene, int overlay_top,
         switch (page) {
             case PAGE_P1: *out_left = "说话";     *out_right = "翻页"; break;
             case PAGE_P2: *out_left = "问课程";   *out_right = "翻页"; break;
-            /* P3 星星积分本（S-F6.1 AC6 键帽行逐字 + docs/ui/V9/points-home-nodata.png）。 */
-            case PAGE_P3: *out_left = "问一问";   *out_right = "下一页"; break;
+            /* P3 星星积分本（planner ruling 11 / F4：human 三选一裁定左键帽「详·双击」
+             * ——详情账本提示压入键帽；右「下一页」不动）。 */
+            case PAGE_P3: *out_left = "详·双击";   *out_right = "下一页"; break;
             /* P4 星星记录本列表（S-F2.1 列表态键帽零回归, 值随页位原地迁移不变;
              * docs/ui/V9/canvas-p3.png）。 */
             case PAGE_P4: *out_left = "说话·双击看"; *out_right = "下移"; break;
@@ -286,7 +287,7 @@ int kidpal_keybar_points_slots(int substate, const char **out_left,
             *out_right = "算了";
             return 0;
         default:
-            /* NONE / 未知子态：调用方回落基层页槽表（P3 = 问一问/下一页），
+            /* NONE / 未知子态：调用方回落基层页槽表（P3 = 详·双击/下一页），
              * 绝不画错键帽。 */
             return -1;
     }

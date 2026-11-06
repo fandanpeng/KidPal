@@ -431,6 +431,16 @@ jobs.push({ name: 'time_10_24', svg: `<svg xmlns="http://www.w3.org/2000/svg" vi
 jobs.push({ name: 'ic_batt_32', svg: svgUse('ic-batt'), w: 32, h: 26, rotate: 0, kind: 'svg' });
 jobs.push({ name: 'ic_bell_13', svg: svgUse('ic-bell'), w: 13, h: 13, rotate: 0, kind: 'svg' });
 
+// v9 积分本资产（TaskPackage 261104-k2-points-device-ui 真机轮 F2/F5/F6）：
+//   金币余额图标 = 母版 ic-coin 符号（48 盒双圈内嵌五角星）缩绘 24×24，视觉同族于
+//     .coin（V9 html 253 行 24px 圆形外框内嵌★）；
+//   进度线小伴位置标 = pt-cat 符号 34×28（V9 html 545 行 viewBox 24 20 152 124）；
+//   游乐场场景标 = sc-wheel 摩天轮 42×42（V9 html 540 行 48 盒，二轮打回城堡改摩天轮）。
+// 三枚按 V9 主页面目标尺寸直出（禁运行时缩放）；1bpp 阈值化由本管线既有通路保证。
+jobs.push({ name: 'ic_coin_24_24', svg: svgUse('ic-coin'), w: 24, h: 24, rotate: 0, kind: 'svg' });
+jobs.push({ name: 'pt_cat_34_28', svg: svgUse('pt-cat'), w: 34, h: 28, rotate: 0, kind: 'svg' });
+jobs.push({ name: 'sc_wheel_42_42', svg: svgUse('sc-wheel'), w: 42, h: 42, rotate: 0, kind: 'svg' });
+
 // ── 10. 主循环：栅格化 → 阈值 → 打包/切片 → 落盘 ──
 const results = [];
 let fontVerdictJobs = [];

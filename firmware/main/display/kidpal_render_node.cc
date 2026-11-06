@@ -48,6 +48,7 @@
 #include "char_window.h"   /* M2K3-A3 驱动半 seam [9]: kidpal_char_window_idle_step / 5min 上限 */
 #include "kidpal_layer.h"
 #include "kidpal_font.h"   /* 统一 kidpal_font 句柄 seam（261028-m6-k1，[K4] 消费口） */
+#include "art_assets.h"    /* K2 积分本图标（pt_cat / ic_coin）经 art 单一资产层装载 */
 #include "diagnostics/log_semantics.h" /* 261022-diag-log-content: PAGE_SWITCH 页名/触发名 */
 
 #include <esp_log.h>
@@ -927,7 +928,7 @@ static void rn_points_box(lv_obj_t *scr, int x, int y, int w, int h, uint32_t co
     lv_obj_clear_flag(o, LV_OBJ_FLAG_SCROLLABLE);
 }
 
-/* 圆角描边框（列表选中行 / 「详细 · 双击看」按钮 / 删除确认分录框）。 */
+/* 圆角描边框（列表选中行 / 删除确认分录框）。 */
 static void rn_points_outline(lv_obj_t *scr, int x, int y, int w, int h)
 {
     lv_obj_t *o = lv_obj_create(scr);
@@ -941,6 +942,93 @@ static void rn_points_outline(lv_obj_t *scr, int x, int y, int w, int h)
     lv_obj_set_style_border_opa(o, LV_OPA_COVER, 0);
     lv_obj_set_style_radius(o, 12, 0);
     lv_obj_clear_flag(o, LV_OBJ_FLAG_SCROLLABLE);
+}
+
+/* 积分本图标资产（K2 真机轮 F2/F5）：把 KAP1 1bpp 经 art 单一资产层
+ * (kidpal_art_load + kidpal_art_pixel) 合成 ARGB8888 lv_image_dsc（墨=不透明黑 /
+ * 纸=透明）。与 story_page.c 的 kstory_art_dsc 同款先例：单槽 loader 缓存即时拷入
+ * 自建缓冲后即释放引用；每资产独立缓存槽（pt_cat / ic_coin / sc_wheel），零互相逐出。资产
+ * 不可用（未 mount / 文件缺 / 尺寸超上限）-> NULL，调用方回落既有几何/文字画法。 */
+#define RN_POINTS_ART_SLOTS 3   /* pt_cat_34_28 / ic_coin_24_24 / sc_wheel_42_42 */
+
+typedef struct {
+    const char *name;
+    lv_image_dsc_t dsc;
+    uint32_t *px;
+    int st; /* 0=未试 1=可用 2=不可用 */
+} rn_points_art_cache_t;
+
+static rn_points_art_cache_t s_rn_points_art[RN_POINTS_ART_SLOTS];
+
+static const lv_image_dsc_t *rn_points_art_dsc(const char *asset, int max_w, int max_h)
+{
+    kidpal_art_img_t img;
+    rn_points_art_cache_t *slot = NULL;
+    int i;
+
+    for (i = 0; i < RN_POINTS_ART_SLOTS; i++) {
+        if (s_rn_points_art[i].name == asset) {
+            slot = &s_rn_points_art[i];
+            break;
+        }
+        if (slot == NULL && s_rn_points_art[i].name == NULL) {
+            slot = &s_rn_points_art[i]; /* 首个空槽预定（命中继续找） */
+        }
+    }
+    if (slot == NULL) {
+        return NULL; /* 槽耗尽（超出缓存容量即资产数, 防御） */
+    }
+    if (slot->st == 2) {
+        return NULL;
+    }
+    if (slot->st == 1) {
+        return &slot->dsc;
+    }
+    if (kidpal_art_load(asset, &img) != 0 || img.w <= 0 || img.h <= 0 ||
+        img.w > max_w || img.h > max_h) {
+        slot->st = 2;
+        return NULL;
+    }
+    slot->px = (uint32_t *)lv_malloc((size_t)img.w * img.h * sizeof(uint32_t));
+    if (slot->px == NULL) {
+        slot->st = 2;
+        return NULL;
+    }
+    for (int y = 0; y < img.h; y++) {
+        for (int x = 0; x < img.w; x++) {
+            int p = kidpal_art_pixel(&img, x, y);
+            slot->px[y * img.w + x] = (p == 1) ? 0xFF000000u : 0x00000000u;
+        }
+    }
+    slot->dsc = lv_image_dsc_t();
+    slot->dsc.header.cf     = LV_COLOR_FORMAT_ARGB8888;
+    slot->dsc.header.w      = img.w;
+    slot->dsc.header.h      = img.h;
+    slot->dsc.header.stride = (uint32_t)img.w * 4u;
+    slot->dsc.data          = (const uint8_t *)slot->px;
+    slot->dsc.data_size     = (uint32_t)(img.w * img.h * 4);
+    slot->name = asset;
+    slot->st = 1;
+    return &slot->dsc;
+}
+
+/* 资产落屏：返回 1 = 已画；0 = 资产不可用（调用方画兜底形态）。 */
+static int rn_points_art_image(lv_obj_t *scr, const char *asset, int max_w, int max_h,
+                               int x, int y)
+{
+    const lv_image_dsc_t *d = rn_points_art_dsc(asset, max_w, max_h);
+    lv_obj_t *im;
+
+    if (d == NULL) {
+        return 0;
+    }
+    im = lv_image_create(scr);
+    if (im == NULL) {
+        return 0;
+    }
+    lv_image_set_src(im, d);
+    lv_obj_set_pos(im, x, y);
+    return 1;
 }
 
 /* 分值 -> 线上横坐标（钳位 [X0, X1]；target <= 0 防御按 1 计——不除零）。 */
@@ -998,9 +1086,32 @@ static void rn_render_points_progress_line(lv_obj_t *scr,
                             &font_puhui_14_1);
         }
     }
-    /* 小伴位置标记（余额位；负余额钳位在起点——数字本身仍由余额文本如实承载）。 */
+    /* 目标位场景标（planner ruling 9 / V9）：sc-wheel 摩天轮 42×42 悬于基线上方、
+     * 底边距基线 12px 不压线，与 pt-cat 同一悬空纪律；整体略大于猫咪 34×28 属设计
+     * 预期——「场景标要像目标不像小图标」。本批只画默认目标位 = 40 分刻度/右端附近
+     * （D-09 四预置切换与自定义伸缩归 K4，本批不接 target_asset 分派）。
+     * 资产不可用回落 = 不画（不画方块）。 */
+    {
+        int tgt_x = RNP_LINE_X1;            /* 目标分值位 = 右端 40 刻度 */
+        int wheel_x = tgt_x - 21;           /* 42 宽中心对目标刻度 */
+        int wheel_y = RNP_LINE_Y - 42 - 12; /* 底边 = 基线 - 12px（V9 统一悬空口径） */
+
+        (void)rn_points_art_image(scr, "sc_wheel_42_42.bin", 42, 42, wheel_x, wheel_y);
+    }
+    /* 小伴位置标（V9：pt-cat 34×28 悬于横线上方、底边距基线 12px 不压线；负余额
+     * 钳位在起点——数字本身仍由余额文本如实承载）。资产不可用回落 16×16 实心方块。 */
     comrade_x = rn_points_line_x(pg->pos, pg->target_points);
-    rn_points_box(scr, comrade_x - 8, RNP_LINE_Y - 30, 16, 16, RNP_INK);
+    {
+        int cat_x = comrade_x - 17;       /* 34 宽中心对余额位 */
+        int cat_y = RNP_LINE_Y - 28 - 12; /* 底边 = 基线 - 12px（V9 统一悬空口径） */
+
+        if (cat_x < 0) {
+            cat_x = 0;
+        }
+        if (rn_points_art_image(scr, "pt_cat_34_28.bin", 34, 28, cat_x, cat_y) == 0) {
+            rn_points_box(scr, comrade_x - 8, RNP_LINE_Y - 30, 16, 16, RNP_INK);
+        }
+    }
 }
 
 /* 分值逐字（正数带 +，负数如实带 -；V9 points-home-negative.png「-40」）。 */
@@ -1058,6 +1169,10 @@ static void rn_render_points_entry_row(lv_obj_t *scr, const kidpal_points_entry_
         lv_obj_t *reason = rn_points_label(scr, e->reason, reason_x, y, RNP_INK,
                                            kidpal_render_node_body_font());
         lv_obj_set_width(reason, reason_w);
+        /* K2 真机轮 F7：定高只容一行——LV_LABEL_LONG_DOT 仅在对象高度小于文本
+         * 自然高时才触发截尾；高度留 LV_SIZE_CONTENT 会折行第二行溢出邻行/框。 */
+        lv_obj_set_height(reason,
+                          lv_font_get_line_height(kidpal_render_node_body_font()));
         lv_label_set_long_mode(reason, LV_LABEL_LONG_DOT);
     }
     rn_points_format_date(e->occurred_at, date, sizeof(date));
@@ -1082,7 +1197,11 @@ static void rn_render_points_delete_entry(const kidpal_points_entry_t *e)
     {
         lv_obj_t *reason = rn_points_label(s_kidpal_scr, e->reason, 190, 134, RNP_INK,
                                            kidpal_render_node_body_font());
-        lv_obj_set_width(reason, 64);
+        lv_obj_set_width(reason, 72); /* 190..262（日期列起点），比原 64 略宽减截断 */
+        /* K2 真机轮 F7：删除确认圆角框内长原因定高一行截尾，绝不折行第二行溢出
+         * 框体（V9 points-delete-confirm.png 单行分录版式）。 */
+        lv_obj_set_height(reason,
+                          lv_font_get_line_height(kidpal_render_node_body_font()));
         lv_label_set_long_mode(reason, LV_LABEL_LONG_DOT);
     }
     rn_points_format_date(e->occurred_at, date, sizeof(date));
@@ -1104,15 +1223,24 @@ static void rn_render_points_home_body_locked(void)
     char buf[64];
     int i;
 
-    /* 右上角余额（数字如实——负值不藏数；NODATA 不进本函数。CLIP = 超大分值
-     * 只截尾不换行、不撑破顶栏）。 */
-    snprintf(buf, sizeof(buf), "★ %d", s_points_home.balance);
+    /* 金币图标 + 余额数字（V9：圆形金币内嵌★，与故事裸 ★ 区分；金币只在积分本出现）。
+     * 数字如实（负值不藏数）；CLIP = 超大分值只截尾不换行、不撑破顶栏。资产不可用
+     * 回落裸 ★ 字形占位。 */
     {
-        lv_obj_t *bal = rn_points_label(s_kidpal_scr, buf, 218, 8, RNP_INK,
-                                        kidpal_render_node_title_font());
-        lv_obj_set_width(bal, 170);
-        lv_obj_set_style_text_align(bal, LV_TEXT_ALIGN_RIGHT, 0);
-        lv_label_set_long_mode(bal, LV_LABEL_LONG_CLIP);
+        const int coin_x = 214;
+        const int num_x = 244; /* 币右沿 238 + 6px 间距（V9 金币+数字成组） */
+
+        if (rn_points_art_image(s_kidpal_scr, "ic_coin_24_24.bin", 24, 24, coin_x, 8) == 0) {
+            rn_points_label(s_kidpal_scr, "★", coin_x, 8, RNP_INK,
+                            kidpal_render_node_title_font());
+        }
+        snprintf(buf, sizeof(buf), "%d", s_points_home.balance);
+        {
+            lv_obj_t *bal = rn_points_label(s_kidpal_scr, buf, num_x, 8, RNP_INK,
+                                            kidpal_render_node_title_font());
+            lv_obj_set_width(bal, 388 - num_x);
+            lv_label_set_long_mode(bal, LV_LABEL_LONG_CLIP);
+        }
     }
     /* 目标名（场景标位说明；超长截尾防撑破版面）。 */
     {
@@ -1128,9 +1256,13 @@ static void rn_render_points_home_body_locked(void)
 
     rn_points_label(s_kidpal_scr, "最近得到", 12, 138, RNP_INK,
                     kidpal_render_node_body_font());
-    rn_points_outline(s_kidpal_scr, 248, 132, 144, 28);
-    rn_points_label(s_kidpal_scr, "详细 · 双击看", 262, 138, RNP_INK,
-                    &font_puhui_14_1);
+    /* planner ruling 11 / F4：原「详细 · 双击看」胶囊（右 248..392、y132..160）删除——
+     * 提示已压入左键帽「详·双击」（keybar.c 页槽表 P3 行）。胶囊只是标题行右侧的叠加
+     * 元素、不占垂直块位，故删除后：
+     *  - 「最近得到」保持左对齐（12,138），标题行右侧留白（row header 右空白，常态，
+     *    无需收拢）；
+     *  - recent 三行 y=166/192/218 与底部语音提示 y=246 均不下移（与 V9 points-home
+     *    余下版面逐行对表，胶囊删除不产生垂直空洞）。 */
 
     if (state == KPTS_HOME_STATE_EMPTY) {
         lv_obj_t *hint = rn_points_label(s_kidpal_scr, "账本空空的，攒下第一笔积分吧",
@@ -1141,8 +1273,10 @@ static void rn_render_points_home_body_locked(void)
         return;
     }
     for (i = 0; i < s_points_home.recent_count && i < KPTS_RECENT_MAX; i++) {
+        /* K2 真机轮 F3：最近三条补 before→after（列位同详细账本页：delta 12 /
+         * before→after 70 / 事由 150 / 日期 300）。 */
         rn_render_points_entry_row(s_kidpal_scr, &s_points_home.recent[i],
-                                   166 + i * 26, 0, 64, 226, 300, 88);
+                                   166 + i * 26, 1, 150, 136, 300, 88);
     }
     /* 语音记账提示（V9 points-home*.png 底栏上方提示条；空账帧由上面的空账话术承载,
      * 不重复出提示）。 */
