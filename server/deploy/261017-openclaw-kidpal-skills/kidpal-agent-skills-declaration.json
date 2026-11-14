@@ -2,7 +2,7 @@
   "case": "kidpal-agent-skills-allowlist",
   "change": {
     "path": "agents.entries.kidpal.skills",
-    "skills": ["kidpal-schedule-answer", "weather", "tavily"]
+    "skills": ["kidpal-schedule-answer", "kidpal-points-answer", "weather", "tavily"]
   },
   "drift_guard": [
     {
@@ -17,5 +17,5 @@
   "rollback": {
     "script": "rollback_agent_skills.py"
   },
-  "_note": "261017-prompt-v11-schedule-recall PV-A6 声明工件。kidpal agent 只保留三项 modelVisible skill（kidpal-schedule-answer / weather / tavily），收敛 bundled/extra 18 项噪音（TECH-261017-xiaozhi-template-residue-deploy-ssot-gap 附带项③）。openclaw.json 含 gateway 凭据、整文件不入仓，只入本无 secret 声明；drift_guard 现状锚 = kidpal 条目未设 authored skills（bundled/extra 全量生效）。apply_agent_skills.py 幂等应用、写前时间戳备份；rollback_agent_skills.py 一步还原。"
+  "_note": "261017-prompt-v11-schedule-recall PV-A6 声明工件。kidpal agent 只保留四项 modelVisible skill（kidpal-schedule-answer / kidpal-points-answer / weather / tavily；kidpal-points-answer 于 2026-11-14 随 261104-k2-points-device-ui 真机轮 F1 增列），收敛 bundled/extra 18 项噪音（TECH-261017-xiaozhi-template-residue-deploy-ssot-gap 附带项③）。openclaw.json 含 gateway 凭据、整文件不入仓，只入本无 secret 声明；drift_guard 现状锚 = kidpal 条目未设 authored skills（bundled/extra 全量生效）。apply_agent_skills.py 幂等应用、写前时间戳备份；rollback_agent_skills.py 一步还原。"
 }

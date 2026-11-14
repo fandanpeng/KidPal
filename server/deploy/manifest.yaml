@@ -239,6 +239,10 @@ entries:
      dst: /root/.openclaw/workspace-kidpal/skills/kidpal-schedule-answer/SKILL.md,
      owner: deploy.sh, verify: md5, restart: none,
      note: 板侧课表问答流程 skill（2026-09-25 落地，loopback 探针实测生效）}
+  - {src: server/deploy/openclaw-skills/workspace-kidpal/kidpal-points-answer/SKILL.md,
+     dst: /root/.openclaw/workspace-kidpal/skills/kidpal-points-answer/SKILL.md,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: 板侧积分问答流程 skill（261104-k2-points-device-ui 真机轮 F1：积分摘要优先 + /opt/kidpal/points/state.json 只读兜底 + 零写权；kidpal agent 可见性归 261017 声明件白名单）}
 
   # ── kidpal agent skills 收敛声明工件（261017-prompt-v11-schedule-recall / PV-A6）──
   # openclaw.json 含 gateway 凭据、整文件不入仓；只入无 secret 声明 + 定点 apply/回滚脚本。
