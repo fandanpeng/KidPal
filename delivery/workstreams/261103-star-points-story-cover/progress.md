@@ -66,3 +66,21 @@
 **human 遗留项**：① 真实 QQ 验证窗口与设备联调窗口需 human 在场（LP11）；② K2 真机轮与 K3 设备观察建议合并一次设备窗；③ 远程发布与部署轮仍归主线程/human，与本包 launch 无涉。
 
 **勘误（2026-11-14，K3 launch 段上文两处修正；append-only 不改旧行）**：上文「K2 真机轮…与 K3 设备观察共用同一 human 设备窗」「human 遗留项②K2 真机轮与 K3 设备观察建议合并一次设备窗」有误——K2 真机轮 + 复验轮**已跑完并全 PASS**（2026-11-06 首轮 / 2026-11-14 复验轮，`delivery/taskpackages/261104-k2-points-device-ui/device-round-evidence.md` §一/§五，human 收口原话「可以了，合并吧」，合并 @ 76ed332e）。其中 `K1L-L1 外部写入不抢前台` 已实证 front `points_observe` 观察 CLI 写入并自推恰一帧 restore，K3 的 QQ 写入可复用该观察缝。K3 仍需**自己的**真实 QQ 设备观察轮（QQ 消息 → front push → 设备不抢前台/积分页原地刷新，K3Q-E4），该轮需 human 在场（LP11）。
+
+## 2026-11-15 · K4 launch 面准备（pod-m2 树复用；叠跑 K3，human override）
+
+**调度判定**：K4（261104-k4-reward-goal-config，mergeOrder 75）dependsOn = [K1, K2, K3]。实况 = K1/K2 merged，**K3 未 merged**（supervisor ESCALATE，等 human 批 + 真实 QQ 设备轮）。LP12 要求「K4 等 K1、K2、K3 merged 后方可 launch」——human 2026-11-15 原话「继续开发K4，中国时间明天上午到时候一块验证」构成**明确 override**：K4 叠在未合并的 K3 之上开工，base ref = `cad07f2c`（K3 HEAD），合并序仍钉死 K3 → K4。K4 合并门前必须先完成 K3 合并与 K3 的 live 证据。K3 的 live 轮（K3Q-E4）与 K4 的真机轮（K4G-E4）合并到 2026-11-16 上午一次设备窗。
+
+**K3 当前状态（交接事实）**：离线闭环完成（scoped 8/8、final 10/10、supervisor ESCALATE）；已部署到 ECS（`cad07f2c`，drift 0，front 重启、openclaw-gateway 重启后 skill 可见、QQ dad/mom 双通道 READY、CLI `show/recent` 实测可用）。未合并。
+
+**门结果**：check-launch blocking 空（--base-ref main）；LP12 pending 按上述 override 处理；settings-lint 3 files 0 RED 0 WARN；board 预填 queued + worktreePath=C:/AI/KidPal-pod-m2；启动卡落 `delivery/taskpackages/261104-k4-reward-goal-config/launch-card.md`。
+
+**基线锚（带锚引用三件齐；判停 = 消费前 git diff --quiet <SHA> HEAD -- <面域>）**：
+
+- server 面 = **435 passed / 0 failed / 33 subtests passed / 9 deselected** @ SHA `cad07f2c`（2026-11-15 实测，本段同日现跑；命令 = `python -m pytest -q --import-mode=importlib -m "not live" "C:/AI/KidPal-pod-m2/server/acceptance"`（仓根执行）；面域 = `server`）。该基线含 K3 的 server 改动。
+- firmware host 面 = **287 Tests / 3 Failures / 0 Ignored**（3 红全 p1_auxbar AB 存量族；量测态 = K2 final `c1de02fe`）。判停 2026-11-15：`git diff --quiet 76ed332e HEAD -- firmware/` exit 0 → 引用不重跑；K4 动 firmware 后该引用失效，builder 必须重跑并判新增红。
+- 本包验收红基线（acceptance-author 新冻结件）恒现跑。
+
+**环境事实**：专属图索引 `C-AI-KidPal-pod-m2` ready（2026-11-15 实查，随树增量）。
+
+**human 遗留项**：① K3 合并批（supervisor ESCALATE 需 approve-escalated-merge）；② 2026-11-16 上午设备窗：K3 真实 QQ 加兑查删/歧义/重复 + K4 目标配置与刻度联动，一次跑完；③ K4 合并排 K3 之后；④ 远程发布仍归主线程/human。
