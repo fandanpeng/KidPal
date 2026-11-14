@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/tech/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 37（待拍板 2 / 待触发 29 / 已接受风险 5）；已结 28（归档索引见下）。
+**摘要**：未结 41（待拍板 2 / 待触发 33 / 已接受风险 5）；已结 28（归档索引见下）。
 
 ## 待拍板（2）
 
@@ -16,7 +16,7 @@
 | [TECH-261022-p3-record-session-state-churn](TECH-261022-p3-record-session-state-churn.md) | MAJOR | P3 记录会话状态演出族缺陷——键帽鬼影闪烁 / 成功路径鬼覆盖层吃按键 / 引导垄断与「说完了」竞态 / 记录语境幻听入素材 / 列表排序与敷衍标题（KPLOG005 真机轮实证） | 已拍板即批处理——human 2026-10-22：登记后紧接走 /triage-change 分流起包（建议拆两包：固件键帽+覆盖层族一包；front 引导节奏+素材过滤+排序标题一包） |
 | [ARQ-261029-home-temp-marker-producer](ARQ-261029-home-temp-marker-producer.md) | MAJOR | F-9 首页临时事件下划线——上游写入侧从不往 name 落 ※ 前缀，[U1] 机制真机永不触发 | P1 包（261028-m6-k2a-p1-home-16px）acceptance-author 冻结轮跨端核对（2026-10-29） |
 
-## 待触发（29）
+## 待触发（33）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -49,6 +49,10 @@
 | [TECH-261028-p3-reader-key-falls-to-session-toggle](TECH-261028-p3-reader-key-falls-to-session-toggle.md) | MAJOR | P3 阅读态 KEY 短按落全局 SESSION_TOGGLE 开语音会话（违反 S-F2.3 AC2「不响应」），阅读态键帽槽同因缺位显示 (null) | 下个动 P3 阅读态 / 板级按键路由 / 键帽裁决面的包；或 human 指定单独立包（/triage-change 起） |
 | [TECH-261030-qqbot-ask-user-block](TECH-261030-qqbot-ask-user-block.md) | MAJOR | QQ 渠道 `ask_user` 提问送不出去——run 卡死 900 秒、后续消息全排队，家长侧只看到「不回」 | QQ 侧再现「发了没回」；或升级 openclaw-qqbot / OpenClaw 主体时 |
 | [TECH-261030-schedule-answer-skill-period-stale](TECH-261030-schedule-answer-skill-period-stale.md) | SHOULD | `kidpal-schedule-answer` skill 仍写「表列第1节…第6节」，live `schedule.md` 已有第7节——设备课表问答会漏掉周一/二/四的兴趣课（足球） | 下个动 OpenClaw skill / 课表部署面的批；或设备课表问答再现「漏第7节 / 漏足球」 |
+| [TECH-261114-kidpal-agents-md-context-regrowth](TECH-261114-kidpal-agents-md-context-regrowth.md) | SHOULD | workspace-kidpal AGENTS.md 静态纪律承载再增长至 20.7KB（每轮 prompt 9,285 tokens）——M5「首轮 ≤11,000」目标按当前增速 1~2 个功能批内破线；结构性冗余（同一规则最多重复 4 遍）留有 3~5KB 压缩空间 | 下一个要往 AGENTS.md 增回合纪律的功能批（批内预检 probe prompt_tokens）；或探针实测 prompt_tokens > 11000；或 NFR-PERF-4 延迟定阈批 |
+| [TECH-261114-openclaw-gateway-eventloop-stalls](TECH-261114-openclaw-gateway-eventloop-stalls.md) | MAJOR | OpenClaw 网关事件循环 ~31s 级阻塞（两个实证触发源：kidpal session store 同步写+cleanup 失败循环、remote model catalog 刷新）——真机语音轮最差 33s 无响应 | 下次 OpenClaw 运维/升级批；或 journalctl 再现 liveness heartbeat delayed / slow SQLite transaction hold；或 NFR-PERF-4 延迟定阈批 |
+| [TECH-261114-overlay-close-channel-rebuild-churn](TECH-261114-overlay-close-channel-rebuild-churn.md) | SHOULD | overlay_close 即断 WS + 5s 后常驻重建属绕路——冷通道按键进聆听 1.57s（温通道 0.82s）、每次重建付全套 bootstrap burst；候选 A「close 不断通道」为 P1-⑤ 延迟优化，待现有开发任务完成后排期，建议与 TECH-261014 家族合并立包 | human 排期——2026-11-14 human 明示「还有开发任务没有完成，完成后再开始这个优化」；立包时建议与 TECH-261014 家族残余项（主循环 TLS 重连阻塞 / autoconnect 静默放弃 / session-end 通道未接线）合并一次 triage、共担一轮真机回归 |
+| [TECH-261114-vad-split-points-double-add](TECH-261114-vad-split-points-double-add.md) | SHOULD | 引擎 Silero VAD 缺省 1000ms 切句致句中停顿 >1s 分两轮——23 天基线真切句 n=2、全部命中积分句式（事由…停顿…加X分）；11-14 叠加网关阻塞时单事双记账（+6 分）。样本不足先观察，不立包 | 观察判据命中（再累计 ≥2 次真切句事件，或双记账再发生一次 → 升 MAJOR 并走 /triage-change 立包）；或 NFR-PERF-4 延迟定阈批 / 下一个引擎配置面包顺带重估 |
 
 ## 已接受风险（5）
 
