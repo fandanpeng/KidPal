@@ -17,3 +17,26 @@ docs 改动。
 - 设备观感偏差申报（非 docs 面）：builder 申报主页目标名以文字行替代场景资产图标，
   归 K4 D-09 承接，设计评审可裁——记录于 review-packet.md，不构成文档变更。
 - 无新增文档债、无 ADR（adrRequired=false）。
+
+## 修复批追加复核（2026-11-14，integrator 收口 v2）
+
+- **零文档面变更复核**：修复批（53944b5b..073b5050）diff 仍零触 `docs/requirements.md`、
+  `docs/architecture.md`、`docs/contracts/**`、`docs/archive/spec.md`；docs-sync 闸在
+  round 4 绿（docsSyncRequired=false）。修复面全部落在实现/部署/资产管线与交付制品。
+- **openclaw workspace AGENTS/skill 归属说明**：本批改动的
+  `server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md`、
+  `server/deploy/openclaw-skills/workspace-kidpal/kidpal-points-answer/SKILL.md`、
+  `server/deploy/261017-openclaw-kidpal-skills/kidpal-agent-skills-declaration.json`
+  与 `server/deploy/manifest.yaml` / openclaw-skills README 均属 **部署面镜像与部署登记**，
+  不是 `docs/` 正式文档：它们是 ECS 上 OpenClaw workspace 的运行时内容源（apply 后 live 生效），
+  其权威语义由 landed 架构/契约与 261017 冻结件承载。故不构成 canonical docs 漂移、不触发
+  docs-sync 的 spec/契约面更新义务。
+- **F1 通道的口径变化**：积分问答数据面从「引擎活动补丁注入 + prompt 占位」叠加为「OpenClaw
+  skill 结构化通道」（kidpal-points-answer：摘要优先 + state 只读兜底 + 零写权 + text view
+  不抢屏），AGENTS 仅在积分问答回合开禁令例外。此为部署面接线，未改变 requirements v1.71 /
+  landed 架构 / 契约对积分语义的冻结；引擎补丁认领 kidpal_points_context 仍保留为底层通路。
+- **冻结件修订**：`server/acceptance/test_261017_openclaw_kidpal_skills.acceptance.py` 同批重锚
+  为四项白名单（+51/−17，非放宽，REVISION LOG 在案）；declaration 的 drift_guard 于 round 3
+  因锚形状回归触发红闸，073b5050 按 A 案回退 `"unset"`（261017 冻结契约形状），处置留痕见
+  review-packet Findings 与 pod-events。均属验收/部署面，不是 docs 变更。
+- **结论**：修复批零 canonical docs 改动、零新增文档债、无 ADR；docs-delta 维持零增量申报。

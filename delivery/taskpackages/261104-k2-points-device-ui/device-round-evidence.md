@@ -46,3 +46,20 @@
 5. F2/F3/F4/F5/F7 看屏：小伴图形 / 金币图标 / 最近三条 before→after / 键帽提示 / 长原因不溢框。
 6. K2D-E4 六 V9 帧 design review 看屏对表。
 7. 断网 NFR-OFF-1 + 兑换「无目标拒答」反路径。
+
+## 五、复验轮（2026-11-14，修复批 b1fa2f3f/b7c4636b 部署 + 烧板后）
+
+- **F10 语音入口**：PASS——积分页点按问一问有回显、有语音回复、成功跳页（mode=auto 链路通）；首轮延迟偏大记 NFR-PERF-4 观察。
+- **F11 冷启动初推**：PASS——重启后进积分页不再滞留未达占位。
+- **F9 去重反馈**：机制 PASS——front dedup hit（rev 不变）+ 引擎 TTS「这条刚记过啦」逐字在日志（14:26:39）；human 首感「没有去重」= 模型回声句在前的顺序困惑，记 UX 观察。
+- **F1 语境到脑**：按 human 裁定走 OpenClaw skill 结构化通道——kidpal-points-answer skill + AGENTS 积分问答回合路由/禁令例外 + declaration 白名单四项（apply 备份在案）+ manifest/README 登记 + test_261017 重锚恰四项。复验：human 确认问分链路可用。
+- **F2/F5/F6 金币**：36px 定档（svgUse 注入 symbol 根治星形漏画；32 档断线 / 40 档权重压摩天轮的三档肉眼对账在 builder 报告）+ 右缘位置（数字右对齐 388、币贴数字左 6px、同排居中，V9 像素对表）。human 看屏确认。
+- **F3/F4/F7**：human 看屏确认（before→after 在、键帽「详·双击」、胶囊已删、长原因不溢框）。
+- **补齐项**：断网可见失败 + 兑换反路径——human 2026-11-14 复验确认。
+- **human 收口原话（2026-11-14）**：「可以了，合并吧」。
+
+### 遗留（不挡合并，挂账）
+
+- F8 末屏翻屏回绕待裁（默认保留）；兑换正向归 K4 目标写入器；语音首轮延迟 NFR-PERF-4 观察；
+- tech-debt：母版 assets.c 平台复现漂移（ic_wifi_14 / p1_chip_mingzao，ruling 10 并案）+ verify_art_assets.mjs 路径硬编码；
+- 资产闭集对账验收悬空（ruling 13，loop-retro 候选）；skill/资产部署登记类 guard 建议（fixer 申报⑥）。
