@@ -252,7 +252,14 @@
     "firmware/main/assets/spiffs_root/sc_wheel_42_42.bin",
     "firmware/main/assets/spiffs_root/ic_coin_24_24.bin",
     "firmware/main/test/ui_art_integration.acceptance.c",
-    "firmware/main/test/retract_p4_three_page.acceptance.c"
+    "firmware/main/test/retract_p4_three_page.acceptance.c",
+    "server/deploy/openclaw-skills/workspace-kidpal/kidpal-points-answer/SKILL.md",
+    "server/deploy/manifest.yaml",
+    "server/deploy/openclaw-skills/README.md",
+    "server/deploy/261017-openclaw-kidpal-skills/kidpal-agent-skills-declaration.json",
+    "server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md",
+    "server/acceptance/test_261017_openclaw_kidpal_skills.acceptance.py",
+    "firmware/main/assets/spiffs_root/ic_coin_36_36.bin"
   ],
   "impactedTestsSeed": [
     {
