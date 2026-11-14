@@ -99,8 +99,72 @@
   ],
   "mutationRequired": true,
   "mutationEvidence": {
-    "perAcceptance": [],
-    "note": "Draft 态空骨架；真实 QQ 不卡死与设备不抢前台证据必须另留，不能由 prompt 静态检查替代。"
+    "perAcceptance": [
+      {
+        "acceptance": "K3Q-A1: CLI 子命令面——add/redeem/delete(--entry-id|--index)/show/recent/targets 分派与成功回执逐字段精确（含 revision 与 command_id）；用法/环境错误 exit 2、语义拒绝 exit 1；add 兼容既有位置参数调用。回引 S-F6.4-AC1/AC2、S-F6.3-AC3/AC4、契约 §1.3⑦⑧。设计态红 = points.py 六子命令 CLI 未实现（现仅 add/redeem 位置参数）",
+        "turnedRed": true,
+        "sensitive": true,
+        "restored": true,
+        "mutation": "实放：_entry_receipt_line 回执字段 revision= 改名 rev=（回执键串漂移）→ 验收 K3qA1CliSurface::test_k3q_a1_add_receipt_exact_fields / test_k3q_a1_redeem_active_target_gate_negative 变红 + unit 四条；sha256 还原后复跑 20+35 全绿",
+        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_qq_points_channel.acceptance.py server/tests/test_points_cli_units.py",
+        "affectedTest": "K3qA1CliSurface::test_k3q_a1_add_receipt_exact_fields；K3qA1CliSurface::test_k3q_a1_redeem_active_target_gate_negative；ReceiptFieldTests::test_add_receipt_exact_key_set_and_values；ReceiptFieldTests::test_redeem_receipt_exact_key_set_and_negative_delta；IdempotencyTests::test_command_id_replay_after_later_write_still_first_entry；IdempotencyTests::test_command_id_replay_returns_first_result"
+      },
+      {
+        "acceptance": "K3Q-A2: 拒绝不伪造成功——非法值/歧义删除定位 exit 1、说明写 stderr、stdout 无成功回执、state 文件字节不变（零写入）。回引 S-F6.4-AC4。设计态红 = delete 子命令与拒绝语义未实现",
+        "turnedRed": true,
+        "sensitive": true,
+        "restored": true,
+        "mutation": "实放：main 的 except ValueError 末尾 return 1 → return 0（拒绝不再以非零退出）→ 验收 K3qA2RejectNotFake 两条变红（并连带 A1 redeem gate / A4 oor 与 unit 六条）；sha256 还原后全绿",
+        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_qq_points_channel.acceptance.py server/tests/test_points_cli_units.py",
+        "affectedTest": "K3qA2RejectNotFake::test_k3q_a2_invalid_values_exit_1_zero_write；K3qA2RejectNotFake::test_k3q_a2_ambiguous_delete_locator_zero_write；K3qA1CliSurface::test_k3q_a1_redeem_active_target_gate_negative；K3qA4StableDelete::test_k3q_a4_delete_by_entry_id_and_oor；RejectPathTests::test_invalid_add_values_zero_write；RejectPathTests::test_delete_locator_ambiguity_zero_write；RejectPathTests::test_delete_shape_reject_leaves_no_lock_side_effect；RejectPathTests::test_redeem_gate_rejects_zero_write；RejectPathTests::test_recent_limit_bounds_rejected；DeleteLocatorTests::test_index_out_of_range_after_deletions_zero_write"
+      },
+      {
+        "acceptance": "K3Q-A3: 幂等权威不在 skill——command_id 传输幂等（重放返首次结果、不新增分录、revision 不变）+ 短窗语义去重（duplicate=true 不记第二条）；skill 恒调 CLI 不自行吞重。回引 S-F6.3-AC5、S-F6.4-AC1。设计态红 = CLI 旗标形与回执字段缺席",
+        "turnedRed": true,
+        "sensitive": true,
+        "restored": true,
+        "mutation": "实放：add_points 内 replayed = _replay_receipt(full, command_id) → None（关掉 add 传输幂等）→ 验收 K3qA3Idempotency::test_k3q_a3_command_id_replay_returns_first_result 变红 + unit 四条；sha256 还原后全绿",
+        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_qq_points_channel.acceptance.py server/tests/test_points_cli_units.py",
+        "affectedTest": "K3qA3Idempotency::test_k3q_a3_command_id_replay_returns_first_result；IdempotencyTests::test_command_id_replay_after_later_write_still_first_entry；IdempotencyTests::test_command_id_replay_returns_first_result；DeleteReplayTests::test_delete_receipt_never_leaks_into_add_replay；DeleteReplayTests::test_delete_receipt_never_overwrites_add_receipt"
+      },
+      {
+        "acceptance": "K3Q-A4: 稳定定位删除——recent 回执 index 与 entry_id 同行（index 1=最新）、delete --index 2 恰删时间倒序中间条并全量重算余额链（允许负余额）、越界/畸形 exit 1 零写入、不存在但形状合法 id 幂等 no-op、序号→id 换算与删除同 _critical（源锚代理）。回引 S-F6.4-AC3、S-F6.2-AC4。设计态红 = recent/delete 与 _delete_entry_locked 缺席",
+        "turnedRed": true,
+        "sensitive": true,
+        "restored": true,
+        "mutation": "实放三处：① _delete_entry_locked 改名 _delete_entry_unlocked → 验收 K3qA4StableDelete::test_k3q_a4_index_resolution_locked_source_anchor 变红；② index 换算挪出 _critical（TOCTOU 窗口）→ unit DeleteLocatorTests::test_index_resolution_and_delete_share_one_in_locked_read 红（源锚仍绿，helper 名在）；③ 关删除重放守卫 → unit DeleteReplayTests 两条红。sha256 还原后全绿",
+        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_qq_points_channel.acceptance.py server/tests/test_points_cli_units.py",
+        "affectedTest": "K3qA4StableDelete::test_k3q_a4_index_resolution_locked_source_anchor；DeleteLocatorTests::test_delete_entry_delegates_to_locked_helper；DeleteLocatorTests::test_index_resolution_and_delete_share_one_in_locked_read；DeleteReplayTests::test_delete_entry_id_replay_is_guarded_too；DeleteReplayTests::test_delete_index_replay_returns_first_result_and_deletes_once"
+      },
+      {
+        "acceptance": "K3Q-A5: kidpal-points-write/SKILL.md 静态纪律 + 负向断言——钉死 /opt/kidpal/venv/bin/python3、KIDPAL_POINTS_STATE、-m gateway.points 与全子命令面；恒调 CLI 不自行吞重；歧义一次性普通文本报错；禁 ask_user；禁直写 /opt/kidpal/points/state.json；无 schedule.md 写路径/front parser 机检段残留；workspace-kidpal 只读边界。回引 S-F6.4-AC1..AC4、TECH-261030、TECH-261023。设计态红 = SKILL.md 不在位",
+        "turnedRed": true,
+        "sensitive": true,
+        "restored": true,
+        "mutation": "实放两处：① SKILL.md 末尾插入 ask_user 字样 → 验收 K3qA5SkillDiscipline::test_k3q_a5_negative_ask_user_absent 变红；② SKILL.md 钉死解释器 /opt/kidpal/venv/bin/python3 改为 /usr/bin/python3 → test_k3q_a5_pins_machine_surface 变红。sha256 还原后全绿",
+        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_qq_points_channel.acceptance.py server/tests/test_points_cli_units.py",
+        "affectedTest": "K3qA5SkillDiscipline::test_k3q_a5_negative_ask_user_absent；K3qA5SkillDiscipline::test_k3q_a5_pins_machine_surface"
+      },
+      {
+        "acceptance": "K3Q-A6: 离线串链——tmp state 经 CLI 写入驱动 front run_points_observe_once() 恰推一帧 points_home、data.restore is True、revision/balance 为权威值；删除 no-op（不存在 id）不推帧。回引 S-F6.4-AC5、NFR-PERF-4（通路存在半，时延值留真实轮）。设计态红 = CLI 旗标形不存在",
+        "turnedRed": true,
+        "sensitive": true,
+        "restored": true,
+        "mutation": "实放：front _observe_points_revision 删掉 home[\"data\"][\"restore\"] = True → 验收 K3qA6OfflineChain::test_k3q_a6_cli_write_single_restore_push 变红；sha256 还原后全绿",
+        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_qq_points_channel.acceptance.py server/tests/test_points_cli_units.py",
+        "affectedTest": "K3qA6OfflineChain::test_k3q_a6_cli_write_single_restore_push"
+      },
+      {
+        "acceptance": "K3Q-A7: 部署三面——manifest 新增 kidpal-points-write src/dst 对（dst=/root/.openclaw/workspace/skills/kidpal-points-write/SKILL.md，owner/verify/restart 字段齐）+ deploy.sh/verify-deploy.sh 保持 manifest 表驱动（本包零脚本改动即可生效）。回引 S-F6.4-AC1（部署生效前置）。设计态红 = manifest 无条目；表驱动断言为 must-stay-green 回归",
+        "turnedRed": true,
+        "sensitive": true,
+        "restored": true,
+        "mutation": "实放：manifest.yaml 临时删掉 kidpal-points-write 条目（flow block）→ 验收 K3qA7Deploy::test_k3q_a7_manifest_registers_points_skill 变红；sha256 还原后全绿",
+        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_qq_points_channel.acceptance.py server/tests/test_points_cli_units.py",
+        "affectedTest": "K3qA7Deploy::test_k3q_a7_manifest_registers_points_skill"
+      }
+    ],
+    "note": "逐 acceptance 变异证据由 builder 真实执行（10 处变异，每处 sha256 前后比对还原，终态复跑 20 passed + 35 passed）；planner 按 acceptance[] 原文串程序化回填，不手抄。"
   },
   "crossEnd": {
     "counterparts": [
