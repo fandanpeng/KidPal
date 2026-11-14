@@ -68,11 +68,13 @@ const WHITELIST = [
   /* P1 既有 7 */
   'time_10_24', 'thermo_man', 'drop_baby', 'ic_batt_32', 'ic_bell_13',
   'doodle_star_26', 'doodle_cloud_52',
-  /* K2 积分本资产（TaskPackage 261104-k2-points-device-ui 真机轮 F2/F5/F6, 2026-11-06）:
-   *   金币余额图标 24×24 / 进度线小伴位置标 34×28 / 游乐场摩天轮场景标 42×42。
-   * 母版符号 = assets.c 的 ic_coin_24_24 / pt_cat_34_28 / sc_wheel_42_42（V9 v9 段
+  /* K2 积分本资产（TaskPackage 261104-k2-points-device-ui 真机轮 F2/F5/F6, 2026-11-06；
+   * 金币 2026-11-14 真机复验轮由 24×24 升 36×36——24 档 1bpp 下双圈糊成一条虚线、
+   * 中心五角星整枚漏画）:
+   *   金币余额图标 36×36 / 进度线小伴位置标 34×28 / 游乐场摩天轮场景标 42×42。
+   * 母版符号 = assets.c 的 ic_coin_36_36 / pt_cat_34_28 / sc_wheel_42_42（V9 v9 段
    * 新增，gen_assets.mjs 同名 job 生成）；本白名单为纯追加，既有 75 枚零搅动。 */
-  'ic_coin_24_24', 'pt_cat_34_28', 'sc_wheel_42_42',
+  'ic_coin_36_36', 'pt_cat_34_28', 'sc_wheel_42_42',
 ];
 
 const KAP1_MAGIC_LE = 0x3150414b; // "KAP1"

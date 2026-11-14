@@ -949,7 +949,7 @@ static void rn_points_outline(lv_obj_t *scr, int x, int y, int w, int h)
  * 纸=透明）。与 story_page.c 的 kstory_art_dsc 同款先例：单槽 loader 缓存即时拷入
  * 自建缓冲后即释放引用；每资产独立缓存槽（pt_cat / ic_coin / sc_wheel），零互相逐出。资产
  * 不可用（未 mount / 文件缺 / 尺寸超上限）-> NULL，调用方回落既有几何/文字画法。 */
-#define RN_POINTS_ART_SLOTS 3   /* pt_cat_34_28 / ic_coin_24_24 / sc_wheel_42_42 */
+#define RN_POINTS_ART_SLOTS 3   /* pt_cat_34_28 / ic_coin_36_36 / sc_wheel_42_42 */
 
 typedef struct {
     const char *name;
@@ -1223,23 +1223,46 @@ static void rn_render_points_home_body_locked(void)
     char buf[64];
     int i;
 
-    /* 金币图标 + 余额数字（V9：圆形金币内嵌★，与故事裸 ★ 区分；金币只在积分本出现）。
-     * 数字如实（负值不藏数）；CLIP = 超大分值只截尾不换行、不撑破顶栏。资产不可用
-     * 回落裸 ★ 字形占位。 */
+    /* 金币图标 + 余额数字（V9 points-home.png 逐项对表：金币紧贴数字左侧、数字右对齐
+     * 贴画布右缘 388、金币与数字同排视觉居中；F5 版币居中偏右 x=214 已退役）。数字如实
+     * （负值不藏数）；CLIP = 超大分值只截尾不换行、不撑破顶栏。资产不可用回落裸 ★ 占位。 */
     {
-        const int coin_x = 214;
-        const int num_x = 244; /* 币右沿 238 + 6px 间距（V9 金币+数字成组） */
+        const int num_x = 244;     /* 数字标签左界（右缘 388 之内的 CLIP 区） */
+        const int num_right = 388; /* 画布右缘口径（400 宽 - 12 边距；F5 前同值） */
+        const int coin_gap = 6;    /* V9 金币↔数字间距 */
+        const int coin_w = 36;     /* ic_coin_36_36 资产宽（36×36 方形） */
+        const lv_font_t *num_font = kidpal_render_node_title_font();
+        int num_w;
+        int coin_x;
+        int coin_y;
 
-        if (rn_points_art_image(s_kidpal_scr, "ic_coin_24_24.bin", 24, 24, coin_x, 8) == 0) {
-            rn_points_label(s_kidpal_scr, "★", coin_x, 8, RNP_INK,
-                            kidpal_render_node_title_font());
-        }
         snprintf(buf, sizeof(buf), "%d", s_points_home.balance);
         {
             lv_obj_t *bal = rn_points_label(s_kidpal_scr, buf, num_x, 8, RNP_INK,
-                                            kidpal_render_node_title_font());
-            lv_obj_set_width(bal, 388 - num_x);
+                                            num_font);
+
+            lv_obj_set_width(bal, num_right - num_x);
+            lv_obj_set_style_text_align(bal, LV_TEXT_ALIGN_RIGHT, 0);
             lv_label_set_long_mode(bal, LV_LABEL_LONG_CLIP);
+        }
+        /* 金币 x = 数字左缘 - 币宽 - 6。数字宽按同字体实测（数值位数/负号随余额变，
+         * 估宽会在 3 位以上错位）。金币 y 与数字行视觉居中。 */
+        num_w = (int)lv_txt_get_width(buf, (uint32_t)strlen(buf), num_font, 0);
+        if (num_w > num_right - num_x) {
+            num_w = num_right - num_x; /* CLIP 生效时贴可见数字左缘，不外推到标签框外 */
+        }
+        coin_x = num_right - num_w - coin_gap - coin_w;
+        if (coin_x < 0) {
+            coin_x = 0;
+        }
+        coin_y = 8 + (lv_font_get_line_height(num_font) - coin_w) / 2;
+        if (coin_y < 0) {
+            coin_y = 0;
+        }
+        if (rn_points_art_image(s_kidpal_scr, "ic_coin_36_36.bin", 36, 36,
+                                coin_x, coin_y) == 0) {
+            rn_points_label(s_kidpal_scr, "★", coin_x, coin_y, RNP_INK,
+                            num_font);
         }
     }
     /* 目标名（场景标位说明；超长截尾防撑破版面）。 */
