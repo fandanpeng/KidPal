@@ -1,6 +1,6 @@
 {
-  "changeId": "261104-k3-qq-points-channel",
-  "title": "QQ 家长积分通道——正式 kidpal-points-write skill、加兑查删、稳定定位与一次性错误回复",
+  "changeId": "261104-k4-reward-goal-config",
+  "title": "奖励场景与激活目标——四预置美术、QQ 自定义/切换/删除、唯一激活与刻度/兑换联动",
   "rigor": "full",
   "sourceType": "proposal",
   "origin": {
@@ -10,67 +10,52 @@
     "upstreamFrozen": "sha1:4eca114e6998e14e",
     "workstream": "261103-star-points-story-cover"
   },
-  "subsystem": "OpenClaw workspace-main 积分 skill + points.py CLI + front restore 推送 + 真实 QQ 验收",
-  "story": "S-F6.4 · QQ 家长记账与更正（AC1–AC5）+ S-F6.3 · 设备语音记账与兑换（AC3、AC4、AC5 同规则半）+ S-F6.2 · 浏览详细账本与删除误记（AC4 删除重算半）+ NFR-PERF-4 · 记账反馈时延。",
-  "planRef": "delivery/taskpackages/261104-k3-qq-points-channel/plan.md",
+  "subsystem": "points 目标配置 + QQ skill 扩展 + 1bpp 场景资产 + firmware 进度线刻度",
+  "story": "S-F6.5 · 奖励场景与激活目标配置（AC1–AC4）+ S-F6.1 · 看积分进度与最近记录（AC2、AC3）+ S-F6.3 · 设备语音记账与兑换（AC3 切目标后金额）+ S-F6.4 · QQ 家长记账与更正（AC4、AC5）。",
+  "planRef": "delivery/taskpackages/261104-k4-reward-goal-config/plan.md",
   "sourceRefs": [
-    "S-F6.4-AC1",
-    "S-F6.4-AC2",
-    "S-F6.4-AC3",
+    "S-F6.5-AC1",
+    "S-F6.5-AC2",
+    "S-F6.5-AC3",
+    "S-F6.5-AC4",
+    "S-F6.1-AC2",
+    "S-F6.1-AC3",
+    "S-F6.3-AC3",
     "S-F6.4-AC4",
     "S-F6.4-AC5",
-    "S-F6.3-AC3",
-    "S-F6.3-AC4",
-    "S-F6.3-AC5",
-    "S-F6.2-AC4",
-    "docs/requirements.md#NFR-PERF-4",
-    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-05",
-    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-07",
-    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-10",
-    "delivery/workstreams/261103-star-points-story-cover/task_plan.md#K3",
-    "docs/debt/tech/TECH-261030-qqbot-ask-user-block.md",
-    "docs/debt/tech/TECH-261012-qq-schedule-write-format-gap.md",
-    "docs/debt/tech/TECH-261023-openclaw-tool-face-prompt-only-readonly.md",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-09",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.2-OQ-2",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.2-OQ-3",
+    "delivery/workstreams/261103-star-points-story-cover/task_plan.md#K4",
+    "docs/architecture.md#§5.5.2",
     "docs/contracts/interface-contract.md#§1.3⑦",
-    "docs/contracts/interface-contract.md#§1.5",
-    "server/deploy/openclaw-skills/workspace-main/kidpal-schedule-write/SKILL.md",
-    "server/gateway/front/front_app.py"
+    "docs/ui/kidpal-ui-design-v9.html",
+    "docs/ui/UIUX-DESIGN-BRIEF.md"
   ],
   "acceptanceRefs": [
-    "docs/requirements.md#S-F6.4",
+    "docs/requirements.md#S-F6.5",
+    "docs/requirements.md#S-F6.1-AC2",
+    "docs/requirements.md#S-F6.1-AC3",
     "docs/requirements.md#S-F6.3-AC3",
-    "docs/requirements.md#S-F6.3-AC4",
-    "docs/requirements.md#S-F6.3-AC5",
-    "docs/requirements.md#NFR-PERF-4",
-    "docs/debt/tech/TECH-261030-qqbot-ask-user-block.md"
+    "docs/requirements.md#S-F6.4-AC4",
+    "docs/requirements.md#S-F6.4-AC5"
   ],
-  "acceptance": [
-    "K3Q-A1: CLI 子命令面——add/redeem/delete(--entry-id|--index)/show/recent/targets 分派与成功回执逐字段精确（含 revision 与 command_id）；用法/环境错误 exit 2、语义拒绝 exit 1；add 兼容既有位置参数调用。回引 S-F6.4-AC1/AC2、S-F6.3-AC3/AC4、契约 §1.3⑦⑧。设计态红 = points.py 六子命令 CLI 未实现（现仅 add/redeem 位置参数）",
-    "K3Q-A2: 拒绝不伪造成功——非法值/歧义删除定位 exit 1、说明写 stderr、stdout 无成功回执、state 文件字节不变（零写入）。回引 S-F6.4-AC4。设计态红 = delete 子命令与拒绝语义未实现",
-    "K3Q-A3: 幂等权威不在 skill——command_id 传输幂等（重放返首次结果、不新增分录、revision 不变）+ 短窗语义去重（duplicate=true 不记第二条）；skill 恒调 CLI 不自行吞重。回引 S-F6.3-AC5、S-F6.4-AC1。设计态红 = CLI 旗标形与回执字段缺席",
-    "K3Q-A4: 稳定定位删除——recent 回执 index 与 entry_id 同行（index 1=最新）、delete --index 2 恰删时间倒序中间条并全量重算余额链（允许负余额）、越界/畸形 exit 1 零写入、不存在但形状合法 id 幂等 no-op、序号→id 换算与删除同 _critical（源锚代理）。回引 S-F6.4-AC3、S-F6.2-AC4。设计态红 = recent/delete 与 _delete_entry_locked 缺席",
-    "K3Q-A5: kidpal-points-write/SKILL.md 静态纪律 + 负向断言——钉死 /opt/kidpal/venv/bin/python3、KIDPAL_POINTS_STATE、-m gateway.points 与全子命令面；恒调 CLI 不自行吞重；歧义一次性普通文本报错；禁 ask_user；禁直写 /opt/kidpal/points/state.json；无 schedule.md 写路径/front parser 机检段残留；workspace-kidpal 只读边界。回引 S-F6.4-AC1..AC4、TECH-261030、TECH-261023。设计态红 = SKILL.md 不在位",
-    "K3Q-A6: 离线串链——tmp state 经 CLI 写入驱动 front run_points_observe_once() 恰推一帧 points_home、data.restore is True、revision/balance 为权威值；删除 no-op（不存在 id）不推帧。回引 S-F6.4-AC5、NFR-PERF-4（通路存在半，时延值留真实轮）。设计态红 = CLI 旗标形不存在",
-    "K3Q-A7: 部署三面——manifest 新增 kidpal-points-write src/dst 对（dst=/root/.openclaw/workspace/skills/kidpal-points-write/SKILL.md，owner/verify/restart 字段齐）+ deploy.sh/verify-deploy.sh 保持 manifest 表驱动（本包零脚本改动即可生效）。回引 S-F6.4-AC1（部署生效前置）。设计态红 = manifest 无条目；表驱动断言为 must-stay-green 回归"
-  ],
-  "acceptanceTestsFile": [
-    "server/acceptance/test_qq_points_channel.acceptance.py"
-  ],
-  "redBaselineCommand": "python -m pytest -q --import-mode=importlib server/acceptance/test_qq_points_channel.acceptance.py（仓根执行）；回归 = python -m pytest -q --import-mode=importlib server/acceptance/test_points_*.acceptance.py",
-  "redBaselineResult": "acceptance-author 冻结实跑 + planner 独立复跑 2026-11-14 @ dev/pod-m2 45518ac2 基线：新冻结件 = 19 failed, 1 passed（1 passed = test_k3q_a7_deploy_verify_manifest_driven，must-stay-green 表驱动回归，非空过）；红因全为实现缺席（points.py 六子命令 CLI 未实现 / SKILL.md 不在位 / manifest 无条目），无 collection error、无环境故障。既有 points 套件 = 20 passed, 2 warnings（零新增红）。",
+  "acceptance": [],
+  "acceptanceTestsFile": [],
+  "redBaselineCommand": "",
+  "redBaselineResult": "",
   "exitCriteria": [
-    "K3Q-E1: 新 `kidpal-points-write` skill 的机检/marker 工程形态与离线验收在场；所有加/兑/查/删只调 K1 points.py CLI，真实执行结果决定 QQ 回复，不直接编辑状态或 schedule.md。",
-    "K3Q-E2: 真实 QQ 证据覆盖加分、兑换、查余额/目标/最近记录、按稳定 id 或最近列表序号删除；兑换金额、资格和重复扣规则与设备语音一致。",
-    "K3Q-E3: 歧义、格式错误和定位不清均以普通 QQ 文本一次性报错并给可重述格式；全程无 `ask_user`、无多轮澄清依赖、无 900 秒卡死或后续消息排队。",
-    "K3Q-E4: QQ 写入/删除时设备在其他页不抢前台，积分页在屏原地刷新；front 推送、points 回执、QQ 回复与设备日志能按 command_id/分录 id 对账。按 NFR-PERF-4 记录真实 QQ 消息到积分页原地刷新的实测时延，不写死阈值。",
-    "K3Q-E5: 目标自定义/切换/删除的完整管理留给 K4，本包只建立家长账本通道；TECH-261030、TECH-261012 与 TECH-261023 不被宣称结项，实际 diff 限于 changeManifest。"
+    "K4G-E1: 四预置 `sc-choco/sc-movie/sc-wheel/sc-gift` 与自定义 `sc-flag` 经既有母版→栅格化→KAP1 管线产出，资产标识、1bpp 内容和设备装载证据一致；不新增字体或重排分区。",
+    "K4G-E2: 真实 QQ 证据覆盖新增 5/200 边界内自定义、出界拒绝、切换唯一激活、非激活自定义删除、预置删除拒绝和激活自定义先切换再删；歧义仍普通文本一次报错。",
+    "K4G-E3: server 与 host 验收证明目标切换只改激活配置、不自动扣分，历史兑换名目不变；切换后语音/QQ 兑换只认新分值，设备刻度与场景标同步伸缩。",
+    "K4G-E4: 一轮真机看四预置、通用标记、大分值与越目标版面，QQ 切目标时其他页不抢前台、积分页原地刷新；V9 design review 与资源预算证据在场。切目标刷新在既有真机证据中顺带记录与 NFR-PERF-4 相同的“QQ 消息→积分页原地刷新”实测时延字段，不写死阈值。",
+    "K4G-E5: K1/K2/K3 的账本、渲染和 QQ 回归零新增红；本包不建设备设置页、不做逐自定义美术、不承接 K5 的 `ic-coin` 封皮资产或导航范围。"
   ],
-  "iterationBudget": 2,
-  "fixBudget": 3,
+  "iterationBudget": 3,
+  "fixBudget": 4,
   "supervisorBlockBudget": 2,
   "contractRefs": [
     "docs/contracts/interface-contract.md#§1.3⑦",
-    "docs/contracts/interface-contract.md#§1.3⑧",
     "docs/contracts/interface-contract.md#§1.4",
     "docs/contracts/interface-contract.md#§1.5"
   ],
@@ -78,93 +63,32 @@
     "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md",
     "delivery/workstreams/261103-star-points-story-cover/review.md",
     "delivery/workstreams/261103-star-points-story-cover/task_plan.md",
-    "delivery/taskpackages/261104-k3-qq-points-channel/plan.md",
+    "delivery/taskpackages/261104-k4-reward-goal-config/plan.md",
     "docs/requirements.md",
     "docs/architecture.md",
     "docs/contracts/interface-contract.md",
     "docs/decisions/ADR.md",
-    "docs/debt/tech/TECH-261030-qqbot-ask-user-block.md",
-    "docs/debt/tech/TECH-261012-qq-schedule-write-format-gap.md",
-    "docs/debt/tech/TECH-261023-openclaw-tool-face-prompt-only-readonly.md"
+    "docs/ui/kidpal-ui-design-v9.html",
+    "docs/ui/UIUX-DESIGN-BRIEF.md",
+    "docs/ui/V9/points-home.png",
+    "docs/ui/V9/points-home-empty.png",
+    "docs/ui/V9/points-home-negative.png"
   ],
   "docsSyncRequired": false,
-  "docsSyncReason": "QQ 同规则、一次性可判、稳定定位和 restore 语义已由 requirements/架构/契约冻结；本包只落 skill 与真实通道证据。",
+  "docsSyncReason": "四预置、资产闭集、OQ-2/OQ-3、唯一激活和刻度/兑换联动均已由 v1.71、架构与契约冻结。",
   "docsOwner": "integrator",
   "securityReviewRequired": false,
   "adrRequired": false,
   "requiredLayers": [
     "unit",
     "acceptance-offline",
+    "firmware-build",
     "live-manual"
   ],
   "mutationRequired": true,
   "mutationEvidence": {
-    "perAcceptance": [
-      {
-        "acceptance": "K3Q-A1: CLI 子命令面——add/redeem/delete(--entry-id|--index)/show/recent/targets 分派与成功回执逐字段精确（含 revision 与 command_id）；用法/环境错误 exit 2、语义拒绝 exit 1；add 兼容既有位置参数调用。回引 S-F6.4-AC1/AC2、S-F6.3-AC3/AC4、契约 §1.3⑦⑧。设计态红 = points.py 六子命令 CLI 未实现（现仅 add/redeem 位置参数）",
-        "turnedRed": true,
-        "sensitive": true,
-        "restored": true,
-        "mutation": "实放：_entry_receipt_line 回执字段 revision= 改名 rev=（回执键串漂移）→ 验收 K3qA1CliSurface::test_k3q_a1_add_receipt_exact_fields / test_k3q_a1_redeem_active_target_gate_negative 变红 + unit 四条；sha256 还原后复跑 20+35 全绿",
-        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_qq_points_channel.acceptance.py server/tests/test_points_cli_units.py",
-        "affectedTest": "K3qA1CliSurface::test_k3q_a1_add_receipt_exact_fields；K3qA1CliSurface::test_k3q_a1_redeem_active_target_gate_negative；ReceiptFieldTests::test_add_receipt_exact_key_set_and_values；ReceiptFieldTests::test_redeem_receipt_exact_key_set_and_negative_delta；IdempotencyTests::test_command_id_replay_after_later_write_still_first_entry；IdempotencyTests::test_command_id_replay_returns_first_result"
-      },
-      {
-        "acceptance": "K3Q-A2: 拒绝不伪造成功——非法值/歧义删除定位 exit 1、说明写 stderr、stdout 无成功回执、state 文件字节不变（零写入）。回引 S-F6.4-AC4。设计态红 = delete 子命令与拒绝语义未实现",
-        "turnedRed": true,
-        "sensitive": true,
-        "restored": true,
-        "mutation": "实放：main 的 except ValueError 末尾 return 1 → return 0（拒绝不再以非零退出）→ 验收 K3qA2RejectNotFake 两条变红（并连带 A1 redeem gate / A4 oor 与 unit 六条）；sha256 还原后全绿",
-        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_qq_points_channel.acceptance.py server/tests/test_points_cli_units.py",
-        "affectedTest": "K3qA2RejectNotFake::test_k3q_a2_invalid_values_exit_1_zero_write；K3qA2RejectNotFake::test_k3q_a2_ambiguous_delete_locator_zero_write；K3qA1CliSurface::test_k3q_a1_redeem_active_target_gate_negative；K3qA4StableDelete::test_k3q_a4_delete_by_entry_id_and_oor；RejectPathTests::test_invalid_add_values_zero_write；RejectPathTests::test_delete_locator_ambiguity_zero_write；RejectPathTests::test_delete_shape_reject_leaves_no_lock_side_effect；RejectPathTests::test_redeem_gate_rejects_zero_write；RejectPathTests::test_recent_limit_bounds_rejected；DeleteLocatorTests::test_index_out_of_range_after_deletions_zero_write"
-      },
-      {
-        "acceptance": "K3Q-A3: 幂等权威不在 skill——command_id 传输幂等（重放返首次结果、不新增分录、revision 不变）+ 短窗语义去重（duplicate=true 不记第二条）；skill 恒调 CLI 不自行吞重。回引 S-F6.3-AC5、S-F6.4-AC1。设计态红 = CLI 旗标形与回执字段缺席",
-        "turnedRed": true,
-        "sensitive": true,
-        "restored": true,
-        "mutation": "实放：add_points 内 replayed = _replay_receipt(full, command_id) → None（关掉 add 传输幂等）→ 验收 K3qA3Idempotency::test_k3q_a3_command_id_replay_returns_first_result 变红 + unit 四条；sha256 还原后全绿",
-        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_qq_points_channel.acceptance.py server/tests/test_points_cli_units.py",
-        "affectedTest": "K3qA3Idempotency::test_k3q_a3_command_id_replay_returns_first_result；IdempotencyTests::test_command_id_replay_after_later_write_still_first_entry；IdempotencyTests::test_command_id_replay_returns_first_result；DeleteReplayTests::test_delete_receipt_never_leaks_into_add_replay；DeleteReplayTests::test_delete_receipt_never_overwrites_add_receipt"
-      },
-      {
-        "acceptance": "K3Q-A4: 稳定定位删除——recent 回执 index 与 entry_id 同行（index 1=最新）、delete --index 2 恰删时间倒序中间条并全量重算余额链（允许负余额）、越界/畸形 exit 1 零写入、不存在但形状合法 id 幂等 no-op、序号→id 换算与删除同 _critical（源锚代理）。回引 S-F6.4-AC3、S-F6.2-AC4。设计态红 = recent/delete 与 _delete_entry_locked 缺席",
-        "turnedRed": true,
-        "sensitive": true,
-        "restored": true,
-        "mutation": "实放三处：① _delete_entry_locked 改名 _delete_entry_unlocked → 验收 K3qA4StableDelete::test_k3q_a4_index_resolution_locked_source_anchor 变红；② index 换算挪出 _critical（TOCTOU 窗口）→ unit DeleteLocatorTests::test_index_resolution_and_delete_share_one_in_locked_read 红（源锚仍绿，helper 名在）；③ 关删除重放守卫 → unit DeleteReplayTests 两条红。sha256 还原后全绿",
-        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_qq_points_channel.acceptance.py server/tests/test_points_cli_units.py",
-        "affectedTest": "K3qA4StableDelete::test_k3q_a4_index_resolution_locked_source_anchor；DeleteLocatorTests::test_delete_entry_delegates_to_locked_helper；DeleteLocatorTests::test_index_resolution_and_delete_share_one_in_locked_read；DeleteReplayTests::test_delete_entry_id_replay_is_guarded_too；DeleteReplayTests::test_delete_index_replay_returns_first_result_and_deletes_once"
-      },
-      {
-        "acceptance": "K3Q-A5: kidpal-points-write/SKILL.md 静态纪律 + 负向断言——钉死 /opt/kidpal/venv/bin/python3、KIDPAL_POINTS_STATE、-m gateway.points 与全子命令面；恒调 CLI 不自行吞重；歧义一次性普通文本报错；禁 ask_user；禁直写 /opt/kidpal/points/state.json；无 schedule.md 写路径/front parser 机检段残留；workspace-kidpal 只读边界。回引 S-F6.4-AC1..AC4、TECH-261030、TECH-261023。设计态红 = SKILL.md 不在位",
-        "turnedRed": true,
-        "sensitive": true,
-        "restored": true,
-        "mutation": "实放两处：① SKILL.md 末尾插入 ask_user 字样 → 验收 K3qA5SkillDiscipline::test_k3q_a5_negative_ask_user_absent 变红；② SKILL.md 钉死解释器 /opt/kidpal/venv/bin/python3 改为 /usr/bin/python3 → test_k3q_a5_pins_machine_surface 变红。sha256 还原后全绿",
-        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_qq_points_channel.acceptance.py server/tests/test_points_cli_units.py",
-        "affectedTest": "K3qA5SkillDiscipline::test_k3q_a5_negative_ask_user_absent；K3qA5SkillDiscipline::test_k3q_a5_pins_machine_surface"
-      },
-      {
-        "acceptance": "K3Q-A6: 离线串链——tmp state 经 CLI 写入驱动 front run_points_observe_once() 恰推一帧 points_home、data.restore is True、revision/balance 为权威值；删除 no-op（不存在 id）不推帧。回引 S-F6.4-AC5、NFR-PERF-4（通路存在半，时延值留真实轮）。设计态红 = CLI 旗标形不存在",
-        "turnedRed": true,
-        "sensitive": true,
-        "restored": true,
-        "mutation": "实放：front _observe_points_revision 删掉 home[\"data\"][\"restore\"] = True → 验收 K3qA6OfflineChain::test_k3q_a6_cli_write_single_restore_push 变红；sha256 还原后全绿",
-        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_qq_points_channel.acceptance.py server/tests/test_points_cli_units.py",
-        "affectedTest": "K3qA6OfflineChain::test_k3q_a6_cli_write_single_restore_push"
-      },
-      {
-        "acceptance": "K3Q-A7: 部署三面——manifest 新增 kidpal-points-write src/dst 对（dst=/root/.openclaw/workspace/skills/kidpal-points-write/SKILL.md，owner/verify/restart 字段齐）+ deploy.sh/verify-deploy.sh 保持 manifest 表驱动（本包零脚本改动即可生效）。回引 S-F6.4-AC1（部署生效前置）。设计态红 = manifest 无条目；表驱动断言为 must-stay-green 回归",
-        "turnedRed": true,
-        "sensitive": true,
-        "restored": true,
-        "mutation": "实放：manifest.yaml 临时删掉 kidpal-points-write 条目（flow block）→ 验收 K3qA7Deploy::test_k3q_a7_manifest_registers_points_skill 变红；sha256 还原后全绿",
-        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_qq_points_channel.acceptance.py server/tests/test_points_cli_units.py",
-        "affectedTest": "K3qA7Deploy::test_k3q_a7_manifest_registers_points_skill"
-      }
-    ],
-    "note": "逐 acceptance 变异证据由 builder 真实执行（10 处变异，每处 sha256 前后比对还原，终态复跑 20 passed + 35 passed）；planner 按 acceptance[] 原文串程序化回填，不手抄。"
+    "perAcceptance": [],
+    "note": "Draft 态空骨架；目标边界、切换不扣分和资产装载均须有可转红证据。"
   },
   "crossEnd": {
     "counterparts": [
@@ -180,150 +104,201 @@
     "exempt": ""
   },
   "changeManifest": [
-    "server/deploy/openclaw-skills/workspace-main/kidpal-points-write/SKILL.md",
-    "server/deploy/openclaw-skills/workspace-main/AGENTS.md",
     "server/gateway/points.py",
     "server/gateway/front/front_app.py",
-    "server/acceptance/test_qq_points_channel.acceptance.py",
-    "server/tests/test_points_cli_units.py",
-    "server/deploy/manifest.yaml",
-    "server/deploy/deploy.sh",
-    "server/deploy/verify-deploy.sh"
+    "server/deploy/openclaw-skills/workspace-main/kidpal-points-write/SKILL.md",
+    "server/acceptance/test_reward_goal_config.acceptance.py",
+    "server/tests/test_points_goal_units.py",
+    "tools/asset-pipeline/gen_assets.mjs",
+    "tools/asset-pipeline/gen_art_spiffs.mjs",
+    "tools/simulator/LvglWindowsSimulator/assets/assets.c",
+    "tools/simulator/LvglWindowsSimulator/assets/assets.h",
+    "firmware/main/assets/spiffs_root/sc_choco_42_42.bin",
+    "firmware/main/assets/spiffs_root/sc_movie_42_42.bin",
+    "firmware/main/assets/spiffs_root/sc_gift_42_42.bin",
+    "firmware/main/assets/spiffs_root/sc_flag_42_42.bin",
+    "firmware/main/display/points_page.c",
+    "firmware/main/display/points_page.h",
+    "firmware/main/display/kidpal_render_node.cc",
+    "firmware/main/test/reward_goal_config.acceptance.c",
+    "firmware/main/test/host_app/main/CMakeLists.txt"
   ],
   "impactedTestsSeed": [
     {
-      "path": "server/tests/test_points_ledger_units.py",
-      "kind": "regression",
-      "note": "K1 执行器不变量：六键分录形状、revision 单调、余额恒由分录重算、command_id 传输幂等先于短窗去重。delete_entry 拆出 _delete_entry_locked 会直接触此文件覆盖面。"
-    },
-    {
       "path": "server/acceptance/test_points_ledger_core.acceptance.py",
       "kind": "regression",
-      "note": "单 writer、幂等、删除与兑换不变量不得被 QQ 入口绕开或复制成第二套规则。"
+      "note": "K1 目标存储与不变量基线：余额、历史分录、单 writer、revision 语义不得因配置命令放松。"
     },
     {
-      "path": "server/acceptance/test_points_device_ui.acceptance.py",
+      "path": "server/acceptance/test_qq_points_channel.acceptance.py",
       "kind": "regression",
-      "note": "K2 设备面：kidpal_points_delete / kidpal_points_page 帧形状、restore 分流、观察缝恰一帧推送的既有夹具——本包离线串链测试应复用其假 websocket 形态，且不得改其断言。"
+      "note": "K3 加/兑/查/删与普通错误回复保持；三个 target 动词复用同一 CLI 与 exit2/exit1 分界，不得新建第二通道。"
     },
     {
-      "path": "server/acceptance/test_points_e2e_spike.acceptance.py",
-      "kind": "regression",
-      "note": "K0 spike 的最小真实写入通路与 points_home/ledger 载荷基线；新 CLI 子命令不得改变既有 add/redeem 位置参数调用的行为（向后兼容）。"
+      "path": "server/acceptance/test_reward_goal_config.acceptance.py",
+      "kind": "new",
+      "note": "5/200 边界内外、预置禁删、激活自定义禁删、唯一激活、切换零分录（balance 与 entries 长度不变、revision+1）、切后 redeem 只认新分值、旧分值拒答且 state 零写入。"
     },
     {
-      "path": "server/tests/test_points_spike_units.py",
-      "kind": "regression",
-      "note": "K0 单元基线（含 build_points_home 出厂态 = 游乐场 40、_is_int 排除 bool 等防御判定）。"
+      "path": "server/tests/test_points_goal_units.py",
+      "kind": "new",
+      "note": "CLI 层单测：_parse_flags 未知/重复/缺值 → exit 2；范围与语义拒绝 → exit 1；回执单行 key=value 与 %XX 只编码空白；target 回执不含 delta/entry_id。"
     },
     {
-      "path": "server/acceptance/test_261017_openclaw_kidpal_skills.acceptance.py",
-      "kind": "regression",
-      "note": "部署三面与 skill 清单既有守卫；须继续断言 kidpal agent modelVisible 白名单恰三项——新 main 侧 skill 不得被误加进板侧声明件。"
+      "path": "firmware/main/test/points_device_ui.acceptance.c",
+      "kind": "frozen-rebaseline",
+      "note": "K2 默认游乐场 40 起始基线；四态、负余额、restore 不抢前台断言只可 additive 扩展，不得削弱。"
     },
     {
-      "path": "server/acceptance/test_261013_qq_schedule_write_closure.acceptance.py",
+      "path": "firmware/main/test/points_spike.acceptance.c",
       "kind": "regression",
-      "note": "仅复用课表 skill 工程形态；schedule.md、front parser 机检、备份还原与提醒 marker 不属积分 writer，且新 SKILL.md 不得残留这些段落（复制粘贴污染）。"
+      "note": "K0/K1 设备侧契约面：出厂 target_asset == \"sc-wheel\"、四键容量；points_page.c 改动后出厂态与四键形状必须零偏移。"
+    },
+    {
+      "path": "firmware/main/test/reward_goal_config.acceptance.c",
+      "kind": "new",
+      "note": "host 可编层：五键 asset→bin 名映射全覆盖且未知标识返回 NULL 不猜图；points=5 与 200 两档进度线伸缩与越目标版面；直读 spiffs_root 四枚新 bin 做 KAP1 头/尺寸/stride/墨量机检。"
+    },
+    {
+      "path": "firmware/main/test/acceptance/archive/ui_art_integration.acceptance.c",
+      "kind": "regression-reference",
+      "note": "KAP1 格式与既有资产闭集历史参照，只读不重开；新增资产 additive，现役加载/降级行为不变。"
+    },
+    {
+      "path": "firmware/main/test/host_app/main/CMakeLists.txt",
+      "kind": "structural",
+      "note": "CMakeLists 变动 → 跑全量 host runner（不只 scoped 子集），并核新 acceptance 位于 host smoke 之前。"
+    },
+    {
+      "path": "device-round-evidence.md",
+      "kind": "live-manual",
+      "note": "render_node.cc 属 host 不可编登记路径：四预置 + sc-flag 逐一目检、切目标时其他页不抢前台、积分页原地刷新并记录与 NFR-PERF-4 同款时延字段、RAM 资源预算实测。"
     }
   ],
+  "uiux": {
+    "uiuxRequired": true,
+    "uiuxLevel": 2,
+    "designRefs": [
+      "docs/ui/V9/points-home.png",
+      "docs/ui/V9/points-home-empty.png",
+      "docs/ui/V9/points-home-negative.png"
+    ],
+    "sharedUiRefs": [
+      "docs/ui/kidpal-ui-design-v9.html",
+      "docs/ui/UIUX-DESIGN-BRIEF.md"
+    ],
+    "uiAcceptanceRefs": [
+      "points-home",
+      "points-home-empty",
+      "points-home-negative"
+    ],
+    "designReviewRequired": true,
+    "designReviewEvidenceRequired": true,
+    "repoVisualArtifactRequired": false
+  },
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
     "delivery/workstreams/261103-star-points-story-cover/"
   ],
   "riskTier": "high",
-  "riskRationale": "真实家长输入可触发持久加账、兑换和删除，并跨 OpenClaw、points.py、front 与设备；还存在 ask_user 卡死和错误定位风险，故为 high。",
+  "riskRationale": "目标配置直接决定兑换金额并跨 QQ、持久状态、front、资产管线和设备进度线；错误会导致错误扣账或目标/显示不一致，故为 high。",
   "gateProfile": [
     "evidence-integrity",
     "test-quality",
     "state-machine",
     "mcp-tool-contract"
   ],
-  "mergeOrder": 74,
+  "mergeOrder": 75,
   "dependsOn": [
     "261104-k1-points-ledger-core",
-    "261104-k2-points-device-ui"
+    "261104-k2-points-device-ui",
+    "261104-k3-qq-points-channel"
   ],
   "decisionCoverage": [
     {
-      "decision": "D-05 · QQ 与语音共享账本规则并可删除",
-      "summary": "正式 QQ skill 提供加/兑/查/删，所有规则经 K1 同一执行器，不依赖 ask_user。",
-      "sourceRefs": [
-        "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-05"
-      ],
-      "landsIn": "exitCriteria:K3Q-E2"
-    },
-    {
-      "decision": "D-07 · QQ/恢复推送不抢前台",
-      "summary": "QQ 所有写入只触发 restore 数据更新，积分页在屏原地刷新。",
-      "sourceRefs": [
-        "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-07"
-      ],
-      "landsIn": "exitCriteria:K3Q-E4"
-    },
-    {
-      "decision": "D-10 · QQ 只调确定性单 writer",
-      "summary": "main agent 整理一次性命令并调 CLI，kidpal 数据目录与 points 状态不直接编辑，不形成第二套账本。",
-      "sourceRefs": [
-        "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-10"
-      ],
-      "landsIn": "exitCriteria:K3Q-E1"
-    },
-    {
-      "decision": "S-F6.4 AC3/AC4 · 稳定定位与一次性可判",
-      "summary": "删除使用稳定记录 id 或最近列表序号；歧义只普通文本报错并给格式，不多轮追问。",
-      "sourceRefs": [
-        "S-F6.4-AC3",
-        "S-F6.4-AC4",
-        "docs/debt/tech/TECH-261030-qqbot-ask-user-block.md"
-      ],
-      "landsIn": "exitCriteria:K3Q-E3"
-    },
-    {
-      "decision": "NFR-PERF-4 · QQ 到账与积分页原地刷新软时延",
-      "summary": "真实 QQ 验收记录消息到设备积分页原地刷新的实测时延，阈值仍待真机调优，不写死验收值。",
-      "sourceRefs": [
-        "docs/requirements.md#NFR-PERF-4"
-      ],
-      "landsIn": "exitCriteria:K3Q-E4"
-    },
-    {
-      "decision": "D-09 · 奖励目标配置",
-      "summary": "四预置、自定义目标、切换和删除配置的完整管理由 K4 承接。",
+      "decision": "D-09 · 书封/场景资产走既有管线",
+      "summary": "本包承担四预置与自定义通用旗标，封皮 ic-coin 归 K5；稳定资产标识来自契约闭集。",
       "sourceRefs": [
         "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-09"
       ],
-      "landsIn": "package:261104-k4-reward-goal-config"
+      "landsIn": "exitCriteria:K4G-E1"
     },
     {
-      "decision": "K0 QQ spike · 最小真实 canary",
-      "summary": "K0 已验证最小真实 QQ 通路，本包在其上正式化完整家长能力，不重做 spike 证明。",
+      "decision": "OQ-2 · 禁止删除激活自定义目标",
+      "summary": "预置不可删，激活自定义必须先切换，任何路径不出现暂无目标页。",
       "sourceRefs": [
-        "delivery/workstreams/261103-star-points-story-cover/review.md#D-spike-first"
+        "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.2-OQ-2"
       ],
-      "landsIn": "exitCriteria:K3Q-E1"
+      "landsIn": "exitCriteria:K4G-E2"
+    },
+    {
+      "decision": "OQ-3 · 自定义目标 5–200 正整数",
+      "summary": "边界内外经真实 QQ 和 server 双侧验证，出界一次性报错。",
+      "sourceRefs": [
+        "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.2-OQ-3"
+      ],
+      "landsIn": "exitCriteria:K4G-E2"
+    },
+    {
+      "decision": "S-F6.5 AC3 · 唯一激活与刻度伸缩",
+      "summary": "切目标只改激活配置，设备进度线随新分值伸缩且 restore 不抢前台。",
+      "sourceRefs": [
+        "S-F6.5-AC3",
+        "S-F6.1-AC2"
+      ],
+      "landsIn": "exitCriteria:K4G-E3"
+    },
+    {
+      "decision": "S-F6.3 AC3 · 切目标后兑换只认新分值",
+      "summary": "旧目标分值不再兑换，切目标本身不产生负向分录，历史名目保持快照。",
+      "sourceRefs": [
+        "S-F6.3-AC3"
+      ],
+      "landsIn": "exitCriteria:K4G-E3"
+    },
+    {
+      "decision": "D-10 · 配置仍走 points.py 单 writer",
+      "summary": "QQ 只整理命令，目标配置校验和持久化由同一执行器承载。",
+      "sourceRefs": [
+        "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-10"
+      ],
+      "landsIn": "exitCriteria:K4G-E2"
+    },
+    {
+      "decision": "D-01 · 故事封皮资产与导航",
+      "summary": "封皮 ic-coin 与 P4 层级导航不在本包，统一由 K5 承接。",
+      "sourceRefs": [
+        "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-01"
+      ],
+      "landsIn": "package:261104-k5-story-cover-nav"
     }
   ],
   "crossPackageBehaviors": [
     {
-      "topic": "K0 QQ canary 到正式家长通道",
-      "owner": "261104-k3-qq-points-channel",
-      "carriedBy": "261104-k3-qq-points-channel",
-      "note": "K0 只证明最小真实写入，K3 新 skill 承载完整加/兑/查/删与一次性错误回复。"
-    },
-    {
-      "topic": "K1 CLI 与 K2 restore 消费缝的联合复证",
+      "topic": "K1 目标存储到 K4 完整配置行为",
       "owner": "261104-k1-points-ledger-core",
-      "carriedBy": "261104-k3-qq-points-channel",
-      "note": "K1 负责命令执行，K2 负责设备刷新，K3 用真实 QQ 把两端串起；不得绕开任一缝。"
+      "carriedBy": "261104-k4-reward-goal-config",
+      "note": "K1 提供合法存储与校验，K4 用真实 QQ 完成自定义/切换/删除及切目标后兑换联动。"
     },
     {
-      "topic": "QQ 目标配置命令的后续扩展",
-      "owner": "261104-k4-reward-goal-config",
+      "topic": "K3 QQ skill 的目标配置扩展",
+      "owner": "261104-k3-qq-points-channel",
       "carriedBy": "261104-k4-reward-goal-config",
-      "note": "K3 建立 skill 与普通错误回复纪律，K4 在同一 skill 上新增自定义/切换/删除目标，不另建通道。"
+      "note": "沿用同一 skill、CLI 和普通错误回复，不新建第二 QQ 通道或 ask_user 流程。"
+    },
+    {
+      "topic": "K2 进度线缝的场景资产与刻度消费",
+      "owner": "261104-k2-points-device-ui",
+      "carriedBy": "261104-k4-reward-goal-config",
+      "note": "K4 补资产与切换行为，K2 的四态/restore/负余额基线不回退。"
+    },
+    {
+      "topic": "资产管线的 K4/K5 串行分工",
+      "owner": "261104-k4-reward-goal-config",
+      "carriedBy": "261104-k5-story-cover-nav",
+      "note": "K4 只产四场景与 sc-flag，K5 后序在同一管线补 ic-coin 与书封，避免并行修改生成器与资产清单。"
     }
   ],
-  "notes": "影响面机械辅证：图索引确认 front 自推链和 points.py 新数据域；kidpal-schedule-write 实读确认可复用的是机检、marker、部署与失败回复工程形态，不是 schedule.md 写路径。共享面：K3 排在 K1/K2 后，points.py/front 只在其合并基线上做必要接线。TECH-261030 只作硬约束，不修插件；TECH-261012 只复用先例不结项；TECH-261023 的只读防线不扩为直接文件写。mergeOrder=74。 2026-11-14 Step 1g architect 预评：points_observe 观察缝已接线无需 marker；CLI 补 delete/show/recent/targets 且回执补 revision+command_id；序号→id 映射锁内完成（拆 _delete_entry_locked）；changeManifest 加 workspace-main/AGENTS.md（QQ 路由护栏）、删 scripts/**（skill 内联，缩部署面）；deploy.sh/verify-deploy.sh 表驱动预期零改动；禁改三件 declaration + workspace-kidpal。"
+  "notes": "影响面机械辅证：架构 §5.5.2 与 tools/asset-pipeline 实读确认 gen_assets.mjs→gen_art_spiffs.mjs→firmware/main/assets/spiffs_root 的既有产线；契约 target.asset 闭集为 sc-choco/sc-movie/sc-wheel/sc-gift/sc-flag，V9 已把游乐场定稿为 sc-wheel，不得回用 sc-castle。相邻冻结锚：K1 目标存储、K2 默认 40、K3 QQ skill、ui_art_integration KAP1 格式均保留；新增资产 additive，不新增字体/分区，不为自定义奖励名猜图。K4 等 K1–K3 merged，mergeOrder=75。 2026-11-15 Step 1g architect 预评 + planner 裁定：渲染落点必须扩 firmware/main/display/kidpal_render_node.cc（host 不可编 → deviceOutcome userVisible:true）；资产只新增 4 枚（sc_wheel_42_42 是 K2 已交付件），落盘名按命名律 sc_*_42_42.bin；scripts/** 删除（skill 无脚本）；CLI 用扁平动词 target-add/target-switch/target-delete + 既有 targets；渲染缓存取 3 槽 + strcmp 重载；v9 母版五符号在位，docs/ui/** 不进 manifest。"
 }

@@ -107,20 +107,19 @@
     "server/gateway/points.py",
     "server/gateway/front/front_app.py",
     "server/deploy/openclaw-skills/workspace-main/kidpal-points-write/SKILL.md",
-    "server/deploy/openclaw-skills/workspace-main/kidpal-points-write/scripts/**",
     "server/acceptance/test_reward_goal_config.acceptance.py",
     "server/tests/test_points_goal_units.py",
     "tools/asset-pipeline/gen_assets.mjs",
     "tools/asset-pipeline/gen_art_spiffs.mjs",
     "tools/simulator/LvglWindowsSimulator/assets/assets.c",
     "tools/simulator/LvglWindowsSimulator/assets/assets.h",
-    "firmware/main/assets/spiffs_root/sc-choco.bin",
-    "firmware/main/assets/spiffs_root/sc-movie.bin",
-    "firmware/main/assets/spiffs_root/sc-wheel.bin",
-    "firmware/main/assets/spiffs_root/sc-gift.bin",
-    "firmware/main/assets/spiffs_root/sc-flag.bin",
+    "firmware/main/assets/spiffs_root/sc_choco_42_42.bin",
+    "firmware/main/assets/spiffs_root/sc_movie_42_42.bin",
+    "firmware/main/assets/spiffs_root/sc_gift_42_42.bin",
+    "firmware/main/assets/spiffs_root/sc_flag_42_42.bin",
     "firmware/main/display/points_page.c",
     "firmware/main/display/points_page.h",
+    "firmware/main/display/kidpal_render_node.cc",
     "firmware/main/test/reward_goal_config.acceptance.c",
     "firmware/main/test/host_app/main/CMakeLists.txt"
   ],
@@ -128,22 +127,52 @@
     {
       "path": "server/acceptance/test_points_ledger_core.acceptance.py",
       "kind": "regression",
-      "note": "K1 已建立目标存储与不变量，本包扩展配置命令不得放松余额、历史分录或单 writer 规则。"
+      "note": "K1 目标存储与不变量基线：余额、历史分录、单 writer、revision 语义不得因配置命令放松。"
     },
     {
       "path": "server/acceptance/test_qq_points_channel.acceptance.py",
       "kind": "regression",
-      "note": "K3 的加/兑/查/删与普通错误回复保持，新目标命令复用同一 skill 和 CLI。"
+      "note": "K3 加/兑/查/删与普通错误回复保持；三个 target 动词复用同一 CLI 与 exit2/exit1 分界，不得新建第二通道。"
+    },
+    {
+      "path": "server/acceptance/test_reward_goal_config.acceptance.py",
+      "kind": "new",
+      "note": "5/200 边界内外、预置禁删、激活自定义禁删、唯一激活、切换零分录（balance 与 entries 长度不变、revision+1）、切后 redeem 只认新分值、旧分值拒答且 state 零写入。"
+    },
+    {
+      "path": "server/tests/test_points_goal_units.py",
+      "kind": "new",
+      "note": "CLI 层单测：_parse_flags 未知/重复/缺值 → exit 2；范围与语义拒绝 → exit 1；回执单行 key=value 与 %XX 只编码空白；target 回执不含 delta/entry_id。"
     },
     {
       "path": "firmware/main/test/points_device_ui.acceptance.c",
       "kind": "frozen-rebaseline",
-      "note": "K2 的默认游乐场 40 是起始基线；K4 增加自定义/切换/伸缩，不削弱四态、负余额和 restore 断言。"
+      "note": "K2 默认游乐场 40 起始基线；四态、负余额、restore 不抢前台断言只可 additive 扩展，不得削弱。"
+    },
+    {
+      "path": "firmware/main/test/points_spike.acceptance.c",
+      "kind": "regression",
+      "note": "K0/K1 设备侧契约面：出厂 target_asset == \"sc-wheel\"、四键容量；points_page.c 改动后出厂态与四键形状必须零偏移。"
+    },
+    {
+      "path": "firmware/main/test/reward_goal_config.acceptance.c",
+      "kind": "new",
+      "note": "host 可编层：五键 asset→bin 名映射全覆盖且未知标识返回 NULL 不猜图；points=5 与 200 两档进度线伸缩与越目标版面；直读 spiffs_root 四枚新 bin 做 KAP1 头/尺寸/stride/墨量机检。"
     },
     {
       "path": "firmware/main/test/acceptance/archive/ui_art_integration.acceptance.c",
       "kind": "regression-reference",
-      "note": "KAP1 格式与既有资产闭集的历史验收参照，只读不重开；新增资产 additive，现役加载/降级行为不变。"
+      "note": "KAP1 格式与既有资产闭集历史参照，只读不重开；新增资产 additive，现役加载/降级行为不变。"
+    },
+    {
+      "path": "firmware/main/test/host_app/main/CMakeLists.txt",
+      "kind": "structural",
+      "note": "CMakeLists 变动 → 跑全量 host runner（不只 scoped 子集），并核新 acceptance 位于 host smoke 之前。"
+    },
+    {
+      "path": "device-round-evidence.md",
+      "kind": "live-manual",
+      "note": "render_node.cc 属 host 不可编登记路径：四预置 + sc-flag 逐一目检、切目标时其他页不抢前台、积分页原地刷新并记录与 NFR-PERF-4 同款时延字段、RAM 资源预算实测。"
     }
   ],
   "uiux": {
@@ -190,43 +219,58 @@
     {
       "decision": "D-09 · 书封/场景资产走既有管线",
       "summary": "本包承担四预置与自定义通用旗标，封皮 ic-coin 归 K5；稳定资产标识来自契约闭集。",
-      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-09"],
+      "sourceRefs": [
+        "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-09"
+      ],
       "landsIn": "exitCriteria:K4G-E1"
     },
     {
       "decision": "OQ-2 · 禁止删除激活自定义目标",
       "summary": "预置不可删，激活自定义必须先切换，任何路径不出现暂无目标页。",
-      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.2-OQ-2"],
+      "sourceRefs": [
+        "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.2-OQ-2"
+      ],
       "landsIn": "exitCriteria:K4G-E2"
     },
     {
       "decision": "OQ-3 · 自定义目标 5–200 正整数",
       "summary": "边界内外经真实 QQ 和 server 双侧验证，出界一次性报错。",
-      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.2-OQ-3"],
+      "sourceRefs": [
+        "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.2-OQ-3"
+      ],
       "landsIn": "exitCriteria:K4G-E2"
     },
     {
       "decision": "S-F6.5 AC3 · 唯一激活与刻度伸缩",
       "summary": "切目标只改激活配置，设备进度线随新分值伸缩且 restore 不抢前台。",
-      "sourceRefs": ["S-F6.5-AC3", "S-F6.1-AC2"],
+      "sourceRefs": [
+        "S-F6.5-AC3",
+        "S-F6.1-AC2"
+      ],
       "landsIn": "exitCriteria:K4G-E3"
     },
     {
       "decision": "S-F6.3 AC3 · 切目标后兑换只认新分值",
       "summary": "旧目标分值不再兑换，切目标本身不产生负向分录，历史名目保持快照。",
-      "sourceRefs": ["S-F6.3-AC3"],
+      "sourceRefs": [
+        "S-F6.3-AC3"
+      ],
       "landsIn": "exitCriteria:K4G-E3"
     },
     {
       "decision": "D-10 · 配置仍走 points.py 单 writer",
       "summary": "QQ 只整理命令，目标配置校验和持久化由同一执行器承载。",
-      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-10"],
+      "sourceRefs": [
+        "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-10"
+      ],
       "landsIn": "exitCriteria:K4G-E2"
     },
     {
       "decision": "D-01 · 故事封皮资产与导航",
       "summary": "封皮 ic-coin 与 P4 层级导航不在本包，统一由 K5 承接。",
-      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-01"],
+      "sourceRefs": [
+        "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-01"
+      ],
       "landsIn": "package:261104-k5-story-cover-nav"
     }
   ],
@@ -256,5 +300,5 @@
       "note": "K4 只产四场景与 sc-flag，K5 后序在同一管线补 ic-coin 与书封，避免并行修改生成器与资产清单。"
     }
   ],
-  "notes": "影响面机械辅证：架构 §5.5.2 与 tools/asset-pipeline 实读确认 gen_assets.mjs→gen_art_spiffs.mjs→firmware/main/assets/spiffs_root 的既有产线；契约 target.asset 闭集为 sc-choco/sc-movie/sc-wheel/sc-gift/sc-flag，V9 已把游乐场定稿为 sc-wheel，不得回用 sc-castle。相邻冻结锚：K1 目标存储、K2 默认 40、K3 QQ skill、ui_art_integration KAP1 格式均保留；新增资产 additive，不新增字体/分区，不为自定义奖励名猜图。K4 等 K1–K3 merged，mergeOrder=75。"
+  "notes": "影响面机械辅证：架构 §5.5.2 与 tools/asset-pipeline 实读确认 gen_assets.mjs→gen_art_spiffs.mjs→firmware/main/assets/spiffs_root 的既有产线；契约 target.asset 闭集为 sc-choco/sc-movie/sc-wheel/sc-gift/sc-flag，V9 已把游乐场定稿为 sc-wheel，不得回用 sc-castle。相邻冻结锚：K1 目标存储、K2 默认 40、K3 QQ skill、ui_art_integration KAP1 格式均保留；新增资产 additive，不新增字体/分区，不为自定义奖励名猜图。K4 等 K1–K3 merged，mergeOrder=75。 2026-11-15 Step 1g architect 预评 + planner 裁定：渲染落点必须扩 firmware/main/display/kidpal_render_node.cc（host 不可编 → deviceOutcome userVisible:true）；资产只新增 4 枚（sc_wheel_42_42 是 K2 已交付件），落盘名按命名律 sc_*_42_42.bin；scripts/** 删除（skill 无脚本）；CLI 用扁平动词 target-add/target-switch/target-delete + 既有 targets；渲染缓存取 3 槽 + strcmp 重载；v9 母版五符号在位，docs/ui/** 不进 manifest。"
 }
