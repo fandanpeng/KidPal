@@ -231,6 +231,13 @@ entries:
      dst: /root/.openclaw/workspace/skills/kidpal-schedule-write/SKILL.md,
      owner: deploy.sh, verify: md5, restart: none,
      note: QQ 课表录入写入 skill（B1 写入纪律 + 写后机检 + 通过后即时重算落 marker；TECH-261012 建议①）}
+  # QQ 家长积分通道（261104-k3-qq-points-channel）：家长在 QQ 里加/兑/查/删，skill 只把
+  # 一句话整理成一次性命令并调 points.py CLI（唯一 writer，与设备语音同一执行器/同一 state）；
+  # 回执单行 key=value、歧义一次性普通文本报错不追问。表驱动，deploy/verify 脚本零改动。
+  - {src: server/deploy/openclaw-skills/workspace-main/kidpal-points-write/SKILL.md,
+     dst: /root/.openclaw/workspace/skills/kidpal-points-write/SKILL.md,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: "QQ 家长积分通道 skill（六子命令 add/redeem/delete/show/recent/targets；钉死解释器 /opt/kidpal/venv/bin/python3 + KIDPAL_POINTS_STATE + -m gateway.points；恒调 CLI 不自行吞重、删除只认 entry_id/序号）"}
   - {src: server/deploy/openclaw-skills/workspace-main/kidpal-schedule-health/SKILL.md,
      dst: /root/.openclaw/workspace/skills/kidpal-schedule-health/SKILL.md,
      owner: deploy.sh, verify: md5, restart: none,
