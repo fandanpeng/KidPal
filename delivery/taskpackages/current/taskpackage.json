@@ -40,10 +40,28 @@
     "docs/requirements.md#S-F6.4-AC4",
     "docs/requirements.md#S-F6.4-AC5"
   ],
-  "acceptance": [],
-  "acceptanceTestsFile": [],
-  "redBaselineCommand": "",
-  "redBaselineResult": "",
+  "acceptance": [
+    "K4G-A1: 自定义分值 5/200 接受、4/201 拒绝且 state 零写入；入库可激活、asset 恒 sc-flag。回引 S-F6.5-AC2。设计态红 = target-add 子命令缺席",
+    "K4G-A2: 四预置逐个禁删、激活中自定义禁删（提示先切换）、非激活可删、未知 id 拒绝，全零写入。回引 S-F6.5-AC4（+AC1 回归）。设计态红 = target-delete 子命令缺席",
+    "K4G-A3: 切换后标量 active_target 单点唯一、list 恰一命中、build_points_home target 四键随切。回引 S-F6.5-AC3。设计态红 = target-switch 子命令缺席",
+    "K4G-A4: 切目标不扣分——balance 与分录数不变、revision +1、零新分录、回执回显 balance。回引 S-F6.5-AC3 / S-F6.1-AC3。设计态红 = target-switch 子命令缺席",
+    "K4G-A5: 切后旧分值 redeem 拒绝零写入、新分值成功落负向分录且事由取新目标名。回引 S-F6.3-AC3。设计态红 = target-switch 子命令缺席",
+    "K4G-A6: 切目标不改写既有兑换分录 reason 快照。回引 S-F6.5-AC3。设计态红 = target-switch 子命令缺席",
+    "K4G-A7: 三回执单行 key=value、禁 delta/entry_id、switch 回显 balance；未知/重复/缺值/缺必填旗标 exit 2，语义拒绝 exit 1 + stderr + stdout 无成功回执。回引 S-F6.4-AC4。设计态红 = target 三子命令缺席",
+    "K4G-A8: target-add / target-switch 同 command_id 重放返首次结果、不新增目标、不重复 bump revision。回引 S-F6.5-AC2 / S-F6.4-AC4。设计态红 = target 子命令缺席",
+    "K4G-A9: SKILL.md 旧硬阻断句消失、frontmatter 覆盖目标管理、§2 含三 target 动词、§5 含四类目标错误、「先 targets 拿 id 不自编」纪律。回引 S-F6.5 / S-F6.4-AC4。设计态红 = SKILL.md 旧阻断句仍在",
+    "K4G-H1: 五键 asset→bin 名映射全覆盖；sc-castle/未知/空串/NULL 返回 NULL 不猜图。回引 S-F6.5-AC1/AC2。设计态红 = kidpal_points_scene_asset 未落",
+    "K4G-H2: 5 与 200 两档刻度几何（0/target/越标延伸）+ 非法入参 -1 + progress 越目标同页结构回归。回引 S-F6.5-AC3 / S-F6.1-AC2。设计态红 = kidpal_points_scale_x 未落",
+    "K4G-H3: 四枚新 bin + sc_wheel 只读：长 268、magic KAP1、format1、42×42、stride6、墨位 0<ink<全墨。回引 S-F6.5-AC1/AC2、arch §5.5.2。设计态红 = 四枚新 bin 未产出",
+    "K4G-H4: 出厂态回归（默认游乐场 40 / sc-wheel / 五逻辑标识可解析可映射）——must-stay-green。回引 S-F6.5-AC1 / S-F6.1-AC2",
+    "K4G-H5: host 注册序（本件在 smoke 前）、points_page.c 在册、两 seam 头/实现落点、render_node 用映射+strcmp 且无 slot->name == asset。回引 S-F6.5-AC3。设计态红 = CMakeLists 未登记 / seam 未落"
+  ],
+  "acceptanceTestsFile": [
+    "server/acceptance/test_reward_goal_config.acceptance.py",
+    "firmware/main/test/reward_goal_config.acceptance.c"
+  ],
+  "redBaselineCommand": "server: python -m pytest -q --import-mode=importlib server/acceptance/test_qq_points_channel.acceptance.py server/acceptance/test_reward_goal_config.acceptance.py（仓根）；host: wsl -d Ubuntu-24.04 -- bash -c \"cd C:/AI/KidPal-pod-m2/firmware/main/test/host_app && ./espidf_wsl.sh build\" + build/host_infra_test.elf（builder 登记 CMakeLists 后首跑）",
+  "redBaselineResult": "acceptance-author 冻结实跑 + planner 独立复跑 2026-11-15 @ cad07f2c：server = 11 failed / 20 passed（红因全为实现缺席：target 三子命令缺席、SKILL.md 旧硬阻断句仍在；20 passed = K3 既有零回归）；host = 新件已 -fsyntax-only RC 0 通过编译通道，但 CMakeLists 登记被 scope 权限拦（角色边界非越权），行为齿红基线待 builder 第一步登记后首跑；既有 host 基线 287 Tests / 3 Failures（3 红 p1_auxbar 存量族）。",
   "exitCriteria": [
     "K4G-E1: 四预置 `sc-choco/sc-movie/sc-wheel/sc-gift` 与自定义 `sc-flag` 经既有母版→栅格化→KAP1 管线产出，资产标识、1bpp 内容和设备装载证据一致；不新增字体或重排分区。",
     "K4G-E2: 真实 QQ 证据覆盖新增 5/200 边界内自定义、出界拒绝、切换唯一激活、非激活自定义删除、预置删除拒绝和激活自定义先切换再删；歧义仍普通文本一次报错。",
