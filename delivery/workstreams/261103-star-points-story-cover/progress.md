@@ -64,3 +64,5 @@
 **环境事实**：专属图索引 `C-AI-KidPal-pod-m2` ready（2026-11-14 index_status 实查，21960 节点 / 64713 边，K2 固件面入图）。
 
 **human 遗留项**：① 真实 QQ 验证窗口与设备联调窗口需 human 在场（LP11）；② K2 真机轮与 K3 设备观察建议合并一次设备窗；③ 远程发布与部署轮仍归主线程/human，与本包 launch 无涉。
+
+**勘误（2026-11-14，K3 launch 段上文两处修正；append-only 不改旧行）**：上文「K2 真机轮…与 K3 设备观察共用同一 human 设备窗」「human 遗留项②K2 真机轮与 K3 设备观察建议合并一次设备窗」有误——K2 真机轮 + 复验轮**已跑完并全 PASS**（2026-11-06 首轮 / 2026-11-14 复验轮，`delivery/taskpackages/261104-k2-points-device-ui/device-round-evidence.md` §一/§五，human 收口原话「可以了，合并吧」，合并 @ 76ed332e）。其中 `K1L-L1 外部写入不抢前台` 已实证 front `points_observe` 观察 CLI 写入并自推恰一帧 restore，K3 的 QQ 写入可复用该观察缝。K3 仍需**自己的**真实 QQ 设备观察轮（QQ 消息 → front push → 设备不抢前台/积分页原地刷新，K3Q-E4），该轮需 human 在场（LP11）。

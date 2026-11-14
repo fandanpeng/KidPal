@@ -7,8 +7,8 @@
   - firmware host 面 = **287 Tests / 3 Failures / 0 Ignored**（3 红全 p1_auxbar AB 存量族；K2 final 轮实测态 `c1de02fe`，且 `76ed332e..HEAD -- firmware/` 为空，合并后无固件改动）。本包 changeManifest 全 server、零固件文件，验证不涉 host build；真机轮烧录用现役 main 固件即可。
   - 本包验收红基线（acceptance-author 新冻结件）恒现跑，无缓存可言。
 - **本包 base ref**：`45518ac2`（prep 前树 HEAD = 包首提交父口径锚；本卡与 progress 锚随 prep commit 叠于其上落库）。包级 diff（终验 scope 圈定 / detect_changes / 白盒复核 / 合并范围）恒用此 ref，不用 main。SHA 以 `pod-events.jsonl` 的 `pod-started` 事件所记为凭。
-- **上一包留根**：`delivery/taskpackages/261104-k2-points-device-ui/pod-retro.md`，intake 逐条评估（构成 blockingDecision → fail-closed 上报）。另注：K2 真机轮（K2PTS-L1/L2/L3，含 K1L-L1/L2 挂接）与 K3 的 K3Q-E4 设备观察共用同一 human 在场设备窗，部署轮仍归主线程。
-- **LP11 前置**：K1/K2 已 merged（merge 双证在案）；真实 QQ 验证窗口 + 设备联调条件由 launch 执行者/human 确认——真实歧义输入不卡死是必做证据，设备轮阶段前须 human 在场。
+- **上一包留根**：`delivery/taskpackages/261104-k2-points-device-ui/pod-retro.md`，intake 逐条评估（构成 blockingDecision → fail-closed 上报）。另注：K2 真机轮 + 复验轮已完成并全 PASS（2026-11-06 / 2026-11-14，`261104-k2-points-device-ui/device-round-evidence.md` §一/§五，human 收口「可以了，合并吧」），其中 `K1L-L1 外部写入不抢前台` 已实证 front `points_observe` 观察 CLI 写入并自推恰一帧 restore——K3 的 QQ 通路可复用该缝；K3 仍需自己的真实 QQ 设备观察轮（QQ 消息 → front push → 设备）。部署轮仍归主线程。
+- **LP11 前置**：K1/K2 已 merged（merge 双证在案）；真实 QQ 验证窗口 + 设备联调条件由 launch 执行者/human 确认——真实歧义输入不卡死是必做证据，K3 真实 QQ 设备轮前须 human 在场。
 - **铁律约束**（taskpackage plan.md 全文为准）：所有加/兑/查/删只调 points.py CLI 并以真实执行回执回复；不得直接编辑状态文件、不得自算第二套余额、不得写 schedule.md、不得把模型生成的分录 id 当事实。不调用 `ask_user`、不依赖多轮澄清；无法唯一理解时普通 QQ 文本一次说明正确说法；删除只用稳定记录 id 或最近列表序号定位。兑换只认激活目标分值且真实兑现后扣，同一次兑换不重复扣，不提供惩罚性扣分入口；查账回答来自真实状态。QQ 推送永不抢前台；本包不新增设备设置页、不提前实现 K4 目标管理，不宣称修复 TECH-261030 / TECH-261012 / TECH-261023。不改 requirements、architecture、`docs/contracts/**` 或 workspace-kidpal 数据只读边界；需要扩大写权或直接文件写时立即停并升级。
 - **传输幂等**：QQ command_id 来自平台消息 id 加命令序号；新的家长消息即使文案相同也必须新建 command_id，再交 K1 短窗语义去重，skill 不得自行吞重。
 - **验证形态申报**（机器消费行，闸按顶格前缀解析）：
