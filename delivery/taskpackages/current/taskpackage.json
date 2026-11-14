@@ -44,10 +44,20 @@
     "docs/requirements.md#NFR-PERF-4",
     "docs/debt/tech/TECH-261030-qqbot-ask-user-block.md"
   ],
-  "acceptance": [],
-  "acceptanceTestsFile": [],
-  "redBaselineCommand": "",
-  "redBaselineResult": "",
+  "acceptance": [
+    "K3Q-A1: CLI 子命令面——add/redeem/delete(--entry-id|--index)/show/recent/targets 分派与成功回执逐字段精确（含 revision 与 command_id）；用法/环境错误 exit 2、语义拒绝 exit 1；add 兼容既有位置参数调用。回引 S-F6.4-AC1/AC2、S-F6.3-AC3/AC4、契约 §1.3⑦⑧。设计态红 = points.py 六子命令 CLI 未实现（现仅 add/redeem 位置参数）",
+    "K3Q-A2: 拒绝不伪造成功——非法值/歧义删除定位 exit 1、说明写 stderr、stdout 无成功回执、state 文件字节不变（零写入）。回引 S-F6.4-AC4。设计态红 = delete 子命令与拒绝语义未实现",
+    "K3Q-A3: 幂等权威不在 skill——command_id 传输幂等（重放返首次结果、不新增分录、revision 不变）+ 短窗语义去重（duplicate=true 不记第二条）；skill 恒调 CLI 不自行吞重。回引 S-F6.3-AC5、S-F6.4-AC1。设计态红 = CLI 旗标形与回执字段缺席",
+    "K3Q-A4: 稳定定位删除——recent 回执 index 与 entry_id 同行（index 1=最新）、delete --index 2 恰删时间倒序中间条并全量重算余额链（允许负余额）、越界/畸形 exit 1 零写入、不存在但形状合法 id 幂等 no-op、序号→id 换算与删除同 _critical（源锚代理）。回引 S-F6.4-AC3、S-F6.2-AC4。设计态红 = recent/delete 与 _delete_entry_locked 缺席",
+    "K3Q-A5: kidpal-points-write/SKILL.md 静态纪律 + 负向断言——钉死 /opt/kidpal/venv/bin/python3、KIDPAL_POINTS_STATE、-m gateway.points 与全子命令面；恒调 CLI 不自行吞重；歧义一次性普通文本报错；禁 ask_user；禁直写 /opt/kidpal/points/state.json；无 schedule.md 写路径/front parser 机检段残留；workspace-kidpal 只读边界。回引 S-F6.4-AC1..AC4、TECH-261030、TECH-261023。设计态红 = SKILL.md 不在位",
+    "K3Q-A6: 离线串链——tmp state 经 CLI 写入驱动 front run_points_observe_once() 恰推一帧 points_home、data.restore is True、revision/balance 为权威值；删除 no-op（不存在 id）不推帧。回引 S-F6.4-AC5、NFR-PERF-4（通路存在半，时延值留真实轮）。设计态红 = CLI 旗标形不存在",
+    "K3Q-A7: 部署三面——manifest 新增 kidpal-points-write src/dst 对（dst=/root/.openclaw/workspace/skills/kidpal-points-write/SKILL.md，owner/verify/restart 字段齐）+ deploy.sh/verify-deploy.sh 保持 manifest 表驱动（本包零脚本改动即可生效）。回引 S-F6.4-AC1（部署生效前置）。设计态红 = manifest 无条目；表驱动断言为 must-stay-green 回归"
+  ],
+  "acceptanceTestsFile": [
+    "server/acceptance/test_qq_points_channel.acceptance.py"
+  ],
+  "redBaselineCommand": "python -m pytest -q --import-mode=importlib server/acceptance/test_qq_points_channel.acceptance.py（仓根执行）；回归 = python -m pytest -q --import-mode=importlib server/acceptance/test_points_*.acceptance.py",
+  "redBaselineResult": "acceptance-author 冻结实跑 + planner 独立复跑 2026-11-14 @ dev/pod-m2 45518ac2 基线：新冻结件 = 19 failed, 1 passed（1 passed = test_k3q_a7_deploy_verify_manifest_driven，must-stay-green 表驱动回归，非空过）；红因全为实现缺席（points.py 六子命令 CLI 未实现 / SKILL.md 不在位 / manifest 无条目），无 collection error、无环境故障。既有 points 套件 = 20 passed, 2 warnings（零新增红）。",
   "exitCriteria": [
     "K3Q-E1: 新 `kidpal-points-write` skill 的机检/marker 工程形态与离线验收在场；所有加/兑/查/删只调 K1 points.py CLI，真实执行结果决定 QQ 回复，不直接编辑状态或 schedule.md。",
     "K3Q-E2: 真实 QQ 证据覆盖加分、兑换、查余额/目标/最近记录、按稳定 id 或最近列表序号删除；兑换金额、资格和重复扣规则与设备语音一致。",
