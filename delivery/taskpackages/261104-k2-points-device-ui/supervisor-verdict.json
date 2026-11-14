@@ -3,7 +3,7 @@
   "riskTier": "high",
   "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
   "producedBy": "supervisor-verdict-gate.mjs",
-  "ts": "2026-11-05T23:48:11.477Z",
+  "ts": "2026-11-14T07:23:13.240Z",
   "changeId": "261104-k2-points-device-ui",
   "originType": "proposal",
   "adjudication": {
@@ -27,7 +27,7 @@
     },
     "advisories": [],
     "precedentHits": [],
-    "circuitBreakerCompletedRounds": 2,
+    "circuitBreakerCompletedRounds": 4,
     "evidenceComplete": true
   },
   "provenance": {
@@ -47,9 +47,9 @@
         "precedentHits": []
       },
       "evidenceCompleteness": {
-        "bearingFactRef": "delivery/taskpackages/261104-k2-points-device-ui/verifier-evidence/rounds/r2.json",
+        "bearingFactRef": "delivery/taskpackages/261104-k2-points-device-ui/verifier-evidence/rounds/r4.json",
         "bearingFactOk": true,
-        "completedRounds": 2,
+        "completedRounds": 4,
         "closeoutArtifactsChecked": [
           "delivery/taskpackages/261104-k2-points-device-ui/docs-delta.md",
           "delivery/taskpackages/261104-k2-points-device-ui/review-packet.md"
@@ -109,10 +109,12 @@
       ".claude/verify-logs/1793874659562-taskpackage-required.log",
       ".claude/verify-logs/1793874789310-taskpackage-required.log",
       ".claude/verify-logs/1793874993750-acceptance-coverage.log",
-      ".claude/verify-logs/1793875266545-mutation-check.log"
+      ".claude/verify-logs/1793875266545-mutation-check.log",
+      ".claude/verify-logs/1794640219091-unit.log",
+      ".claude/verify-logs/1794640234743-acceptance.log"
     ],
     "verifierEvidenceRefs": [
-      "delivery/taskpackages/261104-k2-points-device-ui/verifier-evidence/rounds/r2.json"
+      "delivery/taskpackages/261104-k2-points-device-ui/verifier-evidence/rounds/r4.json"
     ],
     "closeoutArtifactsChecked": [
       "delivery/taskpackages/261104-k2-points-device-ui/docs-delta.md",
