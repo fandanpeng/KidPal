@@ -48,3 +48,19 @@
 **final 终验**：scope 圈定清单 `delivery/taskpackages/261104-k2-points-device-ui/test-scope-final.txt`（detect_changes C-AI-KidPal-pod-m2 专属索引 since=b96b978d 正常圈定）；final round 2 承重（invocationId 3fb1729b-b9fa-47bd-9629-d71f696776f2）10 闸全跑零 skip——firmware-build 真编译 fresh 绿、unit 154 passed / acceptance 73 passed / 3 subtests，verifier-evidence-check factOk:true；round 1 留痕（scope 清单注记格式缺陷致 acceptance 闸 executor-skipped，格式修正后重跑）。host 287/3 判停续用（c1de02fe..HEAD firmware 零差异）。圈定合跑零误伤（8 件 server 面逐件实测 154/0）。
 
 **closeout**：docs-delta.md（零文档变更）+ review-packet.md（demo 对账 E1/E2/E5 绿、E3/E4 pending 真机轮）+ overlap-probe.json（no-overlap；deviceOutcome required=true：device-round-evidence 待真机轮 + protocol.cc 申报登记集收窄项交 planner）落包目录；closeout-check PASS indexProjection inserted；pod-closed 事件 8f95f0f2 在 pod-events.jsonl。制品与三件测试面改动随后由 integrator commit 进 dev/pod-m2（不 push）。merge 门交 planner 跑 supervisor 闸；K2PTS-L1/L2/L3 真机轮（含 K1L-L1/L2 挂接）human 在场安排。
+
+## 2026-11-14 · K3 launch 面准备（pod-m2 树复用）
+
+**调度判定**：K3（261104-k3-qq-points-channel，mergeOrder 74）dependsOn = [K1, K2] 均已 merged（main 76ed332e，K1 @ ae7725cf），WIP=1 串行链下一包 = K3；复用池树 `C:/AI/KidPal-pod-m2`（上一包 K2 已 merged，常驻分支 dev/pod-m2=45518ac2=main）。互斥租用检查通过：devloop/pods 扫描无其他活跃 Pod 落在该树或 dev/pod-m2 分支。**LP11 判定**：K1/K2 merged 双证满足；「真实 QQ 验证窗口 + 设备联调条件」为 human 在场条件，设备轮阶段前确认（真实歧义输入不卡死是必做证据）。树交接卫生核过（tracked 净、untracked 无残留；本包 changeManifest 全 server，不涉固件构建）。**上一包留根**：K2 pod-retro 六教训与流程债交 planner intake 逐条评估；K2 真机轮（K2PTS-L1/L2/L3 + K1L-L1/L2 挂接）与 K3 的 K3Q-E4 设备观察共用同一 human 设备窗。
+
+**门结果**：check-launch blocking 空（--base-ref main），launchPreconditions 余 LP11 pending（human 条件，见上）；settings-lint 3 files 0 RED 0 WARN；board 预填 queued + worktreePath=C:/AI/KidPal-pod-m2（portfolio-reconcile 95 pods reconciled）；启动卡落 `delivery/taskpackages/261104-k3-qq-points-channel/launch-card.md`。
+
+**基线锚（带锚引用三件齐；判停 = 消费前 git diff --quiet <SHA> HEAD -- <面域>）**：
+
+- server 面 = **415 passed / 0 failed / 33 subtests passed / 9 deselected** @ SHA `45518ac2`（2026-11-14 实测，本段同日现跑；命令 = `python -m pytest -q --import-mode=importlib -m "not live" "C:/AI/KidPal-pod-m2/server/acceptance"`（仓根执行）；量测时 HEAD = 45518ac2；面域 = `server`）。旧锚 b96b978d（411/0）因 K1/K2 改 server/ 判停失效，本行取代。
+- firmware host 面 = **287 Tests / 3 Failures / 0 Ignored**（3 红全 p1_auxbar AB 存量族；量测态 = K2 final `c1de02fe`）。判停 2026-11-14：`git diff --quiet c1de02fe HEAD -- firmware/` 之外另核 `76ed332e..HEAD -- firmware/` 为空（合并后无固件改动）→ 引用不重跑；本包 changeManifest 零固件文件，验证不涉 host build。
+- 本包验收红基线（acceptance-author 新冻结件）恒现跑，无缓存可言。
+
+**环境事实**：专属图索引 `C-AI-KidPal-pod-m2` ready（2026-11-14 index_status 实查，21960 节点 / 64713 边，K2 固件面入图）。
+
+**human 遗留项**：① 真实 QQ 验证窗口与设备联调窗口需 human 在场（LP11）；② K2 真机轮与 K3 设备观察建议合并一次设备窗；③ 远程发布与部署轮仍归主线程/human，与本包 launch 无涉。
