@@ -250,7 +250,6 @@
     "tools/simulator/LvglWindowsSimulator/assets/assets.c",
     "firmware/main/assets/spiffs_root/pt_cat_34_28.bin",
     "firmware/main/assets/spiffs_root/sc_wheel_42_42.bin",
-    "firmware/main/assets/spiffs_root/ic_coin_24_24.bin",
     "firmware/main/test/ui_art_integration.acceptance.c",
     "firmware/main/test/retract_p4_three_page.acceptance.c",
     "server/deploy/openclaw-skills/workspace-kidpal/kidpal-points-answer/SKILL.md",
