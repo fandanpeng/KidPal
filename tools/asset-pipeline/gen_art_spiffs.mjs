@@ -4,10 +4,12 @@
  *
  * 上游母版纪律：单一母版 = tools/simulator/LvglWindowsSimulator/assets/assets.c（由
  * gen_assets.mjs 从 V3 设计稿生成，阈值化 RGB565，唯一值集 ⊆ {0x0000, 0xFFFF}）。
- * 本脚本把 68 枚闭集白名单资产逐枚从 RGB565 转成 KAP1 1bpp 位图文件，落入
+ * 本脚本把 78 枚闭集白名单资产逐枚从 RGB565 转成 KAP1 1bpp 位图文件，落入
  * firmware/main/assets/spiffs_root/。文件名 = 上游管线资产名 + ".bin"。
  *
- * KAP1 冻结格式（left firmware/main/test/ui_art_integration.acceptance.c 头）：
+ * KAP1 冻结格式（格式文档随 260915 归档迁入
+ * firmware/main/test/acceptance/archive/ui_art_integration.acceptance.c 头；现役数值
+ * 常量单一源 = firmware/main/display/art_assets.h 的 KIDPAL_ART_*）：
  *   offset 0 : magic  u32 = 0x3150414B（字节序 'K''A''P''1'）
  *   offset 4 : format u16 = 1 (KIDPAL_ART_FMT_1BPP)
  *   offset 6 : flags  u16 = 0
@@ -21,7 +23,7 @@
  * 任何非阈值化中间值 = 转换错误（拒绝静默）。
  *
  * 用法：node tools/asset-pipeline/gen_art_spiffs.mjs
- * 输出：firmware/main/assets/spiffs_root/<name>.bin（47 枚闭集）
+ * 输出：firmware/main/assets/spiffs_root/<name>.bin（78 枚闭集）
  */
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -32,7 +34,9 @@ const REPO       = join(__dirname, '..', '..');
 const ASSETS_C   = join(REPO, 'tools', 'simulator', 'LvglWindowsSimulator', 'assets', 'assets.c');
 const OUT_DIR    = join(REPO, 'firmware', 'main', 'assets', 'spiffs_root');
 
-/* 68 枚闭集白名单（= acceptance artt_expected[] 文件根名，= assets.h 符号名） */
+/* 78 枚闭集白名单（闭集单源 = 本脚本 WHITELIST；原 acceptance artt_expected[] 已于
+ * 260915 归档（见 firmware/main/test/acceptance/archive/README.md），闭集不再由验收件
+ * 承载。条目名 = assets.h 符号名 = 产出 <name>.bin 根名） */
 const WHITELIST = [
   /* 吉祥物 7 姿态 */
   'pose_daily_96', 'pose_listen_96', 'pose_think_96', 'pose_talk_96',
@@ -64,6 +68,13 @@ const WHITELIST = [
   /* P1 既有 7 */
   'time_10_24', 'thermo_man', 'drop_baby', 'ic_batt_32', 'ic_bell_13',
   'doodle_star_26', 'doodle_cloud_52',
+  /* K2 积分本资产（TaskPackage 261104-k2-points-device-ui 真机轮 F2/F5/F6, 2026-11-06；
+   * 金币 2026-11-14 真机复验轮由 24×24 升 36×36——24 档 1bpp 下双圈糊成一条虚线、
+   * 中心五角星整枚漏画）:
+   *   金币余额图标 36×36 / 进度线小伴位置标 34×28 / 游乐场摩天轮场景标 42×42。
+   * 母版符号 = assets.c 的 ic_coin_36_36 / pt_cat_34_28 / sc_wheel_42_42（V9 v9 段
+   * 新增，gen_assets.mjs 同名 job 生成）；本白名单为纯追加，既有 75 枚零搅动。 */
+  'ic_coin_36_36', 'pt_cat_34_28', 'sc_wheel_42_42',
 ];
 
 const KAP1_MAGIC_LE = 0x3150414b; // "KAP1"

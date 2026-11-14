@@ -20,6 +20,7 @@
 
 #include "schedule_page.h"
 #include "story_page.h"
+#include "points_page.h"  /* K2：points_home/ledger 缓存形状 + KPTS_SUBSTATE_* 子态单源 */
 #include "kidpal_font.h"  /* lv_font_t 声明 + 统一 kidpal_font 句柄 seam（261028-m6-k1） */
 
 #ifdef __cplusplus
@@ -319,6 +320,39 @@ void kidpal_render_node_refresh_story(void);
  * 内部持 lvgl_port_lock，调用方无需预加锁。
  */
 void kidpal_render_node_story_local_front(void);
+
+/*
+ * ---- 星星积分本渲染缓存与重渲（TaskPackage 261104-k2-points-device-ui，轮 2） ----
+ *
+ * 数据源纪律：K1/K2 权威帧只经 mcp_server 消费链解析后投递给本缓存（points_page.c
+ * 决策表在 mcp 侧裁决，渲染面只消费、不重算余额/进度——plan 铁律「K1 唯一权威」）。
+ * 缓存为 RAM 副本（掉电即失，不写 NVS/SD）。全部小量（home ≈ 0.7KB + ledger ≈ 1.2KB）。
+ */
+
+/* 缓存 points_home 权威帧（收到即置「数据已送达」）——四态/进度线/最近三条渲染源。 */
+void kidpal_render_node_cache_points_home(const kidpal_points_home_t *frame);
+
+/* 缓存 points_ledger 权威帧 + 分页状态 + 当前光标（详细账本/删除确认渲染源）。 */
+void kidpal_render_node_cache_points_ledger(const kidpal_points_ledger_t *frame,
+                                            const kidpal_points_ledger_state_t *state,
+                                            int cursor);
+
+/* P3 积分页是否在屏（LOCAL_PAGE 前台且当前页 = KP_PAGE_POINTS_HOME）。restore 帧
+ * 「在屏原地刷新 / 他页不抢前台」的判据单一权威（D-07 消费缝）。无锁整数读。 */
+int kidpal_render_node_points_on_screen(void);
+
+/* 积分子态查询（键帽随态/页点消失判据）：本地页 = 积分页且基层为前台时返回
+ * KPTS_SUBSTATE_*；其余（他页 / 覆盖层前台）-> -1（消费方回落既有路径）。
+ * 无锁整数读，可跨任务调用。 */
+int kidpal_render_node_points_substate(void);
+
+/* 积分页重渲（本地导航与在屏 restore 刷新单入口）：持锁重渲基层积分页（按当前
+ * 子态分派主页/详细账本/删除确认）；当前页非积分页 -> no-op（不抢前台）。 */
+void kidpal_render_node_refresh_points(void);
+
+/* 主动接管前台进积分主页（D-07 例外分叉：仅设备主动语音记账成功 / 显式打开时调用；
+ * restore 帧绝不走本缝）。持锁清 transient、落 LOCAL_PAGE、渲积分主页。 */
+void kidpal_render_node_show_points_home(void);
 
 /*
  * 故事页子态查询（键帽随态变 getter，TaskPackage 260924-m4-k2-p3-star-notebook-ui；

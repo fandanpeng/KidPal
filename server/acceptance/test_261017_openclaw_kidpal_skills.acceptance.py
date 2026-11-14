@@ -17,10 +17,13 @@ FROZEN OFFLINE CONTRACT（builder MUST implement；纯 python / 离线可跑 / �
      零额外依赖）。必需顶层键：case / change / drift_guard / backup / rollback。
        · case : 非空字符串（本包只有一种收敛策略，取值不作枚举约束）。
        · change : {"path": "agents.entries.kidpal.skills",
-                   "skills": ["kidpal-schedule-answer", "weather", "tavily"]}
+                   "skills": ["kidpal-schedule-answer", "kidpal-points-answer",
+                              "weather", "tavily"]}
            - path 必须恰为 "agents.entries.kidpal.skills"（apply / rollback /
              drift_guard 三者共用的唯一定位键）；
-           - skills 必须**恰三项**、无重复、集合 = 上述白名单（顺序不作语义）。
+           - skills 必须**恰四项**、无重复、集合 = 上述白名单（顺序不作语义）。
+             （2026-11-14 重锚：原「恰三项」，增 kidpal-points-answer；见文件尾
+             REVISION LOG。）
        · drift_guard : 非空 list[{path, expect}]；须含
            {"path": "agents.entries.kidpal.skills", "expect": "unset"}
          （现状锚 = kidpal agent 未设 authored skills，bundled/extra 全量生效）。
@@ -55,7 +58,7 @@ FROZEN OFFLINE CONTRACT（builder MUST implement；纯 python / 离线可跑 / �
 强度申报（契约条目 → 承载齿 → 性质档）：
 
   · 声明在位 / JSON 可解析 / 顶层键齐        → test_pv_a6_declaration_present_and_schema → 机制级
-  · allowlist 恰三项 / 无重复 / path 定位    → test_pv_a6_allowlist_exactly_three     → 机制级
+  · allowlist 恰四项 / 无重复 / path 定位    → test_pv_a6_allowlist_exactly_three     → 机制级
   · apply 脚本消费声明（stdlib json）        → test_pv_a6_apply_script_consumes_declaration → 机制级
   · apply 幂等（二次零语义变更、零新备份）   → test_pv_a6_apply_idempotent             → 行为级（真跑）
   · drift_guard 现状不中拒绝（exit 3 零写）  → test_pv_a6_apply_drift_guard_exit3      → 行为级（真跑）
@@ -77,7 +80,7 @@ FROZEN OFFLINE CONTRACT（builder MUST implement；纯 python / 离线可跑 / �
       - backup.pattern 以 glob 在 config 同目录成立 ⇔ pattern 形如
         `<config basename>.bak-...-*`；
       - 「allowlist 生效」以 openclaw.json 文本状态为代理——OpenClaw 运行时是否
-        真只注入三项归 PV-A8 live 轮。
+        真只注入声明白名单四项归 PV-A8 live 轮。
 
 Run protocol（文件名两点须 importlib 模式）:
   python -m pytest -q --import-mode=importlib -m "not live" server/acceptance/
@@ -102,6 +105,21 @@ acceptance-author 复核记录，**零断言改动**）：
   test_261022_openclaw_kidpal_tools.acceptance.py 的 preserves_other_keys 齿真跑
   承载）；P3 落 drift_guard 现状锚时须以本包 tools patch 已应用态为准（plan.md
   跨包事实）。
+
+────────────────────────────────────────────────────────────────────────────
+REVISION LOG（冻结件修订记录；每条形如 日期 · 授权 · 触发 · 语义）：
+
+  2026-11-14 · 授权 = human 裁定 F1 skill 通道（OpenClaw kidpal agent 增板侧
+  skill）+ planner ruling 15（261104-k2-points-device-ui frozen-rebaseline）
+  · 触发 = 新增板侧 skill kidpal-points-answer（积分问答：摘要优先 + state
+  只读兜底），声明件 change.skills 由三项扩为四项
+  · 语义 = **非放宽**：闭集对账强度不变——项数恰等、无重复、集合恰等三条断言
+  全部保留，仅集合成员扩一名（kidpal-schedule-answer / kidpal-points-answer /
+  weather / tavily）；声明件改动与本重锚同批原子落（先例 = 261017 批自身）
+  · 改动面 = 本文件 EXPECTED_SKILLS、引用该集合的三条断言的期望值（改用
+  len(EXPECTED_SKILLS) 取单源）、头注契约节与强度申报名单同步；零删除断言、
+  零放宽断言。测试名 test_pv_a6_allowlist_exactly_three 沿用历史名（零外部引用
+  点，重命名无收益，语义以上述 docstring 与本节为准）。
 """
 
 from __future__ import annotations
@@ -123,7 +141,7 @@ APPLY_SCRIPT = SKILLS_DIR / "apply_agent_skills.py"
 ROLLBACK_SCRIPT = SKILLS_DIR / "rollback_agent_skills.py"
 
 TARGET_PATH = "agents.entries.kidpal.skills"
-EXPECTED_SKILLS = ("kidpal-schedule-answer", "weather", "tavily")
+EXPECTED_SKILLS = ("kidpal-schedule-answer", "kidpal-points-answer", "weather", "tavily")
 TIMESTAMP_RE = re.compile(r"\d{8}T\d{6}")
 
 _MISSING = object()
@@ -257,7 +275,7 @@ class OpenclawKidpalSkillsAcceptance(unittest.TestCase):
         return pattern
 
     # ------------------------------------------------------------------ #
-    # PV-A6 · 声明工件在位 / schema / allowlist 恰三项（机制级）
+    # PV-A6 · 声明工件在位 / schema / allowlist 恰四项（机制级）
     # ------------------------------------------------------------------ #
 
     def test_pv_a6_declaration_present_and_schema(self):
@@ -320,23 +338,26 @@ class OpenclawKidpalSkillsAcceptance(unittest.TestCase):
             "声明面与回滚面不一致（回滚不可跑）。")
 
     def test_pv_a6_allowlist_exactly_three(self):
-        """coverage: PV-A6 — 目标白名单恰三项、无重复、集合 = kidpal-schedule-answer /
-        weather / tavily（顺序不作语义）。"""
+        """coverage: PV-A6 — 目标白名单恰四项、无重复、集合 = kidpal-schedule-answer /
+        kidpal-points-answer / weather / tavily（顺序不作语义）。测试名沿用
+        2026-10-18 冻结名；2026-11-14 重锚后语义 = 恰 EXPECTED_SKILLS 集合相等
+        （见文件尾 REVISION LOG）。"""
         decl = self._decl()
         skills = (decl.get("change") or {}).get("skills")
         self.assertIsInstance(skills, list, "PV-A6 RED: change.skills 不是 list（前置）。")
         self.assertEqual(
-            len(skills), 3,
-            f"PV-A6 RED: 白名单项数 = {len(skills)}（{skills}），须恰三项 —— "
-            "kidpal agent 只保留 kidpal-schedule-answer / weather / tavily。")
+            len(skills), len(EXPECTED_SKILLS),
+            f"PV-A6 RED: 白名单项数 = {len(skills)}（{skills}），须恰 "
+            f"{len(EXPECTED_SKILLS)} 项 —— kidpal agent 只保留 kidpal-schedule-answer / "
+            "kidpal-points-answer / weather / tavily。")
         self.assertEqual(
-            len(set(skills)), 3,
+            len(set(skills)), len(EXPECTED_SKILLS),
             f"PV-A6 RED: 白名单有重复项（{skills}）—— 重复项不构成额外能力。")
         self.assertEqual(
             sorted(skills), sorted(EXPECTED_SKILLS),
-            f"PV-A6 RED: 白名单 {sorted(skills)} ≠ 契约三项 "
+            f"PV-A6 RED: 白名单 {sorted(skills)} ≠ 契约四项 "
             f"{sorted(EXPECTED_SKILLS)} —— bundled/extra 噪音未收敛干净或误删"
-            "kidpal-schedule-answer。")
+            "kidpal-schedule-answer / kidpal-points-answer。")
 
     def test_pv_a6_apply_script_consumes_declaration(self):
         """coverage: PV-A6 — apply 脚本在位、消费声明工件名、用 stdlib json（不依赖 jq）。"""
@@ -376,7 +397,7 @@ class OpenclawKidpalSkillsAcceptance(unittest.TestCase):
             self.assertIsNone(gerr, f"PV-A6 RED: apply 后 config 不可解析: {gerr}")
             self.assertEqual(
                 got, want,
-                "PV-A6 RED: apply 未产生声明目标态（kidpal skills = 声明白名单三项）。")
+                "PV-A6 RED: apply 未产生声明目标态（kidpal skills = 声明白名单四项）。")
             backups_after_first = _backups(td, pattern)
             self.assertTrue(
                 backups_after_first,

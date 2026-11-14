@@ -26,3 +26,25 @@
 - 本两包验收红基线（acceptance-author 新冻结齿）恒现跑，无缓存可言。
 
 **human 遗留项**：① launch 命令 human 自跑（两张启动卡已落各包目录）；② K0 的两笔真实 QQ canary 需 human 从真实家长 QQ 发送（LP7 裁定路径：自包含明确指令 + canary token；禁直编 state 文件/禁终端 CLI 冒充/禁本地注入/禁提前建 K3 skill）；③ K0a merged 后 K0 才做共享 CMake 追加与真机终验（LP8）；④ K0 真机轮与 QQ 轮的设备操作窗口需 human 在场。
+
+## 2026-11-05 · K2 launch 面准备（pod-m2 树复用）
+
+**调度判定**：K2（261104-k2-points-device-ui，mergeOrder 73）dependsOn = [K1] 已 merged（board 实查 + main 提交 ae7725cf，human 批 ref=4a610ed9），WIP=1 串行链下一包 = K2；复用池树 `C:/AI/KidPal-pod-m2`（上一包 K1 已 merged，常驻分支 dev/pod-m2=b96b978d，merge-driver rebase 后即 main）。互斥租用检查通过：devloop/pods 扫描无活跃 Pod 落在该树或 dev/pod-m2 分支。LP10 判定 satisfied：K1 merged 双证，points.py 单 writer、删除/兑换不变量、keyset producer 已成可消费基线（K1 verify final 10/10 在案）。**上一包留根**：K1 pod-retro 四条逐条评估归 planner intake；其中 K1L-L1/L2 真机轮按 human 2026-11-05 意向挂 K2 真机轮一起跑，部署轮仍归主线程。树交接卫生核过（tracked 净；`sdkconfig.pre-launch-bak-20261104` 残留已按 K1 卡预告删除，现役 host_app/sdkconfig 在位）。
+
+**门结果**：check-launch blocking 空（--base-ref main）；settings-lint 3 files 0 RED 0 WARN；board 预填 queued + worktreePath=C:/AI/KidPal-pod-m2（portfolio-reconcile 95 pods reconciled）；启动卡落 `delivery/taskpackages/261104-k2-points-device-ui/launch-card.md`。
+
+**基线锚（带锚引用三件齐；判停 = 消费前 git diff --quiet <SHA> HEAD -- <面域>）**：
+
+- server 面 = **411 passed / 0 failed / 33 subtests passed / 9 deselected** @ SHA `b96b978d`（2026-11-05 实测；命令 = `python -m pytest -q --import-mode=importlib -m "not live" "C:/AI/KidPal-pod-m2/server/acceptance"`（仓根执行）；量测时 HEAD = b96b978d；面域 = `server`）。旧锚 85cc3747（401/0）因 K1 改 server/ 判停失效，本行取代。
+- firmware host 面 = **278 Tests / 3 Failures / 0 Ignored**（3 红全 p1_auxbar AB 存量族；K0 收尾留痕，落盘锚 = 261104-k0-points-e2e-spike taskpackage K0S-E4 / LP8 段，量测态 = K0 合并态 ace646e3）。判停 2026-11-05：`git diff --quiet ace646e3 HEAD -- firmware/` exit 0 → 引用不重跑；K2 builder 动 firmware/ 后该引用失效，后续消费方重跑（命令同 K0 锚行）。
+- 本包验收红基线（acceptance-author 新冻结齿）恒现跑，无缓存可言。
+
+**环境事实**：专属图索引 `C-AI-KidPal-pod-m2` ready（2026-11-05 index_status 实查，21740 节点 / 64106 边，K1 points 面入图；复用树随树沿用，intake 自动增量）。
+
+**human 遗留项**：无新增（K0 gov 登记尾差、远程发布、K1 部署轮仍归主线程/human，与本包 launch 无涉）。
+
+## 2026-11-05 · K2 integrator 收口（离线面）
+
+**final 终验**：scope 圈定清单 `delivery/taskpackages/261104-k2-points-device-ui/test-scope-final.txt`（detect_changes C-AI-KidPal-pod-m2 专属索引 since=b96b978d 正常圈定）；final round 2 承重（invocationId 3fb1729b-b9fa-47bd-9629-d71f696776f2）10 闸全跑零 skip——firmware-build 真编译 fresh 绿、unit 154 passed / acceptance 73 passed / 3 subtests，verifier-evidence-check factOk:true；round 1 留痕（scope 清单注记格式缺陷致 acceptance 闸 executor-skipped，格式修正后重跑）。host 287/3 判停续用（c1de02fe..HEAD firmware 零差异）。圈定合跑零误伤（8 件 server 面逐件实测 154/0）。
+
+**closeout**：docs-delta.md（零文档变更）+ review-packet.md（demo 对账 E1/E2/E5 绿、E3/E4 pending 真机轮）+ overlap-probe.json（no-overlap；deviceOutcome required=true：device-round-evidence 待真机轮 + protocol.cc 申报登记集收窄项交 planner）落包目录；closeout-check PASS indexProjection inserted；pod-closed 事件 8f95f0f2 在 pod-events.jsonl。制品与三件测试面改动随后由 integrator commit 进 dev/pod-m2（不 push）。merge 门交 planner 跑 supervisor 闸；K2PTS-L1/L2/L3 真机轮（含 K1L-L1/L2 挂接）human 在场安排。

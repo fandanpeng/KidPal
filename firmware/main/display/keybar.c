@@ -12,6 +12,7 @@
  * 槽表（P 行逐字）。
  */
 #include "keybar.h"
+#include "points_page.h" /* K2PTS-P6: KPTS_SUBSTATE_* 积分子态常量单源 */
 
 #include <stddef.h> /* NULL */
 
@@ -45,8 +46,9 @@ int kidpal_keybar_slots(int page, int scene, int overlay_top,
         switch (page) {
             case PAGE_P1: *out_left = "说话";     *out_right = "翻页"; break;
             case PAGE_P2: *out_left = "问课程";   *out_right = "翻页"; break;
-            /* P3 星星积分本（S-F6.1 AC6 键帽行逐字 + docs/ui/V9/points-home-nodata.png）。 */
-            case PAGE_P3: *out_left = "问一问";   *out_right = "下一页"; break;
+            /* P3 星星积分本（planner ruling 11 / F4：human 三选一裁定左键帽「详·双击」
+             * ——详情账本提示压入键帽；右「下一页」不动）。 */
+            case PAGE_P3: *out_left = "详·双击";   *out_right = "下一页"; break;
             /* P4 星星记录本列表（S-F2.1 列表态键帽零回归, 值随页位原地迁移不变;
              * docs/ui/V9/canvas-p3.png）。 */
             case PAGE_P4: *out_left = "说话·双击看"; *out_right = "下移"; break;
@@ -253,5 +255,40 @@ int kidpal_keybar_story_transition_slots(int story_sub, int last_known_sub,
             /* LIST / STAMP / DELETE / BODY_UNAVAILABLE / -1 等：不接管，回落既有
              * 路径（该相位残留由 [CG-C1] scene 复位兜底）。 */
             return 0;
+    }
+}
+
+/* ==========================================================================
+ * P3 星星积分本子态键帽三槽（TaskPackage 261104-k2-points-device-ui, K2PTS-P6;
+ * additive 尾部追加——既有函数与值域零触碰）
+ *
+ * 键帽字面单源 = docs/ui/V9/points-ledger.png / points-delete-confirm.png 两张
+ * 冻结页级 ref 逐字（EQ-4）。子态常量经 points_page.h 符号消费，本文件零本地
+ * 镜像。覆盖层页点消失 = kidpal_keybar_dots 既有 overlay_top 语义（不另造机制）。
+ * ========================================================================== */
+int kidpal_keybar_points_slots(int substate, const char **out_left,
+                               const char **out_right)
+{
+    /* 防御：任一输出指针 NULL -> -1，从不为 UB。 */
+    if (out_left == NULL || out_right == NULL) {
+        return -1;
+    }
+    switch (substate) {
+        case KPTS_SUBSTATE_LEDGER:
+            /* V9 points-ledger.png 左槽「问一问」（KEY 短按 = 开语音会话，积分语境）/
+             * 右槽「下移」（BOOT 短按 = 光标下移，与故事列表同型）。 */
+            *out_left  = "问一问";
+            *out_right = "下移";
+            return 0;
+        case KPTS_SUBSTATE_DELETE_CONFIRM:
+            /* V9 points-delete-confirm.png 左「删掉」（KEY 短按 = 确认删除）/
+             * 右「算了」（BOOT = 取消）；与 story KSTORY_PAGE_DELETE 同字（WF-F2-05）。 */
+            *out_left  = "删掉";
+            *out_right = "算了";
+            return 0;
+        default:
+            /* NONE / 未知子态：调用方回落基层页槽表（P3 = 详·双击/下一页），
+             * 绝不画错键帽。 */
+            return -1;
     }
 }

@@ -228,6 +228,19 @@ REVISION LOG
              live-manual 层在 taskpackage acceptance[] 单列不落本文件；firmware 半 =
              firmware/main/test/points_spike.acceptance.c K0PTS-F1..F4。设计态红 =
              points.py 不在世 / display_schema 白名单未扩 / front 接线缺席）。
+  2026-11-05 K0PTS-A5 wire 半重钉（tighten-only / 语义保持；授权 = K2 包
+             261104-k2-points-device-ui planner ruling 5 选项 a；触发 = K2 front
+             尊重设备请求 limit 的产品语义）：wire 半种子由 2 条扩至 limit+1 条
+             （2 条 canary + limit-1 条填充分录，时间严格介于 _T_EARLY/_T_LATE 之间，
+             最新/最早 canary 首尾可及性不变），「首页应答必回 next_cursor」断言
+             原样保留、在真实多页条件下继续生效——原断言在 2 条种子被 limit=6 一页
+             取尽（next_cursor=None、has_more=False = 契约 §四正确行为）时必红，
+             编码了 front 无条件切页的实现细节。续页段同步改为沿 next_cursor 循环
+             取页直至最早 canary 到达（步进宽度由 front 决定：K0 step=1 多跳 /
+             K2 limit=6 单跳均绿），每页 restore=true/reset=False 断言逐跳保留，
+             并新增末页 has_more=False + next_cursor=None 断言（additive 收紧）。
+             producer 半（limit=1 直调）零触碰；front_app.py 本修订零改动（front
+             尚为 step=1 时重钉后仍全绿 = 语义保持硬校验）。
 """
 
 from __future__ import annotations
@@ -1075,8 +1088,20 @@ class K0ptsPaginationCanaryAcceptance(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="k0pts_a5_wire_") as tmp:
             with _front_with_points(tmp) as front:
                 sid = "sess-k0pts-a5"
-                self._seed_canaries(pts, str(Path(tmp) / "state.json"))
-                rev = pts.read_state(str(Path(tmp) / "state.json"))["revision"]
+                wire_state = str(Path(tmp) / "state.json")
+                self._seed_canaries(pts, wire_state)
+                # wire 半种子扩到 limit+1 条（2026-11-05 planner ruling 5 选项 a 重钉）:
+                # 原 2 条 canary 以 limit=DEFAULT(6) 请求首页时一页取尽，
+                # next_cursor=None 且 has_more=False 是契约正确行为（§四）；
+                # 「首页应答必回 next_cursor」这条断言原样保留的前提是种子真实多页
+                # ——补 limit-1 条填充分录（时间严格介于两 canary 之间，最新/最早
+                # canary 的首尾可及性与断言实质不变），不再编码 front 无条件切页的
+                # 实现细节（K2：front 尊重设备请求的 limit，2 条一页取尽时
+                # next_cursor=None 是正确分页语义而非缺陷）。
+                for _i in range(POINTS_PAGE_LIMIT_DEFAULT - 1):
+                    pts.add_points(wire_state, 1, f"日常填充 {_i}",
+                                   now=_T_EARLY + timedelta(minutes=_i + 1))
+                rev = pts.read_state(wire_state)["revision"]
                 # 首页请求（cursor 缺省）→ 恰一帧 points_ledger、restore 缺席、reset。
                 up, dev = _device_to_engine(front, sid, [
                     json.dumps({"type": "kidpal_points_page", "cursor": None,
@@ -1100,26 +1125,47 @@ class K0ptsPaginationCanaryAcceptance(unittest.TestCase):
                 self.assertEqual(_forwarded_types(up.sent), [],
                                  "K0PTS-A5 RED: kidpal_points_page 被透传引擎 —— "
                                  "front 整条消费义务被破（契约 §四）。")
-                # 续页请求 → restore:true、reset=False、含最早 canary。
+                # 续页请求 → restore:true、reset=False，沿游标翻页直至最早 canary
+                # 到达（2026-11-05 重钉：wire 半的步进宽度由 front 决定——K0 spike
+                # step=1 逐条下发 / K2 起 front 尊重设备 limit=6 满窗翻页——验收只钉
+                # 分页语义本身，不编码步进实现细节；每页续页语义断言不变，且最后
+                # 一页必须 has_more=False + next_cursor=None = 契约 §四 到最早）。
                 next_cursor = (data.get("page") or {}).get("next_cursor")
                 self.assertTrue(next_cursor, "K0PTS-A5 RED(前置): 首页应答未给 next_cursor。")
-                up2, dev2 = _device_to_engine(front, sid, [
-                    json.dumps({"type": "kidpal_points_page", "cursor": next_cursor,
-                                "known_revision": rev,
-                                "limit": POINTS_PAGE_LIMIT_DEFAULT},
-                               ensure_ascii=False)])
-                frames2 = _points_ledger_frames(dev2.sent_text)
-                self.assertEqual(len(frames2), 1, "K0PTS-A5 RED: 续页应答帧数 != 1。")
-                data2 = frames2[0].get("data") or {}
-                self.assertIs(data2.get("restore"), True,
-                              "K0PTS-A5 RED: 续页应答 restore 非 true —— 续页是后台"
-                              "取数，抢前台会打断孩子浏览（契约 §四）。")
-                self.assertFalse((data2.get("page") or {}).get("reset"),
-                                 "K0PTS-A5 RED: 正常续页应答 reset 非 False。")
-                self.assertIn(CANARY_EARLIEST_TOKEN,
-                              " ".join(e.get("reason", "") for e in data2.get("items", [])),
-                              "K0PTS-A5 RED: 续页应答缺最早 canary —— 消费端（设备上行"
-                              "→front 应答→设备 wire）首尾均可及的离线闭环被破。")
+                earliest_seen = False
+                hops = 0
+                last_page = {}
+                while next_cursor and not earliest_seen:
+                    hops += 1
+                    self.assertLess(hops, 10,
+                                    "K0PTS-A5 RED: 续页循环 10 跳未收敛 —— 游标链"
+                                    "异常（未前进或到最早仍 has_more=True）。")
+                    up2, dev2 = _device_to_engine(front, sid, [
+                        json.dumps({"type": "kidpal_points_page", "cursor": next_cursor,
+                                    "known_revision": rev,
+                                    "limit": POINTS_PAGE_LIMIT_DEFAULT},
+                                   ensure_ascii=False)])
+                    frames2 = _points_ledger_frames(dev2.sent_text)
+                    self.assertEqual(len(frames2), 1, "K0PTS-A5 RED: 续页应答帧数 != 1。")
+                    data2 = frames2[0].get("data") or {}
+                    page2 = data2.get("page") or {}
+                    self.assertIs(data2.get("restore"), True,
+                                  "K0PTS-A5 RED: 续页应答 restore 非 true —— 续页是后台"
+                                  "取数，抢前台会打断孩子浏览（契约 §四）。")
+                    self.assertFalse(page2.get("reset"),
+                                     "K0PTS-A5 RED: 正常续页应答 reset 非 False。")
+                    earliest_seen = any(CANARY_EARLIEST_TOKEN in e.get("reason", "")
+                                        for e in data2.get("items", []))
+                    last_page = page2
+                    next_cursor = page2.get("next_cursor")
+                self.assertTrue(earliest_seen,
+                                "K0PTS-A5 RED: 续页应答缺最早 canary —— 消费端（设备上行"
+                                "→front 应答→设备 wire）首尾均可及的离线闭环被破。")
+                self.assertFalse(last_page.get("has_more"),
+                                 "K0PTS-A5 RED: 已到最早却 has_more=True。")
+                self.assertIsNone(last_page.get("next_cursor"),
+                                  "K0PTS-A5 RED: 已到最早 next_cursor 非空（契约 §四："
+                                  "null 且 has_more=false = 已到最早一页）。")
                 # limit 越界上行 → 拒绝记日志、不回帧。
                 up3, dev3 = _device_to_engine(front, sid, [
                     json.dumps({"type": "kidpal_points_page", "cursor": None,

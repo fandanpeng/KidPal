@@ -89,6 +89,21 @@ KIDPAL_SCHEDULE_SUMMARY_PLACEHOLDER = "{{schedule_summary}}"
 # 或诚实说查不到（T5 注入语义②窗口外诚实 / TECH-261018 零编造）。
 KIDPAL_SCHEDULE_SUMMARY_EMPTY = "（本次会话未提供）"
 
+# KidPal 积分语境摘要注入类型 (TaskPackage 261104-k2-points-device-ui 真机轮 F1):
+# front 在积分语境会话（ctx(points_home/points_ledger)）向引擎腿注入
+# {"type":"kidpal_points_context","summary":<str>}——摘要由 front gateway/points.py
+# 单源派生（契约 §四 kidpal_session_ctx points 两值半）。本文件只做「存会话态 + 填充
+# 动态 context 占位」的**纯管道**：零积分业务解析（不 import gateway、不算余额、
+# 不读账本、不懂分录语义），KIDPAL_SCHEDULE_SUMMARY_TYPE 同型先例。
+KIDPAL_POINTS_CONTEXT_TYPE = "kidpal_points_context"
+
+# 积分摘要动态 context 占位（server/deploy/kidpal-agent-prompt.txt 的
+# 「积分摘要：{{points_summary}}」行，紧排课表摘要行之后）。填充缝与课表同款：
+# 引擎部署副本补丁内字面单次替换。
+KIDPAL_POINTS_SUMMARY_PLACEHOLDER = "{{points_summary}}"
+# 积分摘要缺席时的占位（front 未注入 / ctx 未到达）：不编造余额或分录（同课表口径）。
+KIDPAL_POINTS_SUMMARY_EMPTY = "（本次会话未提供）"
+
 # KidPal ASR 静音幻听串表 (TaskPackage 261014-engine-stop-truncation-asr-filter /
 # 改动点 3)。Qwen/Whisper 系 ASR 在低能量/静音段的已知幻听模式——引擎收到 listen
 # stop 后对缓冲尾音（本质是停止后的静音）整段识别，恒产 "Thank you." 一类串，被当
@@ -264,6 +279,13 @@ class ConnectionHandler:
         # （回填前快照）：帧迟到 / 二次到达时以原形重填，绝不丢占位。
         self._kidpal_schedule_summary = ""
         self._kidpal_schedule_prompt_base = None
+        # KidPal 积分语境摘要会话态 (261104-k2-points-device-ui F1 / 课表同型管道):
+        # front 在积分语境注入 kidpal_points_context 帧 -> 存入本字段；动态 context 的
+        # {{points_summary}} 占位在系统提示词构建/刷新时填充（本补丁零积分解析，
+        # 摘要内容全部来自 front 的单源派生）。_kidpal_points_prompt_base = 占位原形
+        # （回填前快照）：帧迟到 / 二次到达时以原形重填，绝不丢占位（课表同款）。
+        self._kidpal_points_summary = ""
+        self._kidpal_points_prompt_base = None
         # KidPal 本回合起点 (261022-m5-k2b 持久会话 / ADR-015): depth==0 在
         # dialogue.put 之前记「本回合之前已落地的实际历史消息数」，chat 发送腿以它
         # 为切片下界——本回合 user + 在途 tool 链整段进请求，先前实际历史一律不向
@@ -598,6 +620,59 @@ class ConnectionHandler:
             % len(self._kidpal_schedule_summary))
         return True
 
+    def _kidpal_apply_points_summary(self, prompt):
+        """{{points_summary}} 占位填充（261104-k2-points-device-ui F1 真机轮）。
+
+        与 _kidpal_apply_schedule_summary 同款字面单次替换：内容 = front 经
+        gateway/points.py 唯一权威状态派生后经内部帧送来的积分摘要；本补丁**零积分
+        业务解析、零 gateway import、不读账本**（契约 §四 points 两值半的单源红线，
+        补丁只做管道）。会话内未收到 ctx 帧 -> 填缺席占位文本（不编造余额/目标/分录）。
+        非 str 原样返回。替换前把占位原形快照到 _kidpal_points_prompt_base——帧迟到 /
+        二次到达时以原形重填（已填文本不可再插，原形可）。
+
+        与课表填充的调用序：change_system_prompt 里先 schedule 后 points，故本函数拿到的
+        入参已含课表摘要文本、只剩 points 占位，快照自然保留课表内容；课表二次到达时经
+        其原形（两占位俱全）重走 change_system_prompt，本函数再以占位原形重填一次——
+        两条摘要互不清除（每轮结果都经两填充器串联产出）。
+        """
+        if not isinstance(prompt, str):
+            return prompt
+        if KIDPAL_POINTS_SUMMARY_PLACEHOLDER not in prompt:
+            return prompt
+        self._kidpal_points_prompt_base = prompt
+        text = self._kidpal_points_summary or KIDPAL_POINTS_SUMMARY_EMPTY
+        return prompt.replace(KIDPAL_POINTS_SUMMARY_PLACEHOLDER, text)
+
+    async def _kidpal_on_points_context(self, message) -> bool:
+        """认领 front 注入的积分语境摘要帧（261104-k2-points-device-ui F1 真机轮）。
+
+        病灶（2026-11-06 真机 09:12:56 / 09:53:02 实证）：front 注入的
+        {"type":"kidpal_points_context","summary":<str>} 在引擎侧被当未知类型丢弃，
+        模型收不到余额/目标/最近分录——「我现在多少分」只能瞎猜。本方法认领该帧。
+
+        命中 -> 存入会话态；若系统提示词已构建则立即回填占位（帧先于/后于 prompt 装配
+        两种时序都覆盖，课表同款）。返回 True（**引擎内部指令**，绝不能当孩子说的话送
+        LLM）。非本类型 / 解析失败 -> False（静默不动，绝不扰动上游路由）。
+        summary 非 str / 缺席 -> 空摘要（引擎填缺席占位文本，不编造）。
+        """
+        try:
+            obj = json.loads(message)
+        except (TypeError, ValueError):
+            return False
+        if not isinstance(obj, dict) or obj.get("type") != KIDPAL_POINTS_CONTEXT_TYPE:
+            return False
+        summary = obj.get("summary")
+        self._kidpal_points_summary = summary.strip() if isinstance(summary, str) else ""
+        # 回填源 = 占位原形优先（帧晚于 prompt 装配时，已填文本里无占位可替；原形里恒有）；
+        # 落定经 change_system_prompt 单收口（与课表同一填充单点）。
+        prompt = self._kidpal_points_prompt_base or self.prompt
+        if prompt:
+            self.change_system_prompt(prompt)
+        self.logger.bind(tag=TAG).info(
+            "kidpal points-summary: 积分摘要已入会话态 len=%d"
+            % len(self._kidpal_points_summary))
+        return True
+
     async def _kidpal_on_listen_message(self, message):
         """listen 帧旁路截断 (261014-engine-stop-truncation-asr-filter 改动点 1)。
 
@@ -675,6 +750,11 @@ class ConnectionHandler:
         # KidPal 课表摘要（261022-m5-n2a / T5 甲）：纯会话态存储 + 占位回填，不依赖
         # 绑定完成——先于绑定门认领，建连即注入的帧不因绑定等待窗（1s）丢失。
         if isinstance(message, str) and await self._kidpal_on_schedule_summary(message):
+            return
+        # KidPal 积分语境摘要（261104-k2-points-device-ui F1）：与课表摘要同层同纪律
+        # （纯会话态存储 + 占位回填，先于绑定门认领，不经过 handleTextMessage——积分
+        # 摘要帧绝不能被当孩子说的话送 LLM）。
+        if isinstance(message, str) and await self._kidpal_on_points_context(message):
             return
         # 检查是否已经获取到真实的绑定状态
         if not self.bind_completed_event.is_set():
@@ -1420,6 +1500,10 @@ class ConnectionHandler:
         # 替换，零课表 MD 解析（契约 §1.5 单源红线；T5 候选乙/丙否决）。组件初始化在
         # 线程池、注入帧在事件循环，两线程都经此单点落定，读摘要取当刻最新会话态。
         self.prompt = self._kidpal_apply_schedule_summary(prompt)
+        # 积分摘要占位填充（261104-k2-points-device-ui F1）：同一单收口串联填充
+        # {{points_summary}}——先 schedule 后 points（课表先填，points 占位原形快照自然
+        # 保留课表文本；两条摘要互不清除，见 _kidpal_apply_points_summary 注记）。
+        self.prompt = self._kidpal_apply_points_summary(self.prompt)
         # 更新系统prompt至上下文
         self.dialogue.update_system_message(self.prompt)
 

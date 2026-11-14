@@ -842,15 +842,18 @@ TEST_CASE("撤 P4 四页重锚: 键帽条页点同源 + 越界哨兵 PAGE_COUNT 
 
     /* tooth 4: P3 积分主页页槽值复对账（2026-11-04 重锚——原「P3 故事列表槽逐字」
      * 随积分主页插入 P3 翻正; 值域字面单源住 keybar_three_slot KKB-A3 重锚齿,
-     * 本齿同值复对账防两文件漂移）。 */
+     * 本齿同值复对账防两文件漂移）。
+     * 【2026-11-06 同步翻正 随 261104-k2-points-device-ui planner ruling 11】F4
+     * 胶囊移入键帽、human 裁定左键帽改「详·双击」——KKB-A3 重锚齿已翻正, 本齿
+     * 同值跟随（问一问 -> 详·双击; 右槽「下一页」不动）, 断言实质零变化。 */
     left = NULL;
     right = NULL;
     rc = kidpal_keybar_slots((int)PAGE_P3, 0, 0, &left, &right);
     TEST_ASSERT_TRUE_MESSAGE(rc == 0 && left != NULL && right != NULL &&
-                                 strcmp(left, "问一问") == 0 &&
+                                 strcmp(left, "详·双击") == 0 &&
                                  strcmp(right, "下一页") == 0,
-        rtp_fm("M2K2-A2 RED(guard): P3 页槽 (左=%s, 右=%s) 不再是 (问一问, 下一页)——积分"
-               "主页页槽未随四页化入列（S-F6.1 AC6 键帽行 + points-home-nodata.png; "
+        rtp_fm("M2K2-A2 RED(guard): P3 页槽 (左=%s, 右=%s) 不再是 (详·双击, 下一页)——积分"
+               "主页页槽未随四页化入列（2026-11-06 human 裁定: F4 胶囊移入键帽; "
                "keybar_three_slot KKB-A3 重锚齿同值）",
                left ? left : "(null)", right ? right : "(null)"));
 
@@ -1249,4 +1252,12 @@ TEST_CASE("撤 P4 三页循环: 注册序守卫+需求契约canary+扫描器自�
  *               现状绿（must-stay）。上方 2026-09-18 冻结相位的「本包义务红」与
  *               「RED baseline 判读口径」历史记录不改写（append-only）; 现役红基线
  *               以 four_page_skeleton.acceptance.c 文件尾 + 本批交付报告为准。
+ *   2026-11-06  test 3 tooth 4 P3 左键帽同步翻正（acceptance-author, TaskPackage
+ *               261104-k2-points-device-ui; 授权 = human 现场裁定（真机轮 F4 三选一
+ *               裁定左键帽改「详·双击」）+ planner ruling 11; 触发 = F4 主页「详细·
+ *               双击看」胶囊移入键帽、页面胶囊删除）: 本齿自注「值域字面单源住
+ *               keybar_three_slot KKB-A3 重锚齿, 同值复对账防两文件漂移」——单源齿
+ *               已翻正 问一问 -> 详·双击（右槽「下一页」不动）, 本齿同值跟随, 断言
+ *               实质零变化, 非放宽。红态后果：与 KKB-A3 同步对 keybar.c 未改现状为
+ *               设计态红, builder 小增量落键帽翻正后转绿；本文件其余齿零改动。
  * --------------------------------------------------------------------------- */

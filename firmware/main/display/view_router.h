@@ -16,6 +16,10 @@
 #ifndef KIDPAL_VIEW_ROUTER_H
 #define KIDPAL_VIEW_ROUTER_H
 
+/* K2 积分子态常量单源（additive；TaskPackage 261104-k2-points-device-ui）:
+ * points_ledger 子页渲染态裁决复用 points_page.h 的 KPTS_SUBSTATE_*（零本地镜像）。 */
+#include "points_page.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -56,6 +60,14 @@ int kidpal_display_route(
 
 /* 解析 control view 的动作 (契约 §1.4)。返回 VRT_CTRL_*；未知/NULL -> VRT_CTRL_UNKNOWN。 */
 int kidpal_display_control_action(const char *action);
+
+/* K2 additive: points 视图 -> 设备渲染子态（TaskPackage 261104-k2-points-device-ui;
+ * display/points_page.h 的 KPTS_SUBSTATE_* 单源，零本地镜像）。
+ *   "points_ledger" -> KPTS_SUBSTATE_LEDGER（详细账本列表态）;
+ *   "points_home"   -> KPTS_SUBSTATE_NONE（基层 P3 主页，键帽回落页槽表）;
+ *   其余 / NULL      -> -1（非积分视图，调用方不切积分子态）。
+ * 纯函数，零副作用；供 mcp_server 消费接线层在 points 帧到达时裁定当前子态。 */
+int kidpal_display_points_substate(const char *view);
 
 /* 全文分页 (S-F4.1: 答案全文上屏, human 裁定否摘要)：返回 screen_lines 行/屏下
  * 装下 text 全文所需的屏数，>=1；NULL 计为 1 (空屏)；screen_lines <= 0 防御返回 1，

@@ -13,5 +13,6 @@
 | `workspace-main/kidpal-schedule-write/` | `/root/.openclaw/workspace/skills/kidpal-schedule-write/` | QQ 课表录入写入 skill：B1 写入纪律（日期纯 `YYYY-MM-DD` 严禁星期后缀）+ 写后机检（front 单源 parser）+ 通过后即时重算落 marker（TECH-261012 建议①） |
 | `workspace-main/kidpal-schedule-health/` | `/root/.openclaw/workspace/skills/kidpal-schedule-health/` | 课表解析失败 QQ 转告巡检 skill：cron `kidpal-schedule-health` 每 15m 唤起 main 读告警件、QQ 主动告知家长、ack 状态件防重复打扰（TECH-261012 建议④）；261031 起该 cron 带 **trigger 判定层**——无告警/同指纹零 token，见 RUNBOOK §8.3d |
 | `workspace-kidpal/kidpal-schedule-answer/` | `/root/.openclaw/workspace-kidpal/skills/kidpal-schedule-answer/` | **板侧** kidpal agent 的课表问答流程 skill（2026-09-25 落地，loopback 探针实测生效） |
+| `workspace-kidpal/kidpal-points-answer/` | `/root/.openclaw/workspace-kidpal/skills/kidpal-points-answer/` | **板侧** kidpal agent 的积分问答流程 skill（261104-k2-points-device-ui 真机轮 F1：积分摘要优先 + `/opt/kidpal/points/state.json` 只读兜底 + 零写权；kidpal agent 可见性归 `261017-openclaw-kidpal-skills` 声明白名单） |
 
 修改 skill 后：先改本仓镜像（进 review），再 `deploy.sh` 铺放到 ECS live 路径——顺序别反。新增 live skill 时同步加 manifest 条目 + 本表一行。

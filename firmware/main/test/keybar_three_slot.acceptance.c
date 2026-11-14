@@ -183,6 +183,11 @@
 #include "../key_gesture_parser.h"
 /* 语音轮五态闭集契约头（[2] 冻结形状: 场景码/look 结构/keycap 值域）。 */
 #include "../display/kidpal_voice_states.h"
+/* P3 积分子态常量单源（2026-11-05 additive, TaskPackage 261104-k2-points-device-ui
+ * frozen-rebaseline; K2PTS-P6 积分子态键帽槽——substate 常量住 points_page.h,
+ * keybar.c 同款 include 消费、零本地镜像; 该头纯 C 零 chip/LVGL 依赖,
+ * host runner 与独立红跑通道两侧同源可编）。 */
+#include "../display/points_page.h"
 
 #define KKB_MAX_PATH 1024
 #define KKB_MAX_READ (8u * 1024u * 1024u)
@@ -233,6 +238,17 @@ __attribute__((weak)) int kidpal_keybar_char_slots(int started, const char **out
                                                    const char **out_right)
 {
     (void)started; (void)out_left; (void)out_right;
+    return KKB_UNIMPLEMENTED;
+}
+/* P3 积分子态键帽槽裁决（2026-11-05 additive, TaskPackage 261104-k2-points-device-ui
+ * frozen-rebaseline; K2PTS-P6——ACC-5 char_slots 先例形态: 并行函数 additive 追加,
+ * 强符号 home = display/keybar.c 已在 runner 在册, builder 落地后覆盖哨兵）。
+ * substate 常量 = KPTS_SUBSTATE_*（points_page.h include 单源, 见 include 区注）。 */
+__attribute__((weak)) int kidpal_keybar_points_slots(int substate,
+                                                     const char **out_left,
+                                                     const char **out_right)
+{
+    (void)substate; (void)out_left; (void)out_right;
     return KKB_UNIMPLEMENTED;
 }
 
@@ -583,13 +599,20 @@ TEST_CASE("键帽条三槽: 左右槽随态文案——页槽表+闭集单源+BO
      * 值域权威 = requirements S-F6.1 AC6 键帽行「问一问 / 下一页」逐字 +
      * docs/ui/V9/points-home-nodata.png 底栏。删了什么：P3 (说话·双击看, 下移) 逐字
      * 断言；为什么：P3 页身份随四页化改变，保留即假红；新钉什么：P3 (问一问, 下一页)
-     * 逐字 + P4 故事槽对在世。 */
+     * 逐字 + P4 故事槽对在世。
+     * 【2026-11-06 frozen-rebaseline 随 261104-k2-points-device-ui planner ruling 11】
+     * 真机轮 F4：主页「详细·双击看」胶囊移入键帽（页面胶囊删除；语音提示离开键帽
+     * = human 明知选择）。human 三选一裁定 = 左键帽改「详·双击」。左槽期望翻正
+     * 问一问 -> 详·双击；右槽「下一页」不动；断言实质（rc=0 + 左右槽逐字 strcmp）
+     * 零变化，只换期望字面。值域权威更新 = 2026-11-06 human 现场裁定（F4 胶囊移入
+     * 键帽语义）为准，原 S-F6.1 AC6 键帽行「问一问」字面随裁定退役。同值复对账齿
+     * retract_p4_three_page M2K2-A2 tooth 4 已同步翻正（防两文件漂移）。 */
     rc = kidpal_keybar_slots(2, 0, 0, &left, &right);
     TEST_ASSERT_TRUE_MESSAGE(rc == 0 && left != NULL && right != NULL &&
-                             strcmp(left, "问一问") == 0 &&
+                             strcmp(left, "详·双击") == 0 &&
                              strcmp(right, "下一页") == 0,
-        kkb_fm("KKB-A3 RED: P3 页槽 (左=%s, 右=%s) 期望 (问一问, 下一页)——P3 积分"
-               "主页键帽漂移 (S-F6.1 AC6 键帽行 + points-home-nodata.png; D-01 四页"
+        kkb_fm("KKB-A3 RED: P3 页槽 (左=%s, 右=%s) 期望 (详·双击, 下一页)——P3 积分"
+               "主页键帽漂移 (2026-11-06 human 裁定: F4 胶囊移入键帽; D-01 四页"
                "重锚: 原故事槽对已迁 P4)",
                left ? left : "(null)", right ? right : "(null)"));
 
@@ -1005,6 +1028,85 @@ TEST_CASE("键帽条三槽: 查字窗键帽随态——未起播「播报」/起
         "纯逻辑单源头（lcd_display.cc 消费无从 include; plan.md 方案 B）");
 }
 
+/* -------------------------------------------------------------------------- *
+ * TEST 7 — K2PTS-P6 积分子态键帽槽值域（behavioral + 结构半; 2026-11-05 additive,
+ * TaskPackage 261104-k2-points-device-ui impactedTestsSeed frozen-rebaseline;
+ * ACC-5 char_slots 先例形态——并行函数 additive 追加, 既有 TEST 1-6 断言集合零
+ * 变化; substate 常量经 points_page.h include 单源消费, 零本地镜像）。
+ * 键帽字面权威 = docs/ui/V9/points-ledger.png（LEDGER「问一问/下移」）+
+ * points-delete-confirm.png（DELETE_CONFIRM「删掉/算了」, WF-F2-05 同族、与 story
+ * KSTORY_PAGE_DELETE 键帽同字）; NONE/未知子态 -> -1（消费方回落基层页槽表,
+ * 绝不画错键帽）。keybar 域归属钉点（points_device_ui.acceptance.c TEST 6 行为
+ * 半之外的本域承载）; 覆盖层页点消失走既有 kidpal_keybar_dots overlay_top 语义
+ * （TEST 1 已钉, 原样保留零重复）。
+ * RED today（独立红跑通道哨兵 -2; host runner 中 keybar.c 强符号已落地 = 绿）。
+ * ------------------------------------------------------------------------ */
+/* coverage: K2PTS-P6 -- 积分子态键帽槽决策表（keybar 域 additive 钉点）: LEDGER -> (问一问, 下移) / DELETE_CONFIRM -> (删掉, 算了) / NONE·未知 -> -1 回落页槽表 / NULL out 防御 -1 + keybar.h 声明在世结构半 */
+TEST_CASE("键帽条三槽: 积分子态键帽槽——账本「问一问/下移」/删除确认「删掉/算了」/NONE 回落 (K2PTS-P6)",
+          "[keybar_three_slot][K2PTS-P6][behavior][structural]")
+{
+    const char *left = NULL;
+    const char *right = NULL;
+    int rc;
+
+    /* tooth 1 (本包红齿): LEDGER 子态 -> (问一问, 下移)——V9 points-ledger.png
+     * 逐字（左槽 = KEY 短按开语音会话积分语境; 右槽 = BOOT 短按光标下移）。 */
+    rc = kidpal_keybar_points_slots(KPTS_SUBSTATE_LEDGER, &left, &right);
+    kkb_require_implemented(rc, "kidpal_keybar_points_slots unimplemented");
+    TEST_ASSERT_TRUE_MESSAGE(
+        rc == 0 && left != NULL && right != NULL &&
+            strcmp(left, "问一问") == 0 && strcmp(right, "下移") == 0,
+        kkb_fm("K2PTS-P6 RED: kidpal_keybar_points_slots(LEDGER) = (rc=%d, 左=%s, "
+               "右=%s) 期望 (0, 问一问, 下移)——详细账本列表态键帽漂移（V9 "
+               "points-ledger.png 冻结页级 ref 逐字; TaskPackage "
+               "261104-k2-points-device-ui）",
+               rc, left ? left : "(null)", right ? right : "(null)"));
+
+    /* tooth 2 (本包红齿): DELETE_CONFIRM 子态 -> (删掉, 算了)——V9
+     * points-delete-confirm.png 逐字（WF-F2-05 同族; 与 story
+     * KSTORY_PAGE_DELETE 键帽同字）。 */
+    rc = kidpal_keybar_points_slots(KPTS_SUBSTATE_DELETE_CONFIRM, &left, &right);
+    TEST_ASSERT_TRUE_MESSAGE(
+        rc == 0 && left != NULL && right != NULL &&
+            strcmp(left, "删掉") == 0 && strcmp(right, "算了") == 0,
+        kkb_fm("K2PTS-P6 RED: kidpal_keybar_points_slots(DELETE_CONFIRM) = (rc=%d, "
+               "左=%s, 右=%s) 期望 (0, 删掉, 算了)——删除确认覆盖层键帽漂移（V9 "
+               "points-delete-confirm.png 逐字）",
+               rc, left ? left : "(null)", right ? right : "(null)"));
+
+    /* tooth 3: NONE / 未知子态 -> -1——消费方回落基层页槽表（P3 积分主页
+     * 「问一问/下一页」= K0a 已冻结页槽表行, keybar_three_slot 冻结域）,
+     * 本缝绝不接管基层键帽。 */
+    rc = kidpal_keybar_points_slots(KPTS_SUBSTATE_NONE, &left, &right);
+    TEST_ASSERT_TRUE_MESSAGE(rc == -1,
+        kkb_fm("K2PTS-P6 RED: kidpal_keybar_points_slots(NONE) = rc=%d 期望 -1——"
+               "基层积分主页键帽被本缝接管（回落页槽表红线: 基层 P3 键帽归 "
+               "kidpal_keybar_slots 页槽表, K0a 冻结域）", rc));
+    rc = kidpal_keybar_points_slots(99, &left, &right);
+    TEST_ASSERT_TRUE_MESSAGE(rc == -1,
+        "K2PTS-P6 RED: 未知子态未防御（-1）——未知子态回落页槽表, 绝不画错键帽");
+
+    /* tooth 4 (防御): NULL out 任一 -> -1（从不为 UB; ACC-5 先例同款）。 */
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_keybar_points_slots(KPTS_SUBSTATE_LEDGER, NULL, &right) == -1,
+        "K2PTS-P6 RED: NULL out_left 未防御（-1）——积分子态键帽槽把空指针当合法");
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_keybar_points_slots(KPTS_SUBSTATE_LEDGER, &left, NULL) == -1,
+        "K2PTS-P6 RED: NULL out_right 未防御（-1）——积分子态键帽槽把空指针当合法");
+
+    /* tooth 5 (结构半): keybar.h 声明 kidpal_keybar_points_slots 在世——
+     * substate 常量单源住 points_page.h（keybar.c include 消费零本地镜像）,
+     * lcd_display.cc 积分子态分支经 include 消费（接线前提）。 */
+    KKB_REQUIRE_ROOT();
+    TEST_ASSERT_TRUE_MESSAGE(
+        kkb_count_in_file(KKB_KEYBAR_H, "kidpal_keybar_points_slots") >= 1,
+        "K2PTS-P6 RED: keybar.h 零 kidpal_keybar_points_slots 声明——积分子态键帽槽"
+        "值域未进纯逻辑单源头（lcd_display.cc 消费无从 include）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        kkb_count_in_file("firmware/main/display/points_page.h",
+                          "KPTS_SUBSTATE_LEDGER") >= 1,
+        "K2PTS-P6 RED: points_page.h 零 KPTS_SUBSTATE_LEDGER——积分子态常量单源"
+        "缺失（keybar 值域常量住 points_page.h, 本文件零本地镜像纪律）");
+}
+
 /* ---------------------------------------------------------------------------
  * KB-A6 终跑判读（suite 级判读说明, review-packet 呈 supervisor）:
  *   判据 = 相对有效基线零新增红 + 本包新齿全绿。
@@ -1105,4 +1207,30 @@ TEST_CASE("键帽条三槽: 查字窗键帽随态——未起播「播报」/起
  *               TEST 1 同源判别自动跟随 PAGE_COUNT, 本文件零新字面。红态后果：
  *               P3/P4 两齿对三页现状为设计态红（P3 现返回故事对、P4 现返回 -1），
  *               builder 落 K0a 页槽表后转绿；其余齿现状绿（must-stay）。
+ *   2026-11-05  K2PTS-P6 additive（acceptance-author, TaskPackage
+ *               261104-k2-points-device-ui impactedTestsSeed frozen-rebaseline;
+ *               授权 = planner ruling——builder 轮 1 因 scope-map deny 未改本冻结
+ *               件, 由 acceptance 写权属主追加最小增量）: 追 include
+ *               ../display/points_page.h（KPTS_SUBSTATE_* 常量单源消费, 零本地
+ *               镜像）+ weak 哨兵 + TEST 7——积分子态键帽槽 kidpal_keybar_points_
+ *               slots 决策表（LEDGER -> 问一问/下移 / DELETE_CONFIRM -> 删掉/
+ *               算了 / NONE·未知 -> -1 回落页槽表 / NULL 防御 -1）+ keybar.h
+ *               声明与 points_page.h 常量单源在世结构半。键帽字面权威 = docs/ui/
+ *               V9 两张冻结页级 ref; ACC-5 char_slots 先例形态（并行函数 additive,
+ *               既有 kidpal_keybar_slots 签名与值域零触碰）。覆盖层页点消失语义
+ *               由 TEST 1 既有齿承载（零重复）。既有 TEST 1-6 断言集合零变化;
+ *               本包义务红（独立红跑通道哨兵红）= TEST 7 哨兵半; host runner 中
+ *               keybar.c 强符号已落地 = 全绿（builder 轮 1 实现）。
+ *   2026-11-06  KKB-A3 P3 左键帽 frozen-rebaseline（acceptance-author, TaskPackage
+ *               261104-k2-points-device-ui; 授权 = human 现场裁定（真机轮 F4 三选一
+ *               裁定左键帽改「详·双击」）+ planner ruling 11; 触发 = F4 主页「详细·
+ *               双击看」胶囊移入键帽、页面胶囊删除——语音提示离开键帽为 human 明知
+ *               选择）: P3 主页基础槽左键帽期望 问一问 -> 详·双击, 右槽「下一页」
+ *               不动。断言实质（rc=0 + 左右槽逐字 strcmp）零变化, 只换期望字面——
+ *               语义保持修订, 非放宽。同值复对账齿 retract_p4_three_page M2K2-A2
+ *               tooth 4 同步翻正（防两文件漂移）。红态后果：本齿对 keybar.c 未改
+ *               现状为设计态红（P3 现返回「问一问」）, builder 小增量落键帽翻正后
+ *               转绿；其余齿零改动（基线 287/3 -> 287/5: KKB-A3 主齿 + retract
+ *               tooth 4 同值复对账齿两处红, 同一根因 = keybar.c P3 左键帽未跟上
+ *               重锚）。
  * --------------------------------------------------------------------------- */

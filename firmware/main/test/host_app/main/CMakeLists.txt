@@ -367,6 +367,16 @@ set(HOST_ACCEPTANCE_SRCS
     "../../../display/points_page.c"
     "../../points_spike.acceptance.c"
 
+    # 包 261104-k2-points-device-ui（设备积分本正式化：points_home/points_ledger 全页、
+    # keyset 取页、删除确认、积分语境与语音闭环）冻结验收。行为齿 [P1]-[P6] 强符号源 =
+    # display/points_page.c（已在册，additive 扩展 [P1]-[P6]）+ display/keybar.c
+    # （已在册，additive 追加 kidpal_keybar_points_slots）；[P7] 消费闭环结构齿扫真实
+    # 工作树（mcp_server.cc / application.cc / protocols 不进 host 构建）+ 登记守。
+    # builder FIRST ACTION：本行登记后本件才进 host runner（TEST 7 登记守防撤）。
+    # **必须置于 host smoke acceptance 之前**（smoke 末位 = 最先执行, 包 0 boundary
+    # 齿注册序守卫）。
+    "../../points_device_ui.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )
