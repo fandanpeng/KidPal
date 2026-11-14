@@ -84,3 +84,17 @@
 **环境事实**：专属图索引 `C-AI-KidPal-pod-m2` ready（2026-11-15 实查，随树增量）。
 
 **human 遗留项**：① K3 合并批（supervisor ESCALATE 需 approve-escalated-merge）；② 2026-11-16 上午设备窗：K3 真实 QQ 加兑查删/歧义/重复 + K4 目标配置与刻度联动，一次跑完；③ K4 合并排 K3 之后；④ 远程发布仍归主线程/human。
+
+## 2026-11-15 · K4 离线收口（叠跑 K3；真机轮待设备窗）
+
+**final 终验**：scope 圈定清单 `delivery/taskpackages/261104-k4-reward-goal-config/test-scope-final.txt`（12 件：本包 2 冻结件 + 11 条 impacted 种子去 1 非测试件 + crossEnd seam + smoke 余量）；final round 1 承重（invocationId `7d3f9c1e-5b2a-4e8f-9a61-c2d4b8f0a7e3`）10 闸全跑零 skip——firmware-build 真编译生成 xiaozhi.bin、unit 110 passed、acceptance 41 passed（firmwareAcceptanceFiles=5 / serverAcceptanceFiles=3）、verifier-evidence-check factOk:true。host 全量 **292 Tests / 3 Failures**（3 红全 p1_auxbar 存量族 AB-A1/A2/A4；292−287=5 = K4G-H1..H5 全 PASS，零新增红）。
+
+**实现**：四枚场景资产（`sc_choco/sc_movie/sc_gift/sc_flag_42_42.bin`，各 268B，纯追加 4A/0M；`sc_wheel` 复用 K2 件）+ `kidpal_points_scene_asset` 五键映射 + `kidpal_points_scale_x` 刻度几何 + render_node 3 槽 strcmp 按名重载 + pointstarget 三扁平动词（target-add/switch/delete）+ SKILL.md 目标管理改写。commit `e87310de`。
+
+**冻结件修正与扩单（如实留痕）**：K4G-A1 不可满足断言、K4G-A7 与 A2 冲突——acceptance-author 最小修正并重冻（revision log 在案）；`read_state` additive 两键致 K0 精确三键断言失效——architect 扩单 APPROVE 后 append `server/tests/test_points_spike_units.py` 并按最小 diff 改（投影 equality + 出厂两键 + receipts 负断言）。commit `63d24c5f` / 扩单在 `e87310de`。
+
+**closeout**：docs-delta.md（零 canonical 变更，理由成立）+ review-packet.md（无 BLOCKING/SHOULD，3 NIT；design-review 文本证据在场；8 条未覆盖面全部如实申报"未跑"）+ verification.json + closeout-check --update-index exit 0。integrator commit `e68713a1`。
+
+**合并门**：`supervisor-verdict-gate` = **ESCALATE**（riskTier high 结构性；evidenceComplete=true，completedRounds=1）。前置升级闸会在合并期因 `deviceOutcome{userVisible:true, kidpal_render_node.cc, K4G-L1}` 缺 device-round-evidence 而拦停——预期。pod-retro 落盘，planner 收尾 commit `98619ffa`。
+
+**未跑 / 下一步**：K4G-L1 真机轮（真实 QQ 目标配置 + 看屏 + 不抢前台 + 时延 + RAM）与 K3 live 轮合并到下一个设备窗；K4 的 ECS 部署轮（points.py/SKILL/四枚资产）归主线程；合并序 K3 → K4，两包合并均需 human 批（supervisor 均 ESCALATE）。
