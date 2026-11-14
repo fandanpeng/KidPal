@@ -1,0 +1,21 @@
+# 261104-k3-qq-points-channel final 相位 test-scope（影响面圈定清单）
+# 合成来源：
+#   ① acceptanceTestsFile（本包冻结验收）= test_qq_points_channel.acceptance.py
+#   ② changeManifest 新增 unit 件（实现面）= test_points_cli_units.py
+#   ③ impactedTestsSeed（7 条，planner Step 1g）：points_ledger_units / points_ledger_core /
+#      points_device_ui / points_e2e_spike / points_spike_units / 261017_openclaw_kidpal_skills /
+#      261013_qq_schedule_write_closure
+#   ④ detect_changes(since=45518ac2) blast-radius 共享 seam：test_perf_k1_roundtrip_latency
+#      （NFR-PERF-4 points 通路时延基线，直接落在本次改动的验面上）
+# 语义：影响面圈定，不默认全量（server/acceptance+server/tests 全部 70+ 件），
+#       也不缩到只剩本包 2 件——纳入种子回归与 NFR 共享 seam。
+server/acceptance/test_qq_points_channel.acceptance.py
+server/tests/test_points_cli_units.py
+server/tests/test_points_ledger_units.py
+server/tests/test_points_spike_units.py
+server/acceptance/test_points_ledger_core.acceptance.py
+server/acceptance/test_points_device_ui.acceptance.py
+server/acceptance/test_points_e2e_spike.acceptance.py
+server/acceptance/test_261017_openclaw_kidpal_skills.acceptance.py
+server/acceptance/test_261013_qq_schedule_write_closure.acceptance.py
+server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py
