@@ -105,8 +105,135 @@
   ],
   "mutationRequired": true,
   "mutationEvidence": {
-    "perAcceptance": [],
-    "note": "Draft 态空骨架；目标边界、切换不扣分和资产装载均须有可转红证据。"
+    "perAcceptance": [
+      {
+        "acceptance": "K4G-A1: 自定义分值 5/200 接受、4/201 拒绝且 state 零写入；入库可激活、asset 恒 sc-flag。回引 S-F6.5-AC2。设计态红 = target-add 子命令缺席",
+        "turnedRed": true,
+        "sensitive": true,
+        "restored": true,
+        "mutation": "add_custom_target 下界 MIN-1（放行 4）（变异后该测试 1 failed；复原后当时仍红=冻结件缺陷（已由 acceptance-author 修正），修后 11 passed）",
+        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_reward_goal_config.acceptance.py",
+        "affectedTest": "K4gA1CustomBounds::test_k4g_a1_custom_points_bounds_5_200"
+      },
+      {
+        "acceptance": "K4G-A2: 四预置逐个禁删、激活中自定义禁删（提示先切换）、非激活可删、未知 id 拒绝，全零写入。回引 S-F6.5-AC4（+AC1 回归）。设计态红 = target-delete 子命令缺席",
+        "turnedRed": true,
+        "sensitive": true,
+        "restored": true,
+        "mutation": "去掉 delete_target 的 active 守卫（变异后 1 failed；复原 1 passed）",
+        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_reward_goal_config.acceptance.py",
+        "affectedTest": "K4gA2DeletePolicy::test_k4g_a2_delete_policy_presets_and_active"
+      },
+      {
+        "acceptance": "K4G-A3: 切换后标量 active_target 单点唯一、list 恰一命中、build_points_home target 四键随切。回引 S-F6.5-AC3。设计态红 = target-switch 子命令缺席",
+        "turnedRed": true,
+        "sensitive": true,
+        "restored": true,
+        "mutation": "set_active_target 的 active_target 改为自赋值（变异后 1 failed；复原 1 passed）",
+        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_reward_goal_config.acceptance.py",
+        "affectedTest": "K4gA3UniqueActive::test_k4g_a3_unique_active_and_home_target_sync"
+      },
+      {
+        "acceptance": "K4G-A4: 切目标不扣分——balance 与分录数不变、revision +1、零新分录、回执回显 balance。回引 S-F6.5-AC3 / S-F6.1-AC3。设计态红 = target-switch 子命令缺席",
+        "turnedRed": true,
+        "sensitive": true,
+        "restored": true,
+        "mutation": "删掉 target-switch 的 revision += 1（变异后 1 failed；复原 1 passed）",
+        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_reward_goal_config.acceptance.py",
+        "affectedTest": "K4gA4NoDeduction::test_k4g_a4_switch_does_not_deduct"
+      },
+      {
+        "acceptance": "K4G-A5: 切后旧分值 redeem 拒绝零写入、新分值成功落负向分录且事由取新目标名。回引 S-F6.3-AC3。设计态红 = target-switch 子命令缺席",
+        "turnedRed": true,
+        "sensitive": true,
+        "restored": true,
+        "mutation": "_resolve_active 恒返回出厂目标（变异后 1 failed；复原 1 passed）",
+        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_reward_goal_config.acceptance.py",
+        "affectedTest": "K4gA5PostSwitchRedeem::test_k4g_a5_post_switch_redeem_new_value_only"
+      },
+      {
+        "acceptance": "K4G-A6: 切目标不改写既有兑换分录 reason 快照。回引 S-F6.5-AC3。设计态红 = target-switch 子命令缺席",
+        "turnedRed": true,
+        "sensitive": true,
+        "restored": true,
+        "mutation": "switch 时改写既有分录 reason（变异后 1 failed；复原 1 passed）",
+        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_reward_goal_config.acceptance.py",
+        "affectedTest": "K4gA6HistorySnapshot::test_k4g_a6_history_reason_snapshot_kept"
+      },
+      {
+        "acceptance": "K4G-A7: 三回执单行 key=value、禁 delta/entry_id、switch 回显 balance；未知/重复/缺值/缺必填旗标 exit 2，语义拒绝 exit 1 + stderr + stdout 无成功回执。回引 S-F6.4-AC4。设计态红 = target 三子命令缺席",
+        "turnedRed": true,
+        "sensitive": true,
+        "restored": true,
+        "mutation": "target-add 回执插入 entry_id=（变异后 1 failed；复原后当时仍红=与 A2 的冻结件冲突（已由 acceptance-author 修正），修后 11 passed）",
+        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_reward_goal_config.acceptance.py",
+        "affectedTest": "K4gA7ReceiptsAndErrors::test_k4g_a7_target_receipts_no_delta_entry_id"
+      },
+      {
+        "acceptance": "K4G-A8: target-add / target-switch 同 command_id 重放返首次结果、不新增目标、不重复 bump revision。回引 S-F6.5-AC2 / S-F6.4-AC4。设计态红 = target 子命令缺席",
+        "turnedRed": true,
+        "sensitive": true,
+        "restored": true,
+        "mutation": "关掉 add_custom_target 的 command_id 重放分支（变异后 1 failed；复原 1 passed）",
+        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_reward_goal_config.acceptance.py",
+        "affectedTest": "K4gA8Idempotency::test_k4g_a8_target_command_id_idempotent"
+      },
+      {
+        "acceptance": "K4G-A9: SKILL.md 旧硬阻断句消失、frontmatter 覆盖目标管理、§2 含三 target 动词、§5 含四类目标错误、「先 targets 拿 id 不自编」纪律。回引 S-F6.5 / S-F6.4-AC4。设计态红 = SKILL.md 旧阻断句仍在",
+        "turnedRed": true,
+        "sensitive": true,
+        "restored": true,
+        "mutation": "SKILL §8 写回旧硬阻断句（变异后 1 failed；复原 1 passed）",
+        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_reward_goal_config.acceptance.py",
+        "affectedTest": "K4gA9SkillTargetManagement::test_k4g_a9_skill_md_target_management"
+      },
+      {
+        "acceptance": "K4G-H1: 五键 asset→bin 名映射全覆盖；sc-castle/未知/空串/NULL 返回 NULL 不猜图。回引 S-F6.5-AC1/AC2。设计态红 = kidpal_points_scene_asset 未落",
+        "turnedRed": true,
+        "sensitive": true,
+        "restored": true,
+        "mutation": "kidpal_points_scene_asset(\"sc-wheel\") 返回 NULL（变异后 H1=FAIL；重编还原后 H1..H5 全 PASS）",
+        "command": "wsl -d Ubuntu-24.04 -- bash -c \"cd C:/AI/KidPal-pod-m2/firmware/main/test/host_app && ./espidf_wsl.sh build\" && ./build/host_infra_test.elf",
+        "affectedTest": "host TEST 1 (K4G-H1)"
+      },
+      {
+        "acceptance": "K4G-H2: 5 与 200 两档刻度几何（0/target/越标延伸）+ 非法入参 -1 + progress 越目标同页结构回归。回引 S-F6.5-AC3 / S-F6.1-AC2。设计态红 = kidpal_points_scale_x 未落",
+        "turnedRed": true,
+        "sensitive": true,
+        "restored": true,
+        "mutation": "刻度分母改 target+1（变异后 H2=FAIL；重编还原后全 PASS）",
+        "command": "wsl -d Ubuntu-24.04 -- bash -c \"cd C:/AI/KidPal-pod-m2/firmware/main/test/host_app && ./espidf_wsl.sh build\" && ./build/host_infra_test.elf",
+        "affectedTest": "host TEST 2 (K4G-H2)"
+      },
+      {
+        "acceptance": "K4G-H3: 四枚新 bin + sc_wheel 只读：长 268、magic KAP1、format1、42×42、stride6、墨位 0<ink<全墨。回引 S-F6.5-AC1/AC2、arch §5.5.2。设计态红 = 四枚新 bin 未产出",
+        "turnedRed": true,
+        "sensitive": true,
+        "restored": true,
+        "mutation": "翻转 sc_flag_42_42.bin magic 首字节（变异后 H3=FAIL；复原 H3=PASS（无需重编））",
+        "command": "wsl -d Ubuntu-24.04 -- bash -c \"cd C:/AI/KidPal-pod-m2/firmware/main/test/host_app && ./espidf_wsl.sh build\" && ./build/host_infra_test.elf",
+        "affectedTest": "host TEST 3 (K4G-H3)"
+      },
+      {
+        "acceptance": "K4G-H4: 出厂态回归（默认游乐场 40 / sc-wheel / 五逻辑标识可解析可映射）——must-stay-green。回引 S-F6.5-AC1 / S-F6.1-AC2",
+        "turnedRed": true,
+        "sensitive": true,
+        "restored": true,
+        "mutation": "kidpal_points_scene_asset(\"sc-wheel\") 返回 NULL（与 H1 同一变异；变异后 H4=FAIL；还原后全 PASS）",
+        "command": "wsl -d Ubuntu-24.04 -- bash -c \"cd C:/AI/KidPal-pod-m2/firmware/main/test/host_app && ./espidf_wsl.sh build\" && ./build/host_infra_test.elf",
+        "affectedTest": "host TEST 4 (K4G-H4)"
+      },
+      {
+        "acceptance": "K4G-H5: host 注册序（本件在 smoke 前）、points_page.c 在册、两 seam 头/实现落点、render_node 用映射+strcmp 且无 slot->name == asset。回引 S-F6.5-AC3。设计态红 = CMakeLists 未登记 / seam 未落",
+        "turnedRed": true,
+        "sensitive": true,
+        "restored": true,
+        "mutation": "槽命中判据改回 slot->name == asset（去掉 strcmp）（变异后 H5=FAIL；复原 H5=PASS（源扫，无需重编））",
+        "command": "wsl -d Ubuntu-24.04 -- bash -c \"cd C:/AI/KidPal-pod-m2/firmware/main/test/host_app && ./espidf_wsl.sh build\" && ./build/host_infra_test.elf",
+        "affectedTest": "host TEST 5 (K4G-H5)"
+      }
+    ],
+    "note": "逐 acceptance 变异证据由 builder 真实执行（13 处变异覆盖 14 个 id，每处还原并复跑）；A1/A7 复原后当时的红因是冻结件自身缺陷，已由 acceptance-author 修正并重冻；planner 按 acceptance[] 原文串程序化回填。"
   },
   "crossEnd": {
     "counterparts": [
@@ -139,7 +266,8 @@
     "firmware/main/display/points_page.h",
     "firmware/main/display/kidpal_render_node.cc",
     "firmware/main/test/reward_goal_config.acceptance.c",
-    "firmware/main/test/host_app/main/CMakeLists.txt"
+    "firmware/main/test/host_app/main/CMakeLists.txt",
+    "server/tests/test_points_spike_units.py"
   ],
   "impactedTestsSeed": [
     {
@@ -191,6 +319,11 @@
       "path": "device-round-evidence.md",
       "kind": "live-manual",
       "note": "render_node.cc 属 host 不可编登记路径：四预置 + sc-flag 逐一目检、切目标时其他页不抢前台、积分页原地刷新并记录与 NFR-PERF-4 同款时延字段、RAM 资源预算实测。"
+    },
+    {
+      "path": "server/tests/test_points_spike_units.py",
+      "kind": "regression",
+      "note": "K0 单元基线：read_state additive 两键使 test_missing_file_is_zero_state 的精确三键 equality 失效；按 architect 扩单评估改投影 equality + 出厂两键值 + receipts 不外泄负断言，只动该测试体。"
     }
   ],
   "uiux": {
@@ -318,5 +451,5 @@
       "note": "K4 只产四场景与 sc-flag，K5 后序在同一管线补 ic-coin 与书封，避免并行修改生成器与资产清单。"
     }
   ],
-  "notes": "影响面机械辅证：架构 §5.5.2 与 tools/asset-pipeline 实读确认 gen_assets.mjs→gen_art_spiffs.mjs→firmware/main/assets/spiffs_root 的既有产线；契约 target.asset 闭集为 sc-choco/sc-movie/sc-wheel/sc-gift/sc-flag，V9 已把游乐场定稿为 sc-wheel，不得回用 sc-castle。相邻冻结锚：K1 目标存储、K2 默认 40、K3 QQ skill、ui_art_integration KAP1 格式均保留；新增资产 additive，不新增字体/分区，不为自定义奖励名猜图。K4 等 K1–K3 merged，mergeOrder=75。 2026-11-15 Step 1g architect 预评 + planner 裁定：渲染落点必须扩 firmware/main/display/kidpal_render_node.cc（host 不可编 → deviceOutcome userVisible:true）；资产只新增 4 枚（sc_wheel_42_42 是 K2 已交付件），落盘名按命名律 sc_*_42_42.bin；scripts/** 删除（skill 无脚本）；CLI 用扁平动词 target-add/target-switch/target-delete + 既有 targets；渲染缓存取 3 槽 + strcmp 重载；v9 母版五符号在位，docs/ui/** 不进 manifest。"
+  "notes": "影响面机械辅证：架构 §5.5.2 与 tools/asset-pipeline 实读确认 gen_assets.mjs→gen_art_spiffs.mjs→firmware/main/assets/spiffs_root 的既有产线；契约 target.asset 闭集为 sc-choco/sc-movie/sc-wheel/sc-gift/sc-flag，V9 已把游乐场定稿为 sc-wheel，不得回用 sc-castle。相邻冻结锚：K1 目标存储、K2 默认 40、K3 QQ skill、ui_art_integration KAP1 格式均保留；新增资产 additive，不新增字体/分区，不为自定义奖励名猜图。K4 等 K1–K3 merged，mergeOrder=75。 2026-11-15 Step 1g architect 预评 + planner 裁定：渲染落点必须扩 firmware/main/display/kidpal_render_node.cc（host 不可编 → deviceOutcome userVisible:true）；资产只新增 4 枚（sc_wheel_42_42 是 K2 已交付件），落盘名按命名律 sc_*_42_42.bin；scripts/** 删除（skill 无脚本）；CLI 用扁平动词 target-add/target-switch/target-delete + 既有 targets；渲染缓存取 3 槽 + strcmp 重载；v9 母版五符号在位，docs/ui/** 不进 manifest。 [扩单 2026-11-15] changeManifest append server/tests/test_points_spike_units.py——依据 = architect 扩单评估（APPROVE）：K4 read_state additive 两键使 K0 存量精确三键 equality 失效，按 K1 同文件扩单先例改断言形态，不改实现、不改冻结件；硬边界 = 只许改 test_missing_file_is_zero_state 一个测试体 + docstring。"
 }

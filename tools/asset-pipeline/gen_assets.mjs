@@ -449,6 +449,15 @@ jobs.push({ name: 'ic_bell_13', svg: svgUse('ic-bell'), w: 13, h: 13, rotate: 0,
 jobs.push({ name: 'ic_coin_36_36', svg: svgUse('ic-coin'), w: 36, h: 36, rotate: 0, kind: 'svg' });
 jobs.push({ name: 'pt_cat_34_28', svg: svgUse('pt-cat'), w: 34, h: 28, rotate: 0, kind: 'svg' });
 jobs.push({ name: 'sc_wheel_42_42', svg: svgUse('sc-wheel'), w: 42, h: 42, rotate: 0, kind: 'svg' });
+// K4 奖励场景四预置美术（TaskPackage 261104-k4-reward-goal-config）：
+//   契约 §1.3⑦ asset 闭集余下四键（sc-choco / sc-movie / sc-gift / sc-flag）各 42×42
+//   直出，与 sc_wheel_42_42 同尺寸同 rotate 0——进度线场景标位一张同一把尺，切换目标
+//   不跳尺寸。sc-flag 同时承载自定义奖励的通用标记图（不做逐个定制美术）。
+//   母版符号 = docs/ui/kidpal-ui-design-v9.html 的 sc-* symbol（V9 已定稿，母版只读）。
+jobs.push({ name: 'sc_choco_42_42', svg: svgUse('sc-choco'), w: 42, h: 42, rotate: 0, kind: 'svg' });
+jobs.push({ name: 'sc_movie_42_42', svg: svgUse('sc-movie'), w: 42, h: 42, rotate: 0, kind: 'svg' });
+jobs.push({ name: 'sc_gift_42_42', svg: svgUse('sc-gift'), w: 42, h: 42, rotate: 0, kind: 'svg' });
+jobs.push({ name: 'sc_flag_42_42', svg: svgUse('sc-flag'), w: 42, h: 42, rotate: 0, kind: 'svg' });
 
 // ── 10. 主循环：栅格化 → 阈值 → 打包/切片 → 落盘 ──
 const results = [];

@@ -1,6 +1,6 @@
 ---
 name: "kidpal-points-write"
-description: "家长经 QQ 要求给孩子加/扣积分、查账、删除误记或兑换奖励时 (KidPal)：一切账本动作只经 points.py CLI（唯一 writer）执行，按单行 key=value 回执如实回复；命令说不清就一次性普通文本报错，绝不追问卡死。"
+description: "家长经 QQ 要求给孩子加/扣积分、查账、删除误记、兑换奖励，或新增/切换/删除奖励目标时 (KidPal)：一切账本动作只经 points.py CLI（唯一 writer）执行，按单行 key=value 回执如实回复；命令说不清就一次性普通文本报错，绝不追问卡死。"
 ---
 
 # KidPal 积分家长通道（QQ 一句话 → 一条 CLI 命令 → 如实回执）
@@ -26,7 +26,7 @@ KIDPAL_POINTS_STATE=/opt/kidpal/points/state.json /opt/kidpal/venv/bin/python3 -
 - 账本文件本体（`/opt/kidpal/points/state.json`）与同级锁文件只归 CLI 一支笔；本 skill 从不
   直接碰这两个文件，也不自己抄一份余额。
 
-## 2. 六个子命令与回执字段
+## 2. 九个子命令与回执字段
 
 回执恒为**单行 key=value**（空白分词）；一行就是一次命令的完整结果，没有第二行花活。
 
@@ -38,6 +38,9 @@ KIDPAL_POINTS_STATE=/opt/kidpal/points/state.json /opt/kidpal/venv/bin/python3 -
 | `show` | `show` | `balance` `revision` `entries_total` `active_target_id` `active_target_name` `active_target_points` |
 | `recent` | `recent [--limit N]`（缺省 5，1–50） | 每条一行：`index` **与** `entry_id` 同行，另带 `delta` `balance_before` `balance_after` `reason` `occurred_at` |
 | `targets` | `targets` | 每个目标一行：`id` `name` `points` `asset` |
+| `target-add` | `target-add --name 看海 --points 60 --command-id <ID>` | `target_id` `name` `points` `revision` `command_id`（**不带** `delta`/`entry_id`——这不是记账） |
+| `target-switch` | `target-switch --target-id <ID> --command-id <ID>` | `target_id` `active_target_id` `balance`（= 没扣分的可对账事实） `revision` `command_id` |
+| `target-delete` | `target-delete --target-id <ID> --command-id <ID>` | `target_id` `deleted=true` `revision` `command_id` |
 
 规则要点：
 
@@ -98,6 +101,10 @@ qq:<yyyymmddHHMMSS>:<这次指令内容的短哈希>
 | 兑换金额不等于当前激活目标分值 | 「现在激活的奖励要 40 分才能兑，说别的数兑不了。这条我没记。」 |
 | 余额不够兑换 | 「还差 N 分才够兑，现在没扣分。」 |
 | exit 2（用法/环境错误） | 「这条命令我这边没说对，没动账本。请再说一次：加几分、为什么。」 |
+| 试图删除预置场景 | 「巧克力、看电影、游乐场、礼物是预置场景，不可删；只有自定义奖励能删。这条我没动。」 |
+| 试图删除正在激活中的自定义目标 | 「这个目标正在用，先切换到别的目标再删。这条我没动。」 |
+| 自定义目标分值不在 5–200 之间 | 「自定义奖励的分值要在 5–200 之间（整数），比如『加个看海，60 分』。这条我没记。」 |
+| 目标名为空 | 「自定义奖励要带一个名字，比如『新增目标 看海 60 分』。这条我没记。」 |
 
 **禁止**：不落账却回「好了」、不查账却凭对话记忆报余额、把 stderr 的原始报错整段倒给家长。
 
@@ -125,4 +132,22 @@ qq:<yyyymmddHHMMSS>:<这次指令内容的短哈希>
 - 不提供惩罚性扣分入口（`add` 只加分；减分只发生在兑换与删除重算）。
 - 设备显示由 front 网关按账本 revision 自动刷新（QQ 到账只更新数据、不抢前台），**你不要**在
   回复里塞任何设备显示块、也不要宣称「已经让孩子看到了」——设备行为以实际在线状态为准。
-- 目标的新增 / 切换 / 删除不在本 skill 面（归目标配置通道）；家长要改目标时如实说这轮没接。
+- 目标的新增 / 切换 / 删除同属本 skill（见 §9）：家长要改目标时就地执行目标子命令，不必另找通道。
+
+## 9. 目标配置（S-F6.5：预置四场景 + 自定义 5–200 分）
+
+出厂预置四项恒在、不可删：巧克力 20 分、看电影 30 分、**游乐场 40 分（出厂默认激活）**、
+礼物 50 分。设备端不设目标——家长要改目标只能经这里。
+
+- 家长说「给孩子加个看海 60 分的奖励」→ `target-add --name 看海 --points 60 --command-id <ID>`。
+  自定义奖励分值只接受 **5–200 的整数**（范围由 CLI 单源校验，你不要自己预判或改写数字）。
+- 家长说「把这周的目标换成看电影」→ **先 `targets` 读出目标列表，拿现成的 `id`，
+  切目标前先取 id，不要自己编 target id**（id 由执行器生成，模型与家长都不该发明）；
+  再 `target-switch --target-id <那个 id> --command-id <ID>`。
+- 家长说「把看海删了」→ 同样先 `targets` 拿 id，再
+  `target-delete --target-id <那个 id> --command-id <ID>`。预置场景删不掉；正在激活中的
+  自定义目标要先切到别的目标再删（AC4）。
+- **切目标不扣分**：`target-switch` 回执里的 `balance` 就是切完之后的余额——把它念给家长，
+  不要自己算、也不要说「已兑换」。之后兑换只认新的激活目标分值（§6）。
+- 目标命令回执同样带 `revision` 与 `command_id`；同一条家长消息重试沿用同一个
+  `command_id`，重放返回首次结果（不会攒出重复目标、不会把版本号刷两遍）。

@@ -414,18 +414,22 @@ def _load_full(path) -> dict:
 
 
 def read_state(path) -> dict:
-    """读取账本状态：{"revision", "balance", "entries"}（entries 时间倒序）。
+    """读取账本状态：{"revision", "balance", "entries", "custom_targets", "active_target"}。
 
-    文件不存在 -> 零状态（revision 0 / balance 0 / entries []）。
+    文件不存在 -> 零状态（revision 0 / balance 0 / entries [] / 出厂激活目标）。
     文件存在但不可解析 / 形状违约 -> ValueError（绝不静默当空账覆盖真账本——数据丢失面）。
     `balance` 恒由分录重算（磁盘上的 balance 只是副本，不是权威）。逐条前后余额按持久值
     返回（写入路径负责重算；读取侧不在读时「修正」陈旧链，以免掩盖写入缺陷）。
+    K4 追加两键（**纯 additive**，K0/K1 三键消费方零影响）：`custom_targets` = 自定义
+    目标列表（只读副本）、`active_target` = 当前激活目标 id（唯一激活 = 标量单点）。
     """
     full = _load_full(path)
     return {
         "revision": full["revision"],
         "balance": full["balance"],
         "entries": full["entries"],
+        "custom_targets": [dict(t) for t in full["custom_targets"]],
+        "active_target": full["active_target"],
     }
 
 
@@ -793,6 +797,63 @@ def delete_entry(path, entry_id=None, *, index=None, command_id=None) -> dict:
 # 目标配置存储（S-F6.5 AC1/AC2/AC4 存储半；OQ-2/OQ-3）                           #
 # --------------------------------------------------------------------------- #
 
+# 目标命令回执在 state.receipts 里的键命名空间（K4；与 add/redeem 的裸 command_id、
+# delete 的 "delete:" 前缀三族互不串味——前缀隔离保证另一族重放查询永远看不到本族回执）。
+_TARGET_RECEIPT_PREFIX = "target:"
+
+
+def _target_receipt_key(command_id: str) -> str:
+    return _TARGET_RECEIPT_PREFIX + command_id
+
+
+def _replay_target_receipt(full: dict, command_id, kind=None):
+    """同 command_id 的目标命令重放 -> 首次结果；无回执 / 形状不符 / kind 不符 -> None。
+
+    形状守卫：值必须带 `kind` 键（裸 command_id 被 add/redeem 分录回执占用时绝不
+    当目标回执读）；kind 不符（同一 command_id 先 target-add 后 target-delete）= 不是
+    同一命令的重试，退回普通执行而不是抛一个错位的「首次结果」。
+    """
+    if command_id is None:
+        return None
+    stored = full["receipts"].get(_target_receipt_key(command_id))
+    if not isinstance(stored, dict) or "kind" not in stored:
+        return None
+    if kind is not None and stored.get("kind") != kind:
+        return None
+    if not isinstance(stored.get("target"), dict):
+        return None
+    return dict(stored)
+
+
+def _store_target_receipt(full: dict, command_id, receipt: dict) -> None:
+    """记录目标命令回执（**只许在 `_critical` 内调用**）。
+
+    病态撞键守卫：若该前缀键已被非目标回执占用（调用方 command_id 字面量恰好以
+    "target:" 开头且该裸键已落 add/redeem 分录回执），绝不覆盖——分录回执的传输
+    幂等优先，本条目标回执降级为不持久（下次重放即普通执行，与 delete 同款处理）。
+    """
+    if command_id is None:
+        return
+    key = _target_receipt_key(command_id)
+    existing = full["receipts"].get(key)
+    if isinstance(existing, dict) and "kind" not in existing:
+        log.warning(
+            "points_target_receipt_key_collision corr_id=%s command_id=%s",
+            uuid.uuid4().hex, command_id)
+        return
+    full["receipts"][key] = dict(receipt)
+
+
+def _target_command_receipt(path, command_id, kind=None):
+    """只读查询：该 command_id 已记录的目标命令回执（无 -> None）。
+
+    写路径未改 K1 三函数的返回形状（既有 unit 逐字断言），CLI 层据本查询取回
+    权威 revision：首写 = 本次 bump 后的版本；重放 = 首次写入的版本（同一回执单源）。
+    """
+    if command_id is None:
+        return None
+    return _replay_target_receipt(_load_full(path), command_id, kind)
+
 
 def get_active_target(path) -> dict:
     """当前激活目标（id/name/points/asset 四键）；出厂态（无 state 文件）= 游乐场 40。"""
@@ -806,11 +867,13 @@ def list_targets(path) -> list:
     return _all_targets(full)
 
 
-def add_custom_target(path, name, points, *, now=None) -> dict:
+def add_custom_target(path, name, points, *, now=None, command_id=None) -> dict:
     """新增自定义奖励目标（OQ-3：name 非空 str；points 为 5–200 正整数）。
 
     id 由执行器生成（模型不产）、asset 恒 "sc-flag"（通用标记图）、revision +1。
     越界 / 畸形 raise ValueError 且**不写账**。
+    command_id（keyword-only，缺省 None = 无传输幂等语义）：同 id 重放 -> 返回首次
+    创建的同一目标（不新增、不重复 bump revision）——QQ 重试不会攒出重复目标。
     """
     if not isinstance(name, str) or not name.strip():
         raise ValueError("add_custom_target name must be a non-empty string")
@@ -822,9 +885,18 @@ def add_custom_target(path, name, points, *, now=None) -> dict:
             f"add_custom_target points must be within "
             f"{CUSTOM_TARGET_MIN_POINTS}-{CUSTOM_TARGET_MAX_POINTS}, got {points}")
     _coerce_now(now)
+    command_id = _coerce_command_id(command_id)
 
     with _critical(path):
         full = _load_full(path)
+        if command_id is not None:
+            replayed = _replay_target_receipt(full, command_id, "target-add")
+            if replayed is not None:
+                log.info(
+                    "points_target_add_replay corr_id=%s command_id=%s target_id=%s "
+                    "revision=%d", uuid.uuid4().hex, command_id,
+                    replayed["target"].get("id"), int(full["revision"]))
+                return dict(replayed["target"])
         target = {
             "id": _new_target_id(),
             "name": name.strip(),
@@ -833,6 +905,12 @@ def add_custom_target(path, name, points, *, now=None) -> dict:
         }
         full["custom_targets"] = list(full["custom_targets"]) + [target]
         full["revision"] = int(full["revision"]) + 1
+        _store_target_receipt(full, command_id, {
+            "id": target["id"],
+            "kind": "target-add",
+            "target": dict(target),
+            "revision": int(full["revision"]),
+        })
         _write_state(path, full)
         revision = int(full["revision"])
 
@@ -842,26 +920,45 @@ def add_custom_target(path, name, points, *, now=None) -> dict:
     return dict(target)
 
 
-def set_active_target(path, target_id, *, now=None) -> dict:
+def set_active_target(path, target_id, *, now=None, command_id=None) -> dict:
     """切换激活目标：revision +1、不产生任何分录（切目标不自动扣分）；未知 id 拒绝。
 
     历史兑换分录的 reason 快照是既有事实，切换不改写（arch 场景⑥E / K1L-E4）。
+    command_id（keyword-only，缺省 None = 无传输幂等语义）：同 id 重放 -> 返回首次
+    切换结果、不重复 bump revision（QQ 重试不会把版本号刷两遍）。
     """
     if not isinstance(target_id, str) or not target_id.strip():
         raise ValueError(
             f"set_active_target target_id must be a non-empty string, got {target_id!r}")
     _coerce_now(now)
+    command_id = _coerce_command_id(command_id)
 
     with _critical(path):
         full = _load_full(path)
+        if command_id is not None:
+            replayed = _replay_target_receipt(full, command_id, "target-switch")
+            if replayed is not None:
+                log.info(
+                    "points_target_switch_replay corr_id=%s command_id=%s target_id=%s "
+                    "revision=%d", uuid.uuid4().hex, command_id,
+                    replayed["target"].get("id"), int(full["revision"]))
+                return dict(replayed["target"])
         known_ids = {t["id"] for t in _all_targets(full)}
         if target_id not in known_ids:
             raise ValueError(f"set_active_target unknown target id {target_id!r}")
         full["active_target"] = target_id
         full["revision"] = int(full["revision"]) + 1
+        active = _resolve_active(full)
+        _store_target_receipt(full, command_id, {
+            "id": active["id"],
+            "kind": "target-switch",
+            "target": dict(active),
+            "active_target_id": active["id"],
+            "balance": sum(int(e["delta"]) for e in full["entries"]),
+            "revision": int(full["revision"]),
+        })
         _write_state(path, full)
         revision = int(full["revision"])
-        active = _resolve_active(full)
 
     log.info(
         "points_target_active corr_id=%s target_id=%s revision=%d",
@@ -869,27 +966,47 @@ def set_active_target(path, target_id, *, now=None) -> dict:
     return active
 
 
-def delete_target(path, target_id, *, now=None) -> dict:
-    """删除自定义目标（非激活）：revision +1；预置 / 激活中 / 未知 id 一律拒绝（OQ-2）。"""
+def delete_target(path, target_id, *, now=None, command_id=None) -> dict:
+    """删除自定义目标（非激活）：revision +1；预置 / 激活中 / 未知 id 一律拒绝（OQ-2）。
+
+    command_id（keyword-only，缺省 None = 无传输幂等语义）：同 id 重放 -> 返回首次
+    删除结果（deleted=true 与首次 revision 原样）、不再删除、不重复 bump revision。
+    """
     if not isinstance(target_id, str) or not target_id.strip():
         raise ValueError(
             f"delete_target target_id must be a non-empty string, got {target_id!r}")
     _coerce_now(now)
+    command_id = _coerce_command_id(command_id)
 
     with _critical(path):
         full = _load_full(path)
+        if command_id is not None:
+            replayed = _replay_target_receipt(full, command_id, "target-delete")
+            if replayed is not None:
+                log.info(
+                    "points_target_delete_replay corr_id=%s command_id=%s target_id=%s",
+                    uuid.uuid4().hex, command_id, replayed["target"].get("id"))
+                return {"id": replayed["target"].get("id"), "deleted": True,
+                        "revision": int(replayed.get("revision", full["revision"]))}
         if target_id in {t["id"] for t in PRESET_TARGETS}:
             raise ValueError(
                 f"delete_target refuses preset target {target_id!r} (presets are constants)")
         if target_id == full["active_target"]:
             raise ValueError(
                 f"delete_target refuses active target {target_id!r} "
-                "(switch to another target first)")
+                "(switch to another target first / 先切换到其他目标再删)")
         remaining = [t for t in full["custom_targets"] if t["id"] != target_id]
         if len(remaining) == len(full["custom_targets"]):
             raise ValueError(f"delete_target unknown target id {target_id!r}")
+        removed = next(t for t in full["custom_targets"] if t["id"] == target_id)
         full["custom_targets"] = remaining
         full["revision"] = int(full["revision"]) + 1
+        _store_target_receipt(full, command_id, {
+            "id": target_id,
+            "kind": "target-delete",
+            "target": dict(removed),
+            "revision": int(full["revision"]),
+        })
         _write_state(path, full)
         revision = int(full["revision"])
 
@@ -1078,6 +1195,9 @@ def _cli_usage(stream) -> None:
         "  python -m gateway.points show\n"
         "  python -m gateway.points recent [--limit N]             (default 5, 1-50)\n"
         "  python -m gateway.points targets\n"
+        "  python -m gateway.points target-add --name TEXT --points N --command-id ID\n"
+        "  python -m gateway.points target-switch --target-id ID --command-id ID\n"
+        "  python -m gateway.points target-delete --target-id ID --command-id ID\n"
         f"env: {POINTS_STATE_ENV} = points state file path (required)")
 
 
@@ -1260,6 +1380,79 @@ def _cmd_targets(state_path: str, argv) -> int:
     return 0
 
 
+# --------------------------------------------------------------------------- #
+# 目标配置子命令（K4；扁平动词——模型说得出、家长念得出）                          #
+# 回执恒单行 key=value，且**禁带 delta= / entry_id=**（防模型误读为记账）：       #
+# target-add     target_id= name= points= revision= command_id=              #
+# target-switch  target_id= active_target_id= balance= revision= command_id= #
+# target-delete  target_id= deleted=true revision= command_id=               #
+# --------------------------------------------------------------------------- #
+
+
+def _receipt_revision(state_path: str, command_id, receipt: dict) -> int:
+    """权威版本号：优先取本 command_id 的回执（首次写入时点），否则取当前状态。"""
+    revision = receipt.get("revision") if isinstance(receipt, dict) else None
+    if revision is None:
+        revision = read_state(state_path)["revision"]
+    return int(revision)
+
+
+def _cmd_target_add(state_path: str, argv) -> int:
+    """`target-add --name TEXT --points N --command-id ID`：预置场景外的自定义奖励。
+
+    5–200 正整数的范围校验**不在此重复**——单源 = add_custom_target（越界 ValueError
+    -> exit 1、锁外零写入）；本函数只做旗标解析与回执装配。
+    """
+    opts = _parse_flags(argv, ("--name", "--points", "--command-id"))
+    _require(opts, ("--name", "--points", "--command-id"))
+    command_id = opts["--command-id"]
+    target = add_custom_target(
+        state_path, opts["--name"], _parse_cli_int(opts["--points"]),
+        command_id=command_id)
+    receipt = _target_command_receipt(state_path, command_id, "target-add") or {}
+    _emit(sys.stdout,
+          f"points target-add ok target_id={_cli_value(target['id'])} "
+          f"name={_cli_value(target['name'])} points={int(target['points'])} "
+          f"revision={_receipt_revision(state_path, command_id, receipt)} "
+          f"command_id={_cli_value(command_id)}")
+    return 0
+
+
+def _cmd_target_switch(state_path: str, argv) -> int:
+    """`target-switch --target-id ID --command-id ID`：切换唯一激活目标（零分录）。
+
+    回执回显 **balance**——切换不扣分是家长可对账的事实，模型不得自行推断余额。
+    """
+    opts = _parse_flags(argv, ("--target-id", "--command-id"))
+    _require(opts, ("--target-id", "--command-id"))
+    command_id = opts["--command-id"]
+    active = set_active_target(state_path, opts["--target-id"], command_id=command_id)
+    receipt = _target_command_receipt(state_path, command_id, "target-switch") or {}
+    balance = receipt.get("balance")
+    if balance is None:
+        balance = read_state(state_path)["balance"]
+    _emit(sys.stdout,
+          f"points target-switch ok target_id={_cli_value(active['id'])} "
+          f"active_target_id={_cli_value(active['id'])} balance={int(balance)} "
+          f"revision={_receipt_revision(state_path, command_id, receipt)} "
+          f"command_id={_cli_value(command_id)}")
+    return 0
+
+
+def _cmd_target_delete(state_path: str, argv) -> int:
+    """`target-delete --target-id ID --command-id ID`：删除自定义目标（非激活）。"""
+    opts = _parse_flags(argv, ("--target-id", "--command-id"))
+    _require(opts, ("--target-id", "--command-id"))
+    command_id = opts["--command-id"]
+    result = delete_target(state_path, opts["--target-id"], command_id=command_id)
+    receipt = _target_command_receipt(state_path, command_id, "target-delete") or {}
+    _emit(sys.stdout,
+          f"points target-delete ok target_id={_cli_value(result['id'])} deleted=true "
+          f"revision={_receipt_revision(state_path, command_id, receipt)} "
+          f"command_id={_cli_value(command_id)}")
+    return 0
+
+
 _CLI_COMMANDS = {
     "add": _cmd_add,
     "redeem": _cmd_redeem,
@@ -1267,6 +1460,9 @@ _CLI_COMMANDS = {
     "show": _cmd_show,
     "recent": _cmd_recent,
     "targets": _cmd_targets,
+    "target-add": _cmd_target_add,
+    "target-switch": _cmd_target_switch,
+    "target-delete": _cmd_target_delete,
 }
 
 

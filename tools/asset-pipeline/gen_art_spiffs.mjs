@@ -4,7 +4,7 @@
  *
  * 上游母版纪律：单一母版 = tools/simulator/LvglWindowsSimulator/assets/assets.c（由
  * gen_assets.mjs 从 V3 设计稿生成，阈值化 RGB565，唯一值集 ⊆ {0x0000, 0xFFFF}）。
- * 本脚本把 78 枚闭集白名单资产逐枚从 RGB565 转成 KAP1 1bpp 位图文件，落入
+ * 本脚本把 82 枚闭集白名单资产逐枚从 RGB565 转成 KAP1 1bpp 位图文件，落入
  * firmware/main/assets/spiffs_root/。文件名 = 上游管线资产名 + ".bin"。
  *
  * KAP1 冻结格式（格式文档随 260915 归档迁入
@@ -23,7 +23,7 @@
  * 任何非阈值化中间值 = 转换错误（拒绝静默）。
  *
  * 用法：node tools/asset-pipeline/gen_art_spiffs.mjs
- * 输出：firmware/main/assets/spiffs_root/<name>.bin（78 枚闭集）
+ * 输出：firmware/main/assets/spiffs_root/<name>.bin（82 枚闭集）
  */
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -34,7 +34,7 @@ const REPO       = join(__dirname, '..', '..');
 const ASSETS_C   = join(REPO, 'tools', 'simulator', 'LvglWindowsSimulator', 'assets', 'assets.c');
 const OUT_DIR    = join(REPO, 'firmware', 'main', 'assets', 'spiffs_root');
 
-/* 78 枚闭集白名单（闭集单源 = 本脚本 WHITELIST；原 acceptance artt_expected[] 已于
+/* 82 枚闭集白名单（闭集单源 = 本脚本 WHITELIST；原 acceptance artt_expected[] 已于
  * 260915 归档（见 firmware/main/test/acceptance/archive/README.md），闭集不再由验收件
  * 承载。条目名 = assets.h 符号名 = 产出 <name>.bin 根名） */
 const WHITELIST = [
@@ -75,6 +75,11 @@ const WHITELIST = [
    * 母版符号 = assets.c 的 ic_coin_36_36 / pt_cat_34_28 / sc_wheel_42_42（V9 v9 段
    * 新增，gen_assets.mjs 同名 job 生成）；本白名单为纯追加，既有 75 枚零搅动。 */
   'ic_coin_36_36', 'pt_cat_34_28', 'sc_wheel_42_42',
+  /* K4 奖励场景四预置（TaskPackage 261104-k4-reward-goal-config，2026-11-15）：
+   * 契约 §1.3⑦ asset 闭集余下四键各 42×42 KAP1 件（sc-flag 兼自定义通用标记图）。
+   * 母版符号 = assets.c 的 sc_choco_42_42 / sc_movie_42_42 / sc_gift_42_42 /
+   * sc_flag_42_42（gen_assets.mjs 同名 job 生成）；本白名单为纯追加，既有 78 枚零搅动。 */
+  'sc_choco_42_42', 'sc_movie_42_42', 'sc_gift_42_42', 'sc_flag_42_42',
 ];
 
 const KAP1_MAGIC_LE = 0x3150414b; // "KAP1"

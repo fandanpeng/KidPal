@@ -113,6 +113,12 @@ REVISION LOG
              frontmatter/§2/§5 未覆盖目标管理。K1 存储层（add_custom_target /
              set_active_target / delete_target / 兑换只认激活分值）已绿，本件对它们
              做行为复核（非空过：断言的是 K4 新增的 CLI 面与回执形状）。
+  2026-11-15 冻结件自矛盾修正（planner 独立核实 2 failed；不改变验收语义强度）：
+             K4G-A1 删除与被测行为无关的 `assertNotEqual(before, None)`（空新建目录的
+             快照必为 None，任何正确实现都不可能满足），改为 target-add 成功后断言
+             state 已落盘；K4G-A7 删除对象改为本次 target-add 出的**非激活**自定义目标
+             （原用例切到该自定义后再断言删除 exit 0，与 K4G-A2 / S-F6.5-AC4「激活中
+             禁删」相互矛盾），switch 回执与禁 delta/entry_id 断言不变。
 """
 
 from __future__ import annotations
@@ -244,7 +250,6 @@ class K4gA1CustomBounds(unittest.TestCase):
         pts = _points_module()
         for value in (5, 200):
             state = _new_state_path(self)
-            before = _snapshot(state)
             proc = _target_add(state, f"奖励{value}", value, f"tadd-{value}")
             self.assertEqual(
                 proc.returncode, 0,
@@ -268,7 +273,9 @@ class K4gA1CustomBounds(unittest.TestCase):
             self.assertEqual(sw.returncode, 0,
                              f"K4G-A1 RED: 新自定义目标应可激活；stderr={sw.stderr!r}")
             self.assertEqual(pts.get_active_target(str(state))["id"], custom[0]["id"])
-            self.assertNotEqual(before, None)
+            self.assertIsNotNone(
+                _snapshot(state),
+                "K4G-A1 RED: target-add 成功后 state 文件必须已落盘（写入真实发生）")
         for value in (4, 201):
             state = _new_state_path(self)
             _add_seed(state, 10, "seed", f"s-{value}")
@@ -537,9 +544,14 @@ class K4gA7ReceiptsAndErrors(unittest.TestCase):
         cases = {}
         add = _target_add(state, "礼物升级", 80, "tadd-gift")
         cases["target-add"] = add
+        self.assertEqual(add.returncode, 0,
+                         f"K4G-A7 RED: 前置 target-add 失败；stderr={add.stderr!r}")
+        gift_id = _receipt(add).get("target_id")
         sw = _run_cli(["target-switch", "--target-id", tid, "--command-id", "tsw-sea"], state)
         cases["target-switch"] = sw
-        de = _run_cli(["target-delete", "--target-id", tid, "--command-id", "tdel-sea"], state)
+        # 删除对象必须是非激活自定义目标（S-F6.5-AC4：激活中禁删，见 K4G-A2）
+        de = _run_cli(
+            ["target-delete", "--target-id", gift_id, "--command-id", "tdel-gift"], state)
         cases["target-delete"] = de
         for label, proc in cases.items():
             self.assertEqual(proc.returncode, 0,

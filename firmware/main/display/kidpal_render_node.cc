@@ -947,9 +947,16 @@ static void rn_points_outline(lv_obj_t *scr, int x, int y, int w, int h)
 /* 积分本图标资产（K2 真机轮 F2/F5）：把 KAP1 1bpp 经 art 单一资产层
  * (kidpal_art_load + kidpal_art_pixel) 合成 ARGB8888 lv_image_dsc（墨=不透明黑 /
  * 纸=透明）。与 story_page.c 的 kstory_art_dsc 同款先例：单槽 loader 缓存即时拷入
- * 自建缓冲后即释放引用；每资产独立缓存槽（pt_cat / ic_coin / sc_wheel），零互相逐出。资产
- * 不可用（未 mount / 文件缺 / 尺寸超上限）-> NULL，调用方回落既有几何/文字画法。 */
-#define RN_POINTS_ART_SLOTS 3   /* pt_cat_34_28 / ic_coin_36_36 / sc_wheel_42_42 */
+ * 自建缓冲后即释放引用；每资产独立缓存槽（pt_cat / ic_coin / 场景标），零互相逐出。
+ * 资产不可用（未 mount / 文件缺 / 尺寸超上限）-> NULL，调用方回落既有几何/文字画法。
+ *
+ * 方案 A（TaskPackage 261104-k4-reward-goal-config）：场景标随激活目标变化，槽位按
+ * **名字**（strcmp）命中；同名 = 直接复用，名字变化 = 释放旧像素缓冲后按名重载
+ * （复用同一槽，RAM 零增长）。三个槽位固定分工，场景标换目标不会逐出 pt_cat/coin。 */
+#define RN_POINTS_ART_SLOT_CAT   0   /* pt_cat_34_28 */
+#define RN_POINTS_ART_SLOT_COIN  1   /* ic_coin_36_36 */
+#define RN_POINTS_ART_SLOT_SCENE 2   /* 场景标：随激活目标按名重载 */
+#define RN_POINTS_ART_SLOTS      3   /* pt_cat_34_28 / ic_coin_36_36 / sc_*_42_42 */
 
 typedef struct {
     const char *name;
@@ -960,37 +967,42 @@ typedef struct {
 
 static rn_points_art_cache_t s_rn_points_art[RN_POINTS_ART_SLOTS];
 
-static const lv_image_dsc_t *rn_points_art_dsc(const char *asset, int max_w, int max_h)
+static const lv_image_dsc_t *rn_points_art_dsc(int slot_index, const char *asset,
+                                               int max_w, int max_h)
 {
     kidpal_art_img_t img;
-    rn_points_art_cache_t *slot = NULL;
-    int i;
+    rn_points_art_cache_t *slot;
 
-    for (i = 0; i < RN_POINTS_ART_SLOTS; i++) {
-        if (s_rn_points_art[i].name == asset) {
-            slot = &s_rn_points_art[i];
-            break;
-        }
-        if (slot == NULL && s_rn_points_art[i].name == NULL) {
-            slot = &s_rn_points_art[i]; /* 首个空槽预定（命中继续找） */
-        }
-    }
-    if (slot == NULL) {
-        return NULL; /* 槽耗尽（超出缓存容量即资产数, 防御） */
-    }
-    if (slot->st == 2) {
+    if (slot_index < 0 || slot_index >= RN_POINTS_ART_SLOTS || asset == NULL) {
         return NULL;
     }
-    if (slot->st == 1) {
-        return &slot->dsc;
+    slot = &s_rn_points_art[slot_index];
+    if (slot->name != NULL && strcmp(slot->name, asset) == 0) {
+        if (slot->st == 2) {
+            return NULL; /* 同名的不可用资产：记住失败，不再逐帧重试 */
+        }
+        if (slot->st == 1) {
+            return &slot->dsc;
+        }
+    }
+    if (slot->name != NULL) {
+        /* 槽内是旧资产（场景标换目标）：释放旧像素缓冲，同一槽按新名重载。 */
+        if (slot->px != NULL) {
+            lv_free(slot->px);
+        }
+        slot->px = NULL;
+        slot->name = NULL;
+        slot->st = 0;
     }
     if (kidpal_art_load(asset, &img) != 0 || img.w <= 0 || img.h <= 0 ||
         img.w > max_w || img.h > max_h) {
+        slot->name = asset; /* 记住失败的资产名：不逐帧重试，也不逐出他槽 */
         slot->st = 2;
         return NULL;
     }
     slot->px = (uint32_t *)lv_malloc((size_t)img.w * img.h * sizeof(uint32_t));
     if (slot->px == NULL) {
+        slot->name = asset;
         slot->st = 2;
         return NULL;
     }
@@ -1013,10 +1025,10 @@ static const lv_image_dsc_t *rn_points_art_dsc(const char *asset, int max_w, int
 }
 
 /* 资产落屏：返回 1 = 已画；0 = 资产不可用（调用方画兜底形态）。 */
-static int rn_points_art_image(lv_obj_t *scr, const char *asset, int max_w, int max_h,
-                               int x, int y)
+static int rn_points_art_image(lv_obj_t *scr, int slot_index, const char *asset,
+                               int max_w, int max_h, int x, int y)
 {
-    const lv_image_dsc_t *d = rn_points_art_dsc(asset, max_w, max_h);
+    const lv_image_dsc_t *d = rn_points_art_dsc(slot_index, asset, max_w, max_h);
     lv_obj_t *im;
 
     if (d == NULL) {
@@ -1053,7 +1065,8 @@ static int rn_points_line_x(int value, int target)
  * 负余额已在决策表里钳位成 pos=0/solid_len=0（全线虚线、小伴在起点）——本函数
  * 只按数据画，不再二次判断（两处判断 = 两套真相源）。 */
 static void rn_render_points_progress_line(lv_obj_t *scr,
-                                           const kidpal_points_progress_t *pg)
+                                           const kidpal_points_progress_t *pg,
+                                           const char *target_asset)
 {
     char label[16];
     int i;
@@ -1086,17 +1099,23 @@ static void rn_render_points_progress_line(lv_obj_t *scr,
                             &font_puhui_14_1);
         }
     }
-    /* 目标位场景标（planner ruling 9 / V9）：sc-wheel 摩天轮 42×42 悬于基线上方、
+    /* 目标位场景标（planner ruling 9 / V9）：sc-* 42×42 悬于基线上方、
      * 底边距基线 12px 不压线，与 pt-cat 同一悬空纪律；整体略大于猫咪 34×28 属设计
-     * 预期——「场景标要像目标不像小图标」。本批只画默认目标位 = 40 分刻度/右端附近
-     * （D-09 四预置切换与自定义伸缩归 K4，本批不接 target_asset 分派）。
+     * 预期——「场景标要像目标不像小图标」。K4：场景标随激活目标变化——逻辑标识
+     * （sc-choco/sc-movie/sc-wheel/sc-gift/sc-flag）经 kidpal_points_scene_asset 单源
+     * 映射为 assets.h 符号名（= <name>.bin 根名）；未知标识不画（绝不猜图）。
      * 资产不可用回落 = 不画（不画方块）。 */
     {
-        int tgt_x = RNP_LINE_X1;            /* 目标分值位 = 右端 40 刻度 */
-        int wheel_x = tgt_x - 21;           /* 42 宽中心对目标刻度 */
-        int wheel_y = RNP_LINE_Y - 42 - 12; /* 底边 = 基线 - 12px（V9 统一悬空口径） */
+        const char *scene_bin = kidpal_points_scene_asset(target_asset);
 
-        (void)rn_points_art_image(scr, "sc_wheel_42_42.bin", 42, 42, wheel_x, wheel_y);
+        if (scene_bin != NULL) {
+            int tgt_x = RNP_LINE_X1;            /* 目标分值位 = 刻度末端 */
+            int wheel_x = tgt_x - 21;           /* 42 宽中心对目标刻度 */
+            int wheel_y = RNP_LINE_Y - 42 - 12; /* 底边 = 基线 - 12px（V9 统一悬空口径） */
+
+            (void)rn_points_art_image(scr, RN_POINTS_ART_SLOT_SCENE, scene_bin, 42, 42,
+                                      wheel_x, wheel_y);
+        }
     }
     /* 小伴位置标（V9：pt-cat 34×28 悬于横线上方、底边距基线 12px 不压线；负余额
      * 钳位在起点——数字本身仍由余额文本如实承载）。资产不可用回落 16×16 实心方块。 */
@@ -1108,7 +1127,8 @@ static void rn_render_points_progress_line(lv_obj_t *scr,
         if (cat_x < 0) {
             cat_x = 0;
         }
-        if (rn_points_art_image(scr, "pt_cat_34_28.bin", 34, 28, cat_x, cat_y) == 0) {
+        if (rn_points_art_image(scr, RN_POINTS_ART_SLOT_CAT, "pt_cat_34_28.bin",
+                                34, 28, cat_x, cat_y) == 0) {
             rn_points_box(scr, comrade_x - 8, RNP_LINE_Y - 30, 16, 16, RNP_INK);
         }
     }
@@ -1259,7 +1279,8 @@ static void rn_render_points_home_body_locked(void)
         if (coin_y < 0) {
             coin_y = 0;
         }
-        if (rn_points_art_image(s_kidpal_scr, "ic_coin_36_36.bin", 36, 36,
+        if (rn_points_art_image(s_kidpal_scr, RN_POINTS_ART_SLOT_COIN,
+                                "ic_coin_36_36.bin", 36, 36,
                                 coin_x, coin_y) == 0) {
             rn_points_label(s_kidpal_scr, "★", coin_x, coin_y, RNP_INK,
                             num_font);
@@ -1274,7 +1295,7 @@ static void rn_render_points_home_body_locked(void)
     }
 
     if (kidpal_points_progress(&s_points_home, &pg) == 0) {
-        rn_render_points_progress_line(s_kidpal_scr, &pg);
+        rn_render_points_progress_line(s_kidpal_scr, &pg, s_points_home.target_asset);
     }
 
     rn_points_label(s_kidpal_scr, "最近得到", 12, 138, RNP_INK,
