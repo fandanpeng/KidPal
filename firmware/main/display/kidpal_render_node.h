@@ -372,6 +372,16 @@ void kidpal_render_node_show_points_home(void);
 int kidpal_render_node_story_substate(void);
 
 /*
+ * 故事会话页态镜像只读 getter（TaskPackage 261104-k5-story-cover-nav; S-F2.6-AC4;
+ * additive 尾部追加）：返回 cache_story 单点派生的 s_story_view.page 原值（KSTORY_PAGE_*
+ * 闭集），**不经前台层过滤**——与 kidpal_render_node_story_substate 不同，VOICE 前台
+ * （Listening 分支此刻正是 VOICE 前台）时后者恒 -1, 不能用于会话语境判据。消费点 =
+ * application.cc Listening 分支 story_cover 扩点（封皮 -> source_page="story_cover";
+ * 列表 -> "story" 记录语境）。无锁整数读，可跨任务调用。
+ */
+int kidpal_render_node_story_session_substate(void);
+
+/*
  * D2 真机轮 R1 根修缝（2026-10-20, 261019-p3-record-dialogue-guide fixer; additive
  * 尾部追加）。任何路径 lv_obj_clean(lv_screen_active()) 销毁屏上对象后必须调用本缝：
  * 渲染节点把静态首页图像控件指针 s_kidpal_img 置 NULL（clean 已销毁, 不置空 = 悬垂;

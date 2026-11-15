@@ -197,6 +197,47 @@ TEST_CASE("chrome ghost builder: transition seam rec_sub boundary (ignored off R
 }
 
 /* -------------------------------------------------------------------------- *
+ * TEST 3b — 过渡窗 + 在途 LIST（K5 261104-k5-story-cover-nav 白盒补强）。
+ * 列表下沉封皮子页后，云端列表渲染窗（story_sub=-1, last_known=LIST）键帽不得闪成
+ * 封皮页槽行「打开/下一页」——LIST 加入在途集，按 story_slots(LIST) 出列表行
+ * 「说话·双击看/下移」（S-F2.1 列表键帽零回归）。冻结件 TEST 2 已钉行为（含 LIST），
+ * 本件补 rec_sub 全值域无关性 + LIST 行逐字落定。
+ * ------------------------------------------------------------------------ */
+TEST_CASE("chrome ghost builder: transition window LIST takes list keycaps (K5)",
+          "[chrome_ghost][builder][linux]")
+{
+    const char *left = NULL, *right = NULL;
+    const char *ref_l = NULL, *ref_r = NULL;
+    static const int recs[] = { 0, 1, -3 };
+    int ir;
+
+    for (ir = 0; ir < (int)(sizeof(recs) / sizeof(recs[0])); ir++) {
+        left = NULL; right = NULL;
+        TEST_ASSERT_EQUAL_INT_MESSAGE(1,
+            kidpal_keybar_story_transition_slots(-1, KSTORY_PAGE_LIST, recs[ir],
+                                                 &left, &right),
+            CG_BUILDER_RED "过渡窗 + LIST 未裁决命中——列表渲染窗键帽掉封皮页槽行"
+            "「打开/下一页」");
+        TEST_ASSERT_EQUAL_INT_MESSAGE(0,
+            kidpal_keybar_story_slots(KSTORY_PAGE_LIST, &ref_l, &ref_r),
+            CG_BUILDER_RED "参照失效: kidpal_keybar_story_slots(LIST) 失败（K5 列表键帽行"
+            "未落）");
+        TEST_ASSERT_TRUE_MESSAGE(left != NULL && right != NULL &&
+                                 ref_l != NULL && ref_r != NULL &&
+                                 strcmp(left, ref_l) == 0 && strcmp(right, ref_r) == 0,
+            CG_BUILDER_RED "过渡窗 LIST 键帽 != story_slots(LIST)——rec_sub 对非 RECORDING"
+            "子态必须零影响 / LIST 行须由封皮页槽表迁入 story_slots");
+    }
+    /* LIST 行逐字（S-F2.1 列表键帽零回归）: 「说话·双击看 / 下移」。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        kidpal_keybar_story_slots(KSTORY_PAGE_LIST, &ref_l, &ref_r) == 0 &&
+        ref_l != NULL && ref_r != NULL &&
+        strcmp(ref_l, "说话·双击看") == 0 && strcmp(ref_r, "下移") == 0,
+        CG_BUILDER_RED "story_slots(LIST) 非 (说话·双击看, 下移)——列表键帽行漂移"
+        "（S-F2.1-AC1 键帽零回归被破）");
+}
+
+/* -------------------------------------------------------------------------- *
  * 结构扫描助手（本件自用前缀 cgw_；cg_ 先例族同款：仓根注入 / 注释剥离 / 区切取 /
  * 裸源计数）。mcp_server.cc 是设备 TU, 不进 host 构建——源锚代理是唯一可断言面,
  * 注释剥离是防假绿的前提（正向锚只认可执行源字面, 260917-m2-k3 sealing pass 教训）。

@@ -194,6 +194,11 @@ def validate_display(payload, *, self_push=False) -> tuple[bool, str]:
     # 先例对称——同为 shape floor，不作逐字段深度类型校验）。白名单零扩：kidpal_story_delete
     # 是 §四端云消息、非 display view，不进本表。
     if view == "story_list":
+        # `data == {}` = 显式「打开故事」导航薄载荷（契约 §1.3③/§1.5 2026-11-15 增认；
+        # 对齐 points 空 data 先例）：front 截获展开为完整非 restore 帧（进封皮）——此处
+        # 放行；其余畸形（total 非整数 / 缺 items / restore 非布尔 / data 非对象）仍拒。
+        if data == {}:
+            return (True, "ok")
         total = data.get("total")
         if total is not None and (not isinstance(total, int) or isinstance(total, bool)
                                   or total < 0):

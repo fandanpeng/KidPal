@@ -2,13 +2,13 @@
 id: TECH-261114-openclaw-gateway-eventloop-stalls
 title: OpenClaw 网关事件循环 ~31s 级阻塞（两个实证触发源：kidpal session store 同步写+cleanup 失败循环、remote model catalog 刷新）——真机语音轮最差 33s 无响应
 domain: tech
-status: deferred
+status: closed
 severity: MAJOR
 owner: 主线程（OpenClaw 网关运维面）
 trigger: 下次 OpenClaw 运维/升级批；或 journalctl 再现 liveness heartbeat delayed / slow SQLite transaction hold；或 NFR-PERF-4 延迟定阈批
 opened: 2026-11-14
-closed: ""
-closedBy: ""
+closed: 2026-11-15
+closedBy: 主线程——P0 ①②③ 执行并验证通过（catalog 关断 11-14 23:00 至 11-15 23:00 五个检查点全静默 / 会话库 177→1 与墓碑 58MB→988KB 达标 / 11-15 真机轮 3-6s 无冻结、全天零 liveness 冻结零 cleanup failed）；残项转 TECH-261115-openclaw-upgrade-batch-residuals
 paths: []
 source: 2026-11-14 延迟专项分析（当日 K2 复验真机轮三源日志）——journalctl -u openclaw-gateway、/tmp/openclaw/openclaw-2026-11-14.log（JSON 明细）、引擎 docker logs、设备 KPLOG029
 handoff: 与 TECH-261022-openclaw-prep-tax-memory-pressure 同批处置（OpenClaw 升级 / ECS 运维面）；NFR-PERF-4 定阈时作为最差情形来源引用
@@ -51,3 +51,15 @@ handoff: 与 TECH-261022-openclaw-prep-tax-memory-pressure 同批处置（OpenCl
 - **回流记账（human 指示「openclaw 侧配置记录在仓里」）**：声明批 `server/deploy/261114-openclaw-session-maintenance/session-maintenance-declaration.json` 已落仓——含两键目标值、drift_guard、当日 live 人工应用记录、重部署重放顺序；**如实记：主线程直写 server/deploy 实现面，跳过 dev-loop 的一次性记账操作**，正式双形态 apply/rollback 脚本 + acceptance 归下个部署批按 261025 骨架补齐，补齐前 deploy.sh 不得把本批当可执行批消费。
 - **残留待办**：①驱逐完成后复核 main/sessions < 预算 + doctor inspect；②63 个 archived 僵尸行留待升级 2.0.4 批（或上游 issue）处置，行本体为惰性元数据；③23:00 整点核验 `remote model catalog updated` 日志行绝迹（catalogRefresh=false 生效判据）。
 - **P0③ deriver 核查收口（18:40 CST）**：无积压、无需限速——honcho-redis keyspace 空（零待处理键）、deriver 自 07:05:54 后 11h 零处理零错误、CPU 0%；今晨 57s 摘要（summary_kidpal_5052）是 280 消息大会话的偶发单条摘要，非持续 backfill；记忆册所记 K4-E6 全量 backfill 运维轮仍属「未启动」而非「在途」。deriver 大摘要时占上游配额与单核，但在独立容器内，不直接阻塞网关事件循环。
+
+**验证回填（2026-11-15 12:11 CST，P0 三件销账，append）**：
+
+- **② catalog 关断 ✓**：2026-11-14 23:00 / 11-15 05:01 / 11:01 三个六小时刷新点全部静默，`remote model catalog updated` 计数 0。
+- **① session store ✓**：kidpal session_nodes=2（设备稳定会话 + 探针会话）、main=65；main/sessions 目录 58MB→**988KB**（2 个文件，墓碑驱逐完成）；11-14 19:00 起零 `cleanup failed`、零 `liveness heartbeat delayed`（31s 级阻塞绝迹）。
+- **真机闭环判据 ✓**：11-15 10:57~11:00 真机轮（积分记分 / 查分 / 设奖励），「识别文本→发送第一段语音」3~6s，无任何 30s 级冻结。10:59 切句事件（「新增奖励。」+「看海60分。」gap 1s）被上下文正确合并为单轮响应——常态时序自愈印证 TECH-261114-vad-split-points-double-add 的假设。
+- **③ deriver 观察项**：队列仍空；今晨新对话触发处理，出现 4 次 `httpx.ConnectError: All connection attempts failed`（连不上模型提供方，网络瞬断形态，重试自愈），独立容器不影响语音路径，保持观察。
+- **重启事件澄清**：11-15 共四次 gateway 重启（00:15/10:55/11:56/12:01）均来自 root SSH 会话，human 2026-11-15 确认「重启时我正常做的」——非故障信号、非凭据问题。12:01 三条 `cron.get` not found 为检查脚本按名查询、API 要求按 ID，任务本体健康（kidpal-reminder-plan 当时 14m 前刚 ok）。
+- **新观察**：11-15 11:00:28~59 出现 30 秒内 14 条 ASR 终句爆发（查字/字母场景），含空片段「。」穿透幻听过滤——既有 TECH-261014-engine-asr-hallucination-after-stop 形态，非回归；该形态（碎片风暴）纳入 TECH-261114-vad-split-points-double-add 的观察面。
+- **处置状态**：P0 ①②③ 全部销账；本条目残余 = main 库 archived 僵尸行 + 触发源丙（重维护评估同步卡循环）留待 OpenClaw 2.0.4 升级批。
+
+**结项（2026-11-15，append）**：本条目贯穿的 P0 ①②③ 已执行并双日验证（11-14 晚操作 + 11-15 全天观察：11-15 真机轮 3-6s 无冻结、当天零 liveness 冻结 / 零 cleanup failed、23:00 检查点 catalog 静默）。未清残项（archived 僵尸行 / 重维护评估卡循环机制 / skill-collection-review cron）已转入 TECH-261115-openclaw-upgrade-batch-residuals，随 OpenClaw 2.0.4 升级批处置。

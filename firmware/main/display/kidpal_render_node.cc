@@ -1554,7 +1554,15 @@ static void rn_render_kidpal_page_locked(kidpal_page_id_t page)
         }
         case KP_PAGE_STORY: {
             lv_screen_load(s_kidpal_scr);
-            if (s_story_list.count <= 0) {
+            if (s_story_view.page == KSTORY_PAGE_COVER) {
+                /* 封皮子态（K5 261104-k5-story-cover-nav; S-F2.6-AC1）: 经 story_page.c
+                 * 封皮渲染分支落屏——封皮不被列表空态分支截走。数据已送达
+                 * （s_story_data_received）才传列表（画计数, total 唯一源）; 数据未达
+                 * 传 NULL（封皮不画计数——不显 ×0 误导, S-F2.1 AC5/AC6 同型判据）。 */
+                kidpal_story_page_render(&s_story_view,
+                                         s_story_data_received ? &s_story_list : nullptr,
+                                         &s_story_text);
+            } else if (s_story_list.count <= 0) {
                 /* 空态两态分叉（seam [SL3]; requirements v1.63 S-F2.1 AC5/AC6）——判据
                  * = 「有无列表数据」（s_story_data_received）而非「断网与否」:
                  *   AC5 无内容空态（数据已送达、确无篇目）= ×0 诚实计数（计数画法照常、
@@ -1975,6 +1983,15 @@ int kidpal_render_node_story_substate(void)
         s_local_page != KP_PAGE_STORY) {
         return -1;
     }
+    return s_story_view.page;
+}
+
+int kidpal_render_node_story_session_substate(void)
+{
+    /* K5 封皮语境判据（261104-k5-story-cover-nav; S-F2.6-AC4）: 会话页态镜像只读——
+     * cache_story 单点派生的 s_story_view.page 原值，不经前台层过滤（VOICE 前台时
+     * kidpal_render_node_story_substate 恒 -1, 不能用于 Listening 分支语境判据）。
+     * 值域 = KSTORY_PAGE_* 闭集。无锁整数读，可跨任务调用。 */
     return s_story_view.page;
 }
 

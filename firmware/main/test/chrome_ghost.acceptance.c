@@ -86,11 +86,14 @@
  *               0  : 回落既有路径（out_* 不触碰）——非过渡窗（story_sub != -1，
  *                      调用方走既有 story 子态表 / 查字窗 / 通用分支）或过渡窗但
  *                      无在途子态（last_known_sub 不在 {KSTORY_PAGE_READER,
- *                      KSTORY_PAGE_RECORDING, KSTORY_PAGE_ORGANIZING}——LIST/STAMP
- *                      等非在途子态过渡窗按 plan 范围不接管，该场景鬼影由 [CG-C1]
- *                      scene 复位兜底）;
+ *                      KSTORY_PAGE_RECORDING, KSTORY_PAGE_ORGANIZING,
+ *                      KSTORY_PAGE_LIST}——STAMP/DELETE/BODY 等非在途子态过渡窗按 plan
+ *                      范围不接管，该场景鬼影由 [CG-C1] scene 复位兜底）;
  *               1  : 过渡窗裁决命中（story_sub == -1 且 last_known_sub 在途）——
  *                      按最后已知子态出键帽，值域**零偏移**复用既有冻结单源:
+ *                      LIST       -> kidpal_keybar_story_slots(KSTORY_PAGE_LIST)
+ *                                    =（「说话·双击看」「下移」; 2026-11-15 K5 重锚——
+ *                                    列表下沉封皮子页后云端列表渲染窗键帽不得闪成封皮行）;
  *                      READER     -> kidpal_keybar_story_slots(KSTORY_PAGE_READER)
  *                                    =（「长按退出」「翻屏」）;
  *                      RECORDING  -> kidpal_keybar_story_rec_slots(rec_sub) 帧分叉
@@ -171,9 +174,10 @@
  *         弹窗（REMIND）dismiss 后的 scene 残留不在 debt ①② 观测集与 plan 范围内，
  *         本包不钉（若真机轮 CG-A5 观测到「知道了/关闭」残留，另起 debt 条目）。
  *   GAP-4（过渡窗在途集边界）：[CG-C2] 在途子态集 = plan 逐字 {READER, RECORDING,
- *         ORGANIZING}；LIST/STAMP/BODY_UNAVAILABLE/DELETE 相位的过渡窗不接管
- *         （plan 修法②逐字范围）——该相位的键帽残留由 [CG-C1] scene 复位兜底，
- *         不在本缝职责内。
+ *         ORGANIZING}，2026-11-15 随 261104-k5-story-cover-nav 追加 LIST（列表下沉封皮
+ *         子页后云端列表渲染窗键帽不得闪成封皮行）；STAMP/BODY_UNAVAILABLE/DELETE
+ *         相位的过渡窗不接管（plan 修法②逐字范围）——该相位的键帽残留由 [CG-C1]
+ *         scene 复位兜底，不在本缝职责内。
  *   GAP-5（双同步不修）：plan「单事件双同步若经 1g 预评评估为良性可留，只修前两因
  *         亦可接受」——本件不断言同步次数（双闪节奏归真机 CG-A5 ①观感终判）。
  *
@@ -266,9 +270,9 @@
  *             （apply_look 写沿 / sync+mid 读沿 / 收尾沿复位 / g_kidpal_keybar_scene
  *             零残留负锚 / keybar.h 声明守）（TEST 3）
  *   coverage: CG-A2 -- 过渡窗裁决行为：三态返回语义（-1 非法 / 0 回落不触碰 out /
- *             1 命中）/ 非过渡窗（story_sub 有效）恒回落 / 在途三子态（READER/
+ *             1 命中）/ 非过渡窗（story_sub 有效）恒回落 / 在途四子态（LIST/READER/
  *             RECORDING 帧 A 帧 B/ORGANIZING）逐值与既有冻结子态表零偏移相等 /
- *             非在途（LIST/STAMP/DELETE/BODY/-1）回落 / 全域左槽绝不为「说完啦」
+ *             非在途（STAMP/DELETE/BODY/-1）回落 / 全域左槽绝不为「说完啦」
  *             「不等了」（语音残留负扫描）/ NULL out 防御（TEST 2）+ sync 区消费
  *             接线源锚 + keybar.h 声明守（TEST 3）
  *   coverage: CG-A3 -- 成功归档层栈收口（结构）：story_list 前推闭包与盖章闭包两处
@@ -876,10 +880,31 @@ TEST_CASE("chrome ghost: story -1 transition window takes last known substate, n
               left != NULL ? left : "(null)", right != NULL ? right : "(null)",
               ref_l != NULL ? ref_l : "(null)", ref_r != NULL ? ref_r : "(null)"));
 
-    /* ---- 过渡窗 + 非在途（LIST/STAMP/DELETE/BODY/-1）回落（plan 逐字范围） --- */
+    /* ---- 过渡窗 + 在途 LIST：列表子态键帽 == story_slots(LIST) ----------------
+     * 2026-11-15 重锚（261104-k5-story-cover-nav frozen-rebaseline）: 列表下沉封皮子页后，
+     * 云端列表渲染窗（story_sub 暂不可见 = -1, last_known = LIST）键帽不得闪成封皮行
+     * 「打开 / 下一页」——LIST 加入在途集，按最后已知子态出列表行「说话·双击看 / 下移」。 */
+    rc = kidpal_keybar_story_transition_slots(-1, KSTORY_PAGE_LIST, 0, &left, &right);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(CG_TRANS_RESOLVED, rc,
+        "CG-A2 RED: 过渡窗 + 在途 LIST 未裁决命中——云端列表渲染窗键帽掉通用分支/封皮页槽"
+        "（真机形态: 列表窗键帽闪成封皮行「打开 / 下一页」; K5 过渡窗集合须含 LIST）");
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_keybar_story_slots(KSTORY_PAGE_LIST, &ref_l, &ref_r) == 0,
+        "CG-A2 RED(infra): kidpal_keybar_story_slots(LIST) 底座回归——K5 列表子态键帽行"
+        "「说话·双击看 / 下移」未落（该行由页槽表迁入 story_slots）");
+    TEST_ASSERT_TRUE_MESSAGE(left != NULL && ref_l != NULL &&
+                             strcmp(left, ref_l) == 0 &&
+                             right != NULL && ref_r != NULL &&
+                             strcmp(right, ref_r) == 0,
+        cg_fm("CG-A2 RED: 过渡窗 LIST 键帽 (左=%s, 右=%s) != 列表子态表 (左=%s, 右=%s)"
+              "——列表键帽行漂移",
+              left != NULL ? left : "(null)", right != NULL ? right : "(null)",
+              ref_l != NULL ? ref_l : "(null)", ref_r != NULL ? ref_r : "(null)"));
+
+    /* ---- 过渡窗 + 非在途（STAMP/DELETE/BODY/-1）回落（plan 逐字范围; 2026-11-15 LIST
+     *      移出非在途集, 见上方在途 LIST 断言） --------------------------------- */
     {
         static const int not_in_flight[] = {
-            KSTORY_PAGE_LIST, KSTORY_PAGE_STAMP, KSTORY_PAGE_DELETE,
+            KSTORY_PAGE_STAMP, KSTORY_PAGE_DELETE,
             KSTORY_PAGE_BODY_UNAVAILABLE, -1
         };
         int i;

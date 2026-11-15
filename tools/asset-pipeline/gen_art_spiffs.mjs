@@ -80,6 +80,10 @@ const WHITELIST = [
    * 母版符号 = assets.c 的 sc_choco_42_42 / sc_movie_42_42 / sc_gift_42_42 /
    * sc_flag_42_42（gen_assets.mjs 同名 job 生成）；本白名单为纯追加，既有 78 枚零搅动。 */
   'sc_choco_42_42', 'sc_movie_42_42', 'sc_gift_42_42', 'sc_flag_42_42',
+  /* K5 封皮大星徽（TaskPackage 261104-k5-story-cover-nav, 2026-11-15）：52×52 KAP1 件
+   * （母版 = assets.c 的 ic_coin_52_52 符号，gen_assets.mjs 同名 job 生成）；本白名单为
+   * 纯追加，既有 82 枚零搅动。 */
+  'ic_coin_52_52',
 ];
 
 const KAP1_MAGIC_LE = 0x3150414b; // "KAP1"

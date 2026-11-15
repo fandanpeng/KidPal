@@ -342,6 +342,14 @@ public:
      * 页内输入的分派落在此处（冻结验收 hardware_validation「mcp 消费」许可接线点）。 */
     bool HandleStoryKey(key_id_t key, key_gesture_t g);
 
+    /* 封皮入口 reset（TaskPackage 261104-k5-story-cover-nav; S-F2.6-AC1; human
+     * 2026-11-15 裁定 = 板级 BOOT 钩子）：P3 -> P4 首翻进入故事模块时由板级
+     * GLOBAL_ACT_PAGE_NEXT 分支调用——把故事视图置封皮子态（KSTORY_PAGE_COVER）并经主
+     * 任务同步渲染节点缓存，随后板级 cycle_next 以该封皮态渲染 P4（冷启动/异常退出后
+     * 首翻 P4 也见封皮, 不落到列表空态）。只置页态 + 缓存视图，不动 [S1] 签名与
+     * kidpal_story_view_init 的 page=LIST 语义。 */
+    void StoryEnterCover();
+
 private:
     McpServer();
     ~McpServer();

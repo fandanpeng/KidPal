@@ -1051,13 +1051,15 @@ class M4K1StoryListPushAcceptance(unittest.TestCase):
                     " —— 三时点② 未接线/非幂等不重复。")
                 self.assertEqual(pushes[0]["data"]["total"], 3,
                                  "M4K1-A3 RED: 归档后推送 total != 更新后现存篇数。")
-                # 2026-10-12 additive（SL-A1 同批）：时点②主动推送 restore 缺省零偏移
-                # （契约 §1.3③ D1 生产纪律——仅 WS 建连恢复推送可置 data.restore；缺省
-                # absent/显式 false 同判，②③调用点零偏移）。
-                self.assertFalse(
-                    pushes[0]["data"].get("restore"),
-                    "M4K1-A3 RED: 归档后（时点②）推送带 data.restore —— 生产纪律破"
-                    "（契约 §1.3③ D1: 仅 WS 建连恢复推送可置 restore; 主动推送缺省零偏移）。")
+                # 2026-11-15 翻正（261104-k5-story-cover-nav frozen-rebaseline）:
+                # 契约 §1.3③ 生产纪律改写——所有后台恢复/对账推送（含归档成功后 = 时点②）
+                # 恒带 restore:true（只填缓存不抢前台）。原 2026-10-12「缺省零偏移」口径
+                # 随契约 LANDED 翻正; 离页导航帧例外（归档失败 :1728）另案保持 False,
+                # 由 K5 server 件 test_c7_archive_failure_offpage_restore_false 承载。
+                self.assertTrue(
+                    pushes[0]["data"].get("restore") is True,
+                    "M4K1-A3 RED: 归档后（时点②）推送未带 data.restore=true —— 生产纪律"
+                    "破（契约 §1.3③: 后台恢复/对账推送恒 restore:true, 只填缓存不抢前台）。")
 
 
 # =========================================================================== #
@@ -1287,12 +1289,12 @@ class M4K1DeleteAcceptance(unittest.TestCase):
                 self.assertEqual(
                     pushes[0]["data"]["total"], 2,
                     "M4K1-A4 RED: 删除后重推 total != 现存篇数（删除即 −1 可见 = 隐式 ack）。")
-                # 2026-10-12 additive（SL-A1 同批）：时点③主动重推 restore 缺省零偏移
-                # （契约 §1.3③ D1 生产纪律——仅 WS 建连恢复推送可置 data.restore）。
-                self.assertFalse(
-                    pushes[0]["data"].get("restore"),
-                    "M4K1-A4 RED: 删除后（时点③）重推带 data.restore —— 生产纪律破"
-                    "（契约 §1.3③ D1: 仅 WS 建连恢复推送可置 restore; ③缺省 False 零偏移）。")
+                # 2026-11-15 翻正（261104-k5-story-cover-nav frozen-rebaseline）:
+                # 契约 §1.3③ 生产纪律改写——删除执行后对账重推（时点③）恒带 restore:true。
+                self.assertTrue(
+                    pushes[0]["data"].get("restore") is True,
+                    "M4K1-A4 RED: 删除后（时点③）重推未带 data.restore=true —— 生产纪律"
+                    "破（契约 §1.3③: 删除执行后对账重推恒 restore:true）。")
                 ids = {it["id"] for it in pushes[0]["data"]["items"]}
                 self.assertNotIn(b["id"], ids,
                                  "M4K1-A4 RED: 重推列表仍含被删 id。")

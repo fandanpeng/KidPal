@@ -49,9 +49,11 @@ int kidpal_keybar_slots(int page, int scene, int overlay_top,
             /* P3 星星积分本（planner ruling 11 / F4：human 三选一裁定左键帽「详·双击」
              * ——详情账本提示压入键帽；右「下一页」不动）。 */
             case PAGE_P3: *out_left = "详·双击";   *out_right = "下一页"; break;
-            /* P4 星星记录本列表（S-F2.1 列表态键帽零回归, 值随页位原地迁移不变;
-             * docs/ui/V9/canvas-p3.png）。 */
-            case PAGE_P4: *out_left = "说话·双击看"; *out_right = "下移"; break;
+            /* P4 星星记录本（K5 261104-k5-story-cover-nav; S-F2.6-AC1：封皮成为 P4 主入口
+             * 基层页槽行 = 封皮行「打开 / 下一页」——旧列表行「说话·双击看 / 下移」已
+             * 迁入 kidpal_keybar_story_slots(KSTORY_PAGE_LIST)（列表 = 封皮子页, 见该函数）。
+             * docs/ui/V9/story-cover.png）。 */
+            case PAGE_P4: *out_left = "打开"; *out_right = "下一页"; break;
             default:
                 /* 页槽表恰四行（P1..P4）。越界页（含 PAGE_COUNT）已由上方防御列一律
                  * -1，本分支对合法页（0..PAGE_COUNT-1）不可达；保留仅为 switch 完整性。 */
@@ -109,7 +111,9 @@ int kidpal_keybar_story_slots(int substate, const char **out_left,
      * 空串 = 消费方置空槽, 非保持旧文案）。正文取不回提示（WF-F2-06,
      * 261016-p3-story-body-sd-cache）: 两键任一手势均关闭回列表, 底栏文案单源 =
      * story_page.h 的 KSTORY_BODY_UNAVAILABLE_KEYCAP_* 宏（本文件零字面重抄, 守
-     * KB-E2 闭集字面红线）。LIST/STAMP 不落本表（基层页槽表 / 演出帧无键帽）-> -1,
+     * KB-E2 闭集字面红线）。**LIST 子态落本表**（K5 261104-k5-story-cover-nav: 列表
+     * 下沉封皮子页后「说话·双击看 / 下移」由 P4 页槽表迁入, 云端列表渲染窗按本行出
+     * 键帽, 不得闪成封皮行）; STAMP 在演出帧双槽留空（见下方 case）; 其余未知 -> -1,
      * 消费方回落既有路径。 */
     switch (substate) {
         case KSTORY_PAGE_RECORDING:
@@ -128,6 +132,13 @@ int kidpal_keybar_story_slots(int substate, const char **out_left,
              * （STAMP 全手势 GLOBAL 交回全局路由, 键帽留空不诱导误按）。 */
             *out_left  = "";
             *out_right = "";
+            return 0;
+        case KSTORY_PAGE_LIST:
+            /* K5 列表子态键帽行（261104-k5-story-cover-nav; S-F2.1 列表键帽零回归）:
+             * 列表下沉封皮子页后，「说话·双击看 / 下移」由 P4 页槽表迁入本行（封皮基层
+             * 页槽行改「打开 / 下一页」）——云端列表渲染窗必按本行出键帽, 不得闪成封皮行。 */
+            *out_left  = "说话·双击看";
+            *out_right = "下移";
             return 0;
         case KSTORY_PAGE_READER:
             *out_left  = "长按退出";
@@ -239,8 +250,12 @@ int kidpal_keybar_story_transition_slots(int story_sub, int last_known_sub,
     if (story_sub != -1) {
         return 0;
     }
-    /* 过渡窗：只接在途三子态（plan 修法②逐字范围）。 */
+    /* 过渡窗：只接在途子态（plan 修法②逐字范围; K5 追加 LIST —— 列表下沉封皮子页
+     * 后云端列表渲染窗 story_sub=-1/last_known=LIST 不得闪成封皮页槽行）。 */
     switch (last_known_sub) {
+        case KSTORY_PAGE_LIST:
+            return (kidpal_keybar_story_slots(KSTORY_PAGE_LIST, out_left,
+                                              out_right) == 0) ? 1 : 0;
         case KSTORY_PAGE_READER:
             return (kidpal_keybar_story_slots(KSTORY_PAGE_READER, out_left,
                                               out_right) == 0) ? 1 : 0;

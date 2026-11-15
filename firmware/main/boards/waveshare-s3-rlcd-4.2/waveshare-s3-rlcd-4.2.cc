@@ -142,7 +142,14 @@ static void keya_dispatch_global_action(global_action_t act)
         break;
     case GLOBAL_ACT_PAGE_NEXT:
         /* BOOT 单击=翻页（P1->P2->P3->P4 循环，冻结路由表 KEY_ID_BOOT+CLICK 恒产此动作；
-         * 主页面基层路径零回归）。 */
+         * 主页面基层路径零回归）。
+         * K5 封皮入口 reset（261104-k5-story-cover-nav; S-F2.6-AC1; human 2026-11-15 裁定
+         * = 板级 BOOT 钩子）：当前页 = P3 时，把故事视图置封皮子态并同步渲染节点缓存（主
+         * 任务内），随后 cycle_next 以该封皮态渲染 P4——冷启动/异常退出后首翻 P4 也见
+         * 封皮（不落到列表空态）。 */
+        if (kidpal_render_node_get_page() == KP_PAGE_POINTS_HOME) {
+            McpServer::GetInstance().StoryEnterCover();
+        }
         app.Schedule([]() { kidpal_render_node_cycle_next(); });
         break;
     case GLOBAL_ACT_OVERLAY_CLOSE:

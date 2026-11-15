@@ -59,7 +59,8 @@ int kidpal_keybar_dots(int page, int overlay_top, kidpal_keybar_dots_t *out);
 /* 左右槽文案裁决（KB-A3 机制单源，冻结映射）:
  *   overlay_top == 0（主页面基层, page 槽表，四行）: P1 说话/翻页 · P2 问课程/翻页 ·
  *     P3 问一问/下一页（星星积分主页, S-F6.1 AC6 + points-home-nodata.png）·
- *     P4 说话·双击看/下移（星星记录本列表, 原 P3 行原地迁移）;
+ *     P4 打开/下一页（K5 261104-k5-story-cover-nav: 封皮成为 P4 主入口，列表行迁入
+ *     kidpal_keybar_story_slots(KSTORY_PAGE_LIST), 见下）;
  *     scene 入参被忽略（主页面无语音场景语境）。
  *   overlay_top != 0（覆盖层随态, scene 槽表）: 左槽 = kidpal_voice_state_look(scene)
  *     .keycap（冻结闭集单源, 零复制）; 右槽 = 语音轮「结束」/ 提醒 REMIND「关闭」;
@@ -84,11 +85,14 @@ int kidpal_keybar_char_slots(int started, const char **out_left,
  * 260924-m4-k2-p3-star-notebook-ui additive 追加, 260928 查字窗
  * kidpal_keybar_char_slots 先例形态——并行函数, 不动 kidpal_keybar_slots 既有
  * 签名与值域, 既有齿不破）:
+ *   substate = KSTORY_PAGE_LIST -> 左「说话·双击看」右「下移」（K5
+ *     261104-k5-story-cover-nav: 列表下沉封皮子页后由 P4 页槽表迁入本行——
+ *     S-F2.1 列表键帽零回归; 云端列表渲染窗按本行出键帽, 不闪成封皮行）;
  *   substate = KSTORY_PAGE_DELETE -> 左「删掉」右「算了」（WF-F2-05）;
  *   substate = KSTORY_PAGE_READER -> 左「长按退出」右「翻屏」（WF-F2-04, v1.52
  *     朗读已砍——旧「念给我听」设计稿口径退役）;
  *   substate = KSTORY_PAGE_RECORDING -> 左「收尾」右「结束」（WF-F2-02）;
- *   其余（LIST = 基层页槽表 / STAMP = 演出帧无键帽）-> -1（消费方回落既有路径）。
+ *   其余（STAMP = 演出帧无键帽 / COVER = 基层页槽表）-> -1（消费方回落既有路径）。
  *   防御: out_left/out_right 任一 NULL -> -1; 成功返回 0。
  * 设备侧 lcd_display.cc story 子态分支消费（键帽值域仍走本纯逻辑单源, 零重算）。 */
 int kidpal_keybar_story_slots(int substate, const char **out_left,

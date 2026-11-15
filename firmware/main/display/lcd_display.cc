@@ -1422,13 +1422,18 @@ static void kidpal_keybar_sync_locked(void)
          * 本包补落）; 旧注担心的「录音态前台 = VOICE 会话 chrome 双写冲突」**已消除**——
          * D2 甲形态进录音态弹出 VOICE 层后, 录音期 front_layer = LOCAL_PAGE, 键帽无
          * apply_look 场景双写, 故 RECORDING 子态可直接出 [收尾]/[结束]。 */
-        if (story_sub == KSTORY_PAGE_DELETE || story_sub == KSTORY_PAGE_READER ||
+        if (story_sub == KSTORY_PAGE_LIST ||
+            story_sub == KSTORY_PAGE_DELETE || story_sub == KSTORY_PAGE_READER ||
             story_sub == KSTORY_PAGE_RECORDING ||
             story_sub == KSTORY_PAGE_ORGANIZING ||
             story_sub == KSTORY_PAGE_STAMP ||
             story_sub == KSTORY_PAGE_BODY_UNAVAILABLE) {
             /* 261023 观感直修: STAMP 并入（盖章演出帧双槽留空, V5 p3-stamp-frame
-             * 设计稿「演出帧无键帽」; keybar.c kidpal_keybar_story_slots 同批加行）。 */
+             * 设计稿「演出帧无键帽」; keybar.c kidpal_keybar_story_slots 同批加行）。
+             * K5 261104-k5-story-cover-nav: LIST 并入——列表下沉封皮子页后由
+             * kidpal_keybar_story_slots(KSTORY_PAGE_LIST) 出「说话·双击看 / 下移」
+             * （S-F2.1 列表键帽零回归; 封皮子态 COVER 不在本集, 回落 P4 页槽表「打开/
+             * 下一页」）。 */
             /* D3 v7（261019 fixer）: RECORDING 帧分叉走 kidpal_keybar_story_rec_slots
              * （帧 A 收尾/丢弃, 帧 B 打断/留空）; ORGANIZING 走 story_slots 整理行
              * （双槽留空, 非交互）。其余子态既有 story_slots 表零偏移。 */

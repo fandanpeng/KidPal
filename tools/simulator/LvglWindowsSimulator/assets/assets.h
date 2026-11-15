@@ -82,3 +82,4 @@ extern const lv_image_dsc_t sc_choco_42_42; /* LV_COLOR_FORMAT_RGB565 */
 extern const lv_image_dsc_t sc_movie_42_42; /* LV_COLOR_FORMAT_RGB565 */
 extern const lv_image_dsc_t sc_gift_42_42; /* LV_COLOR_FORMAT_RGB565 */
 extern const lv_image_dsc_t sc_flag_42_42; /* LV_COLOR_FORMAT_RGB565 */
+extern const lv_image_dsc_t ic_coin_52_52; /* LV_COLOR_FORMAT_RGB565 */

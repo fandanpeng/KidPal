@@ -475,6 +475,13 @@ class M4K3CtxConditionalPushAcceptance(unittest.TestCase):
                     f"M4K3-A7 RED: 首帧 ctx(story) 产生 {len(pushes)} 帧 story_list "
                     "下行（应恰一帧）—— ctx 条件推送未实现（defer ①恢复重裁 front 半"
                     "缺失; 引导态会话建立同拍无列表数据源）或非单帧（重复推送）。")
+                # 2026-11-15 翻正（261104-k5-story-cover-nav frozen-rebaseline）: ctx 建立
+                # 恢复推送（:1023）属后台恢复/对账推送, 契约 §1.3③ 生产纪律要求恒
+                # restore:true（只填缓存不抢前台）——恰一帧语义不变, 补 restore 断言。
+                self.assertTrue(
+                    pushes[0]["data"].get("restore") is True,
+                    "M4K3-A7 RED: ctx(story) 恢复推送未带 data.restore=true —— 契约 "
+                    "§1.3③ 生产纪律破（引导态会话建立同拍推送须只填缓存不抢前台）。")
                 self.assertEqual(
                     pushes[0]["data"]["total"], 2,
                     "M4K3-A7 RED: 条件推送 total != 现存篇数 —— producer 语义偏移"

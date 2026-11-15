@@ -458,6 +458,11 @@ jobs.push({ name: 'sc_choco_42_42', svg: svgUse('sc-choco'), w: 42, h: 42, rotat
 jobs.push({ name: 'sc_movie_42_42', svg: svgUse('sc-movie'), w: 42, h: 42, rotate: 0, kind: 'svg' });
 jobs.push({ name: 'sc_gift_42_42', svg: svgUse('sc-gift'), w: 42, h: 42, rotate: 0, kind: 'svg' });
 jobs.push({ name: 'sc_flag_42_42', svg: svgUse('sc-flag'), w: 42, h: 42, rotate: 0, kind: 'svg' });
+// K5 封皮大星徽（TaskPackage 261104-k5-story-cover-nav, 2026-11-15）：
+//   母版 ic-coin 符号 52×52 直出（V9 story-cover.png 封皮徽章口径; D-09 书封/ic-coin
+//   走既有资产管线）。产物符号名 = ic_coin_52_52（命名律 = 符号名 + 尺寸后缀）。
+//   纯追加, 既有资产零搅动（K4 先例）。
+jobs.push({ name: 'ic_coin_52_52', svg: svgUse('ic-coin'), w: 52, h: 52, rotate: 0, kind: 'svg' });
 
 // ── 10. 主循环：栅格化 → 阈值 → 打包/切片 → 落盘 ──
 const results = [];
