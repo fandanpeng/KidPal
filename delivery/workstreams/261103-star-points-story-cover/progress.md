@@ -98,3 +98,15 @@
 **合并门**：`supervisor-verdict-gate` = **ESCALATE**（riskTier high 结构性；evidenceComplete=true，completedRounds=1）。前置升级闸会在合并期因 `deviceOutcome{userVisible:true, kidpal_render_node.cc, K4G-L1}` 缺 device-round-evidence 而拦停——预期。pod-retro 落盘，planner 收尾 commit `98619ffa`。
 
 **未跑 / 下一步**：K4G-L1 真机轮（真实 QQ 目标配置 + 看屏 + 不抢前台 + 时延 + RAM）与 K3 live 轮合并到下一个设备窗；K4 的 ECS 部署轮（points.py/SKILL/四枚资产）归主线程；合并序 K3 → K4，两包合并均需 human 批（supervisor 均 ESCALATE）。
+
+## 2026-11-15 · K3/K4 合并入 main（叠跑栈，单次 merge）
+
+**合并**：`merge-driver --pod 261104-k4-reward-goal-config --human-approval-ref 010e2fe8…`（human 2026-11-15 原话「合并吧，删了这种情况再观察一下」）→ merge commit `b8c53b89c11f`，main 簿记头 `22684638`。K3 的提交为 K4 合并提交的祖先（叠跑栈），无独立 K3 merge commit；K3 board 已归 merged，K4 board merged。
+
+**合并门**：K4 supervisor ESCALATE（high 结构性，completedRounds=2，final r2 承重轮 factOk）；前置升级闸 PASS（device-round-evidence K4G-L1 human-visual PASS，binary sha 35c71e…，sourceCommit 2127a19f 为 HEAD 祖先；human-approval-ref 五要素核验 OK）。
+
+**真机轮结果**：K4 目标配置全过程 + 场景标修复后看屏（摩天轮↔通用旗↔摩天轮）+ 不抢前台全 PASS；K4G-L1 闭环。K3 真实 QQ 加/查/删 PASS；**歧义删除未闭环**（三次「昨天/今天那条」被模型猜删，SKILL.md §5.1 + AGENTS.md 常驻纪律已部署但运行层未复测通过；main agent 模型 deepseek-v4-flash），按 human 裁定观察后续，已在 K3 device-round-evidence 与 review-packet 如实申报。
+
+**未做**：远程发布（`release-pr.mjs --publish` 只推 release/* 并开 PR，PR 合并仍 human）；K5 未开。
+
+**教训**：叠跑两个包在同一分支，使 merge-driver 的「单 pod diff ⊆ manifest」假设失效——本次以 K4 为栈代表合并、K3 作为祖先随批进入并单独归 board；后续叠跑应避免跨包 live 修复落在对方 manifest 之外。
