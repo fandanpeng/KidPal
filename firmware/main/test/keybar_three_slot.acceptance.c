@@ -63,6 +63,10 @@
  *                 （第 4 页位整值撤出 -> 该索引落入越界防御列 -1; 原「存在性」齿已
  *                 同步翻正，见本文件 REVISION LOG，ADV 随 deviation 收回一并消解）;
  *           scene 入参在基层列被忽略（任意 int 均合法——主页面无语音场景语境）。
+ *           【2026-11-15 K5 重锚（261104-k5-story-cover-nav）】四页态现况：P3 = 星星积分本
+ *           左「详·双击」右「下一页」（K0a/K2）；P4 = 故事封皮 左「打开」右「下一页」
+ *           （S-F2.6-AC1）；故事列表「说话·双击看 / 下移」迁入 kidpal_keybar_story_slots
+ *           （KSTORY_PAGE_LIST 子态行）——见 TEST 2 下方 P4 页槽齿 + LIST 子态齿。
  *         overlay_top != 0（覆盖层随态, scene 槽表）:
  *           左槽 = kidpal_voice_state_look(scene).keycap（冻结闭集单源——内部消费
  *             [2] 的 look, 零复制零偏移, KB-E2; 禁止在本模块重抄闭集字面）;
@@ -247,6 +251,19 @@ __attribute__((weak)) int kidpal_keybar_char_slots(int started, const char **out
 __attribute__((weak)) int kidpal_keybar_points_slots(int substate,
                                                      const char **out_left,
                                                      const char **out_right)
+{
+    (void)substate; (void)out_left; (void)out_right;
+    return KKB_UNIMPLEMENTED;
+}
+
+/* P4 故事子态键帽槽裁决（2026-11-15 additive, TaskPackage 261104-k5-story-cover-nav
+ * frozen-rebaseline; 遵循 char_slots / points_slots 并行函数先例——不是本包新增实现，
+ * 强符号 home = display/keybar.c 已在 runner 在册）。substate 值镜像 story_page.h
+ * 冻结枚举（LIST = 0）。 */
+#define KKB_SUBSTATE_LIST 0 /* KSTORY_PAGE_LIST */
+__attribute__((weak)) int kidpal_keybar_story_slots(int substate,
+                                                    const char **out_left,
+                                                    const char **out_right)
 {
     (void)substate; (void)out_left; (void)out_right;
     return KKB_UNIMPLEMENTED;
@@ -616,17 +633,32 @@ TEST_CASE("键帽条三槽: 左右槽随态文案——页槽表+闭集单源+BO
                "重锚: 原故事槽对已迁 P4)",
                left ? left : "(null)", right ? right : "(null)"));
 
-    /* P4 页槽齿（2026-11-04 additive 随 D-01 四页重锚）: 故事列表键帽对原地迁移
-     * P4（索引 = PAGE_P3+1 = 3）——原 P3 逐字断言平移至此, 值零偏移（S-F2.1 列表
-     * 态键帽零回归; keybar.c 页槽表加 case PAGE_P4 行）。 */
+    /* P4 页槽断言（2026-11-15 重锚, 261104-k5-story-cover-nav frozen-rebaseline）:
+     * 封皮成为 P4 主入口——P4 基层页槽行由列表行翻正为封皮行「打开 / 下一页」
+     * （S-F2.6-AC1; docs/ui/V9/story-cover.png 底栏逐字）。列表子态键帽「说话·双击看 /
+     * 下移」迁入 kidpal_keybar_story_slots(LIST)（见下方 LIST 子态断言）。 */
     left = NULL;
     right = NULL;
     rc = kidpal_keybar_slots((int)PAGE_P3 + 1, 0, 0, &left, &right);
     TEST_ASSERT_TRUE_MESSAGE(rc == 0 && left != NULL && right != NULL &&
+                             strcmp(left, "打开") == 0 &&
+                             strcmp(right, "下一页") == 0,
+        kkb_fm("KKB-A3 RED: P4 页槽 (左=%s, 右=%s) 期望 (打开, 下一页)——封皮键帽未落"
+               "（S-F2.6-AC1; 旧列表行 (说话·双击看, 下移) = 封皮下沉未接线）",
+               left ? left : "(null)", right ? right : "(null)"));
+
+    /* P4 列表子态键帽断言（2026-11-15 additive, 261104-k5-story-cover-nav）: 故事列表下沉为
+     * 封皮子页后，列表态键帽对「说话·双击看 / 下移」迁入 kidpal_keybar_story_slots
+     * （KSTORY_PAGE_LIST）——S-F2.1 列表键帽零回归；封皮基层改画「打开 / 下一页」。 */
+    left = NULL;
+    right = NULL;
+    rc = kidpal_keybar_story_slots(KKB_SUBSTATE_LIST, &left, &right);
+    TEST_ASSERT_TRUE_MESSAGE(rc == 0 && left != NULL && right != NULL &&
                              strcmp(left, "说话·双击看") == 0 &&
                              strcmp(right, "下移") == 0,
-        kkb_fm("KKB-A3 RED: P4 页槽 (左=%s, 右=%s) 期望 (说话·双击看, 下移)——故事"
-               "列表键帽对未随四页化迁至 P4（D-01 原地迁移; S-F2.1 零回归面）",
+        kkb_fm("KKB-A3 RED: LIST 子态键帽 (左=%s, 右=%s) 期望 (说话·双击看, 下移)——列表"
+               "键帽行未从页槽表迁入 story_slots（S-F2.1 列表键帽零回归; 否则云端列表"
+               "渲染窗键帽会闪成封皮行）",
                left ? left : "(null)", right ? right : "(null)"));
 
     /* 第 4 页槽位齿（KB-E1 deviation 面 —— 2026-09-18 随 260917-m2-k2-retract-p4-

@@ -513,7 +513,7 @@ TEST_CASE("record_session_live: session_ctx 发送原语+wire 形状 (RSL-A1)",
     region = rsl_region_between(RSL_PROTO_CC, "SendKidpalSessionCtx", "IsTimeout");
     TEST_ASSERT_TRUE_MESSAGE(region != NULL,
         "RSL-A1 RED(infra): protocol.cc SendKidpalSessionCtx 函数区切取失败"
-        "（原语未落/锚漂移——须复核本齿锚）");
+        "（原语未落/锚漂移——须复核本断言锚）");
     TEST_ASSERT_TRUE_MESSAGE(
         rsl_contains(region, "session_id") && rsl_contains(region, "kidpal_session_ctx") &&
         rsl_contains(region, "source_page") && rsl_contains(region, "SendText("),
@@ -558,7 +558,7 @@ TEST_CASE("record_session_live: 发送时点 Listening 分支序+负锚 (RSL-A2)
                                    "case kDeviceStateSpeaking:");
     TEST_ASSERT_TRUE_MESSAGE(listening != NULL,
         "RSL-A2 RED(infra): application.cc Listening 分支切片失败（case 锚漂移"
-        "——须复核本齿锚）");
+        "——须复核本断言锚）");
 
     /* tooth 2: 时序序断言——ctx 调用点在 IsAudioProcessorRunning 门**之前**（= 门
      * 之外无条件执行; 门内执行会短路通道复用会话, notes ②）且在 SendStartListening
@@ -782,7 +782,7 @@ TEST_CASE("record_session_live: 录音手势会话接线+交叉负锚 (RSL-A5)",
         const char *p_disc, *p_close;
         TEST_ASSERT_TRUE_MESSAGE(region != NULL,
             "RSL-A5 RED(infra): mcp_server.cc DISCARD_RECORD case 区切取失败（case 锚"
-            "漂移——须复核本齿锚, 不属 builder 修订面）");
+            "漂移——须复核本断言锚, 不属 builder 修订面）");
         p_disc = strstr(region, "SendKidpalStoryDiscard(");
         p_close = strstr(region, "CloseAudioChannel");
         TEST_ASSERT_TRUE_MESSAGE(p_disc != NULL,
@@ -970,7 +970,7 @@ TEST_CASE("record_session_live: kidpal_story_discard 发送原语+wire 形状 (R
     region = rsl_region_between(RSL_PROTO_CC, "SendKidpalStoryDiscard", "IsTimeout");
     TEST_ASSERT_TRUE_MESSAGE(region != NULL,
         "RSL-A8 RED(infra): protocol.cc SendKidpalStoryDiscard 函数区切取失败"
-        "（原语未落/锚漂移——须复核本齿锚, 不属 builder 修订面）");
+        "（原语未落/锚漂移——须复核本断言锚, 不属 builder 修订面）");
     TEST_ASSERT_TRUE_MESSAGE(
         rsl_contains(region, "session_id") &&
         rsl_contains(region, "kidpal_story_discard") &&
@@ -1076,7 +1076,7 @@ TEST_CASE("record_session_live: Listening 分支积分子页语境扩点 (RSL-A9
                                    "case kDeviceStateSpeaking:");
     TEST_ASSERT_TRUE_MESSAGE(listening != NULL,
         "RSL-A9 RED(infra): application.cc Listening 分支切片失败（case 锚漂移"
-        "——须复核本齿锚, 不属 builder 修订面）");
+        "——须复核本断言锚, 不属 builder 修订面）");
     TEST_ASSERT_TRUE_MESSAGE(
         rsl_contains(listening, "\"points_ledger\"") &&
         rsl_contains(listening, "KPTS_SUBSTATE_LEDGER") &&
@@ -1094,7 +1094,7 @@ TEST_CASE("record_session_live: Listening 分支积分子页语境扩点 (RSL-A9
     region = rsl_region_between(RSL_PROTO_CC, "SendKidpalSessionCtx", "IsTimeout");
     TEST_ASSERT_TRUE_MESSAGE(region != NULL,
         "RSL-A9 RED(infra): protocol.cc SendKidpalSessionCtx 函数区切取失败"
-        "（原语未落/锚漂移——须复核本齿锚, 不属 builder 修订面）");
+        "（原语未落/锚漂移——须复核本断言锚, 不属 builder 修订面）");
     TEST_ASSERT_TRUE_MESSAGE(
         rsl_contains(region, "selected_id") &&
         rsl_contains(region, "kidpal_points_json_escape"),
@@ -1170,3 +1170,61 @@ TEST_CASE("record_session_live: Listening 分支积分子页语境扩点 (RSL-A9
  *               SendKidpalSessionCtx 现形兼容（builder 轮 1 已全绿实证）; story
  *               语境映射 / 原发送时点 / 单点消费语义零回退（K0a 重锚面零触碰）。
  * --------------------------------------------------------------------------- */
+
+/* ========================================================================== *
+ * TEST 11 — RSL-A10: story_cover 普通问答语境扩点（261104-k5-story-cover-nav
+ * 2026-11-15 additive 重锚; impactedTestsSeed frozen-rebaseline: [S1] 签名断言不动,
+ * 补 story_cover 语境结构断言 —— 授权 = planner 派发单「[S1] 签名断言不动，补
+ * story_cover 语境结构断言」）。
+ *
+ * 契约位 = §四 kidpal_session_ctx（source_page 闭集 story_cover = 普通问答，
+ * P4 封皮产生 story_cover，P4 列表仍产生 story 并切记录语境）；requirements
+ * S-F2.6-AC4（语音「打开故事」只到封皮）+ S-F2.2-AC1（列表记录语境回归）。
+ *
+ * 强度 = 机制级源锚代理（设备 TU application.cc host 不可链）: 断言 Listening
+ * 分支出现 "story_cover" 字面 + KP_PAGE_STORY 页判 + 封皮子态判据（任一冻结口径：
+ * KSTORY_PAGE_COVER / kidpal_story_page_rendered_page / KSTORY_PAGE_LIST 子态）。
+ * [S1] kidpal_story_ctx_source_page(KP_PAGE_STORY) == "story" 的签名/映射零改由
+ * TEST 3 既有断言承载（本条不重复断言，只作回归参照）。真机 list-vs-cover 分语境
+ * 目击归 K5S-E4。
+ * RED today: Listening 分支零 "story_cover" 命中（封皮子态未接语境扩点）。
+ * ========================================================================== */
+/* coverage: S-F2.6-AC4 -- story_cover 普通问答语境（语音「打开故事」只到封皮, 不切记录语境） */
+/* coverage: S-F2.6 -- source_page 闭集扩 story_cover（K5 承载） */
+/* coverage: S-F2.2-AC1 -- 列表仍 story 记录语境（[S1] 签名零改回归参照） */
+TEST_CASE("record_session_live: story_cover 普通问答语境扩点 (RSL-A10)",
+          "[record_session_live][RSL-A10][structural]")
+{
+    char *region;
+    const char *sp;
+    int have_cover_gate;
+
+    RSL_REQUIRE_ROOT();
+
+    region = rsl_region_between(RSL_APP_CC, "case kDeviceStateListening:",
+                                "case kDeviceStateSpeaking:");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "RSL-A10 RED(infra): application.cc Listening 分支锚漂移（Listening/Speaking "
+        "case）——须复核本断言锚");
+    TEST_ASSERT_TRUE_MESSAGE(rsl_contains(region, "\"story_cover\""),
+        "RSL-A10 RED: Listening 分支无 \"story_cover\" 字面——P4 封皮普通问答语境扩点"
+        "缺失（契约 §四闭集六值; S-F2.6-AC4 语音「打开故事」只到封皮不得误切记录语境）");
+    TEST_ASSERT_TRUE_MESSAGE(rsl_contains(region, "KP_PAGE_STORY"),
+        "RSL-A10 RED: Listening 分支 story_cover 扩点未按 KP_PAGE_STORY 页判——L2 语境"
+        "扩点须在 P4 页族内分支（防其他页误吐 story_cover）");
+    have_cover_gate = rsl_contains(region, "KSTORY_PAGE_COVER") ||
+                      rsl_contains(region, "kidpal_story_page_rendered_page") ||
+                      rsl_contains(region, "kidpal_story_cover_substate") ||
+                      rsl_contains(region, "KSTORY_PAGE_LIST");
+    TEST_ASSERT_TRUE_MESSAGE(have_cover_gate,
+        "RSL-A10 RED: story_cover 扩点无封皮子态判据（KSTORY_PAGE_COVER / 会话页态只读 "
+        "getter / KSTORY_PAGE_LIST 子态门）——封皮与列表分语境判据缺失（列表须仍 story 记录"
+        "语境; S-F2.2-AC1 回归）");
+    free(region);
+
+    /* 回归参照（非本条断言语义扩张）: [S1] 签名/映射零改 —— P4 列表仍 "story"。 */
+    sp = kidpal_story_ctx_source_page(RSL_KP_PAGE_STORY);
+    TEST_ASSERT_TRUE_MESSAGE(sp != NULL && strcmp(sp, "story") == 0,
+        "RSL-A10 RED: kidpal_story_ctx_source_page(KP_PAGE_STORY) != \"story\"——[S1] "
+        "签名/映射零改回归被破（封皮扩点不得改动列表记录语境映射）");
+}
