@@ -3,7 +3,7 @@
   "riskTier": "high",
   "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
   "producedBy": "supervisor-verdict-gate.mjs",
-  "ts": "2026-11-14T17:46:35.394Z",
+  "ts": "2026-11-15T04:07:38.993Z",
   "changeId": "261104-k4-reward-goal-config",
   "originType": "proposal",
   "adjudication": {
@@ -27,7 +27,7 @@
     },
     "advisories": [],
     "precedentHits": [],
-    "circuitBreakerCompletedRounds": 1,
+    "circuitBreakerCompletedRounds": 2,
     "evidenceComplete": true
   },
   "provenance": {
@@ -47,9 +47,9 @@
         "precedentHits": []
       },
       "evidenceCompleteness": {
-        "bearingFactRef": "delivery/taskpackages/261104-k4-reward-goal-config/verifier-evidence/rounds/r1.json",
+        "bearingFactRef": "delivery/taskpackages/261104-k4-reward-goal-config/verifier-evidence/rounds/r2.json",
         "bearingFactOk": true,
-        "completedRounds": 1,
+        "completedRounds": 2,
         "closeoutArtifactsChecked": [
           "delivery/taskpackages/261104-k4-reward-goal-config/docs-delta.md",
           "delivery/taskpackages/261104-k4-reward-goal-config/review-packet.md"
@@ -117,7 +117,7 @@
       ".claude/verify-logs/1794670621722-mutation-check.log"
     ],
     "verifierEvidenceRefs": [
-      "delivery/taskpackages/261104-k4-reward-goal-config/verifier-evidence/rounds/r1.json"
+      "delivery/taskpackages/261104-k4-reward-goal-config/verifier-evidence/rounds/r2.json"
     ],
     "closeoutArtifactsChecked": [
       "delivery/taskpackages/261104-k4-reward-goal-config/docs-delta.md",
