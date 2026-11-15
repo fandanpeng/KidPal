@@ -1647,19 +1647,21 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
              *     S-F2.1 AC5/AC6 同型判据）, rc 恒 0（不因缺数据降级/黑屏）。
              * 计数源恒 kidpal_story_counter(list)（total 优先；不另造 cover_total）。 */
             lv_obj_t *book;
-            /* 书封外框（rbox: x=90..310 / y=30..245, 圆角 12, 3px 边框）。 */
+            /* 书封外框（rbox: x=96..303 / y=40..223, 圆角 10, 3px 边框; 对齐 V9 母版
+             * 墨迹 bbox——真机轮 human 二次看屏打回三条之一）。 */
             book = lv_obj_create(scr);
             lv_obj_remove_style_all(book);
-            lv_obj_set_size(book, 220, 215);
-            lv_obj_set_pos(book, 90, 30);
-            lv_obj_set_style_radius(book, 12, 0);
+            lv_obj_set_size(book, 207, 183);
+            lv_obj_set_pos(book, 96, 40);
+            lv_obj_set_style_radius(book, 10, 0);
             lv_obj_set_style_bg_opa(book, LV_OPA_TRANSP, 0);
             lv_obj_set_style_border_width(book, 3, 0);
             lv_obj_set_style_border_color(book, lv_color_hex(KSY_COLOR_INK), 0);
             lv_obj_set_style_border_opa(book, LV_OPA_COVER, 0);
             lv_obj_clear_flag(book, LV_OBJ_FLAG_SCROLLABLE);
-            /* 书脊线（竖线 @x=104, 自书封内顶 34 至 241——书封形态结构件）。 */
-            ksy_box(scr, 104, 34, 3, 207, KSY_COLOR_INK);
+            /* 书脊线（竖线 @x=118..119, 2px 宽, 自书封上边框 40 至下边 223, 全长 183——
+             * 与书封外框上下边框齐平；对齐 V9 母版）。 */
+            ksy_box(scr, 118, 40, 2, 183, KSY_COLOR_INK);
             /* 大星徽（V9 母版 `ic-coin` 52px: 外圈 3.5px 实线 + 内圈 2px 细实线双圈 +
              * 中心实心五角星, brief §5 / :132/:133; 中心 (210,79), 左 184 / 上 53）。
              * 资产可用 -> 直接落产线件 ic_coin_52_52（与设计逐像素一致）;
@@ -1700,13 +1702,18 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
                                    kidpal_font_title());
                 }
             }
-            /* 「星星记录本」标题（徽章下方标题带, 居中 20px；缺字经 fallback 链回退）。 */
-            ksy_label_font(scr, "星星记录本", 150, 148, KSY_COLOR_INK, kidpal_font_title());
-            /* 星星计数「★ ×N」（右上角, 数据已送达才画）——计数源恒 total。 */
+            /* 「星星记录本」标题（徽章下方标题带, 20px；缺字经 fallback 链回退）。
+             * 真机轮三次看屏定标: label (165,121) -> 墨迹 x≈167..263 / y≈125..142,
+             * 与设计墨迹 160..266 / 125..142 对齐、中心 x≈215 ≈ 星徽中心 210 同列。 */
+            ksy_label_font(scr, "星星记录本", 165, 121, KSY_COLOR_INK, kidpal_font_title());
+            /* 星星计数「★ ×N」（右上角, 数据已送达才画）——计数源恒 total。
+             * 真机轮三次看屏定标: ★ 用 16px 正文字体（20px 墨宽 18.6 > 设计 14, 会压到
+             * 「×」起笔）, (349,17) -> 墨迹 ≈349..364 / 19..33、中线 26; 「×N」14px 落
+             * (367,19) -> 左缘 367 让开星右角, 墨中线 ≈25.5 与星中线对齐（原高约 4.5px）。 */
             if (list != NULL) {
-                ksy_label(scr, "★", 316, 8, KSY_COLOR_INK);
+                ksy_label_font(scr, "★", 349, 17, KSY_COLOR_INK, kidpal_font_body());
                 snprintf(buf, sizeof(buf), "×%d", kidpal_story_counter(list));
-                ksy_label(scr, buf, 344, 8, KSY_COLOR_INK);
+                ksy_label(scr, buf, 367, 19, KSY_COLOR_INK);
             }
             /* 小伴右侧探头（brief §5 / :132 / V9 母版: 书封右沿外留 8px 缝、不压叠）:
              * 复用 pose_daily_96 全姿态（96x96, 内容 bbox 74x83），等比缩绘 205/256
@@ -1724,10 +1731,23 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
                 }
             }
             /* 角落涂鸦点缀（brief §3.1④ 装饰件, 非文字/说明; V9 母版左下云 + 左上「+」）:
-             * 左下云 = doodle_cloud_52 资产（内容左缘落 x≈55 / 顶缘 y≈207, 对齐母版）;
+             * 左下云 = doodle_cloud_52 资产 **等比缩绘**（资产 ink bbox (4,8)-(50,40),
+             * 目标墨迹 30x21 -> scale 164/256≈0.64, pivot 置左上: ink 左 = 52+4×0.64≈55 /
+             * 顶 = 202+8×0.64≈207, 对齐母版 55..85 / 207..228）。旧 1:1 落 48,199 把 47x33
+             * 墨迹压进书封左边(96)——human 二次看屏打回。资产缺路径静默不画（沿用
+             * kstory_art_dsc 返回 NULL 判据）。
              * 左上「+」= 原生十字两笔（母版 bbox 68..79 / 48..59）。均属装饰, 不进任何
              * 验收断言带本体——只作封皮气氛, 不动书封/标题/星徽/计数的既有几何。 */
-            ksy_art_image(scr, "doodle_cloud_52.bin", 96, 96, 48, 199);
+            {
+                const lv_image_dsc_t *cl_im = kstory_art_dsc("doodle_cloud_52.bin", 96, 96);
+                if (cl_im != NULL) {
+                    lv_obj_t *ci = lv_image_create(scr);
+                    lv_image_set_src(ci, cl_im);
+                    lv_image_set_pivot(ci, 0, 0);
+                    lv_image_set_scale(ci, 164);
+                    lv_obj_set_pos(ci, 52, 202);
+                }
+            }
             ksy_box(scr, 68, 52, 12, 3, KSY_COLOR_INK); /* 「+」横笔 */
             ksy_box(scr, 72, 48, 3, 12, KSY_COLOR_INK); /* 「+」竖笔 */
             break;
