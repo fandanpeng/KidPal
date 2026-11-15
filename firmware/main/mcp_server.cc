@@ -25,6 +25,12 @@
 #include "display/view_router.h"
 #include "display/schedule_page.h"
 #include "display/story_page.h"  /* 故事 P3 (包 260829-story-p3): 列表/阅读/录音/盖章消费面 */
+#include "display/points_page.h" /* 星星积分 P3 (261104-k0-points-e2e-spike): points_home/
+                                  * points_ledger 载荷消费 + restore 分流 + 分页缓存纪律；
+                                  * 261104-k2-points-device-ui: 四态/进度线/键位/删除确认/
+                                  * keyset 状态/selected_id 只读注入消费接线 */
+#include "display/keybar.h"      /* 261104-k2-points-device-ui: 积分子态键帽三槽
+                                  * kidpal_keybar_points_slots 消费接线 */
 #include "display/story_cache.h" /* P3 正文本地缓存纯逻辑面 (261016-p3-story-body-sd-cache):
                                   * RAM 索引 / 当屏缺失 / 双击三分支 / 预取决策 / id 校验 /
                                   * SD I/O 适配声明 */
@@ -62,6 +68,24 @@ namespace {
 kidpal_story_view_t g_story_view = {};
 kidpal_story_list_t g_story_list = {};
 kidpal_story_text_t g_story_text = {};
+/* 星星积分 P3 消费缓存（261104-k0-points-e2e-spike；单例视图无并发竞态——mcp 回调
+ * 同步跑在接收任务、渲染经 Application::Schedule 归主任务）。「数据未达不显示数字」
+ * （S-F6.1 AC4）= 这两块 RAM 初态为 0 且从未收到权威帧的事实，由本接线层承载。 */
+kidpal_points_home_t g_points_home = {};
+kidpal_points_ledger_t g_points_ledger = {};
+kidpal_points_ledger_view_t g_points_ledger_view = {};
+/* 261104-k2-points-device-ui 消费侧状态（纯逻辑决策表住 display/points_page.c，这里
+ * 只持有调用方侧状态并做 tick 驱动；与 g_story_* 同级宽松度）:
+ *   g_points_ledger_state = keyset 全量分页客户端状态（apply / next_request 消费）；
+ *   g_points_home_received = 「是否收到过权威 points_home」（NODATA 判据）；
+ *   g_points_cursor = 详细账本当前页内选中行（0-based）；
+ *   g_points_pending_delete_id / tries / sent_ms = 删除上行隐式 ack 重发记账。 */
+kidpal_points_ledger_state_t g_points_ledger_state = {};
+int g_points_cursor = 0;
+unsigned long g_points_delete_idle_ms = 0;
+char g_points_pending_delete_id[KPTS_ENTRY_ID_CAP] = {0};
+int g_points_pending_tries = 0;
+uint32_t g_points_pending_sent_ms = 0;
 }  // namespace
 
 /* -------------------------------------------------------------------------- *
@@ -250,6 +274,207 @@ unsigned long g_story_body_unavailable_idle_ms = 0; /* WF-F2-06 覆盖层 10s id
 bool StoryDispatchAct(int act);
 /* 预取 / 双击等待 tick 驱动（定义在 EnsureStoryTickTimer 之后） */
 bool StoryPrefetchTick(void);
+/* 星星积分本 tick 驱动复用同一 ~100ms 定时器（定义在本文件下方）。 */
+void EnsureStoryTickTimer(void);
+
+/* -------------------------------------------------------------------------- *
+ * 星星积分本 K2 消费侧辅助（TaskPackage 261104-k2-points-device-ui）
+ *
+ * 纯逻辑决策表全部住 display/points_page.c；本区只做「设备侧状态 -> 决策表输入 ->
+ * 动作执行」的接线（与 story_page.c + StoryDispatchAct 同型分工）。手势来源 =
+ * HandleStoryKey（板级按键回调把页内手势交进本函数时）。
+ * ------------------------------------------------------------------------ */
+
+/* 选中项同步：cursor 落在当前权威页窗内 -> selected id = 该分录 id（再经只读注入
+ * 决策校验，设备不造 id）；越界/空 -> 清空。 */
+void PointsSyncSelectedId()
+{
+    const char* cand = nullptr;
+
+    if (g_points_cursor >= 0 && g_points_cursor < g_points_ledger.item_count) {
+        cand = g_points_ledger.items[g_points_cursor].id;
+    }
+    if (cand != nullptr &&
+        kidpal_points_selected_id_injectable(&g_points_ledger, cand) == 1) {
+        kidpal_points_ui_set_selected_id(cand);
+    } else {
+        kidpal_points_ui_set_selected_id(nullptr);
+    }
+    /* 渲染缓存光标同步（详细账本描边框 / 删除确认选中行；帧与分页状态不动）。 */
+    kidpal_render_node_cache_points_ledger(nullptr, nullptr, g_points_cursor);
+}
+
+/* KEY/BOOT 手势 -> 积分主页/详细账本键位决策表 gesture 码。 */
+int PointsGestureCode(key_id_t key, key_gesture_t g)
+{
+    if (key == KEY_ID_KEY) {
+        if (g == KEY_GESTURE_CLICK) return KPTS_GESTURE_KEY_SHORT;
+        if (g == KEY_GESTURE_DOUBLE_CLICK) return KPTS_GESTURE_KEY_DOUBLE;
+        if (g == KEY_GESTURE_LONG_PRESS) return KPTS_GESTURE_KEY_LONG;
+    } else if (key == KEY_ID_BOOT) {
+        if (g == KEY_GESTURE_CLICK) return KPTS_GESTURE_BOOT_SHORT;
+        if (g == KEY_GESTURE_DOUBLE_CLICK) return KPTS_GESTURE_BOOT_DOUBLE;
+        if (g == KEY_GESTURE_LONG_PRESS) return KPTS_GESTURE_BOOT_LONG;
+    }
+    return -1;
+}
+
+/* KEY/BOOT 手势 -> 删除确认子态 gesture 码（其余 = OTHER：不响应）。 */
+int PointsDeleteGestureCode(key_id_t key, key_gesture_t g)
+{
+    if (key == KEY_ID_KEY && g == KEY_GESTURE_CLICK) return KPTS_DEL_GESTURE_KEY_SHORT;
+    if (key == KEY_ID_BOOT) {
+        if (g == KEY_GESTURE_CLICK) return KPTS_DEL_GESTURE_BOOT_SHORT;
+        if (g == KEY_GESTURE_DOUBLE_CLICK) return KPTS_DEL_GESTURE_BOOT_DOUBLE;
+        if (g == KEY_GESTURE_LONG_PRESS) return KPTS_DEL_GESTURE_BOOT_LONG;
+    }
+    return KPTS_DEL_GESTURE_OTHER;
+}
+
+/* 续页请求（BOOT 双击翻屏 / 光标到底）：消费 next_request 决策表；无续页 = no-op。 */
+void PointsRequestNextPage()
+{
+    char cursor[KPTS_CURSOR_CAP];
+    int known_rev = -1;
+    int limit = KPTS_PAGE_REQ_LIMIT;
+    int has_next = kidpal_points_ledger_next_request(
+        &g_points_ledger_state, cursor, sizeof(cursor), &known_rev, &limit);
+
+    if (has_next < 0) {
+        ESP_LOGW(TAG, "points_page next_request rejected size=%d", (int)sizeof(cursor));
+        return;
+    }
+    if (has_next == 0) {
+        ESP_LOGI(TAG, "points_page next_request home_only rev=%d limit=%d", known_rev,
+                 limit);
+    }
+    SendKidpalPointsPage(has_next == 1 ? cursor : nullptr, known_rev, limit);
+}
+
+/* 积分页重渲（本地导航 / 帧到达后统一经 Schedule 回 main app task 落屏——渲染面持
+ * lvgl 锁；当前页非积分页时 refresh 内部 no-op，restore 帧绝不抢前台，D-07）。 */
+void PointsRefreshRender()
+{
+    if (kidpal_render_node_get_page() != KP_PAGE_POINTS_HOME) {
+        return;
+    }
+    Application::GetInstance().Schedule([]() {
+        kidpal_render_node_refresh_points();
+    });
+}
+
+/* 显式打开详细账本（KEY 双击）：清本地分页游标 + 请求最新首页（契约 §四）。 */
+void PointsEnterLedger()
+{
+    kidpal_points_ui_set_substate(KPTS_SUBSTATE_LEDGER);
+    g_points_cursor = 0;
+    SendKidpalPointsPage(nullptr, -1, KPTS_PAGE_REQ_LIMIT);
+    PointsRefreshRender(); /* 先落账本壳（帧未到 = 数据未达话术），帧到达后再刷 */
+    ESP_LOGI(TAG, "points_key open_ledger request=home limit=%d", KPTS_PAGE_REQ_LIMIT);
+}
+
+/* 积分页内手势 dispatch 单点（返回 = 是否消费；false 交回全局路由）。 */
+bool PointsDispatchKey(key_id_t key, key_gesture_t g)
+{
+    int substate = kidpal_points_ui_substate();
+
+    if (substate == KPTS_SUBSTATE_DELETE_CONFIRM) {
+        int dact;
+
+        g_points_delete_idle_ms = 0; /* 任意手势重计 10s 静默窗（§2.3） */
+        dact = kidpal_points_delete_confirm_decide(PointsDeleteGestureCode(key, g));
+        if (dact == KPTS_DEL_ACT_CONFIRM) {
+            const char* sel = kidpal_points_ui_selected_id();
+            if (sel != nullptr && sel[0] != '\0') {
+                std::snprintf(g_points_pending_delete_id,
+                              sizeof(g_points_pending_delete_id), "%s", sel);
+                g_points_pending_tries = 0;
+                g_points_pending_sent_ms = lv_tick_get();
+                SendKidpalPointsDelete(sel);
+                EnsureStoryTickTimer();
+                ESP_LOGI(TAG, "points_key delete_confirm id=%s", sel);
+            }
+            kidpal_points_ui_set_substate(KPTS_SUBSTATE_LEDGER);
+            PointsRefreshRender(); /* 关删除覆盖层回账本（页点/键帽随态恢复） */
+        } else if (dact == KPTS_DEL_ACT_CANCEL) {
+            kidpal_points_ui_set_substate(KPTS_SUBSTATE_LEDGER);
+            PointsRefreshRender();
+            ESP_LOGI(TAG, "points_key delete_cancel");
+        } else {
+            ESP_LOGI(TAG, "points_key delete_noop key=%d gesture=%d", (int)key, (int)g);
+        }
+        return true; /* 删除覆盖层吞全手势（§2.3 子态行） */
+    }
+
+    if (substate == KPTS_SUBSTATE_LEDGER) {
+        int act = kidpal_points_ledger_key_action(PointsGestureCode(key, g));
+
+        switch (act) {
+            case KPTS_ACT_VOICE_SESSION:
+                /* 积分语境（source_page=points_ledger + selected_id）由
+                 * application.cc 会话发起点按 kidpal_points_ui_substate() 取。
+                 * K2 真机轮 F10：入口走 ToggleChatState（= 对话开关，与课表「问课程」
+                 * 同语义）而非 StartListening——后者在 Idle 非故事语境恒 ManualStop，
+                 * 点按开启后永不 stop、零 ASR。ToggleChatState 走 HandleToggleChatEvent
+                 * Idle 分支恒 AutoStop/Realtime（真机 mode=auto 实证可转写）。 */
+                Application::GetInstance().Schedule([]() {
+                    kidpal_render_node_show_chat();
+                });
+                Application::GetInstance().ToggleChatState();
+                return true;
+            case KPTS_ACT_BACK:
+                kidpal_points_ui_set_substate(KPTS_SUBSTATE_NONE);
+                PointsRefreshRender(); /* 回积分主页（页内子态归零、键帽回落页槽表） */
+                ESP_LOGI(TAG, "points_key ledger_back");
+                return true;
+            case KPTS_ACT_CURSOR_DOWN:
+                if (g_points_cursor + 1 < g_points_ledger.item_count) {
+                    g_points_cursor++;
+                    PointsSyncSelectedId();
+                    PointsRefreshRender(); /* 光标描边框随行 */
+                } else if (g_points_ledger_state.has_more) {
+                    PointsRequestNextPage(); /* 屏底续页 = 新页首项由帧到达后复位 */
+                }
+                ESP_LOGI(TAG, "points_key cursor=%d", g_points_cursor);
+                return true;
+            case KPTS_ACT_NEXT_SCREEN:
+                PointsRequestNextPage();
+                ESP_LOGI(TAG, "points_key next_screen");
+                return true;
+            case KPTS_ACT_DELETE_ENTER:
+                if (g_points_ledger.item_count > 0) {
+                    kidpal_points_ui_set_substate(KPTS_SUBSTATE_DELETE_CONFIRM);
+                    g_points_delete_idle_ms = 0;
+                    EnsureStoryTickTimer();
+                    PointsRefreshRender(); /* 整屏覆盖层 + 页点消失 */
+                    ESP_LOGI(TAG, "points_key delete_enter cursor=%d", g_points_cursor);
+                    return true;
+                }
+                return false; /* 空账无删除对象：交回全局 */
+            default:
+                return false; /* 账本 KEY 双击无双击语义（→ 全局 NONE） */
+        }
+    }
+
+    /* KPTS_SUBSTATE_NONE = 基层 P3 积分主页（§2.3 P3 积分主页行）。 */
+    switch (kidpal_points_home_key_action(PointsGestureCode(key, g))) {
+        case KPTS_ACT_VOICE_SESSION:
+            /* K2 真机轮 F10：同详细账本分支——ToggleChatState 对话开关（Idle 恒
+             * AutoStop/Realtime），不再走 StartListening（非故事恒 ManualStop）。 */
+            Application::GetInstance().Schedule([]() {
+                kidpal_render_node_show_chat();
+            });
+            Application::GetInstance().ToggleChatState();
+            return true;
+        case KPTS_ACT_OPEN_LEDGER:
+            PointsEnterLedger();
+            return true;
+        case KPTS_ACT_BACK:
+            return false; /* KEY 长按 = 回首页：交全局 route（基层一层到家） */
+        default:
+            return false; /* BOOT 页循环归 K0a 四页骨架（不由本表接管） */
+    }
+}
 
 /* ~100ms tick 三驱动（seam [K2] 消歧冲销执行 / [K3] 10s idle 静默取消 / [K4] 5s
  * 重发）——禁 1s tick 驱动消歧（300ms 死线粒度不够, plan 机制形态注记）。全部
@@ -320,6 +545,35 @@ void StoryTickTimerCb(lv_timer_t* timer) {
     /* ⑤ 预取 / 双击等待（SC-A1/A4/A5）: 纯逻辑决策住 story_cache.c, 此处只注入
      * 显式输入并执行发帧 / 降级出参。 */
     if (StoryPrefetchTick()) {
+        busy = true;
+    }
+
+    /* ⑥ 星星积分本删除确认 10s 静默取消（261104-k2-points-device-ui, K2PTS-P3;
+     * 静默——不显示倒计时。任意手势重计 = PointsDispatchKey 消费侧复位累计）。 */
+    if (kidpal_points_ui_substate() == KPTS_SUBSTATE_DELETE_CONFIRM) {
+        if (kidpal_points_delete_idle_step(&g_points_delete_idle_ms, 100UL) == 1) {
+            g_points_delete_idle_ms = 0;
+            kidpal_points_ui_set_substate(KPTS_SUBSTATE_LEDGER);
+            PointsRefreshRender(); /* 10s 静默取消回账本（不显示倒计时） */
+            ESP_LOGI(TAG, "points_delete idle_close");
+        } else {
+            busy = true;
+        }
+    } else {
+        g_points_delete_idle_ms = 0;
+    }
+
+    /* ⑦ 星星积分本删除上行隐式 ack 重发（契约 §四；上限后静默停发、不假删；
+     * 对账冲销 = 权威 points_ledger 重推到路由侧消费）。 */
+    if (g_points_pending_delete_id[0] != '\0') {
+        if (kidpal_points_delete_resend_due(g_points_pending_tries,
+                                            now - g_points_pending_sent_ms) == 1) {
+            ESP_LOGW(TAG, "points_delete_resend id=%s tries=%d",
+                     g_points_pending_delete_id, g_points_pending_tries);
+            SendKidpalPointsDelete(g_points_pending_delete_id);
+            g_points_pending_tries++;
+            g_points_pending_sent_ms = now;
+        }
         busy = true;
     }
 
@@ -1280,6 +1534,13 @@ bool McpServer::HandleStoryKey(key_id_t key, key_gesture_t g) {
         return false;
     }
 
+    /* K2 additive（261104-k2-points-device-ui）: P3 星星积分本页内手势族优先消费
+     * （积分主页 / 详细账本 / 删除确认子态）；页不拥有该手势 -> false 交回全局路由
+     * （主页 BOOT 页循环仍归 K0a 四页骨架，零偏移）。 */
+    if (kidpal_render_node_get_page() == KP_PAGE_POINTS_HOME) {
+        return PointsDispatchKey(key, g);
+    }
+
     /* 删除子态任意手势消费 = idle 重计（seam [K3] 消费侧义务: 每次手势驱动即复位
      * 累计; host 行为齿不可达半, 盲区申报在案）。 */
     if (g_story_view.page == KSTORY_PAGE_DELETE) {
@@ -1373,8 +1634,9 @@ void McpServer::AddCommonTools() {
     AddTool("kidpal/display",
         "Render an E1 display payload issued by the KidPal gateway on this board. "
         "The payload carries a view (char/schedule/story_list/story_text/text/home/"
-        "control whitelist) and optional data; the board routes it to the matching "
-        "display face, applies control actions, and returns a delivery acknowledgement.",
+        "control/points_home/points_ledger whitelist) and optional data; the board routes "
+        "it to the matching display face, applies control actions, and returns a delivery "
+        "acknowledgement.",
         PropertyList({
             Property("view", kPropertyTypeString),
             Property("data", kPropertyTypeString, std::string(""))
@@ -1883,6 +2145,16 @@ void McpServer::AddCommonTools() {
                         kidpal_story_view_t reader_view = g_story_view;
                         (void)kidpal_story_open_reader(&reader_view, parsed.get(),
                                                        KSTORY_READER_LINES_PER_SCREEN);
+                        /* K0A-E3-F2 真机缺陷修复（261104-k0a-four-page-skeleton fixer 轮,
+                         * 约束版 C1b, architect 2026-11-05 裁定）：云端阅读路径此前只把
+                         * READER 落在栈上快照 reader_view，从不提交回 mcp 权威视图
+                         * g_story_view —— 于是键归属闸（读渲染节点，已由 F1 报 READER）
+                         * 放行 KEY，但 HandleStoryKey 的输入决策表读 g_story_view=LIST，
+                         * 把 KEY 短按判成 REC_SESSION 误开录音会话（真机 :114
+                         * story_key rec_session_slot page=0）。此处把阅读开态提交回
+                         * 权威视图，令 input 表见 READER（KEY 短/双=NONE、长=READER_EXIT、
+                         * BOOT=翻屏）。 */
+                        g_story_view = reader_view;
                         cJSON_AddNumberToObject(ack, "screens", reader_view.screens);
                         ESP_LOGI(TAG, "story_text_dispatch corr_id=%s screens=%d degrade=false",
                                  corr_id, reader_view.screens);
@@ -1892,8 +2164,207 @@ void McpServer::AddCommonTools() {
                             kidpal_render_node_begin_page();
                             kidpal_story_page_render(&reader_view, list_snapshot.get(),
                                                      reader_text.get());
+                            /* K0A-E3-F2（约束版 C1b）：阅读页落屏后把渲染节点缓存也同步到
+                             * READER（deferred_flush / 本地重渲见真页态），与上方
+                             * g_story_view 提交配对，消除「两结构半分裂」。缓存取**执行期**
+                             * g_story_* 当前值（R2-F4 防时序倒挂纪律：不回写入队时的
+                             * reader_view/list_snapshot/reader_text 旧快照）。 */
+                            kidpal_render_node_cache_story(&g_story_view, &g_story_list, &g_story_text);
                             kidpal_render_node_end_page();
                         });
+                    }
+                    break;
+                }
+                case VRT_ROUTE_POINTS_HOME: { /* VRT_ROUTE_POINTS_HOME —— P3 星星积分本
+                    * 主页（契约 §1.3⑦；261104-k0-points-e2e-spike 最小消费）。解析
+                    * data（revision/balance/target 四键/recent 六键分录/restore 布尔）：
+                    * 成功 -> 填 RAM 缓存 + restore 分流（takeover：true=只填缓存不抢
+                    * 前台 / 缺省false=接管前台跳积分页）；解析失败 (-1) -> 显式降级，
+                    * 绝不盲渲染（V27；restore 载荷失败静默，不打扰前台——ADR-005 同款）。 */
+                    cJSON_AddStringToObject(ack, "route", "points_home");
+                    char corr_id[24];
+                    snprintf(corr_id, sizeof(corr_id), "kdp-%u",
+                             static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+                    /* kidpal_points_home_t ≈ 0.7KB（3×分录 + target）→ 堆分配（本文件头
+                     * ssl_receive 4096B 栈纪律）。 */
+                    auto p_home = std::make_unique<kidpal_points_home_t>();
+                    if (kidpal_points_home_parse(data.c_str(), p_home.get()) != 0) {
+                        cJSON_AddBoolToObject(ack, "degrade", true);
+                        ESP_LOGW(TAG, "display_dispatch view=points_home corr_id=%s degrade=true",
+                                 corr_id);
+                        if (!mcp_json_get_bool(data, "restore")) {
+                            auto display = Board::GetInstance().GetDisplay();
+                            app.Schedule([display]() {
+                                display->SetChatMessage("system", "积分本暂时打不开，稍后再试试");
+                            });
+                        }
+                        break;
+                    }
+                    g_points_home = *p_home;
+                    /* 渲染缓存投递（K2 正式主页消费源；四态/进度线判定仍在本函数下方
+                     * 以 points_page.c 决策表裁决，渲染面零重算）。 */
+                    kidpal_render_node_cache_points_home(&g_points_home);
+                    /* K2PTS-P1/P2: 四态判定 + 进度线画法数据面（消费接线）。
+                     * NODATA 判据落「有无权威帧」——本处已收到，frame 非 NULL；
+                     * 未收到时由渲染面 KP_POINTS_NODATA_HINT 占位（零数字）。 */
+                    int pts_state = kidpal_points_home_state(&g_points_home);
+                    kidpal_points_progress_t pts_progress = {};
+                    int pts_progress_rc = kidpal_points_progress(&g_points_home,
+                                                                 &pts_progress);
+                    int pts_takeover = kidpal_points_home_takeover(p_home.get());
+                    if (pts_takeover == 1) {
+                        /* 主动展示（语音成功/显式打开）= 基层积分主页；restore 帧
+                         * 只填缓存不抢前台，也不得把在屏详细账本打回主页（D-07）。 */
+                        kidpal_points_ui_set_substate(KPTS_SUBSTATE_NONE);
+                    }
+                    cJSON_AddNumberToObject(ack, "balance", p_home->balance);
+                    cJSON_AddNumberToObject(ack, "revision", p_home->revision);
+                    cJSON_AddNumberToObject(ack, "recent", p_home->recent_count);
+                    cJSON_AddNumberToObject(ack, "state", pts_state);
+                    if (pts_progress_rc == 0) {
+                        cJSON_AddNumberToObject(ack, "progress_pos", pts_progress.pos);
+                        cJSON_AddNumberToObject(ack, "progress_target",
+                                                pts_progress.target_points);
+                        cJSON_AddNumberToObject(ack, "progress_solid",
+                                                pts_progress.solid_len);
+                        cJSON_AddBoolToObject(ack, "overshoot",
+                                              pts_progress.overshoot != 0);
+                    }
+                    ESP_LOGI(TAG, "display_dispatch view=points_home corr_id=%s balance=%d "
+                                  "revision=%d recent=%d restore=%d takeover=%d state=%d "
+                                  "pos=%d target=%d solid=%d overshoot=%d",
+                             corr_id, p_home->balance, p_home->revision,
+                             p_home->recent_count, p_home->restore, pts_takeover,
+                             pts_state, pts_progress.pos, pts_progress.target_points,
+                             pts_progress.solid_len, pts_progress.overshoot);
+                    if (pts_takeover == 1) {
+                        /* 主动展示（设备主动语音记账成功 / 显式打开）= 跳 P3 积分主页
+                         * （D-07 例外分叉，替代 K0 最小 chat 行）；restore 帧只填缓存
+                         * 不抢前台，但积分页在屏时原地刷新（不打断浏览、不切子态）。 */
+                        app.Schedule([]() {
+                            kidpal_render_node_show_points_home();
+                        });
+                    } else if (kidpal_render_node_points_on_screen()) {
+                        app.Schedule([]() {
+                            kidpal_render_node_refresh_points();
+                        });
+                    }
+                    break;
+                }
+                case VRT_ROUTE_POINTS_LEDGER: { /* VRT_ROUTE_POINTS_LEDGER —— P3 详细账本
+                    * 分页（契约 §1.3⑧ + §四 kidpal_points_page；261104-k0 最小消费）。
+                    * 解析 data（items 六键分录 ≤6 / page 四键 / restore 布尔）-> 分页
+                    * 缓存纪律 kidpal_points_ledger_apply（reset 丢弃旧缓存、同版本续页
+                    * 累加、跨版本拒绝）。视觉版式归 K2。 */
+                    cJSON_AddStringToObject(ack, "route", "points_ledger");
+                    char corr_id[24];
+                    snprintf(corr_id, sizeof(corr_id), "kdp-%u",
+                             static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+                    auto p_ledger = std::make_unique<kidpal_points_ledger_t>();
+                    if (kidpal_points_ledger_parse(data.c_str(), p_ledger.get()) != 0) {
+                        cJSON_AddBoolToObject(ack, "degrade", true);
+                        ESP_LOGW(TAG, "display_dispatch view=points_ledger corr_id=%s degrade=true",
+                                 corr_id);
+                        if (!mcp_json_get_bool(data, "restore")) {
+                            auto display = Board::GetInstance().GetDisplay();
+                            app.Schedule([display]() {
+                                display->SetChatMessage("system", "详细账本暂时打不开，稍后再试试");
+                            });
+                        }
+                        break;
+                    }
+                    g_points_ledger = *p_ledger;
+                    {
+                        int apply_rc = kidpal_points_ledger_apply(
+                            &g_points_ledger_view, p_ledger.get());
+                        int state_rc = kidpal_points_ledger_state_apply(
+                            &g_points_ledger_state, p_ledger.get());
+                        if (apply_rc != 0 || state_rc != 0) {
+                            /* 跨版本续页被拒（契约 §四「不得跨版本追加」）：缓存零扰动。 */
+                            ESP_LOGW(TAG, "points_ledger_apply corr_id=%s cached_rev=%d "
+                                          "frame_rev=%d reset=%d -> reject(apply=%d state=%d)",
+                                     corr_id, g_points_ledger_view.revision,
+                                     p_ledger->revision, p_ledger->reset, apply_rc,
+                                     state_rc);
+                        }
+                        /* K2PTS-P4: 「共 y 屏」以 page_total（全量）为准；一屏行数 =
+                         * 单帧容量 KPTS_LEDGER_ITEMS_MAX（请求窗口与展示窗口一致，
+                         * 不继承故事 4 行/屏）。 */
+                        int screens = kidpal_points_ledger_screen_total(
+                            &g_points_ledger_state, KPTS_LEDGER_ITEMS_MAX);
+                        /* 新页到达：选中行落该页首项（翻屏 = 落该屏首项，§2.3）。 */
+                        g_points_cursor = 0;
+                        PointsSyncSelectedId();
+                        /* 渲染缓存投递（详细账本/删除确认画法消费源；光标与分页状态
+                         * 同帧快照，渲染面零重算）。 */
+                        kidpal_render_node_cache_points_ledger(
+                            &g_points_ledger, &g_points_ledger_state, g_points_cursor);
+                        /* 子态：显式打开 -> 详细账本；在屏账本/删除确认的 restore
+                         * 重推 -> 保持/收敛到详细账本；在主页收到后台账本缓存帧不抢
+                         * 前台、不切子态（D-07 restore 不抢前台）。 */
+                        {
+                            int pts_sub = kidpal_display_points_substate("points_ledger");
+                            if (pts_sub >= 0 &&
+                                (!p_ledger->restore ||
+                                 kidpal_points_ui_substate() != KPTS_SUBSTATE_NONE)) {
+                                kidpal_points_ui_set_substate(pts_sub);
+                            }
+                        }
+                        /* 在屏原地刷新（显式打开 / 删除对账重推）；restore 帧不抢前台，
+                         * 他页在前台时零渲染（D-07）。 */
+                        if (kidpal_render_node_points_on_screen()) {
+                            app.Schedule([]() {
+                                kidpal_render_node_refresh_points();
+                            });
+                        }
+                        /* K2PTS-P6: 子态键帽三槽消费接线（账本「问一问/下移」/
+                         * 删除确认「删掉/算了」单源；覆盖层页点消失走既有
+                         * kidpal_keybar_dots overlay_top 语义，机制零新增）。 */
+                        const char* key_left = nullptr;
+                        const char* key_right = nullptr;
+                        int slots_rc = kidpal_keybar_points_slots(
+                            kidpal_points_ui_substate(), &key_left, &key_right);
+                        /* 隐式 ack 对账（契约 §四 kidpal_points_delete / K2PTS-P3）:
+                         * 权威重推首页（reset=true）不含 pending id -> 删除生效，冲销
+                         * pending；仍含 -> 不冲销（继续按 5s/上限重发，不假删）。 */
+                        if (p_ledger->reset != 0 &&
+                            g_points_pending_delete_id[0] != '\0') {
+                            int hit = kidpal_points_delete_reconcile_hit(
+                                g_points_pending_delete_id, &g_points_ledger);
+                            if (hit == 0) {
+                                ESP_LOGI(TAG, "points_delete ack id=%s",
+                                         g_points_pending_delete_id);
+                                g_points_pending_delete_id[0] = '\0';
+                                g_points_pending_tries = 0;
+                            }
+                        }
+                        cJSON_AddNumberToObject(ack, "total", p_ledger->page_total);
+                        cJSON_AddNumberToObject(ack, "items", p_ledger->item_count);
+                        cJSON_AddNumberToObject(ack, "cached",
+                                                g_points_ledger_state.cached_count);
+                        cJSON_AddNumberToObject(ack, "screens", screens);
+                        cJSON_AddStringToObject(
+                            ack, "substate",
+                            kidpal_points_ui_substate() == KPTS_SUBSTATE_DELETE_CONFIRM
+                                ? "delete_confirm"
+                                : "ledger");
+                        ESP_LOGI(TAG, "display_dispatch view=points_ledger corr_id=%s "
+                                      "total=%d items=%d reset=%d has_more=%d apply_rc=%d "
+                                      "state_rc=%d cached=%d rev=%d screens=%d substate=%d "
+                                      "slots_rc=%d key=%s/%s selected=%s pending=%s",
+                                 corr_id, p_ledger->page_total, p_ledger->item_count,
+                                 p_ledger->reset, p_ledger->has_more, apply_rc, state_rc,
+                                 g_points_ledger_state.cached_count,
+                                 g_points_ledger_state.revision, screens,
+                                 kidpal_points_ui_substate(), slots_rc,
+                                 key_left != nullptr ? key_left : "-",
+                                 key_right != nullptr ? key_right : "-",
+                                 kidpal_points_ui_selected_id()[0] != '\0'
+                                     ? kidpal_points_ui_selected_id()
+                                     : "-",
+                                 g_points_pending_delete_id[0] != '\0'
+                                     ? g_points_pending_delete_id
+                                     : "-");
                     }
                     break;
                 }

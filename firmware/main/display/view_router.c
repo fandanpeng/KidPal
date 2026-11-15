@@ -59,6 +59,14 @@ int kidpal_display_route(const char *view)
     if (strcmp(view, "story_text") == 0) {
         return VRT_ROUTE_STORY_TEXT;
     }
+    /* additive 尾部追加（261104-k0-points-e2e-spike [G1]；契约 §1.3⑦⑧）：P3 积分本
+     * 主页 / 详细账本分页——数值码 7/8 只增不改，既有 0..6 零偏移。 */
+    if (strcmp(view, "points_home") == 0) {
+        return VRT_ROUTE_POINTS_HOME;
+    }
+    if (strcmp(view, "points_ledger") == 0) {
+        return VRT_ROUTE_POINTS_LEDGER;
+    }
 
     /* 白名单外 view -> UNKNOWN 降级信号：独立路径，与任何正常渲染不混流。
      * (格式不遵循降级, V27 / spec §4.0 —— 绝不盲渲染。) */
@@ -85,6 +93,11 @@ int kidpal_display_control_action(const char *action)
     if (strcmp(action, "start_organizing") == 0) {
         return VRT_CTRL_START_ORGANIZING;
     }
+
+    /* 负锚（261104-k0-points-e2e-spike [G1]；契约 §1.4 add_points / redeem_points 行）：
+     * 积分两动作是**网关决定类**——front 截获薄意图交 points.py 执行，控制帧不发给
+     * 任何一端；设备只消费执行后的权威积分视图。设备侧**不可路由** = 误下发即降级，
+     * 绝不在此执行任何记账语义（故不登记 VRT_CTRL_* 数值码，落到下方 UNKNOWN）。 */
 
     /* 未知动作 -> 降级 (不执行任何语义)。 */
     return VRT_CTRL_UNKNOWN;
@@ -120,4 +133,21 @@ int kidpal_display_text_page_count(const char *text, int screen_lines)
          * 的有处理失败模式 (G 生成面)，设备只渲染全文。 */
         return (int)((line_count + screen_lines - 1) / screen_lines);
     }
+}
+
+/* K2 additive: points 视图 -> 设备渲染子态（TaskPackage 261104-k2-points-device-ui,
+ * K2PTS-P2/P6；子态常量单源 = points_page.h KPTS_SUBSTATE_*）。
+ * 纯函数、零副作用；只裁「当前 points 视图属于基层主页还是详细账本子页」。 */
+int kidpal_display_points_substate(const char *view)
+{
+    if (view == NULL) {
+        return -1;
+    }
+    if (strcmp(view, "points_ledger") == 0) {
+        return KPTS_SUBSTATE_LEDGER;
+    }
+    if (strcmp(view, "points_home") == 0) {
+        return KPTS_SUBSTATE_NONE;
+    }
+    return -1;
 }

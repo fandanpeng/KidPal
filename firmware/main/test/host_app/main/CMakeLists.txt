@@ -350,6 +350,42 @@ set(HOST_ACCEPTANCE_SRCS
     # **必须置于 host smoke acceptance 之前**（smoke 末位 = 最先执行）。
     "../../story_typography.acceptance.c"
 
+    # 包 261104-k0a-four-page-skeleton（四页骨架：P3 积分占位 / P4 故事原地迁移 /
+    # source_page 枚举驱动 / TECH-261028 阅读键修复）冻结验收。本清单 = 261104
+    # K0a∥K0 两包唯一共享构建清单：K0a 先落本行，K0 等 K0a merged、重取基线后
+    # 追加自己的登记行，不改 K0a 其余登记。**必须置于 host smoke acceptance
+    # 之前**（smoke 末位 = 最先执行, 包 0 boundary 齿注册序守卫）。
+    "../../four_page_skeleton.acceptance.c"
+
+    # 包 261104-k0-points-e2e-spike（星星积分最小通路：points_home / points_ledger
+    # 载荷消费 + restore 分流 + 分页缓存纪律 + 上行分页驱动方）被测实现 + 冻结验收。
+    # display/points_page.{c,h} = [G2]/[G3] 纯逻辑 seam 强符号源（覆盖冻结件 weak
+    # 哨兵；零芯片/零 LVGL 依赖 -> host_app linux target 同源）；display/view_router.c
+    # 已在册。相对 host_app/main 分别为 ../../../display/ 与 ../../。本行按 K0a∥K0
+    # 共享清单约定在 K0a merged 后追加（K0S-E4/LP8）；**必须置于 host smoke
+    # acceptance 之前**（smoke 末位 = 最先执行, 包 0 boundary 齿注册序守卫）。
+    "../../../display/points_page.c"
+    "../../points_spike.acceptance.c"
+
+    # 包 261104-k2-points-device-ui（设备积分本正式化：points_home/points_ledger 全页、
+    # keyset 取页、删除确认、积分语境与语音闭环）冻结验收。行为齿 [P1]-[P6] 强符号源 =
+    # display/points_page.c（已在册，additive 扩展 [P1]-[P6]）+ display/keybar.c
+    # （已在册，additive 追加 kidpal_keybar_points_slots）；[P7] 消费闭环结构齿扫真实
+    # 工作树（mcp_server.cc / application.cc / protocols 不进 host 构建）+ 登记守。
+    # builder FIRST ACTION：本行登记后本件才进 host runner（TEST 7 登记守防撤）。
+    # **必须置于 host smoke acceptance 之前**（smoke 末位 = 最先执行, 包 0 boundary
+    # 齿注册序守卫）。
+    "../../points_device_ui.acceptance.c"
+
+    # 包 261104-k4-reward-goal-config（奖励场景与激活目标：四预置场景美术 + QQ 自定义/
+    # 切换/删除 + 唯一激活与刻度/兑换联动）冻结验收。seam [G1] asset→bin 名映射 /
+    # [G2] 刻度几何的强符号源 = display/points_page.c（已在册，additive 尾部追加，本行
+    # 不重复登记该文件）；[G3] 设备 TU 源锚 kidpal_render_node.cc 不进 host 构建，由
+    # TEST 5 tree-scan 承载。builder FIRST ACTION：本行登记后本件才进 host runner
+    # （TEST 5 校验注册序——登记行缺失即红）。**必须置于 host smoke acceptance 之前**
+    # （smoke 末位 = 最先执行, 包 0 boundary 齿注册序守卫）。
+    "../../reward_goal_config.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

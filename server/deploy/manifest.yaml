@@ -64,6 +64,19 @@ entries:
   - {src: server/gateway/story.py,
      dst: /opt/kidpal/front/gateway/story.py,
      owner: deploy.sh, verify: md5, restart: front}
+  # 积分确定性执行器（261104-k1-points-ledger-core）：front 薄意图截获与
+  # `python -m gateway.points` CLI **共用同一模块、同一 state 文件**（D-10 单 writer）。
+  # 运行态数据不入清单（runtime data，与 OpenClaw 运行态同纪律）：
+  #   state = /opt/kidpal/points/state.json（env KIDPAL_POINTS_STATE 单源覆盖口；
+  #           未设 env 时代码缺省 = 本路径 —— arch §5.3.2 权威布局）
+  #   lock  = /opt/kidpal/points/.lock（写入临界区的进程间文件锁，常驻不删）
+  # 迁移注记（K0 live 现状 /opt/kidpal/points.json）：本包不改 env 名，live 侧把
+  # KIDPAL_POINTS_STATE 指到 /opt/kidpal/points/state.json 并把既有 points.json
+  # 内容搬过去（一次性运维动作，归部署轮；代码不读第二路径、不留双账本分支）。
+  - {src: server/gateway/points.py,
+     dst: /opt/kidpal/front/gateway/points.py,
+     owner: deploy.sh, verify: md5, restart: front,
+     note: "积分唯一确定性 writer（front 薄意图 + CLI 共用）；state 运行态 = /opt/kidpal/points/{state.json,.lock}，env KIDPAL_POINTS_STATE 单源，不入清单"}
   # 两枚 request 级 system prompt 制品（front_app 每次回合现读 PROMPTS_DIR，无服务
   # 重启面——restart: none）。261024 换代：指令挪 system 后 live 指令全在制品里，
   # 缺位 = _load_prompt_artifact 返 "" -> 空制品回填包装形态兜底（最坏退回旧 live
@@ -218,6 +231,13 @@ entries:
      dst: /root/.openclaw/workspace/skills/kidpal-schedule-write/SKILL.md,
      owner: deploy.sh, verify: md5, restart: none,
      note: QQ 课表录入写入 skill（B1 写入纪律 + 写后机检 + 通过后即时重算落 marker；TECH-261012 建议①）}
+  # QQ 家长积分通道（261104-k3-qq-points-channel）：家长在 QQ 里加/兑/查/删，skill 只把
+  # 一句话整理成一次性命令并调 points.py CLI（唯一 writer，与设备语音同一执行器/同一 state）；
+  # 回执单行 key=value、歧义一次性普通文本报错不追问。表驱动，deploy/verify 脚本零改动。
+  - {src: server/deploy/openclaw-skills/workspace-main/kidpal-points-write/SKILL.md,
+     dst: /root/.openclaw/workspace/skills/kidpal-points-write/SKILL.md,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: "QQ 家长积分通道 skill（六子命令 add/redeem/delete/show/recent/targets；钉死解释器 /opt/kidpal/venv/bin/python3 + KIDPAL_POINTS_STATE + -m gateway.points；恒调 CLI 不自行吞重、删除只认 entry_id/序号）"}
   - {src: server/deploy/openclaw-skills/workspace-main/kidpal-schedule-health/SKILL.md,
      dst: /root/.openclaw/workspace/skills/kidpal-schedule-health/SKILL.md,
      owner: deploy.sh, verify: md5, restart: none,
@@ -226,6 +246,10 @@ entries:
      dst: /root/.openclaw/workspace-kidpal/skills/kidpal-schedule-answer/SKILL.md,
      owner: deploy.sh, verify: md5, restart: none,
      note: 板侧课表问答流程 skill（2026-09-25 落地，loopback 探针实测生效）}
+  - {src: server/deploy/openclaw-skills/workspace-kidpal/kidpal-points-answer/SKILL.md,
+     dst: /root/.openclaw/workspace-kidpal/skills/kidpal-points-answer/SKILL.md,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: 板侧积分问答流程 skill（261104-k2-points-device-ui 真机轮 F1：积分摘要优先 + /opt/kidpal/points/state.json 只读兜底 + 零写权；kidpal agent 可见性归 261017 声明件白名单）}
 
   # ── kidpal agent skills 收敛声明工件（261017-prompt-v11-schedule-recall / PV-A6）──
   # openclaw.json 含 gateway 凭据、整文件不入仓；只入无 secret 声明 + 定点 apply/回滚脚本。

@@ -23,17 +23,23 @@
  * Seam contract pinned by this file（builder implements；「home =」为冻结落点）:
  *
  *   [S1] source_page 映射单点（home = display/story_page.{c,h} additive 尾部追加;
- *        契约 §四 source_page 闭集 story/home/schedule「其余取值现版本无行为」+ notes
- *        ④ 映射散落 = 漏入口根因，单点函数一次做全）:
+ *        契约 §四 source_page 闭集「home/schedule/points_home/points_ledger/
+ *        story_cover/story」+ notes ④ 映射散落 = 漏入口根因，单点函数一次做全。
+ *        【2026-11-04 重锚随 261104-k0a-four-page-skeleton D-08 枚举驱动】映射按
+ *        KP_PAGE_* 枚举符号分流、废除数值 case（结构锚住 four_page_skeleton
+ *        K0A-A5 tooth 3; 本文件以数值镜像消费行为面）:
  *          const char *kidpal_story_ctx_source_page(int page);
- *            -- page == 2 (KP_PAGE_STORY) -> "story"; page == 1 (KP_PAGE_SCHEDULE)
- *               -> "schedule"; page == 0 (KP_PAGE_HOME) -> "home"; 其余（负值/未知）
- *               -> "home"（闭集缺省兜底, 绝不外溢第四取值）。返回静态串字面指针,
- *               永不 NULL。
+ *            -- KP_PAGE_HOME -> "home"; KP_PAGE_SCHEDULE -> "schedule";
+ *               KP_PAGE_POINTS_HOME -> "points_home"（P3 积分主页 = 普通问答语境,
+ *               契约 §四「不得误切记录语境」）; KP_PAGE_STORY -> "story"（记录语境
+ *               ——原行为随页位迁移保值）; 其余（负值/未知/KP_PAGE_COUNT）-> "home"
+ *               （闭集缺省兜底, 绝不外溢第四取值、绝不回退成 story）。返回静态串
+ *               字面指针, 永不 NULL。
  *            镜像锚: KP_PAGE_* 数值 = retract_p4_three_page.acceptance.c M2K2-A2
- *            冻结（HOME=0/SCHEDULE=1/STORY=2）。本文件不 include kidpal_render_node.h
- *            （设备专属头、host 不编）, 以数值镜像 + 既有跨件枚举齿承载等值——
- *            kidpal_render_node.h 枚举值漂移时 M2K2-A2 先红, 本文件行为齿随之红。
+ *            冻结（2026-11-04 重锚后: HOME=0/SCHEDULE=1/POINTS_HOME=2/STORY=3）。
+ *            本文件不 include kidpal_render_node.h（设备专属头、host 不编）, 以数值
+ *            镜像 + 既有跨件枚举齿承载等值——kidpal_render_node.h 枚举漂移时
+ *            M2K2-A2 先红, 本文件行为齿随之红。
  *
  *   [S2] 引导态纯逻辑二缝（home = display/story_page.{c,h}; S-F2.2 AC1 记录语境引导
  *        + §2.3「记录会话 · 引导态」行; 底座 KVR_CTX_LISTEN_MANUAL + WF-B-01 消费,
@@ -245,11 +251,15 @@
 #define RSL_PAGE_RECORDING 2 /* KSTORY_PAGE_RECORDING */
 #define RSL_PAGE_STAMP     3 /* KSTORY_PAGE_STAMP */
 #define RSL_PAGE_DELETE    4 /* KSTORY_PAGE_DELETE */
-/* KP_PAGE_* = kidpal_render_node.h 冻结枚举（M2K2-A2 齿钉等值: HOME=0/SCHEDULE=1/
- * STORY=2; 本文件镜像消费, 漂移由 M2K2-A2 先红）。 */
+/* KP_PAGE_* = kidpal_render_node.h 冻结枚举（M2K2-A2 齿钉等值, 2026-11-04 四页重锚:
+ * HOME=0/SCHEDULE=1/POINTS_HOME=2/STORY=3; 本文件镜像消费, 漂移由 M2K2-A2 先红）。
+ * 【2026-11-04 重锚留痕】RSL_KP_PAGE_STORY 由 2 改 3（D-01: 故事页原地迁移 P4;
+ * 原数值 2 现属积分主页 = 新增 RSL_KP_PAGE_POINTS_HOME 承载）, RSL-A3 tooth 1
+ * 同步加 points_home 映射齿（D-08 枚举驱动 + 契约 §四 :347 闭集）。 */
 #define RSL_KP_PAGE_HOME     0
 #define RSL_KP_PAGE_SCHEDULE 1
-#define RSL_KP_PAGE_STORY    2
+#define RSL_KP_PAGE_POINTS_HOME 2
+#define RSL_KP_PAGE_STORY    3
 /* [S3] 回显区容量（冻结值; story_page.h 落同值 define——RSL-A6 行为齿按本镜像断言,
  * 两处不一致 = 行为齿红即实现偏移）。 */
 #define RSL_ECHO_MAX_LINES 4
@@ -601,6 +611,14 @@ TEST_CASE("record_session_live: source_page 闭集映射单点 (RSL-A3)",
     sp = kidpal_story_ctx_source_page(RSL_KP_PAGE_HOME);
     TEST_ASSERT_TRUE_MESSAGE(sp != NULL && strcmp(sp, "home") == 0,
         "RSL-A3 RED: KP_PAGE_HOME 未映射 \"home\"——闭集一次做全");
+    /* tooth 1b (2026-11-04 重锚 additive, D-08): P3 积分主页 -> "points_home"（契约
+     * §四 :347 闭集新值; 普通问答语境——不得误切记录语境。镜像 2 在现役数值 case 2
+     * 实现下产 "story" = D-08 要废除的误切根因, 设计态红）。 */
+    sp = kidpal_story_ctx_source_page(RSL_KP_PAGE_POINTS_HOME);
+    TEST_ASSERT_TRUE_MESSAGE(sp != NULL && strcmp(sp, "points_home") == 0,
+        "RSL-A3 RED: KP_PAGE_POINTS_HOME 未映射 \"points_home\"——P3 积分主页会话"
+        "来源缺失（契约 §四 :347 闭集; D-08 枚举驱动; 现状该索引映 \"story\" = 记录"
+        "语境误切根因, 语境防回归负锚 = four_page_skeleton K0A-A6）");
     sp = kidpal_story_ctx_source_page(-1);
     TEST_ASSERT_TRUE_MESSAGE(sp != NULL && strcmp(sp, "home") == 0,
         "RSL-A3 RED: 负值页未兜底 \"home\"——越界缺省兜底缺失（契约闭集不外溢第四"
@@ -1025,6 +1043,67 @@ TEST_CASE("record_session_live: canary+注册序守卫 (RSL-C1)",
     free(cm);
 }
 
+/* ========================================================================== *
+ * TEST 10 — RSL-A9: Listening 分支积分子页语境扩点（2026-11-05 additive,
+ * TaskPackage 261104-k2-points-device-ui impactedTestsSeed frozen-rebaseline;
+ * D-08 + 契约 §四 kidpal_session_ctx「P3 积分主页/详细账本分别产生
+ * points_home/points_ledger，详细账本可附加 selected_id，其值只能来自最近收到
+ * 的 points_ledger items、设备不造 id」）。
+ * 性质: 纯结构齿（树扫真实工作树; builder 轮 1 已落实现——本齿落盘即绿, 无
+ * 哨兵面; 独立红跑通道同理绿）。强度 = 机制级源锚代理: 不钉逐字节 wire（同
+ * RSL-A1 强度申报）, wire 逐字节复证挂设备轮。story 语境映射（RSL-A3）、原
+ * 发送时点（RSL-A2: StartListening 前 + IsAudioProcessorRunning 门之外）、
+ * 单点消费语义零变化（K0a 重锚面零回退——本齿只 additive 追钉积分子页半）。
+ * ========================================================================== */
+/* coverage: 跨包承接 261104-k2-points-device-ui D-08 -- Listening 分支积分子页语境扩点（"points_ledger" 字面 + KPTS_SUBSTATE_LEDGER 子态门 + kidpal_points_ui_selected_id 只读读取 + 二参 ctx 原语调用同区） */
+/* coverage: 契约 §四 kidpal_session_ctx -- 详细账本语境 points_ledger + selected_id 只读附带（机制级源锚代理; 逐字节 wire 复证挂设备轮） */
+TEST_CASE("record_session_live: Listening 分支积分子页语境扩点 (RSL-A9)",
+          "[record_session_live][RSL-A9][structural]")
+{
+    char *listening;
+    char *region;
+
+    RSL_REQUIRE_ROOT();
+
+    /* tooth 1: Listening 分支内扩点结构同区在世——"points_ledger" 字面（详细账本
+     * 语境闭集值）+ KPTS_SUBSTATE_LEDGER 子态门（积分主页基层仍发 points_home,
+     * RSL-A3 tooth 1b 已钉映射; 本齿防扩点绕过子态门误覆盖）+
+     * kidpal_points_ui_selected_id 读取（selected_id 只读来源 = 设备侧消费态
+     * 单点, D-08「不造 id」的板端根）+ kidpal_points_ui_substate 门入参读取。
+     * 发送点仍单点住本分支（RSL-A2 tooth 1 恰一次断言零变化——扩点在该调用内
+     * 原地扩展, 不另立第二发送点）。 */
+    listening = rsl_region_between(RSL_APP_CC, "case kDeviceStateListening:",
+                                   "case kDeviceStateSpeaking:");
+    TEST_ASSERT_TRUE_MESSAGE(listening != NULL,
+        "RSL-A9 RED(infra): application.cc Listening 分支切片失败（case 锚漂移"
+        "——须复核本齿锚, 不属 builder 修订面）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        rsl_contains(listening, "\"points_ledger\"") &&
+        rsl_contains(listening, "KPTS_SUBSTATE_LEDGER") &&
+        rsl_contains(listening, "kidpal_points_ui_selected_id") &&
+        rsl_contains(listening, "kidpal_points_ui_substate"),
+        "RSL-A9 RED: Listening 分支缺积分子页语境扩点（\"points_ledger\" 字面 / "
+        "KPTS_SUBSTATE_LEDGER 子态门 / kidpal_points_ui_selected_id 只读读取——"
+        "契约 §四 详细账本语境 + selected_id 只读附带的板端构造半缺失; "
+        "261104-k2-points-device-ui D-08）");
+    free(listening);
+
+    /* tooth 2: ctx 原语 wire 半——protocol.cc SendKidpalSessionCtx 函数区含
+     * selected_id 序列化片段与 JSON 转义单源消费（空串/NULL 不附带 = 条件拼接,
+     * 转义单源与分页游标共用; 逐字节 wire 复证挂设备轮——强度申报见头注）。 */
+    region = rsl_region_between(RSL_PROTO_CC, "SendKidpalSessionCtx", "IsTimeout");
+    TEST_ASSERT_TRUE_MESSAGE(region != NULL,
+        "RSL-A9 RED(infra): protocol.cc SendKidpalSessionCtx 函数区切取失败"
+        "（原语未落/锚漂移——须复核本齿锚, 不属 builder 修订面）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        rsl_contains(region, "selected_id") &&
+        rsl_contains(region, "kidpal_points_json_escape"),
+        "RSL-A9 RED: protocol.cc SendKidpalSessionCtx 函数区缺 selected_id 序列化"
+        "片段/JSON 转义消费——详细账本语境 selected_id 附带半无承载（契约 §四 "
+        "selected_id 可选尾附; 畸形 id 未转义 = front 拒收风险）");
+    free(region);
+}
+
 /* --------------------------------------------------------------------------- *
  * RED baseline 判读口径（acceptance-author 冻结期实跑, 2026-09-30; 现状树 @5d58eb9,
  * firmware 自 2c7343a 零差异——既有齿零偏移由引用锚行判停承载, 不重跑全套 host build）:
@@ -1051,6 +1130,16 @@ TEST_CASE("record_session_live: canary+注册序守卫 (RSL-C1)",
  *   CloseAudioChannel 在场半与 tooth 4 负锚现状绿 = must-stay-green）。
  *   RSL-A8 全红（发送原语三文件消费链零命中 + wire 形状区切取失败）。
  *   其余 TEST_CASE 判读口径不变（host runner 内既有齿零新增红由引用锚行判停承载）。
+ *   2026-11-04 增补（TaskPackage 261104-k0a-four-page-skeleton D-01/D-08 四页重锚,
+ *   acceptance-author 留痕修订; 授权 = impactedTestsSeed frozen-rebaseline「S1 钉
+ *   数值 page==2 与三值闭集；改枚举驱动并保留 home/schedule/story 原行为」）:
+ *     RSL_KP_PAGE_STORY 镜像 2→3（故事页原地迁移 P4; KP_PAGE 数值权威 =
+ *     retract test 3 重锚齿）+ 新增 RSL_KP_PAGE_POINTS_HOME=2 + RSL-A3 tooth 1b
+ *     （points_home 映射齿）。现状树设计态红面：RSL-A3 tooth 1 story 半（镜像 3 ->
+ *     现役 default "home"）+ tooth 1b（镜像 2 -> 现役 "story"）; home/schedule 半与
+ *     tooth 2 缺省兜底现状绿（原行为保留 must-stay）。枚举驱动的结构锚（映射区
+ *     KP_PAGE_* 符号在世、数值 case 废除）住 four_page_skeleton K0A-A5 tooth 3,
+ *     本文件不重复承载。
  * --------------------------------------------------------------------------- *
  * REVISION LOG（tighten-only 修订窗口; 纯 additive / 零断言语义变化才可追加）:
  *   （冻结时点无修订。）
@@ -1068,4 +1157,16 @@ TEST_CASE("record_session_live: canary+注册序守卫 (RSL-C1)",
  *               形态; 强度 = 机制级源锚代理, 逐字节 wire 复证挂设备轮）。既有 TEST
  *               1-7 断言集合零变化; 设计态红面追加 RSL-A8 全红 + RSL-A5 tooth 3
  *               换锚红（SendKidpalStoryDiscard 零命中）。
+ *   2026-11-05  additive 新增 TEST 10 / RSL-A9（acceptance-author, TaskPackage
+ *               261104-k2-points-device-ui impactedTestsSeed frozen-rebaseline;
+ *               授权 = planner ruling——builder 轮 1 因 scope-map deny 未改本冻结
+ *               件, 由 acceptance 写权属主追加最小增量）: Listening 分支积分子页
+ *               语境扩点结构齿（tooth 1 = "points_ledger" 字面 + KPTS_SUBSTATE_
+ *               LEDGER 子态门 + kidpal_points_ui_selected_id 只读读取同区; tooth 2
+ *               = protocol.cc SendKidpalSessionCtx 函数区 selected_id 序列化 +
+ *               kidpal_points_json_escape 转义单源消费）。D-08 + 契约 §四 详细
+ *               账本语境闭集半; 强度 = 机制级源锚代理, 逐字节 wire 复证挂设备轮。
+ *               既有 TEST 1-9 断言集合零变化——RSL-A1/A2 既有 needle 与二参
+ *               SendKidpalSessionCtx 现形兼容（builder 轮 1 已全绿实证）; story
+ *               语境映射 / 原发送时点 / 单点消费语义零回退（K0a 重锚面零触碰）。
  * --------------------------------------------------------------------------- */

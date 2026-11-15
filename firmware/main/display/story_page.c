@@ -1007,6 +1007,28 @@ int kidpal_story_text_parse(const char *data_json, kidpal_story_text_t *out)
 
 
 /* -------------------------------------------------------------------------- *
+ * 阅读态渲染页真相（TaskPackage 261104-k0a-four-page-skeleton fixer 轮, K0A-E3
+ * 真机缺陷：阅读态键帽取不到 READER）。
+ *
+ * 云端阅读正文渲染走 begin_page -> kidpal_story_page_render -> end_page 夹钳，**不经**
+ * kidpal_render_node_cache_story，故渲染节点 s_story_view.page 在阅读驻留期全程停留
+ * LIST。kidpal_render_node_story_substate() 的 READER 补口（SERVER_PAGE + READER ->
+ * READER）按 s_story_view.page 判永远取不到 READER -> 键帽链在进阅读后停列表槽
+ * 「说话·双击看/下移」（真机 KPLOG：substate=-1 last_known=0）。
+ *
+ * 本静态只记「最近一次成功落屏的页态」，供渲染节点 getter 判阅读态；**不改**
+ * s_story_view.page——退出阅读回列表时 rn_render_kidpal_page_locked 仍按 s_story_view
+ * 的 LIST 重渲，零副作用。初值 = LIST（未渲染 = 冷启动基层页）。
+ * ------------------------------------------------------------------------ */
+static int s_ksy_rendered_page = KSTORY_PAGE_LIST;
+
+int kidpal_story_page_rendered_page(void)
+{
+    return s_ksy_rendered_page;
+}
+
+
+/* -------------------------------------------------------------------------- *
  * kidpal_story_page_render — 渲染面 (纯 LVGL on the ACTIVE screen, P3-A2/A4/A5/A6)
  *
  * minimal: 布局常量按 host seam 400x300 定坐标；真实 RLCD 屏观感殿后 9b
@@ -1690,6 +1712,10 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
      * s_kidpal_img!=NULL && top==LOCAL_PAGE) 在 VOICE 让位/缺席后全真 -> 悬垂 UAF。
      * 调用方均已持 lvgl 锁（ScheduleStoryRender 夹钳 / StoryRecTimerCb LVGL 定时器 /
      * rn_render_kidpal_page_locked）; 失败降级出口（-1）不置——空白屏不谎报 P3。 */
+    /* K0A-E3 真机缺陷修复（261104-k0a-four-page-skeleton fixer 轮）: 记录本帧真实
+     * 落屏页态（阅读态键帽链判据，见文件内 s_ksy_rendered_page 注）。须先于
+     * story_page_front（后者在 READER 时触发键帽重 sync）。 */
+    s_ksy_rendered_page = v->page;
     kidpal_render_node_story_page_front();
     return 0;
 }
@@ -2284,15 +2310,33 @@ int kidpal_story_stamp_text(int serial, char *out, size_t cap)
 
 const char *kidpal_story_ctx_source_page(int page)
 {
-    /* KP_PAGE_* 数值镜像 = M2K2-A2 冻结等值（HOME=0/SCHEDULE=1/STORY=2）;
-     * kidpal_render_node.h 枚举漂移时 M2K2-A2 先红、本行为齿随之红。 */
+    /* 枚举驱动映射（TaskPackage 261104-k0a-four-page-skeleton, seam [5];
+     * decisionCoverage D-08-context + 契约 §四 source_page 闭集）。
+     *
+     * 【2026-11-04 重写】原实现按**数值** case 2/1/0 分流——页位一挪（P3 积分主页插入、
+     * 故事迁 P4）就静默把积分页误报成记录语境，且新增页永远漏改（「映射散落 / 数值
+     * 耦合」= TECH-261028 同族根因面）。现按 KP_PAGE_* **符号**分流：新增页改枚举即
+     * 在本处一次补齐，编译器对未覆盖的枚举值仍有 -Wswitch 提示。
+     *
+     * 产出恒在契约 §四主页四值内：home / schedule / points_home / story
+     * （points_ledger = K2 详细账本语境、story_cover = K5 封皮语境，**不由本包产出**）。
+     * 其余（负值 / 未知 / KP_PAGE_COUNT）走闭集缺省 "home"——绝不外溢新取值、绝不
+     * 回退成 "story"（对端 server/gateway/front/front_app.py _consume_kidpal_control
+     * 只对 "story" 切累积态，其余取值整条消费无行为——本侧缺省 home 与「普通会话」
+     * 对齐）。返回静态串字面指针, 永不 NULL。 */
     switch (page) {
-    case 2: /* KP_PAGE_STORY */
-        return "story";
-    case 1: /* KP_PAGE_SCHEDULE */
+    case KP_PAGE_HOME:
+        return "home";
+    case KP_PAGE_SCHEDULE:
         return "schedule";
-    case 0: /* KP_PAGE_HOME */
-    default: /* 负值/未知 -> 闭集缺省兜底, 绝不外溢第四取值 */
+    case KP_PAGE_POINTS_HOME:
+        /* P3 星星积分主页 = 普通问答语境（契约 §四「不得误切记录语境」）。 */
+        return "points_home";
+    case KP_PAGE_STORY:
+        /* P4 星星记录本 = 记录语境（S-F2.2-AC1 source_page=story；原 P3 行为随页位
+         * 迁移保值不变）。 */
+        return "story";
+    default: /* 负值 / 未知 / KP_PAGE_COUNT -> 闭集缺省兜底 */
         return "home";
     }
 }
@@ -2427,12 +2471,36 @@ int kidpal_story_key_owns(int front_layer, int kidpal_page, int page_state,
     if (front_layer == KIDPAL_LAYER_STORY_DELETE) {
         return 1;
     }
-    /* (c) 基层 P3 故事页既有语义（keya_story_page_wants 原「overlay_top == 0 &&
-     * page == P3」逐字等价, K2/K3 主页面路径零回归）。 */
+    /* (c) 基层故事页既有语义（keya_story_page_wants 原「overlay_top == 0 &&
+     * page == P3」逐字等价, K2/K3 主页面路径零回归；P3 故事位随 D-01 四页骨架迁 P4,
+     * 判据以符号 KP_PAGE_STORY 表达、语义零偏移）。 */
     if (front_layer == KIDPAL_LAYER_NONE && kidpal_page == KP_PAGE_STORY) {
         return 1;
     }
-    /* 其余（VOICE/其它覆盖层前台且非记录语境 / 基层非 P3 / 记录语境标志未置）-> 0。 */
+    /* (d) 阅读态归属（TECH-261028 修法甲, TaskPackage 261104-k0a-four-page-skeleton;
+     * SPV2-RK1 tooth 1）：阅读正文画在云端渲染夹钳 SERVER_PAGE 前台, 上面三支无一命中
+     * -> KEY 短按漏到 key_route_layer 通用覆盖层列映射 GLOBAL_ACT_SESSION_TOGGLE ->
+     * 误开语音会话（违反 S-F2.3-AC2「KEY 短按不响应」+ 补充规则「阅读态无会话入口」）。
+     * 补一支 = READER 页态 + SERVER_PAGE 前台归故事页; 页输入表 READER 态本就把 KEY
+     * 短按映 KSPV2_ACT_NONE（既有 SPV2-A6 齿承载, 零改动）、长按仍 READER_EXIT。
+     *
+     * **只补这一支, 不得整层吞**：VOICE 前台（非记录语境）/ LIST 态在夹钳前台仍交回
+     * 全局路由——其它覆盖层（查字窗 CHAR_REPLAY、课表答案页 SESSION_TOGGLE）的既定
+     * 会话入口零改动（全局覆盖层表 key_route_layer 本包零触碰, SPV2-RK1 tooth 3 钉死
+     * 该不选面; 修法「不选」项 = 改全局表吞短按）。 */
+    if (page_state == KSTORY_PAGE_READER && front_layer == KIDPAL_LAYER_SERVER_PAGE) {
+        return 1;
+    }
+    /* (e) 基层 P3 星星积分主页（TaskPackage 261104-k2-points-device-ui 轮 2）: 积分页
+     * 页内手势族（积分主页 / 详细账本 / 删除确认子态）归积分消费面——板级经本判据
+     * 放行后 HandleStoryKey 分派 PointsDispatchKey；页不拥有该手势（主页 BOOT 页循环 /
+     * KEY 长按回首页）时返回 false 交回全局路由，K0a 四页骨架零偏移。积分页是
+     * LOCAL_PAGE 基层（无覆盖层），front_layer 归一值 = KIDPAL_LAYER_NONE；删除确认
+     * 是同一基层上的整屏画法（不另起层），故本支同样覆盖其吞全手势语义。 */
+    if (front_layer == KIDPAL_LAYER_NONE && kidpal_page == KP_PAGE_POINTS_HOME) {
+        return 1;
+    }
+    /* 其余（VOICE/其它覆盖层前台且非记录语境 / 基层非故事页 / 记录语境标志未置）-> 0。 */
     return 0;
 }
 

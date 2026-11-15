@@ -1,0 +1,39 @@
+{
+  "case": "openclaw-session-maintenance-and-catalog-refresh",
+  "changes": [
+    {
+      "path": "session.maintenance",
+      "value": {
+        "mode": "enforce",
+        "pruneAfter": "14d",
+        "preserveRecent": "30d",
+        "maxEntries": 300,
+        "maxDiskBytes": "40mb",
+        "highWaterBytes": "30mb",
+        "resetArchiveRetention": "14d"
+      }
+    },
+    {
+      "path": "models.catalogRefresh.enabled",
+      "value": false
+    }
+  ],
+  "drift_guard": [
+    {
+      "path": "session.maintenance",
+      "expect_any": ["unset", "__changes_value__"]
+    },
+    {
+      "path": "models.catalogRefresh.enabled",
+      "expect_any": ["unset", false]
+    }
+  ],
+  "backup": {
+    "dir": "/root/.openclaw",
+    "pattern": "openclaw.json.bak-261114-*"
+  },
+  "rollback": {
+    "script": "PENDING——本批为回流记账批（无 apply/rollback 脚本）；回滚 = openclaw config 恢复两键为 unset（运行默认：maintenance 无界保留、catalogRefresh enabled=true），或按 261025 骨架补正式脚本后一步回滚"
+  },
+  "_note": "261114-openclaw-session-maintenance 回流记账声明（主线程直写 server/deploy 实现面，human 2026-11-14 指示「得把 openclaw 侧的配置记录在仓里」——如实记：跳过 dev-loop 流程的一次性记账操作；正式双形态 apply/rollback 脚本 + acceptance 归下个部署批按 261025 骨架补齐，补齐前本批不得被 deploy.sh 当可执行批消费）。为什么需要这两键——2026-11-14 延迟专项（docs/notes/latency-analysis-20261114.md + TECH-261114-openclaw-gateway-eventloop-stalls）实测：①session.maintenance 未设置时 retention 无界，kidpal agent 库积 177 会话（176 个为 261024 持久会话补丁前的每请求匿名会话）、main/sessions/ 积 5322 个 *.jsonl.deleted.*.zst 墓碑归档共 58MB（默认「归档保留到磁盘预算驱逐」+预算默认 10gb = 实际永不删）；当日 14:23 真机轮 31s 事件循环阻塞即在 kidpal 库同步写+维护空转窗口内发生。②models.catalogRefresh 默认 true：每 6h 拉远端目录（47 providers/1350 models），2026-11-14 11:01 刷新与 31.69s 事件循环阻塞同秒结束（当日 18:12 对本批键做 config 热加载时又实测到第三次 31.5s 阻塞——重维护评估同步卡循环形态，三次数值 31438/31690/31524ms 高度一致，疑内部 30s 同步预算）。live 已应用记录（人工 openclaw config set，2026-11-14 17:14~18:18 CST，非脚本）：先 warn 试跑后翻 enforce；kidpal session_nodes 177→1、main 71→67（余 63 行为 2026-09-24 archived 僵尸，transcript 已失，待 fix-missing/预算驱逐收尾）；main/sessions 墓碑归档按 resetArchiveRetention=14d + maxDiskBytes=40mb 驱逐中（~3 文件/s）。preserveRecent=30d 的取舍：护住 qqbot（last activity 10-27）与 cron 会话（10-31）不被预算驱逐误伤；9 月僵尸（>45d）不在保护窗。重部署重放顺序：本声明两键 → perf-k1 声明（thinkingDefault off）→ 261022 kidpal-tools → 261022 honcho-plugin → 261025 dreaming-disable → 261017 kidpal-skills；openclaw.json 整文件不入仓（含网关凭据），本声明零 secret。"
+}

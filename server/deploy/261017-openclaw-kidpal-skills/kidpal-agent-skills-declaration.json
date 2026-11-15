@@ -2,7 +2,12 @@
   "case": "kidpal-agent-skills-allowlist",
   "change": {
     "path": "agents.entries.kidpal.skills",
-    "skills": ["kidpal-schedule-answer", "weather", "tavily"]
+    "skills": [
+      "kidpal-schedule-answer",
+      "kidpal-points-answer",
+      "weather",
+      "tavily"
+    ]
   },
   "drift_guard": [
     {
@@ -17,5 +22,5 @@
   "rollback": {
     "script": "rollback_agent_skills.py"
   },
-  "_note": "261017-prompt-v11-schedule-recall PV-A6 声明工件。kidpal agent 只保留三项 modelVisible skill（kidpal-schedule-answer / weather / tavily），收敛 bundled/extra 18 项噪音（TECH-261017-xiaozhi-template-residue-deploy-ssot-gap 附带项③）。openclaw.json 含 gateway 凭据、整文件不入仓，只入本无 secret 声明；drift_guard 现状锚 = kidpal 条目未设 authored skills（bundled/extra 全量生效）。apply_agent_skills.py 幂等应用、写前时间戳备份；rollback_agent_skills.py 一步还原。"
+  "_note": "261017-prompt-v11-schedule-recall PV-A6 声明工件。kidpal agent 只保留四项 modelVisible skill（kidpal-schedule-answer / kidpal-points-answer / weather / tavily；kidpal-points-answer 于 2026-11-14 随 261104-k2-points-device-ui 真机轮 F1 增列），收敛 bundled/extra 18 项噪音（TECH-261017-xiaozhi-template-residue-deploy-ssot-gap 附带项③）。openclaw.json 含 gateway 凭据、整文件不入仓，只入本无 secret 声明；drift_guard 现状锚 = kidpal 条目未设 authored skills（bundled/extra 全量生效）——冻结契约要求 expect 为字符串 unset 且测试夹具按 unset 建模，禁写成数组。apply_agent_skills.py 幂等应用、写前时间戳备份；rollback_agent_skills.py 一步还原。实况（2026-11-14）：本批 apply 已在 live 执行，live 现为四项白名单（kidpal-schedule-answer / kidpal-points-answer / weather / tavily），写前备份 = /root/.openclaw/openclaw.json.bak-kidpal-skills-20261114T070232。因 unset 锚与 live 现状已不相符，下次增 / 减 skill 的批次须 conscious 处置 guard：先核 live 现状再决定锚的处置或走 drift STOP 的显式裁决，不得盲跑 apply。"
 }

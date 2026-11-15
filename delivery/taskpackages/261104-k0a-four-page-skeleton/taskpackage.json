@@ -42,10 +42,43 @@
     "docs/requirements.md#§2.4",
     "docs/debt/tech/TECH-261028-p3-reader-key-falls-to-session-toggle.md"
   ],
-  "acceptance": [],
-  "acceptanceTestsFile": [],
-  "redBaselineCommand": "",
-  "redBaselineResult": "",
+  "acceptance": [
+    "K0A-A1 四页回绕——key_page_next 四页环 P1→P2→P3(points 占位)→P4(story)→回绕 P1。授权 = requirements §2.4 四页循环图 + D-01。设计态红",
+    "K0A-A2 枚举重锚——PAGE_P1..P4=0..3 / KP_PAGE_HOME=0/SCHEDULE=1/POINTS_HOME=2/STORY=3/COUNT=4，序锚 + 语境值负锚（POINTS_LEDGER/STORY_COVER 不进枚举=K2/K5 越包）+ KP_PAGE_CHAR 撤出保持 + 三页 prose 退役。授权 = §2.4/§2.3 对账② + D-01。设计态红",
+    "K0A-A3 四点页点——keybar dots(3) 落防御列→四点化，P3 第 3 实心；覆盖层页点隐藏与防御齿 must-stay 同 TEST。授权 = §2.2 中 4 页点 + D-01。设计态红",
+    "K0A-A4 P3 占位数据未达——KP_POINTS_NODATA_HINT 宏（话术单源「积分数据还在路上，等一等再来看」住 kidpal_render_node.h）+ case 区消费 + 页名「星星积分本」+ 零 %d / 零 lv_bar 族 / 零 KSTORY_EMPTY_HINT 借用负锚。授权 = S-F6.1-AC4 + D-01-skeleton。设计态红（宏缺）",
+    "K0A-A5 source_page 枚举驱动——映射区 KP_PAGE_* 符号结构锚（D-08 数值 case 废除机械锚）+ 未知/负值/COUNT→\"home\" 永不 story。授权 = 契约 §四 + D-08 + S-F2.2-AC1 回归半。设计态红（首红 points_home）",
+    "K0A-A6 P3 不切记录语境——source_page(2)==\"story\" 误切根因实证负锚。授权 = 契约 §四 + D-08。设计态红",
+    "K0A-C1 注册序+canary+自检——CMakeLists 登记行在位 + 需求四页锚/契约六值闭集行在世。授权 = K0A-E1/E2。绿（登记行 planner 代落已核）",
+    "M2K2-A1: 四页回绕行为半 + render_node 循环基数结构半（retract test1/test2 收紧型重锚，三页→四页全齿翻正：STORY→P4 邻接、越界哨兵平移 PAGE_COUNT）。授权 = D-01。设计态红→落地绿",
+    "M2K2-A2: 两页枚举对齐四页重锚 + 键帽条页点同源四页化（retract test3/test4：字面 4 单点、PAGE_P4/POINTS_HOME 入列、P3 积分槽对；tooth6 设备侧页索引邻接锚由 lcd_display.cc 注释同步承载）。授权 = D-01。设计态红→落地绿",
+    "M2K2-A3: 键路由回归靶四步复合环（retract test5，D-01）。设计态红→落地绿",
+    "M2K2-A4: 查字通路保留齿零触碰 must-stay（retract test6，查字/课表覆盖层入口保留的对照面）。绿",
+    { "id": "M2K2-E1: 需求四页锚 canary（retract test7 换 requirements v1.71 锚）。绿", "kind": "structural", "rationale": "docs canary：全部断言读 docs/requirements.md 文本，唯一红路径 = 改需求文档；本包铁律零 docs 触碰，不存在合法源变异（builder 2026-11-05 变异取证轮裁定 A，planner 批）。kind:'structural' = 闸通道①「非代码可测」的既定语义。" },
+    { "id": "M2K2-E2: 契约 canary（retract test7，契约行在世守卫）。绿", "kind": "structural", "rationale": "同上：断言读 docs/contracts/** 在世性，唯一红路径 = 改契约文本，越契约写防线；豁免理由同 M2K2-E1。" },
+    "KD-A3: 键位分层派发零回归守卫——PAGE_P4 头内 >=1 + PAGE_COUNT==4 + PAGE_P4==COUNT-1，只改页集；KD-A1/A2/A6、KD-E2 全绿 = 全局覆盖层 KEY 短按语义零改动实证。授权 = D-01。设计态红→落地绿",
+    "KD-E1: 页集重锚齿（key_layer_dispatch 三页守卫翻正四页）。授权 = D-01。设计态红→落地绿",
+    "KB-A3: P3 槽对 (问一问,下一页)（S-F6.1 AC6 + points-home-nodata.png）+ additive P4 槽齿 (说话·双击看,下移)@PAGE_P3+1；页点同源/闭集单源全绿。授权 = D-01 + S-F6.1 AC6。设计态红→落地绿",
+    "M4K3-A1: source_page 闭集映射单点重锚（原 RSL-A3 齿）——镜像 RSL_KP_PAGE_STORY 2→3 + 新增 RSL_KP_PAGE_POINTS_HOME=2 + points_home 映射齿；发送时点/负锚/gating 零回归全绿。授权 = D-08。设计态红→落地绿",
+    "K3R-A1: 录音语境键手势归属重锚（原 RSR-A1 齿）——RSR_KP_PAGE_STORY 镜像 2→3；三页现树上两条基层判据齿设计态红、四页落地转绿（REVISION LOG 已申报）。授权 = D-01（planner 2026-11-04 补授权）",
+    "K3R-A5: story_list defer 缓存消费重锚（原 RSR-A5 齿，同上授权）。设计态红→落地绿",
+    "TECH-261028: 阅读键归属收紧——story_page_v2 additive TEST 21（SPV2-RK1）四齿：①key_owns(SERVER_PAGE,3,READER,0)==1 ②VOICE 整层吞负锚 ③对照面 must-stay：查字窗 CHAR_REPLAY(5) + 课表答案页 SESSION_TOGGLE 保留（修复不得改全局覆盖层表）④阅读键帽 (长按退出,翻屏)；TEST 1-20 故事三 story 零回归基线全绿原样。授权 = TECH-261028 + S-F2.3-AC2。设计态红→落地绿（真机闭环补强 = planner 2026-11-05 裁定 B 窄修，K0A-E3 终判）",
+    "DLG-A2: 页名闭集重锚——page2→\"points_home\"、page3 fallback→\"story\"、新增 page4 fallback 哨兵；[DLG-C2] seam 行同步。授权 = D-01（planner 2026-11-04 补授权）。设计态红→落地绿",
+    "M3K2-A6: 页循环守卫同源化（原 KSG-A6 齿）——PAGE_COUNT==3 字面改同源判别 PAGE_P2 < PAGE_COUNT-1（两态皆绿守卫齿性质保持）。授权 = D-01（planner 2026-11-04 补授权）。绿"
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/four_page_skeleton.acceptance.c",
+    "firmware/main/test/retract_p4_three_page.acceptance.c",
+    "firmware/main/test/key_layer_dispatch.acceptance.c",
+    "firmware/main/test/keybar_three_slot.acceptance.c",
+    "firmware/main/test/record_session_live.acceptance.c",
+    "firmware/main/test/record_session_repair.acceptance.c",
+    "firmware/main/test/schedule_grid.acceptance.c",
+    "firmware/main/test/diag_log.acceptance.c",
+    "firmware/main/test/story_page_v2.acceptance.c"
+  ],
+  "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && wsl -d Ubuntu-24.04 -- ./firmware/main/test/host_app/build/host_infra_test.elf",
+  "redBaselineResult": "acceptance-author 冻结实跑（2026-11-04，双写手收敛单写手后两轮稳定、逐字一致）：host build error=0（-Werror 全绿，新文件与九件在册编译）；host runner = 273 Tests / 21 Failures / 0 Ignored。红名单 21 按名（判读按名不按总数）：①存量族 3 = p1_auxbar AB-A1/AB-A2/AB-A4（基线锚 265/3 @ 2f2c5871 在册、非本包责任）；②本批义务红 18 = K0A-A1..A6（6）+ M2K2-A1×2/A2×2/A3（5）+ KD-A3/KD-E1（1）+ KB-A3（1）+ RSL-A3（1）+ SPV2-RK1 tooth①（1）+ RSR-A1/RSR-A5（2，镜像 2→3 在三页现树的设计态红、四页落地转绿）+ DLG-A2（1）。零「本应红现绿」、零「本应绿现红」；canary/注册齿/must-stay 齿全绿",
   "exitCriteria": [
     "K0A-E1: Pod 内 acceptance-author 产出并冻结四页循环、四点页点、逐页 source_page、故事三 story 零回归与阅读键缺陷的验收证据；红基线、变异证据和既有冻结件收紧型修订留痕齐全。",
     "K0A-E2: host 全量验收与 device build 证据在场；P3 静态占位与 P4 故事原地迁移可编译，K0 的新 points_page.c 经本包接管缝接入。firmware/main/test/host_app/main/CMakeLists.txt 是两包唯一共享构建清单，K0 必须等本包 merged、重取基线后追加自己的登记。",
@@ -90,8 +123,29 @@
   ],
   "mutationRequired": true,
   "mutationEvidence": {
-    "perAcceptance": [],
-    "note": "Draft 态空骨架；由 Pod 内 builder/verifier 按冻结验收逐条回填，拆包侧不预写变异结果。"
+    "perAcceptance": [
+      { "acceptanceId": "K0A-A1 四页回绕——key_page_next 四页环 P1→P2→P3(points 占位)→P4(story)→回绕 P1。授权 = requirements §2.4 四页循环图 + D-01。设计态红", "mutation": "M-01 页集回退三页：key_gesture_parser.h 的 PAGE_COUNT 写死为 3（PAGE_P4=3 与 COUNT 同值，四页环退化）", "affectedTest": "four_page_skeleton: K0A-A1 key_page_next 四页回绕 (test1)", "turnedRed": true, "sensitive": true, "result": "FAIL @four_page_skeleton.acceptance.c:593 —— tooth2 期望 key_page_next(P3)=PAGE_P4(3)，实得 0（回绕 P1）；tooth3/4 连锁。还原后 md5 c86ef3c94e4e3b8f2a74b364db600fd0 与好态一致" },
+      { "acceptanceId": "K0A-A2 枚举重锚——PAGE_P1..P4=0..3 / KP_PAGE_HOME=0/SCHEDULE=1/POINTS_HOME=2/STORY=3/COUNT=4，序锚 + 语境值负锚（POINTS_LEDGER/STORY_COVER 不进枚举=K2/K5 越包）+ KP_PAGE_CHAR 撤出保持 + 三页 prose 退役。授权 = §2.4/§2.3 对账② + D-01。设计态红", "mutation": "M-07 页序 prose 回潮：kidpal_render_node.h 头注回插「三页循环」自述", "affectedTest": "four_page_skeleton: K0A-A2 两页枚举四页重锚 (test2)", "turnedRed": true, "sensitive": true, "result": "FAIL @four_page_skeleton.acceptance.c:707 —— tooth5「三页循环」prose 计数 =1（期望 0）。还原后 md5 3897b200e1bf1fce9c0dd957daba1f5e 一致" },
+      { "acceptanceId": "K0A-A3 四点页点——keybar dots(3) 落防御列→四点化，P3 第 3 实心；覆盖层页点隐藏与防御齿 must-stay 同 TEST。授权 = §2.2 中 4 页点 + D-01。设计态红", "mutation": "M-01 页集回退三页（同上，同源变异）", "affectedTest": "four_page_skeleton: K0A-A3 键帽条页点四点 (test3)", "turnedRed": true, "sensitive": true, "result": "FAIL @four_page_skeleton.acceptance.c:742 —— dots(page=3) 落越界防御 -1（total/active 三件套不成立）；同源变异 M-01。还原后 md5 c86ef3c9... 一致" },
+      { "acceptanceId": "K0A-A4 P3 占位数据未达——KP_POINTS_NODATA_HINT 宏（话术单源「积分数据还在路上，等一等再来看」住 kidpal_render_node.h）+ case 区消费 + 页名「星星积分本」+ 零 %d / 零 lv_bar 族 / 零 KSTORY_EMPTY_HINT 借用负锚。授权 = S-F6.1-AC4 + D-01-skeleton。设计态红（宏缺）", "mutation": "M-08 话术单源漂移：KP_POINTS_NODATA_HINT 字面「等一等再来看」改「稍后再来看」", "affectedTest": "four_page_skeleton: K0A-A4 P3 积分占位数据未达 (test4)", "turnedRed": true, "sensitive": true, "result": "FAIL @four_page_skeleton.acceptance.c:816 —— tooth2 AC4 等待话术逐字不匹配（话术偏移设计权威）。还原后 md5 3897b200... 一致" },
+      { "acceptanceId": "K0A-A5 source_page 枚举驱动——映射区 KP_PAGE_* 符号结构锚（D-08 数值 case 废除机械锚）+ 未知/负值/COUNT→\"home\" 永不 story。授权 = 契约 §四 + D-08 + S-F2.2-AC1 回归半。设计态红（首红 points_home）", "mutation": "M-02 数值页位耦合回潮：story_page.c 的 kidpal_story_ctx_source_page 改回数值 case（2→story/1→schedule/0→home）", "affectedTest": "four_page_skeleton: K0A-A5 source_page 枚举驱动 (test5)", "turnedRed": true, "sensitive": true, "result": "FAIL @four_page_skeleton.acceptance.c:910 —— tooth1 期望 points_home 实得 story；tooth3 映射区 KP_PAGE_HOME/SCHEDULE/POINTS_HOME 符号缺失。还原后 md5 71600e0151eeac85af9ff89882f98713 一致" },
+      { "acceptanceId": "K0A-A6 P3 不切记录语境——source_page(2)==\"story\" 误切根因实证负锚。授权 = 契约 §四 + D-08。设计态红", "mutation": "M-02 数值页位耦合回潮（同上，同源变异）", "affectedTest": "four_page_skeleton: K0A-A6 P3 不切记录语境 (test6)", "turnedRed": true, "sensitive": true, "result": "FAIL @four_page_skeleton.acceptance.c:990 —— tooth1 source_page(2)==\"story\"，积分页被误切记录语境（D-08 要堵的根因形态复现）；同源变异 M-02。还原后 md5 71600e01... 一致" },
+      { "acceptanceId": "K0A-C1 注册序+canary+自检——CMakeLists 登记行在位 + 需求四页锚/契约六值闭集行在世。授权 = K0A-E1/E2。绿（登记行 planner 代落已核）", "mutation": "M-11 注册序倒置：CMakeLists 把 four_page 登记行移到 host_infra_smoke 之后（仍在册，测试照跑）", "affectedTest": "four_page_skeleton: K0A-C1 注册序守卫+canary+自检 (test7)", "turnedRed": true, "sensitive": true, "result": "FAIL @four_page_skeleton.acceptance.c:1068 —— tooth1「mine < smoke」不成立；套件仍为 273 用例（未靠摘行制造假红）。还原后 md5 a53eb375b2757ac21d5298ff543ed67e 一致" },
+      { "acceptanceId": "M2K2-A1: 四页回绕行为半 + render_node 循环基数结构半（retract test1/test2 收紧型重锚，三页→四页全齿翻正：STORY→P4 邻接、越界哨兵平移 PAGE_COUNT）。授权 = D-01。设计态红→落地绿", "mutation": "M-01 页集回退三页（行为半）+ M-06 循环基数写死 3（结构半，kidpal_render_node.cc 的 % KP_PAGE_COUNT → % 3）", "affectedTest": "retract_p4_three_page: M2K2-A1 行为半 test1 + 结构半 test2", "turnedRed": true, "sensitive": true, "result": "行为半 FAIL @retract_p4_three_page.acceptance.c:528（key_page_next(P3) 期望 P4）；结构半 M-06 FAIL @:598（cycle_next 区不再以 % KP_PAGE_COUNT 取模）。两文件还原后 md5 c86ef3c9.../ae84dbfc... 一致" },
+      { "acceptanceId": "M2K2-A2: 两页枚举对齐四页重锚 + 键帽条页点同源四页化（retract test3/test4：字面 4 单点、PAGE_P4/POINTS_HOME 入列、P3 积分槽对；tooth6 设备侧页索引邻接锚由 lcd_display.cc 注释同步承载）。授权 = D-01。设计态红→落地绿", "mutation": "M-09 设备侧页索引邻接漂移：lcd_display.cc 注释把 KP_PAGE_STORY 的恒等页由 PAGE_P4 改回 PAGE_P3", "affectedTest": "retract_p4_three_page: M2K2-A2 test3（枚举/邻接）", "turnedRed": true, "sensitive": true, "result": "FAIL @retract_p4_three_page.acceptance.c:715 —— tooth6「KP_PAGE_STORY 邻接不到 PAGE_P4（40 字节窗）」；同批 M-07 亦 red @:766（三页 prose）、M-01 red @:655/:796（枚举值/页点）。还原后 md5 77b6494062c799529f2e970928c89cef 一致" },
+      { "acceptanceId": "M2K2-A3: 键路由回归靶四步复合环（retract test5，D-01）。设计态红→落地绿", "mutation": "M-01 页集回退三页（同源变异）+ M-13 覆盖层列 KEY 长按语义改 HOME", "affectedTest": "retract_p4_three_page: M2K2-A3 键路由回归靶 test5", "turnedRed": true, "sensitive": true, "result": "FAIL @retract_p4_three_page.acceptance.c:925 —— tooth3 四步复合环 seq[3] 期望 PAGE_P4；M-13 独立 red @:900（覆盖层 KEY 长按不再 OVERLAY_CLOSE）。还原后 md5 c86ef3c9.../02254650→好态 一致" },
+      { "acceptanceId": "M2K2-A4: 查字通路保留齿零触碰 must-stay（retract test6，查字/课表覆盖层入口保留的对照面）。绿", "mutation": "M-10 写侧死态 API 回潮：kidpal_render_node.h 回插 kidpal_render_node_cache_char_data 引用（正是该齿守护的回归形态）", "affectedTest": "retract_p4_three_page: M2K2-A4 查字通路保留靶 test6", "turnedRed": true, "sensitive": true, "result": "FAIL @retract_p4_three_page.acceptance.c:1020 —— tooth5「.h/.cc 仍有 cache_char* 残留 %d 处」；同款守卫 char_window_overlay.acceptance.c:1299 亦红。还原后 md5 3897b200... 一致" },
+      { "acceptanceId": "KD-A3: 键位分层派发零回归守卫——PAGE_P4 头内 >=1 + PAGE_COUNT==4 + PAGE_P4==COUNT-1，只改页集；KD-A1/A2/A6、KD-E2 全绿 = 全局覆盖层 KEY 短按语义零改动实证。授权 = D-01。设计态红→落地绿", "mutation": "M-13 分层路由语义回归：key_gesture_parser.cc 的 key_route_layer 通用覆盖层列 KEY LONG_PRESS 由 OVERLAY_CLOSE 改为 HOME", "affectedTest": "key_layer_dispatch: KD-A3 key_route_layer 决策表 (test1)", "turnedRed": true, "sensitive": true, "result": "FAIL @key_layer_dispatch.acceptance.c:538 —— 覆盖层列 KEY 长按不再 OVERLAY_CLOSE（KD-A3 机制齿本体）；M-01 亦可经共享 TEST_CASE 之门齿触发（@:852）。还原后 md5 02254650（好态）一致" },
+      { "acceptanceId": "KD-E1: 页集重锚齿（key_layer_dispatch 三页守卫翻正四页）。授权 = D-01。设计态红→落地绿", "mutation": "M-01 页集回退三页（同源变异）", "affectedTest": "key_layer_dispatch: KD-A3/KD-E1 零回归守卫 (test4)", "turnedRed": true, "sensitive": true, "result": "FAIL @key_layer_dispatch.acceptance.c:852 —— tooth2 期望 PAGE_COUNT==4 且 PAGE_P4==COUNT-1，实得 PAGE_COUNT=3。还原后 md5 c86ef3c9... 一致" },
+      { "acceptanceId": "KB-A3: P3 槽对 (问一问,下一页)（S-F6.1 AC6 + points-home-nodata.png）+ additive P4 槽齿 (说话·双击看,下移)@PAGE_P3+1；页点同源/闭集单源全绿。授权 = D-01 + S-F6.1 AC6。设计态红→落地绿", "mutation": "M-01 页集回退三页（同源变异）", "affectedTest": "keybar_three_slot: KB-A3 左右槽随态文案 (test2)", "turnedRed": true, "sensitive": true, "result": "FAIL @keybar_three_slot.acceptance.c:602 —— P4 槽对断言：page=3 落越界防御 -1（期望「说话·双击看/下移」）。还原后 md5 c86ef3c9... 一致" },
+      { "acceptanceId": "M4K3-A1: source_page 闭集映射单点重锚（原 RSL-A3 齿）——镜像 RSL_KP_PAGE_STORY 2→3 + 新增 RSL_KP_PAGE_POINTS_HOME=2 + points_home 映射齿；发送时点/负锚/gating 零回归全绿。授权 = D-08。设计态红→落地绿", "mutation": "M-02 数值页位耦合回潮（同源变异）", "affectedTest": "record_session_live: RSL-A3 source_page 闭集映射单点 (test3)", "turnedRed": true, "sensitive": true, "result": "FAIL @record_session_live.acceptance.c:618 —— KP_PAGE_POINTS_HOME 期望 points_home 实得 story（积分页语境信号错切）。还原后 md5 71600e01... 一致" },
+      { "acceptanceId": "K3R-A1: 录音语境键手势归属重锚（原 RSR-A1 齿）——RSR_KP_PAGE_STORY 镜像 2→3；三页现树上两条基层判据齿设计态红、四页落地转绿（REVISION LOG 已申报）。授权 = D-01（planner 2026-11-04 补授权）", "mutation": "M-04 归属判据页错位：story_page.c 的 kidpal_story_key_owns (c) 支把 KP_PAGE_STORY 改指 KP_PAGE_SCHEDULE（基层故事页不再拥有 KEY）", "affectedTest": "record_session_repair: RSR-A1 录音语境键手势归属 (test1)", "turnedRed": true, "sensitive": true, "result": "FAIL @record_session_repair.acceptance.c:518 —— 基层故事页归属期望 1 实得 0（builder 单测 record_session_repair.test.c:52 同红）。还原后 md5 71600e01... 一致" },
+      { "acceptanceId": "K3R-A5: story_list defer 缓存消费重锚（原 RSR-A5 齿，同上授权）。设计态红→落地绿", "mutation": "M-05 defer 消费判据页错位：kidpal_story_list_deferred_flush 的 kidpal_page 判据由 KP_PAGE_STORY 改指 KP_PAGE_SCHEDULE", "affectedTest": "record_session_repair: RSR-A5 defer 缓存消费 (test5)", "turnedRed": true, "sensitive": true, "result": "FAIL @record_session_repair.acceptance.c:724 —— 正命中组合 (voice_front=0, STORY, LIST) 期望 1 实得 0（UT:87 同红）。还原后 md5 71600e01... 一致" },
+      { "acceptanceId": "TECH-261028: 阅读键归属收紧——story_page_v2 additive TEST 21（SPV2-RK1）四齿：①key_owns(SERVER_PAGE,3,READER,0)==1 ②VOICE 整层吞负锚 ③对照面 must-stay：查字窗 CHAR_REPLAY(5) + 课表答案页 SESSION_TOGGLE 保留（修复不得改全局覆盖层表）④阅读键帽 (长按退出,翻屏)；TEST 1-20 故事三 story 零回归基线全绿原样。授权 = TECH-261028 + S-F2.3-AC2。设计态红→落地绿（真机闭环补强 = planner 2026-11-05 裁定 B 窄修，K0A-E3 终判）", "mutation": "M-03 归属支指错层：story_page.c 的 kidpal_story_key_owns (d) 支前台层判据由 KIDPAL_LAYER_SERVER_PAGE 改指 KIDPAL_LAYER_REMINDER（阅读态归属失效）", "affectedTest": "story_page_v2: SPV2-RK1 阅读键归属收紧 (test21 tooth1)", "turnedRed": true, "sensitive": true, "result": "FAIL @story_page_v2.acceptance.c:2589 —— key_owns(SERVER_PAGE, STORY, READER, 0) 期望 1 实得 0（TECH-261028 缺陷形态复现）。还原后 md5 71600e01... 一致" },
+      { "acceptanceId": "DLG-A2: 页名闭集重锚——page2→\"points_home\"、page3 fallback→\"story\"、新增 page4 fallback 哨兵；[DLG-C2] seam 行同步。授权 = D-01（planner 2026-11-04 补授权）。设计态红→落地绿", "mutation": "M-12 页名表漏改：log_semantics.c 的 kidpal_log_page_name 回退三项（home/schedule/story），P3 积分页无名字", "affectedTest": "diag_log: DLG-A2 语义名映射闭集 (test2)", "turnedRed": true, "sensitive": true, "result": "FAIL @diag_log.acceptance.c:902 —— page 2 期望 points_home 实得 story（映射表漏项 = 日志降级伪名）。还原后 md5 696509a8b29c6cbfcf35a2ef0eb96307 一致" },
+      { "acceptanceId": "M3K2-A6: 页循环守卫同源化（原 KSG-A6 齿）——PAGE_COUNT==3 字面改同源判别 PAGE_P2 < PAGE_COUNT-1（两态皆绿守卫齿性质保持）。授权 = D-01（planner 2026-11-04 补授权）。绿", "mutation": "M-06 循环基数写死：kidpal_render_node.cc 的 cycle_next 由 % KP_PAGE_COUNT 改为 % 3", "affectedTest": "schedule_grid: M3K2-A6 页循环/键帽条回归靶", "turnedRed": true, "sensitive": true, "result": "FAIL @schedule_grid.acceptance.c:1438 —— 「% KP_PAGE_COUNT 在世」齿不成立（页数改回四/三会再漂移）。还原后 md5 ae84dbfcd53f99ca9983ac0a86cb3aa2 一致" }
+    ],
+    "note": "builder 变异取证轮（2026-11-05）回填：13 条变异（M-01..M-13）/ 13 轮 build+run / 20 条 functional id 全部 turnedRed 且逐条 md5 还原确认零残留；终态 273 Tests / 3 Failures（仅存量 AB 族）。M2K2-E1/E2 为 docs canary（唯一红路径 = 改 requirements/契约文本，铁律零 docs 触碰），planner 2026-11-05 裁定 A 转 kind:'structural' 豁免，见 acceptance[] 对象条目 rationale。K0A-C1 保持 functional（M-11 换序变异实证，不靠摘行造假）。正副产品：M-13/M-10 连带打红非本包冻结齿（char_window_overlay/voice_round_ui），证变异为真实语义回归。"
   },
   "crossEnd": {
     "counterparts": [
@@ -117,9 +171,31 @@
     "firmware/main/test/keybar_three_slot.acceptance.c",
     "firmware/main/test/record_session_live.acceptance.c",
     "firmware/main/test/story_page_v2.acceptance.c",
+    "firmware/main/test/record_session_repair.acceptance.c",
+    "firmware/main/test/schedule_grid.acceptance.c",
+    "firmware/main/test/diag_log.acceptance.c",
+    "firmware/main/diagnostics/log_semantics.c",
+    "firmware/main/display/lcd_display.cc",
+    "firmware/main/test/record_session_repair.test.c",
+    "firmware/main/mcp_server.cc",
     "firmware/main/test/host_app/main/CMakeLists.txt"
   ],
   "impactedTestsSeed": [
+    {
+      "path": "firmware/main/test/record_session_repair.acceptance.c",
+      "kind": "frozen-rebaseline",
+      "note": "拆包预扫遗漏、Pod 内相邻锚反查发现（planner 2026-11-04 收敛批注授权补入）：RSR_KP_PAGE_STORY=2 数值镜像喂 kidpal_story_key_owns/deferred_flush 的 rule-(c) 齿；四页后 KP_PAGE_STORY=3、传 2 = 积分页即假红。镜像 2→3 收紧型重锚。"
+    },
+    {
+      "path": "firmware/main/test/schedule_grid.acceptance.c",
+      "kind": "frozen-rebaseline",
+      "note": "拆包预扫遗漏、Pod 内相邻锚反查发现（同上授权）：KSG-A6 钉 PAGE_COUNT==3；四页落地即假红，字面 3→4 重锚。"
+    },
+    {
+      "path": "firmware/main/test/diag_log.acceptance.c",
+      "kind": "frozen-rebaseline",
+      "note": "拆包预扫遗漏、Pod 内相邻锚反查发现（同上授权）：DLG-A2 页名闭集注释自标「3 页闭集」、页 2 名断言在四页下语义漂移（page 2 = 积分页）；按四页闭集重锚。"
+    },
     {
       "path": "firmware/main/test/retract_p4_three_page.acceptance.c",
       "kind": "frozen-rebaseline",
@@ -244,5 +320,5 @@
       "note": "独立承接包不并入本包；合并前核对双方冻结验收，本包只处理四页骨架和 TECH-261028。"
     }
   ],
-  "notes": "workType = new-capability + remediation。影响面机械辅证：C-AI-KidPal 图索引确认 kidpal_render_node_cycle_next、kidpal_story_ctx_source_page、keybar 三函数和 application.cc 会话发送单点；source_page 图 inbound=0 属 C 调用解析缺口，已由 application.cc:1313-1320 实读补录。相邻冻结锚非零命中：retract_p4_three_page、key_layer_dispatch KD-E1、keybar_three_slot、record_session_live S1、story_page_v2；均为 D-01/D-08 或 TECH-261028 已批准的重锚/回归面，只能由 acceptance-author 收紧型留痕修订。K0a 与 K0 mergeOrder=70/71，K0a 必须先合；两包唯一共享文件为 firmware/main/test/host_app/main/CMakeLists.txt，K0 在 K0a merged 后追加，不宣称文件零重叠。"
+  "notes": "workType = new-capability + remediation。影响面机械辅证：C-AI-KidPal 图索引确认 kidpal_render_node_cycle_next、kidpal_story_ctx_source_page、keybar 三函数和 application.cc 会话发送单点；source_page 图 inbound=0 属 C 调用解析缺口，已由 application.cc:1313-1320 实读补录。相邻冻结锚非零命中：retract_p4_three_page、key_layer_dispatch KD-E1、keybar_three_slot、record_session_live S1、story_page_v2；均为 D-01/D-08 或 TECH-261028 已批准的重锚/回归面，只能由 acceptance-author 收紧型留痕修订。K0a 与 K0 mergeOrder=70/71，K0a 必须先合；两包唯一共享文件为 firmware/main/test/host_app/main/CMakeLists.txt，K0 在 K0a merged 后追加，不宣称文件零重叠。Pod intake（261104）补记：1g 前置技术预评由拆包期 architect 承接（plan.md reviewed-by + 门1 两轮 GREEN，changeManifest/impactedTestsSeed 已随拆包落盘，同源劳动不重复）；1i 新机制批判定未命中——本包为既有固件页面状态机扩展，非新子系统/新外部依赖/新数据迁移（本列车 spike 位为并行 K0 包，本包 dependsOn 为空不消费 spike）；1c scope-map 核对通过（builder/fixer firmware/** allow 覆盖 manifest，acceptance 文件归 acceptance-author 窄 allow；taskpackage 目录内非 dispatch-progress 写件由 planner 代落）；上一包 pod-retro 四条流程教训（带窗实测校准连带内家具 / FAS 键名单一 owner / perAcceptance 投影时点 / 红绿名单按名判读）随本包派单带下去。Planner 收敛批注（2026-11-04，第三次拉起）：① 前两次被停拉起之一遗留 claude -p 孤儿 planner 进程（PID 13844），其 acceptance-author 与本会话派出的 acceptance-author 形成并发双写手——已 taskkill 收敛单写手（pod-events orphan-writer-resolved 在案），孤儿已落盘产物（four_page_skeleton.acceptance.c 新冻结件 + retract_p4_three_page 重锚进行中稿）经在盘评审后由幸存者接管续作，不推倒重来；② 相邻冻结锚反查发现三件 seed 外冻结件将被四页落地打红（record_session_repair RSR 镜像 2→3 / schedule_grid KSG-A6 PAGE_COUNT==3→4 / diag_log DLG-A2 页名闭集），已授权收紧型重锚并补入 changeManifest 与 impactedTestsSeed（拆包预扫遗漏，门1 复扫未覆盖，事后补录）；record_dialogue_guide.acceptance.c:250 死宏 RDL_KEY_PAGE_STORY 全文件无消费点、漂移无害，留痕不动、不扩 scope；③ 新冻结件 CMakeLists 登记行被 acceptance-author scope 拦写，由 planner 按派单既定分工代落一行机械登记（red baseline 前置条件，非实现动作）。Planner 收敛批注二（2026-11-05，builder 首轮停点裁断）：④ changeManifest 二次扩围 3 件（builder 停点申请 A，D-01 同族机械重锚）：diagnostics/log_semantics.c（DLG-A2 页名闭集实现落点，表 3→4 项 + 注释）、display/lcd_display.cc:1372（M2K2-A2 tooth6 邻接齿扫注释文本，PAGE_P3→PAGE_P4 恒等注）、test/record_session_repair.test.c:12（UT_KP_PAGE_STORY 数值镜像 2→3，builder 单测）——拆包预扫只扫 *.acceptance.c 的规则缺口（漏 .test.c 数值镜像 / 实现文件页名表 / 设备消费面注释），advisory 记档，同类页集变更必扫清单待 pod-retro 沉淀；⑤ TECH-261028 真机断链裁断（builder 停点申请 B）：静态路径分析实证板级 keya_story_page_wants 喂给 kidpal_story_key_owns 的 page_state 在 SERVER_PAGE 前台下恒 -1（kidpal_render_node_story_substate 非本地页前台返回 -1 + 阅读态渲染路径不调 story_local_front），修法甲归属支真机不命中、K0A-E3 必复现原缺陷——裁走窄修：kidpal_render_node_story_substate() 增一支（front==SERVER_PAGE && s_local_page==KP_PAGE_STORY && s_story_view.page==KSTORY_PAGE_READER → 返回 READER，纯 additive、只对 READER 放开、LIST/RECORDING 仍 -1 不碰 CG-A2 过渡窗），在 manifest 文件内；板级改「喂最后已知子态」为备选不出；TECH-261028 条目未覆盖此环，条件加强候选记档（debt 条目更新不归本包），K0A-E3 真机轮终判。Planner 收敛批注三（2026-11-05，真机轮 K0A-E3-F2 + human 指定的 architect 预审流程）：⑥ 真机复测轮发现 F2 = 阅读态 KEY 短按误开录音会话——根因 = 双真相源分歧（键归属闸读渲染节点 F1 后=READER 放行，HandleStoryKey 输入决策表读 mcp 权威视图 g_story_view 停 LIST），云端 fetch 阅读路径（mcp_server.cc:1883-1896）只渲快照、从不提交 g_story_view 也不 cache_story；「单页翻屏退 list」实为被 F2 劫持后的录音态 BOOT=丢弃语义，非回绕缺陷（回绕逻辑单屏 (0+1)%1=0 正确）。fixer 分析 + architect 评审（human 指令：方案先过 architect 再改）裁**约束版 C1b**：mcp_server.cc 两处一行（open_reader 后 `g_story_view = reader_view;`；阅读闭包内 render 后 end_page 前 `kidpal_render_node_cache_story(&g_story_view,&g_story_list,&g_story_text);`——不回写旧快照，守 R2-F4 防时序倒挂纪律）+ record_session_repair.test.c 结构齿（双变异自验）；C1a 单用否（deferred_flush 半分裂残留）、C2 否（第二裁决真相源）、C3 立技术债（open_reader 提交语义单点化/双真相源收敛，登记动作归收口后主线程）；story_list_gate「阅读期背景刷新不踢回列表」**不是本包收益也不得顺手改 gate**（architect 纠正 fixer 副作用宣称）；changeManifest 三次扩围 +mcp_server.cc（F2 = TECH-261028 同一修复组成环，非独立缺陷）；回归面在 final scope 全保留外加 story_cache/story_typography/record_session_lifecycle/record_dialogue_guide+V7 全套。"
 }

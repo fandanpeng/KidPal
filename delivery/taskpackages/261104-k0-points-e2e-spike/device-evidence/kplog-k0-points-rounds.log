@@ -1,0 +1,5 @@
+[2026-11-05 16:34:29] I (14570502) MCP: display_dispatch view=points_home corr_id=kdp-14570502 balance=10 revision=3 restore=0 takeover=1
+[2026-11-05 16:35:39] I (14641342) MCP: display_dispatch view=points_home corr_id=kdp-14641342 balance=10 revision=3 restore=0 takeover=1
+[2026-11-05 16:35:52] I (14653192) kidpal_rn: PAGE_SWITCH from=home to=schedule trigger=key local_from=0 local_to=1
+[2026-11-05 16:35:53] I (14654552) kidpal_rn: PAGE_SWITCH from=schedule to=points_home trigger=key local_from=1 local_to=2
+[2026-11-05 16:35:55] I (14657462) kidpal_rn: PAGE_SWITCH from=points_home to=story trigger=key local_from=2 local_to=3

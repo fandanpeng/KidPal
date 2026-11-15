@@ -47,6 +47,13 @@ set(SOURCES "audio/audio_codec.cc"
             # story_page.c / story_page.h (家 display/; 纯逻辑+纯 LVGL -> host 单测同源,
             # 见 firmware/main/test/story_p3.acceptance.c)。
             "display/story_page.c"
+            # P3 星星积分本设备消费面 (TaskPackage 261104-k0-points-e2e-spike):
+            # points_home 载荷最小消费 + restore 分流 + points_ledger 解析与分页缓存
+            # 纪律（points_page.c / points_page.h, 家 display/; 纯 C + 自足极简 JSON、
+            # 零芯片/零 LVGL 依赖 -> host_app linux target 同源）。mcp_server.cc 的
+            # kidpal/display 消费链引用；**host runner 登记（HOST_ACCEPTANCE_SRCS）
+            # 属 K0a merged 后的 FIRST ACTION（K0S-E4/LP8），不在本包先行追加**。
+            "display/points_page.c"
             # P3 正文本地缓存纯逻辑面 (TaskPackage 261016-p3-story-body-sd-cache):
             # RAM 索引 / 当屏缺失 / 双击三分支决策 / 预取决策 / id 校验 / 盖章侧效应
             # 守卫——零 FATFS / 零 LVGL / 零芯片依赖 -> host_app linux target 同源

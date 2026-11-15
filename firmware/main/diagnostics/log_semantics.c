@@ -161,17 +161,22 @@ const char *kidpal_log_gesture_name(int g)
 
 const char *kidpal_log_page_name(int page)
 {
+    /* 页名闭集 = kidpal_page_id_t 四页（TaskPackage 261104-k0a-four-page-skeleton,
+     * planner 2026-11-05 扩单授权）：P3 = 星星积分主页、P4 = 星星记录本原地迁移
+     * （D-01 四页骨架）。新增页必须过本表取名——映射表漏项 = PAGE_SWITCH 日志降级
+     * 伪名, EQ-3。 */
     static const char *const names[] = {
-        "home",     /* 0 KP_PAGE_HOME */
-        "schedule", /* 1 KP_PAGE_SCHEDULE */
-        "story"     /* 2 KP_PAGE_STORY */
+        "home",        /* 0 KP_PAGE_HOME */
+        "schedule",    /* 1 KP_PAGE_SCHEDULE */
+        "points_home", /* 2 KP_PAGE_POINTS_HOME（P3 星星积分本）*/
+        "story"        /* 3 KP_PAGE_STORY（P4 星星记录本, 原地迁移）*/
     };
 
     if (page >= 0 && (unsigned)page < (unsigned)(sizeof(names) / sizeof(names[0]))) {
         return names[page];
     }
-    /* 负值同走 fallback：kidpal_render_node_story_substate 用 -1 表「非 P3」，页面面
-     * 同样可能收到负值；page 3（撤 P4 后的非法页）绝不能映射出伪语义名。 */
+    /* 负值同走 fallback：kidpal_render_node_story_substate 用 -1 表「非故事页」，页面面
+     * 同样可能收到负值；page 4（四页闭集外首格）绝不能映射出伪语义名。 */
     return ls_fallback("page", page);
 }
 

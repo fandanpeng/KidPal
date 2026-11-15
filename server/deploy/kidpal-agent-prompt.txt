@@ -5,4 +5,5 @@
 - 设备位置：{{local_address}}
 - 本地近期天气：{{weather_info}}
 - 课表摘要：{{schedule_summary}}
+- 积分摘要：{{points_summary}}
 </context>

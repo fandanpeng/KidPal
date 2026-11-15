@@ -1,0 +1,100 @@
+[2026-11-06 09:28:32] I (1222672) kidpal_rn: PAGE_RENDER out=2 local=2 sview=0 ssess=0
+[2026-11-06 09:28:33] I (1223472) waveshare_rlcd_4_2: key_edge corr_id=kdp-1223472 key=1(boot) edge=down hold_ms=0
+[2026-11-06 09:28:33] I (1223642) waveshare_rlcd_4_2: key_edge corr_id=kdp-1223642 key=1(boot) edge=up hold_ms=170
+[2026-11-06 09:28:33] I (1223642) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-1223642 key=1(boot) gesture=1(click)
+[2026-11-06 09:28:33] I (1223832) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-1223832 key=1(boot) gesture=click hold_ms=360 overlay=0
+[2026-11-06 09:28:33] I (1223832) MCP: points_key cursor=2
+[2026-11-06 09:28:33] I (1223842) kidpal_rn: PAGE_SWITCH from=points_home to=points_home trigger=net local_from=2 local_to=2
+[2026-11-06 09:28:33] I (1223842) kidpal_rn: PAGE_RENDER in=2 local=2 sview=0 ssess=0 active_ok=1
+[2026-11-06 09:28:33] I (1223862) kidpal_rn: render page POINTS_HOME (P3) points page
+[2026-11-06 09:28:33] I (1223862) LcdDisplay: KEYBAR ovl=0 page=2 substate=-1 last_known=-1 left=问一问 right=下移
+[2026-11-06 09:28:33] I (1223862) kidpal_rn: PAGE_RENDER out=2 local=2 sview=0 ssess=0
+[2026-11-06 09:28:34] I (1224742) waveshare_rlcd_4_2: key_edge corr_id=kdp-1224742 key=1(boot) edge=down hold_ms=0
+[2026-11-06 09:28:34] I (1224912) waveshare_rlcd_4_2: key_edge corr_id=kdp-1224912 key=1(boot) edge=up hold_ms=170
+[2026-11-06 09:28:34] I (1224912) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-1224912 key=1(boot) gesture=1(click)
+[2026-11-06 09:28:34] I (1225092) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-1225092 key=1(boot) gesture=click hold_ms=350 overlay=0
+[2026-11-06 09:28:34] I (1225092) MCP: points_key cursor=3
+[2026-11-06 09:28:34] I (1225092) kidpal_rn: PAGE_SWITCH from=points_home to=points_home trigger=net local_from=2 local_to=2
+[2026-11-06 09:28:34] I (1225102) kidpal_rn: PAGE_RENDER in=2 local=2 sview=0 ssess=0 active_ok=1
+[2026-11-06 09:28:34] I (1225132) kidpal_rn: render page POINTS_HOME (P3) points page
+[2026-11-06 09:28:34] I (1225132) LcdDisplay: KEYBAR ovl=0 page=2 substate=-1 last_known=-1 left=问一问 right=下移
+[2026-11-06 09:28:34] I (1225132) kidpal_rn: PAGE_RENDER out=2 local=2 sview=0 ssess=0
+[2026-11-06 09:28:54] I (1244672) waveshare_rlcd_4_2: key_edge corr_id=kdp-1244672 key=1(boot) edge=down hold_ms=0
+[2026-11-06 09:28:55] I (1246172) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-1246172 key=1(boot) gesture=long hold_ms=1500 overlay=0
+[2026-11-06 09:28:55] I (1246172) MCP: points_key delete_enter cursor=3
+[2026-11-06 09:28:55] I (1246182) kidpal_rn: PAGE_SWITCH from=points_home to=points_home trigger=net local_from=2 local_to=2
+[2026-11-06 09:28:55] I (1246182) kidpal_rn: PAGE_RENDER in=2 local=2 sview=0 ssess=0 active_ok=1
+[2026-11-06 09:28:55] I (1246202) kidpal_rn: render page POINTS_HOME (P3) points page
+[2026-11-06 09:28:55] I (1246202) LcdDisplay: KEYBAR ovl=0 page=2 substate=-1 last_known=-1 left=删掉 right=算了
+[2026-11-06 09:28:55] I (1246202) kidpal_rn: PAGE_RENDER out=2 local=2 sview=0 ssess=0
+[2026-11-06 09:28:56] I (1246972) waveshare_rlcd_4_2: key_edge corr_id=kdp-1246972 key=1(boot) edge=up hold_ms=2300
+[2026-11-06 09:28:56] I (1246972) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-1246972 key=1(boot) gesture=3(long_press)
+[2026-11-06 09:29:01] I (1252032) waveshare_rlcd_4_2: key_edge corr_id=kdp-1252032 key=0(key) edge=down hold_ms=0
+[2026-11-06 09:29:01] I (1252152) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1252152 rtc=09:29 date=11-06 wday=4
+[2026-11-06 09:29:01] I (1252222) waveshare_rlcd_4_2: key_edge corr_id=kdp-1252222 key=0(key) edge=up hold_ms=190
+[2026-11-06 09:29:01] I (1252412) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-1252412 key=0(key) gesture=click hold_ms=380 overlay=0
+[2026-11-06 09:29:01] I (1252412) MCP: points_key delete_confirm id=pt_23877cbf471a4d74b818680c6db56d39
+[2026-11-06 09:29:01] I (1252422) kidpal_rn: PAGE_SWITCH from=points_home to=points_home trigger=net local_from=2 local_to=2
+[2026-11-06 09:29:01] I (1252422) kidpal_rn: PAGE_RENDER in=2 local=2 sview=0 ssess=0 active_ok=1
+[2026-11-06 09:29:01] I (1252452) kidpal_rn: render page POINTS_HOME (P3) points page
+[2026-11-06 09:29:01] I (1252452) LcdDisplay: KEYBAR ovl=0 page=2 substate=-1 last_known=-1 left=问一问 right=下移
+[2026-11-06 09:29:01] I (1252452) kidpal_rn: PAGE_RENDER out=2 local=2 sview=0 ssess=0
+[2026-11-06 09:29:01] I (1252872) MCP: display_dispatch view=points_home corr_id=kdp-1252872 balance=8 revision=5 recent=3 restore=1 takeover=0 state=2 pos=8 target=40 solid=8 overshoot=0
+[2026-11-06 09:29:01] I (1252872) MCP: points_delete ack id=pt_23877cbf471a4d74b818680c6db56d39
+[2026-11-06 09:29:01] I (1252882) MCP: display_dispatch view=points_ledger corr_id=kdp-1252872 total=3 items=3 reset=1 has_more=0 apply_rc=0 state_rc=0 cached=3 rev=5 screens=1 substate=1 slots_rc=0 key=问一问/下移 selected=pt_44efe5bc644b475faa425b77723601ef pending=-
+[2026-11-06 09:29:02] I (1252902) kidpal_rn: PAGE_SWITCH from=points_home to=points_home trigger=net local_from=2 local_to=2
+[2026-11-06 09:29:02] I (1252912) kidpal_rn: PAGE_RENDER in=2 local=2 sview=0 ssess=0 active_ok=1
+[2026-11-06 09:29:02] I (1252932) kidpal_rn: render page POINTS_HOME (P3) points page
+[2026-11-06 09:29:02] I (1252942) LcdDisplay: KEYBAR ovl=0 page=2 substate=-1 last_known=-1 left=问一问 right=下移
+[2026-11-06 09:29:02] I (1252942) kidpal_rn: PAGE_RENDER out=2 local=2 sview=0 ssess=0
+[2026-11-06 09:29:02] I (1253352) kidpal_rn: PAGE_SWITCH from=points_home to=points_home trigger=net local_from=2 local_to=2
+[2026-11-06 09:29:02] I (1253352) kidpal_rn: PAGE_RENDER in=2 local=2 sview=0 ssess=0 active_ok=1
+[2026-11-06 09:29:02] I (1253382) kidpal_rn: render page POINTS_HOME (P3) points page
+[2026-11-06 09:29:02] I (1253382) LcdDisplay: KEYBAR ovl=0 page=2 substate=-1 last_known=-1 left=问一问 right=下移
+[2026-11-06 09:29:02] I (1253382) kidpal_rn: PAGE_RENDER out=2 local=2 sview=0 ssess=0
+[2026-11-06 09:29:22] I (1272462) SystemInfo: free sram: 38827 minimal sram: 11611
+[2026-11-06 09:29:59] I (1310152) MCP: display_dispatch view=points_home corr_id=kdp-1310152 balance=8 revision=5 recent=3 restore=1 takeover=0 state=2 pos=8 target=40 solid=8 overshoot=0
+[2026-11-06 09:29:59] I (1310162) MCP: display_dispatch view=points_ledger corr_id=kdp-1310162 total=3 items=3 reset=1 has_more=0 apply_rc=0 state_rc=0 cached=3 rev=5 screens=1 substate=1 slots_rc=0 key=问一问/下移 selected=pt_44efe5bc644b475faa425b77723601ef pending=-
+[2026-11-06 09:29:59] I (1310182) kidpal_rn: PAGE_SWITCH from=points_home to=points_home trigger=net local_from=2 local_to=2
+[2026-11-06 09:29:59] I (1310192) kidpal_rn: PAGE_RENDER in=2 local=2 sview=0 ssess=0 active_ok=1
+[2026-11-06 09:29:59] I (1310212) kidpal_rn: render page POINTS_HOME (P3) points page
+[2026-11-06 09:29:59] I (1310212) LcdDisplay: KEYBAR ovl=0 page=2 substate=-1 last_known=-1 left=问一问 right=下移
+[2026-11-06 09:29:59] I (1310222) kidpal_rn: PAGE_RENDER out=2 local=2 sview=0 ssess=0
+[2026-11-06 09:29:59] I (1310632) kidpal_rn: PAGE_SWITCH from=points_home to=points_home trigger=net local_from=2 local_to=2
+[2026-11-06 09:29:59] I (1310632) kidpal_rn: PAGE_RENDER in=2 local=2 sview=0 ssess=0 active_ok=1
+[2026-11-06 09:29:59] I (1310642) kidpal_rn: render page POINTS_HOME (P3) points page
+[2026-11-06 09:29:59] I (1310642) LcdDisplay: KEYBAR ovl=0 page=2 substate=-1 last_known=-1 left=问一问 right=下移
+[2026-11-06 09:29:59] I (1310642) kidpal_rn: PAGE_RENDER out=2 local=2 sview=0 ssess=0
+[2026-11-06 09:30:01] I (1312152) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1312152 rtc=09:30 date=11-06 wday=4
+[2026-11-06 09:30:11] I (1322122) waveshare_rlcd_4_2: key_edge corr_id=kdp-1322122 key=0(key) edge=down hold_ms=0
+[2026-11-06 09:30:13] I (1323622) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-1323622 key=0(key) gesture=long hold_ms=1500 overlay=0
+[2026-11-06 09:30:13] I (1323622) MCP: points_key ledger_back
+[2026-11-06 09:30:13] I (1323622) kidpal_rn: PAGE_SWITCH from=points_home to=points_home trigger=net local_from=2 local_to=2
+[2026-11-06 09:30:13] I (1323632) kidpal_rn: PAGE_RENDER in=2 local=2 sview=0 ssess=0 active_ok=1
+[2026-11-06 09:30:13] I (1323672) kidpal_rn: render page POINTS_HOME (P3) points page
+[2026-11-06 09:30:13] I (1323672) LcdDisplay: KEYBAR ovl=0 page=2 substate=-1 last_known=-1 left=问一问 right=下一页
+[2026-11-06 09:30:13] I (1323672) kidpal_rn: PAGE_RENDER out=2 local=2 sview=0 ssess=0
+[2026-11-06 09:30:14] I (1324502) waveshare_rlcd_4_2: key_edge corr_id=kdp-1324502 key=0(key) edge=up hold_ms=2380
+[2026-11-06 09:30:14] I (1324502) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-1324502 key=0(key) gesture=3(long_press)
+[2026-11-06 09:30:22] I (1332462) SystemInfo: free sram: 31807 minimal sram: 10359
+[2026-11-06 09:30:24] I (1335212) waveshare_rlcd_4_2: key_edge corr_id=kdp-1335212 key=0(key) edge=down hold_ms=0
+[2026-11-06 09:30:26] I (1336712) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-1336712 key=0(key) gesture=long hold_ms=1500 overlay=0
+[2026-11-06 09:30:26] I (1336712) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-1336712 action=2(home)
+[2026-11-06 09:30:26] I (1337302) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=1336551
+[2026-11-06 09:30:26] I (1337302) LcdDisplay: KEYBAR ovl=0 page=0 substate=-1 last_known=-1 left=说话 right=翻页
+[2026-11-06 09:30:26] I (1337302) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-06 09:30:26] I (1337312) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-06 09:30:26] I (1337322) kidpal_rn: chrome_front layer_top=2 force_hide=0 front=0
+[2026-11-06 09:30:26] I (1337322) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+[2026-11-06 09:30:26] I (1337332) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+[2026-11-06 09:30:26] I (1337342) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+[2026-11-06 09:30:26] I (1337352) LcdDisplay: KEYBAR ovl=0 page=0 substate=-1 last_known=-1 left=说话 right=翻页
+[2026-11-06 09:30:26] I (1337382) kidpal_rn: show_home: LOCAL_PAGE front (layer top=2)
+[2026-11-06 09:30:28] I (1338542) waveshare_rlcd_4_2: key_edge corr_id=kdp-1338542 key=0(key) edge=up hold_ms=3330
+[2026-11-06 09:30:28] I (1338542) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-1338542 key=0(key) gesture=3(long_press)
+[2026-11-06 09:31:01] I (1372162) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1372162 rtc=09:31 date=11-06 wday=4
+[2026-11-06 09:31:23] I (1393282) SystemInfo: free sram: 42183 minimal sram: 10359
+[2026-11-06 09:32:01] I (1432162) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1432162 rtc=09:32 date=11-06 wday=4
+[2026-11-06 09:32:23] I (1453322) SystemInfo: free sram: 42191 minimal sram: 10359
+[2026-11-06 09:33:01] I (1492162) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-1492162 rtc=09:33 date=11-06 wday=4
+[2026-11-06 09:33:24] I (1514212) SystemInfo: free sram: 42195 minimal sram: 10359

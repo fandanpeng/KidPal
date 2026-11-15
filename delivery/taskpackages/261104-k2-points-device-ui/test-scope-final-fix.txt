@@ -1,0 +1,61 @@
+# test-scope-final-fix — 261104-k2-points-device-ui（integrator 修复批后范围圈定终验，2026-11-14）
+#
+# 圈定方法（integrator Step 4①，2026-11-14）：范围 = 本包 acceptanceTestsFile ∪ 修复批
+#   变更测试档 ∪ detect_changes blast radius 映射测试 ∪ taskpackage impactedTestsSeed ∪
+#   共享 seam / 安全余量。图索引可用（C-AI-KidPal-pod-m2 专属索引，per-Pod launch 面必办项）
+#   → 正常圈定，非降级。
+# detect_changes（project=C-AI-KidPal-pod-m2，since=53944b5b，direction=inbound，depth=2）：
+#   changed_files=26（修复批实现面 + 资产 + 部署面 + 制品面），seed_symbols=85，
+#   impacted_total=50。impacted_modules：firmware/main 14 / server/acceptance 33 / server/gateway 3。
+#   受影响测试族（blast radius 命中）= chrome_ghost / keybar_three_slot / retract_p4_three_page
+#   （firmware）+ test_m4k1_story_cloud_link / test_m4k3_record_session_live /
+#   test_points_device_ui / test_points_e2e_spike / test_points_ledger_core /
+#   test_record_cancel_lifecycle / test_record_dialogue_guide / test_record_front_polish
+#   （server acceptance）；server/gateway 命中 _push_schedule_connect /
+#   _push_schedule_refresh_to_legs / _relay_schedule_payload（front 建连推送同族缝）。
+# 影响面（修复批）= firmware display/mcp + front + engine-patch + openclaw 部署面 + 资产管线：
+#   F10/F3/F7/F2/F5/F6/F4 固件观感与键帽、F11 front 建连初推、F9 front dedup 语音反馈、
+#   F1 引擎补丁 + OpenClaw skill 链（AGENTS/SKILL/declaration/prompt）。
+# 全量回归 = 人工触发位（不跑）：server 全量 415 与 host 287/3 引用 builder/fixer fresh 证据
+#   （pod-events builder-complete / fixer-complete 事件 + 复验轮），integrator 在本轮 scope 内
+#   另抽跑佐证（见 review-packet v2 Verification Evidence）。
+# 路径条目分节注记供人读；机械消费只取下方纯路径行（闸 scope 匹配为逐行精确集合匹配，
+# 中文注记行一律以 # 起首）。
+#
+# ── firmware 本包冻结件 / 修复批重锚件 / detect_changes 命中件：
+firmware/main/test/points_device_ui.acceptance.c
+firmware/main/test/keybar_three_slot.acceptance.c
+firmware/main/test/retract_p4_three_page.acceptance.c
+firmware/main/test/ui_art_integration.acceptance.c
+firmware/main/test/chrome_ghost.acceptance.c
+# ── firmware 共享 seam / 种子回归（impactedTestsSeed + 图命中族；host 实跑形态 = 单 ELF 全件合跑）：
+firmware/main/test/record_session_live.acceptance.c
+firmware/main/test/story_page_v2.acceptance.c
+firmware/main/test/four_page_skeleton.acceptance.c
+firmware/main/test/points_spike.acceptance.c
+# ── server 本包冻结件 / 修复批重锚件 / 重钉件：
+server/acceptance/test_points_device_ui.acceptance.py
+server/acceptance/test_points_e2e_spike.acceptance.py
+server/acceptance/test_261017_openclaw_kidpal_skills.acceptance.py
+# ── server detect_changes blast radius 命中件（front 建连推送 / 语境注入口）：
+server/acceptance/test_m4k1_story_cloud_link.acceptance.py
+server/acceptance/test_m4k3_record_session_live.acceptance.py
+server/acceptance/test_points_ledger_core.acceptance.py
+server/acceptance/test_record_cancel_lifecycle.acceptance.py
+server/acceptance/test_record_dialogue_guide.acceptance.py
+server/acceptance/test_record_front_polish.acceptance.py
+# ── server 安全余量（engine-patch connection.py / prompt 载体 / AGENTS 静态语义 / dedup speak）：
+server/acceptance/test_kidpal_speak_sync.acceptance.py
+server/acceptance/test_261022_m5_k1_prompt_carrier_migration.acceptance.py
+server/acceptance/test_261023_agents_md_static_semantics_alignment.acceptance.py
+# ── server units（共享 seam / 种子回归）：
+server/tests/test_story_units.py
+server/tests/test_engine_round_close_units.py
+server/tests/test_reminder_units.py
+#
+# ── 圈定判定：
+# 范围 = 影响面圈定清单（非全量、非缩到只剩本包档）：firmware 9 + server acceptance 12 +
+# server units 3 = 24 个测试档，覆盖修复批 changeManifest 增量（firmware display/mcp/资产 +
+# server front/engine-patch/openclaw 部署面 + tools 资产管线）与 detect_changes 全部命中测试族。
+# live-manual 项（K2PTS-L1/L2/L3 + K1L-L1/L2）已由真机轮与复验轮 device-round-evidence.md
+# 承载，不在本终验范围（不伪造 host 替代真机）。

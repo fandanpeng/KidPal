@@ -1,0 +1,74 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r1.json)",
+  "changeId": "261104-k4-reward-goal-config",
+  "phase": "final",
+  "round": 1,
+  "invocationId": "7d3f9c1e-5b2a-4e8f-9a61-c2d4b8f0a7e3",
+  "outcome": "ok",
+  "observedGateExit": 0,
+  "gatesRun": 10,
+  "scopeFile": "delivery/taskpackages/261104-k4-reward-goal-config/test-scope-final.txt",
+  "scopeBasis": "detect_changes C-AI-KidPal-pod-m2 since=cad07f2c (31 changed files / 48 impacted) ∪ acceptanceTestsFile ∪ impactedTestsSeed 11 条 ∪ 共享 seam 回归 ∪ 安全余量；per-Pod 图索引可用，正常圈定（未降级）",
+  "scopeEntries": 12,
+  "evidenceRef": "delivery/taskpackages/261104-k4-reward-goal-config/verifier-evidence/rounds/r1.json",
+  "evidenceFact": {
+    "artifactType": "verifier-round-fact",
+    "authority": "bearing",
+    "producedBy": "verify.mjs",
+    "ok": true,
+    "startedAt": "2026-11-14T17:40:57.724Z",
+    "completedAt": "2026-11-14T17:41:38.397Z"
+  },
+  "gateSummary": [
+    { "gate": "taskpackage-required", "kind": "governance", "ok": true, "ms": 309, "timing": "scoped" },
+    { "gate": "change-manifest", "kind": "governance", "ok": true, "ms": 376, "timing": "scoped", "note": "pre-cutoff 存量放行声明" },
+    { "gate": "firmware-build", "kind": "structural", "ok": true, "ms": 8484, "timing": "scoped", "note": "真编译通过（xiaozhi.bin 生成）" },
+    { "gate": "contract-lint", "kind": "structural", "ok": true, "ms": 110, "timing": "scoped", "note": "仅一条既有断链 warning" },
+    { "gate": "acceptance-coverage", "kind": "functional", "ok": true, "ms": 126, "timing": "scoped", "note": "14 个 acceptance id 全覆盖" },
+    { "gate": "mutation-check", "kind": "functional", "ok": true, "ms": 126, "timing": "scoped", "note": "14 条 perAcceptance" },
+    { "gate": "docs-sync", "kind": "governance", "ok": true, "ms": 130, "timing": "scoped", "note": "docsSyncRequired=false，人工复核成立（docs-delta.md）" },
+    { "gate": "security", "kind": "security", "ok": true, "ms": 119, "timing": "scoped", "note": "securityReviewRequired=false" },
+    { "gate": "unit", "kind": "functional", "ok": true, "ms": 15429, "timing": "full", "note": "110 passed, 1 warning (pytest, scope 交集)" },
+    { "gate": "acceptance", "kind": "functional", "ok": true, "ms": 15372, "timing": "full", "note": "41 passed, 1 warning; firmwareAcceptanceFiles=5, serverAcceptanceFiles=3" }
+  ],
+  "mechanicalCheck": {
+    "tool": ".claude/scripts/verifier-evidence-check.mjs",
+    "args": "--change-id 261104-k4-reward-goal-config --phase final --round 1 --invocation-id 7d3f9c1e-5b2a-4e8f-9a61-c2d4b8f0a7e3",
+    "exit": 0,
+    "output": {
+      "ok": true,
+      "gate": "verifier-evidence",
+      "evidenceRef": "delivery/taskpackages/261104-k4-reward-goal-config/verifier-evidence/rounds/r1.json",
+      "factOk": true,
+      "observedGateExit": 0,
+      "phase": "final",
+      "round": 1
+    }
+  },
+  "hostRunner": {
+    "command": "wsl -d Ubuntu-24.04 -- bash -lc \"cd /mnt/c/AI/KidPal-pod-m2/firmware/main/test/host_app && ./espidf_wsl.sh build && ./build/host_infra_test.elf\"",
+    "result": "292 Tests 3 Failures 0 Ignored",
+    "passLines": 289,
+    "k4gTests": "K4G-H1..H5 全 PASS (reward_goal_config.acceptance.c:265/313/386/436/487)",
+    "threeFailures": [
+      "p1_auxbar_style.acceptance.c:522 AB-A1 ic_batt_15 消费点未接入",
+      "p1_auxbar_style.acceptance.c:608 AB-A2 ic_thermo_12 落位漂出授权域",
+      "p1_auxbar_style.acceptance.c:754 AB-A4 ic_wifi_14 消费点缺失"
+    ],
+    "conclusion": "3 红全 p1_auxbar 存量族，与 K2 final 基线 287/3 同族同项；292-287=5 = 本包新增 K4G-H1..H5。零新增红。"
+  },
+  "deviceOutcome": {
+    "declared": true,
+    "userVisible": true,
+    "acceptanceRefs": ["K4G-L1"],
+    "hostUncompilablePaths": ["firmware/main/display/kidpal_render_node.cc"],
+    "deviceRoundEvidence": "none (not run; device-round-evidence.md absent — pending human device window)",
+    "note": "pre-merge-escalation-gate 将因设备轮证据缺席 BLOCK，属预期；不伪造 PASS"
+  },
+  "docsSync": {
+    "required": false,
+    "deltaRef": "delivery/taskpackages/261104-k4-reward-goal-config/docs-delta.md",
+    "conclusion": "requirements / architecture / contracts / docs/ui 四类零 diff"
+  },
+  "adr": { "required": false, "produced": [] }
+}

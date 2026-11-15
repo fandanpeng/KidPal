@@ -12,6 +12,7 @@
  * 槽表（P 行逐字）。
  */
 #include "keybar.h"
+#include "points_page.h" /* K2PTS-P6: KPTS_SUBSTATE_* 积分子态常量单源 */
 
 #include <stddef.h> /* NULL */
 
@@ -38,17 +39,22 @@ int kidpal_keybar_slots(int page, int scene, int overlay_top,
     }
 
     if (overlay_top == 0) {
-        /* 主页面基层：页槽表（规格权威 = requirements §2.2 线框行逐字）。scene 入参
-         * 在基层列被忽略（主页面无语音场景语境，任意 int 均合法）。 */
+        /* 主页面基层：页槽表（规格权威 = requirements §2.2 线框行 + §2.4 四页序逐字）。
+         * scene 入参在基层列被忽略（主页面无语音场景语境，任意 int 均合法）。
+         * 四页行（2026-11-04 261104-k0a-four-page-skeleton / D-01 四页骨架重锚）：
+         * P3 = 星星积分主页、P4 = 星星记录本列表（原 P3 行原地迁移）。 */
         switch (page) {
             case PAGE_P1: *out_left = "说话";     *out_right = "翻页"; break;
             case PAGE_P2: *out_left = "问课程";   *out_right = "翻页"; break;
-            case PAGE_P3: *out_left = "说话·双击看"; *out_right = "下移"; break;
+            /* P3 星星积分本（planner ruling 11 / F4：human 三选一裁定左键帽「详·双击」
+             * ——详情账本提示压入键帽；右「下一页」不动）。 */
+            case PAGE_P3: *out_left = "详·双击";   *out_right = "下一页"; break;
+            /* P4 星星记录本列表（S-F2.1 列表态键帽零回归, 值随页位原地迁移不变;
+             * docs/ui/V9/canvas-p3.png）。 */
+            case PAGE_P4: *out_left = "说话·双击看"; *out_right = "下移"; break;
             default:
-                /* M2-K2 撤 P4：原第 4 页槽位的过渡兜底 case 随枚举整值撤出而消解，
-                 * 页槽表只剩 P1/P2/P3 三行。越界页（含原第 4 页索引 = PAGE_COUNT）
-                 * 已由上方防御列一律 -1，本分支对合法页（0..PAGE_COUNT-1 = P1..P3）
-                 * 不可达；保留仅为 switch 完整性，不复活任何页位。 */
+                /* 页槽表恰四行（P1..P4）。越界页（含 PAGE_COUNT）已由上方防御列一律
+                 * -1，本分支对合法页（0..PAGE_COUNT-1）不可达；保留仅为 switch 完整性。 */
                 return -1;
         }
         return 0;
@@ -208,8 +214,10 @@ void kidpal_keybar_scene_reset(void)
  * story -1 过渡窗键帽裁决（TaskPackage 261022-p3-record-chrome-ghost-fix, CG-A2；
  * additive 尾部追加）
  *
- * kidpal_render_node_story_substate() 在覆盖层 / 云端渲染夹钳前台时恒返回 -1
- * （缓存页态在覆盖层下不可见）。层切换/语音事件触发的 chrome 重同步常跑在故事
+ * kidpal_render_node_story_substate() 在覆盖层 / 云端渲染夹钳前台时返回 -1
+ * （缓存页态在覆盖层下不可见；唯一例外 = 阅读态 TECH-261028 归属补口，planner
+ * 2026-11-05 裁定 B——SERVER_PAGE 前台 + READER 时如实报 READER，其余页态仍 -1）。
+ * 层切换/语音事件触发的 chrome 重同步常跑在故事
  * 子态缓存更新之前 —— 过渡窗若直接掉通用分支，要么画语音残留键帽（CG-A1 因二），
  * 要么把故事会话期的键帽闪成基层页槽表。本函数按调用方注入的「最后已知子态」
  * 在过渡窗继续出故事键帽；在途集之外（LIST/STAMP/DELETE/BODY_UNAVAILABLE 等）
@@ -247,5 +255,40 @@ int kidpal_keybar_story_transition_slots(int story_sub, int last_known_sub,
             /* LIST / STAMP / DELETE / BODY_UNAVAILABLE / -1 等：不接管，回落既有
              * 路径（该相位残留由 [CG-C1] scene 复位兜底）。 */
             return 0;
+    }
+}
+
+/* ==========================================================================
+ * P3 星星积分本子态键帽三槽（TaskPackage 261104-k2-points-device-ui, K2PTS-P6;
+ * additive 尾部追加——既有函数与值域零触碰）
+ *
+ * 键帽字面单源 = docs/ui/V9/points-ledger.png / points-delete-confirm.png 两张
+ * 冻结页级 ref 逐字（EQ-4）。子态常量经 points_page.h 符号消费，本文件零本地
+ * 镜像。覆盖层页点消失 = kidpal_keybar_dots 既有 overlay_top 语义（不另造机制）。
+ * ========================================================================== */
+int kidpal_keybar_points_slots(int substate, const char **out_left,
+                               const char **out_right)
+{
+    /* 防御：任一输出指针 NULL -> -1，从不为 UB。 */
+    if (out_left == NULL || out_right == NULL) {
+        return -1;
+    }
+    switch (substate) {
+        case KPTS_SUBSTATE_LEDGER:
+            /* V9 points-ledger.png 左槽「问一问」（KEY 短按 = 开语音会话，积分语境）/
+             * 右槽「下移」（BOOT 短按 = 光标下移，与故事列表同型）。 */
+            *out_left  = "问一问";
+            *out_right = "下移";
+            return 0;
+        case KPTS_SUBSTATE_DELETE_CONFIRM:
+            /* V9 points-delete-confirm.png 左「删掉」（KEY 短按 = 确认删除）/
+             * 右「算了」（BOOT = 取消）；与 story KSTORY_PAGE_DELETE 同字（WF-F2-05）。 */
+            *out_left  = "删掉";
+            *out_right = "算了";
+            return 0;
+        default:
+            /* NONE / 未知子态：调用方回落基层页槽表（P3 = 详·双击/下一页），
+             * 绝不画错键帽。 */
+            return -1;
     }
 }

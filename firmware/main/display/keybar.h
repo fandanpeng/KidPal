@@ -24,7 +24,8 @@
 #define KIDPAL_KEYBAR_H
 
 /* 页点总数同源 = 现行页循环页数（key_gesture_parser.h PAGE_COUNT；2026-09-18 随
- * 260917-m2-k2-retract-p4-three-page 撤 P4，随枚举 = 3，KB-E1 deviation 收回）。本模块
+ * 260917-m2-k2-retract-p4-three-page 撤 P4；2026-11-04 随 261104-k0a-four-page-skeleton
+ * D-01 四页骨架为 4，KB-E1 deviation 口径收回维持）。本模块
  * 永不写死数字面——总数恒取 (int)PAGE_COUNT。key_gesture_parser.h 在 firmware/main/
  * （display/ 上一级），相对 include 以兼容 host（仅 -I display）与设备两侧。 */
 #include "../key_gesture_parser.h"
@@ -41,7 +42,7 @@ extern "C" {
 
 /* 页点槽裁决输出（KB-A1 中槽机制值）:
  *   visible: 1 = 页点显示（仅主页面基层）; 0 = 覆盖层隐藏
- *   total:   页点总数 = 现行页循环页数（同源 PAGE_COUNT = 3）
+ *   total:   页点总数 = 现行页循环页数（同源 PAGE_COUNT）
  *   active:  当前实心页点下标（0-based，= 当前页） */
 typedef struct {
     int visible;
@@ -56,8 +57,9 @@ typedef struct {
 int kidpal_keybar_dots(int page, int overlay_top, kidpal_keybar_dots_t *out);
 
 /* 左右槽文案裁决（KB-A3 机制单源，冻结映射）:
- *   overlay_top == 0（主页面基层, page 槽表）: P1 说话/翻页 · P2 问课程/翻页 ·
- *     P3 说话·双击看/下移（P4 撤页后页槽表只此三行, 越界页交防御列 -1）;
+ *   overlay_top == 0（主页面基层, page 槽表，四行）: P1 说话/翻页 · P2 问课程/翻页 ·
+ *     P3 问一问/下一页（星星积分主页, S-F6.1 AC6 + points-home-nodata.png）·
+ *     P4 说话·双击看/下移（星星记录本列表, 原 P3 行原地迁移）;
  *     scene 入参被忽略（主页面无语音场景语境）。
  *   overlay_top != 0（覆盖层随态, scene 槽表）: 左槽 = kidpal_voice_state_look(scene)
  *     .keycap（冻结闭集单源, 零复制）; 右槽 = 语音轮「结束」/ 提醒 REMIND「关闭」;
@@ -143,6 +145,22 @@ int kidpal_keybar_story_transition_slots(int story_sub, int last_known_sub,
  * 消费点 = lcd_display 键帽三槽随态（记录语境录音态）。 */
 int kidpal_keybar_story_rec_slots(int guide_sub, const char **out_left,
                                   const char **out_right);
+
+/* -------------------------------------------------------------------------- *
+ * P3 星星积分本子态键帽槽裁决（TaskPackage 261104-k2-points-device-ui, K2PTS-P6;
+ * additive 追加——既有声明零触碰；additive 并行函数形态同 char_slots/story_slots）:
+ *   substate = KPTS_SUBSTATE_LEDGER         -> 左「问一问」右「下移」
+ *              （V9 points-ledger.png 冻结页级 ref 逐字）;
+ *   substate = KPTS_SUBSTATE_DELETE_CONFIRM -> 左「删掉」右「算了」
+ *              （V9 points-delete-confirm.png；WF-F2-05 同族、与 story
+ *              KSTORY_PAGE_DELETE 键帽同字）;
+ *   KPTS_SUBSTATE_NONE / 未知子态 -> -1（消费方回落基层页槽表，绝不画错键帽）。
+ *   防御: 任一输出指针 NULL -> -1; 成功返回 0。
+ * 值域单源 = docs/ui/V9 两张冻结页级 ref；substate 常量住 points_page.h（本函数
+ * 经 include 消费、零本地镜像）。覆盖层页点消失走既有 kidpal_keybar_dots
+ * overlay_top 语义，机制零新增。 */
+int kidpal_keybar_points_slots(int substate, const char **out_left,
+                               const char **out_right);
 
 #ifdef __cplusplus
 }

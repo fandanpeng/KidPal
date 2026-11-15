@@ -15,7 +15,7 @@
 
 - **跨包约束（LP8 对偶）**：`firmware/main/test/host_app/main/CMakeLists.txt` 是两包唯一共享构建清单，由本包先落；K0 等 K0a merged 后才追加登记。本包不得触碰 points 业务文件（K0 的新 points_page.c 经本包接管缝接入，见 K0A-E2）。
 - **环境事实**：复用池树 `C:/AI/KidPal-pod-m2`（常驻分支 `dev/pod-m2`，2026-11-04 复位到 22b30654）；固件环境在位（managed_components 软链 + host build 热缓存）；`firmware/main/test/host_app/sdkconfig` 已改名 `sdkconfig.pre-launch-bak-20261104`（构建从 defaults 重生成，确认无误后可删）；专属图索引 `C-AI-KidPal-pod-m2` 在册随树复用。
-- **会话标识**：点火后由 launch 执行者回填。
+- **会话标识**：2026-11-04 由主线程会话（dispatch 树 pod-m1-k1a-key-layer-dispatch）以 Agent 后台 subagent 派发 planner（非 headless、非 CLI 交互式；无 `--settings`，降级面生效：settings-presence=extension-session，收尾手工跑 supervisor-gate-check.mjs + portfolio-reconcile.mjs）。续跑经主线程 SendMessage 至该 planner agent（agent 会话 id `a392695344c177105`，仅作续跑句柄用）。
 - **命令行**（两形态并列，标注适用条件）：
   ① 人在场交互式：`claude --settings .claude/dev-loop.settings.json --agent planner`
   ② 无人值守 headless：`claude -p --dangerously-skip-permissions --settings .claude/dev-loop.settings.json --agent planner`（另加 `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0`）

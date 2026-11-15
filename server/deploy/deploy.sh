@@ -134,6 +134,17 @@ if [ "$CHANGED_ANY" -eq 0 ]; then
   echo "无变更条目（live 已与 $COMMIT 一致）。"
 fi
 
+# ── 2b. 积分运行态目录（261104-k1-points-ledger-core；arch §5.3.2 权威布局）──
+# state = /opt/kidpal/points/state.json（env KIDPAL_POINTS_STATE 单源覆盖口，未设时
+# 代码缺省即本路径）；锁 = 同目录 `.lock`（写入临界区的进程间文件锁，常驻不删）。
+# 运行态数据**不入清单**（runtime data，与 OpenClaw 运行态同纪律）；目录在此幂等铺放
+# （代码侧 _write_state 亦 os.makedirs 兜底，本步只让布局显式可见）。
+# 迁移注记：K0 live 现状 /opt/kidpal/points.json —— env 名不动，由运维轮把
+# KIDPAL_POINTS_STATE 改指 /opt/kidpal/points/state.json 并搬既有内容（一次性动作）。
+if [ "$DRY_RUN" -eq 0 ]; then
+  install -d -m 755 /opt/kidpal/points
+fi
+
 # systemd timer 单元铺放后需 reload（幂等）
 if [ "$DRY_RUN" -eq 0 ]; then
   if systemctl list-unit-files 2>/dev/null | grep -q kidpal-deploy-drift; then

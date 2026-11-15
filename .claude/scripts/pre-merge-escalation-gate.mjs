@@ -532,7 +532,17 @@ export function assessDeviceOutcome(input, deps = {}) {
     reasons.push('device-round-evidence-missing：合并前必须有 device-round-evidence.md 的结构化真机目击记录');
   } else {
     if (evidence.changeId !== input.changeId) reasons.push('device-round-evidence-changeId-mismatch');
-    if (evidence.sourceCommit !== input.source) reasons.push('device-round-evidence-source-commit-mismatch：目击固件来源 commit 必须等于本次合并 HEAD');
+    // 2026-11-05 热修（同簇第二刀，human 明确签字 2026-11-05：261104-k0a 合并链自引用死结
+    // 实证——证据文件随合并提交时，证据提交必在真机目击之后、合并 HEAD 必为其后代，严格
+    // 相等结构性不可满足）。放宽为「相等或证据 commit 是合并 HEAD 的祖先」；二进制与代码的
+    // 绑定仍由 binaryRef SHA-256 对账（verifyBinary）硬兜底，伪造空间为零。祖先判定经
+    // deps.gitAncestor 注入（闸手跑路径无注入 = 保持严格相等，语义收紧方向安全）。
+    const evidenceCommitMatches = (() => {
+      if (evidence.sourceCommit === input.source) return true;
+      if (typeof deps.gitAncestor !== 'function') return false;
+      try { return deps.gitAncestor(input.source, evidence.sourceCommit) === true; } catch { return false; }
+    })();
+    if (!evidenceCommitMatches) reasons.push('device-round-evidence-source-commit-mismatch：目击固件来源 commit 必须等于本次合并 HEAD');
     if (typeof evidence.binaryRef !== 'string' || !/^[0-9a-f]{64}$/.test(String(evidence.binarySha256 || '')) || !verifyBinary(evidence.binaryRef, evidence.binarySha256)) {
       reasons.push('device-round-evidence-binary-mismatch：binaryRef 不存在或 SHA-256 不符');
     }
@@ -593,6 +603,12 @@ function collectDeviceOutcome(projectDir, changeId, source, sourceDiffPaths) {
       verifyExcerpt: (ref, sha) => {
         const prefix = 'delivery/taskpackages/' + changeId + '/device-evidence/';
         return typeof ref === 'string' && ref.startsWith(prefix) && hashFile(ref) === sha;
+      },
+      // 2026-11-05 热修第二刀配套：祖先判定注入（本函数模块级、无 execFn 变量，直用
+      // execSync；cwd = 闸进程 cwd = merge-driver 传入的合并源 worktree）。
+      gitAncestor: (head, maybeAncestor) => {
+        execSync(`git merge-base --is-ancestor ${maybeAncestor} ${head}`, { encoding: 'utf8', stdio: 'pipe' }); // 非祖先非零退出抛错
+        return true;
       },
     });
     if (parsed.error) {

@@ -52,11 +52,18 @@ function wrapSvg(viewBox, body, extraDefs = true) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}">${extraDefs ? `<defs>${defs}</defs>` : ''}${body}</svg>`;
 }
 
-// svgUse(): symbol 内容内联（不嵌套 <use href="#id">，libvips 对 use→symbol→use→defs 的间接层解析不稳）。
+// svgUse(): 顶层 symbol 内容内联（不嵌套 <use href="#id">，libvips 对 use→symbol→use→defs 的间接层解析不稳）。
 // defs 随文档注入；symbol body 内部对 #mp-head 等 defs 的 <use> 引用落在同一文档内、可解析。
+// 2026-11-14 K2 真机轮金币复验修订：另把全部 <symbol> 定义注入 defs——body 内部对**其它 symbol**
+// 的嵌套 <use>（ic-coin → ic-star）此前无解析目标，中心实心五角星整枚漏画（非 1bpp 阈值压没，
+// 因此单纯放大尺寸不可能恢复星形）。本稿内只有 ic-coin 引用 symbol（pt-cat 引用的是 defs 的
+// #mp-head），其余资产栅格化零变化。
 function svgUse(id) {
   const s = symbols[id];
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${s.viewBox}"><defs>${defs}</defs>${s.body}</svg>`;
+  const symDefs = Object.entries(symbols)
+    .map(([k, v]) => `<symbol id="${k}" viewBox="${v.viewBox}">${v.body}</symbol>`)
+    .join('');
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${s.viewBox}"><defs>${defs}${symDefs}</defs>${s.body}</svg>`;
 }
 
 // ── 3. 栅格化核心：rotate 先于 flatten(防透明误判黑) + 1bpp 阈值 + RGB565 打包 ──
@@ -430,6 +437,27 @@ for (const [nm, s] of Object.entries(LEGACY_INLINE)) {
 jobs.push({ name: 'time_10_24', svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 244 108"><text x="122" y="86" text-anchor="middle" font-family="'Segoe UI','Arial Rounded MT Bold',sans-serif" font-weight="700" font-size="96" letter-spacing="-3" fill="#000">10  24</text></svg>`, w: 244, h: 108, rotate: -1, kind: 'svg' });
 jobs.push({ name: 'ic_batt_32', svg: svgUse('ic-batt'), w: 32, h: 26, rotate: 0, kind: 'svg' });
 jobs.push({ name: 'ic_bell_13', svg: svgUse('ic-bell'), w: 13, h: 13, rotate: 0, kind: 'svg' });
+
+// v9 积分本资产（TaskPackage 261104-k2-points-device-ui 真机轮 F2/F5/F6；金币尺寸 2026-11-14
+// 真机复验轮修订）：
+//   金币余额图标 = 母版 ic-coin 符号（48 盒双圈内嵌五角星）缩绘 36×36。24×24 档在 1bpp 下
+//     双圈退化成一条 1px 虚线、且中心星形因 svgUse 未注入 symbol 定义而整枚漏画（见 svgUse
+//     注释）；36×36 是外环/内圈/实心五角星三者清晰可辨的最小档（32×32 内圈仍糊成 1px 断线）。
+//   进度线小伴位置标 = pt-cat 符号 34×28（V9 html 545 行 viewBox 24 20 152 124）；
+//   游乐场场景标 = sc-wheel 摩天轮 42×42（V9 html 540 行 48 盒，二轮打回城堡改摩天轮）。
+// 三枚按主页面目标尺寸直出（禁运行时缩放）；1bpp 阈值化由本管线既有通路保证。
+jobs.push({ name: 'ic_coin_36_36', svg: svgUse('ic-coin'), w: 36, h: 36, rotate: 0, kind: 'svg' });
+jobs.push({ name: 'pt_cat_34_28', svg: svgUse('pt-cat'), w: 34, h: 28, rotate: 0, kind: 'svg' });
+jobs.push({ name: 'sc_wheel_42_42', svg: svgUse('sc-wheel'), w: 42, h: 42, rotate: 0, kind: 'svg' });
+// K4 奖励场景四预置美术（TaskPackage 261104-k4-reward-goal-config）：
+//   契约 §1.3⑦ asset 闭集余下四键（sc-choco / sc-movie / sc-gift / sc-flag）各 42×42
+//   直出，与 sc_wheel_42_42 同尺寸同 rotate 0——进度线场景标位一张同一把尺，切换目标
+//   不跳尺寸。sc-flag 同时承载自定义奖励的通用标记图（不做逐个定制美术）。
+//   母版符号 = docs/ui/kidpal-ui-design-v9.html 的 sc-* symbol（V9 已定稿，母版只读）。
+jobs.push({ name: 'sc_choco_42_42', svg: svgUse('sc-choco'), w: 42, h: 42, rotate: 0, kind: 'svg' });
+jobs.push({ name: 'sc_movie_42_42', svg: svgUse('sc-movie'), w: 42, h: 42, rotate: 0, kind: 'svg' });
+jobs.push({ name: 'sc_gift_42_42', svg: svgUse('sc-gift'), w: 42, h: 42, rotate: 0, kind: 'svg' });
+jobs.push({ name: 'sc_flag_42_42', svg: svgUse('sc-flag'), w: 42, h: 42, rotate: 0, kind: 'svg' });
 
 // ── 10. 主循环：栅格化 → 阈值 → 打包/切片 → 落盘 ──
 const results = [];

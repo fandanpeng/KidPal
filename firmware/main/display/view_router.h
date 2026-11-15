@@ -9,12 +9,16 @@
  *
  * C linkage：供 .c 冻结验收与被 .cc 消费，统一 extern "C"。
  *
- * 降级语义：白名单(view ∈ char/schedule/story_list/story_text/text/home/control)
+ * 降级语义：白名单(view ∈ char/schedule/story_list/story_text/text/home/control/points_home/points_ledger)
  * 之外的 view 一律路由到显式 UNKNOWN 降级路径(值 -1)，调用方必须展示友好
  * 降级提示、绝不盲渲染 (V27 / spec §4.0 格式不遵循兜底行)。NULL 同样归降级。
  */
 #ifndef KIDPAL_VIEW_ROUTER_H
 #define KIDPAL_VIEW_ROUTER_H
+
+/* K2 积分子态常量单源（additive；TaskPackage 261104-k2-points-device-ui）:
+ * points_ledger 子页渲染态裁决复用 points_page.h 的 KPTS_SUBSTATE_*（零本地镜像）。 */
+#include "points_page.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,6 +33,11 @@ enum {
     VRT_ROUTE_SCHEDULE = 4,     /* schedule   课表 (§1.3 ②, 包 5/6) */
     VRT_ROUTE_STORY_LIST = 5,   /* story_list 故事列表 (§1.3 ③, 包 8) */
     VRT_ROUTE_STORY_TEXT = 6,   /* story_text 故事正文 (§1.3 ④, 包 8) */
+    /* additive 尾部追加（TaskPackage 261104-k0-points-e2e-spike；冻结数值 = 7 / 8，
+     * 既有 0..6 零偏移——契约 §1.3⑦⑧ 白名单 7→9 的设备消费半；seam 权威 =
+     * firmware/main/test/points_spike.acceptance.c 文件头 [G1]）。 */
+    VRT_ROUTE_POINTS_HOME = 7,  /* points_home   P3 星星积分本主页 (§1.3 ⑦) */
+    VRT_ROUTE_POINTS_LEDGER = 8,/* points_ledger P3 详细账本分页 (§1.3 ⑧) */
     VRT_ROUTE_UNKNOWN = (-1)    /* 白名单外 view / NULL — 显式降级路径 */
 };
 
@@ -51,6 +60,14 @@ int kidpal_display_route(
 
 /* 解析 control view 的动作 (契约 §1.4)。返回 VRT_CTRL_*；未知/NULL -> VRT_CTRL_UNKNOWN。 */
 int kidpal_display_control_action(const char *action);
+
+/* K2 additive: points 视图 -> 设备渲染子态（TaskPackage 261104-k2-points-device-ui;
+ * display/points_page.h 的 KPTS_SUBSTATE_* 单源，零本地镜像）。
+ *   "points_ledger" -> KPTS_SUBSTATE_LEDGER（详细账本列表态）;
+ *   "points_home"   -> KPTS_SUBSTATE_NONE（基层 P3 主页，键帽回落页槽表）;
+ *   其余 / NULL      -> -1（非积分视图，调用方不切积分子态）。
+ * 纯函数，零副作用；供 mcp_server 消费接线层在 points 帧到达时裁定当前子态。 */
+int kidpal_display_points_substate(const char *view);
 
 /* 全文分页 (S-F4.1: 答案全文上屏, human 裁定否摘要)：返回 screen_lines 行/屏下
  * 装下 text 全文所需的屏数，>=1；NULL 计为 1 (空屏)；screen_lines <= 0 防御返回 1，

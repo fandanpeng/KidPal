@@ -212,6 +212,21 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
                              const kidpal_story_list_t *list,
                              const kidpal_story_text_t *story);
 
+/*
+ * 最近一次成功落屏的故事页态（TaskPackage 261104-k0a-four-page-skeleton fixer 轮,
+ * K0A-E3 真机缺陷：阅读态键帽取不到 READER）。
+ *
+ * 云端阅读正文渲染走 begin_page -> kidpal_story_page_render -> end_page 夹钳，**不经**
+ * kidpal_render_node_cache_story，故渲染节点 s_story_view.page 在阅读驻留期全程停留
+ * LIST——kidpal_render_node_story_substate() 的 READER 补口按 s_story_view.page 判永远
+ * 取不到 READER，键帽链退回过渡窗出列表槽（真机实证「说话·双击看/下移」）。本 getter
+ * 供渲染节点 getter 判「本帧 _实际落屏_ 的页态」，只在成功落屏出口更新；**不改**
+ * s_story_view.page（退出阅读回列表时 rn_render_kidpal_page_locked 仍按 s_story_view
+ * 的 LIST 重渲，零副作用）。初值 = LIST（未渲染 = 冷启动基层页）。无锁整数读，可跨
+ * 任务调用（与 s_story_view.page 既有宽松度同级）。
+ */
+int kidpal_story_page_rendered_page(void);
+
 /* ---- ⑨ LIST 分屏纯逻辑三缝（seam [K8]; 原语形态, 行/屏数显式注入） ---- */
 /* BOOT 短按光标下移: cursor+1; 越过当前屏底 -> 翻下一屏并落该屏首项; 到底 -> wrap
  * 回首项（永不离页）。count<=0 -> 0（零副作用, out 不触碰）; rows<=0 -> 按 1 行/屏
@@ -277,9 +292,11 @@ int kidpal_story_text_seq(const char *data_json);
  * 不一致 = 行为齿红即实现偏移。 */
 #define KSTORY_ECHO_MAX_LINES 4
 
-/* [S1] source_page 映射单点（契约 §四闭集 story/schedule/home 一次做全）: KP_PAGE_*
- * 数值镜像（M2K2-A2 冻结等值: HOME=0/SCHEDULE=1/STORY=2）; 越界/未知 -> "home"
- * （闭集缺省兜底, 绝不外溢第四取值）。返回静态串字面指针, 永不 NULL。 */
+/* [S1] source_page 映射单点（契约 §四闭集主页四值一次做全:
+ * home / schedule / points_home / story; 枚举驱动 = 按 kidpal_render_node.h 的
+ * KP_PAGE_* **符号**分流，2026-11-04 261104-k0a-four-page-skeleton / D-08 重写——
+ * 数值 case 页位耦合已废除）; 越界/未知/KP_PAGE_COUNT -> "home"（闭集缺省兜底,
+ * 绝不外溢新取值、绝不回退 story）。返回静态串字面指针, 永不 NULL。 */
 const char *kidpal_story_ctx_source_page(int page);
 
 /* [S2] 引导态纯逻辑二缝: 气泡逐字单源（S-F2.2-AC1「需要我帮你记点什么？」; lcd
