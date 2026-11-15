@@ -1,0 +1,143 @@
+{
+  "changeId": "261117-session-end-intent-longretry",
+  "title": "云端结束意图三段补链 + 自动重连封顶长跑与离线期人工意向不丢",
+  "rigor": "full",
+  "sourceType": "proposal",
+  "origin": {
+    "type": "proposal",
+    "upstreamType": "proposal",
+    "upstreamRef": "delivery/workstreams/261115-session-channel-resident/PROPOSAL.md",
+    "upstreamFrozen": "sha1:bc53e2b9d5cf772d",
+    "workstream": "261115-session-channel-resident"
+  },
+  "subsystem": "firmware control end_session 消费与自动重连策略 + front display 门禁与提示词承载",
+  "story": "S-F1.4 · 日程提醒（离线期提醒必达与自愈）+ requirements §2.1 结束通道②（云端结束意图）+ requirements §2.1 结束通道③（再按 KEY）+ requirements §2.2 四态演出回归",
+  "planRef": "delivery/taskpackages/261117-session-end-intent-longretry/plan.md",
+  "sourceRefs": [
+    "docs/requirements.md#§2.1",
+    "docs/requirements.md#S-F1.4",
+    "docs/architecture.md#§5.2",
+    "docs/architecture.md#§6.4",
+    "docs/contracts/interface-contract.md#§1.4-end_session",
+    "docs/contracts/interface-contract.md#§1.5",
+    "docs/contracts/interface-contract.md#§1.6",
+    "docs/decisions/ADR.md#ADR-019",
+    "delivery/review/261115-arch-review-session-channel-resident/PROPOSAL.md#T1",
+    "delivery/review/261115-arch-review-session-channel-resident/PROPOSAL.md#T2",
+    "delivery/review/261115-arch-review-session-channel-resident/PROPOSAL.md#T5",
+    "docs/debt/tech/TECH-261014-session-end-channels-unwired.md",
+    "docs/debt/tech/TECH-261014-autoconnect-gives-up-silently.md"
+  ],
+  "acceptanceRefs": [
+    "docs/requirements.md#§2.1",
+    "docs/requirements.md#S-F1.4",
+    "docs/contracts/interface-contract.md#§1.4-end_session",
+    "docs/contracts/interface-contract.md#§1.5",
+    "docs/contracts/interface-contract.md#§1.6",
+    "delivery/review/261115-arch-review-session-channel-resident/PROPOSAL.md#§5"
+  ],
+  "acceptance": [
+    "SEI-A1: 设备 control end_session——mcp_server.cc control `case 0` 区内 `EndVoiceSession()` 恰 1、`AbortSpeaking(` 命中 0（负锚：防双重收尾）。回引契约 §1.4、PROPOSAL T5、ADR-019 ⑥。设计态红 = case 0 只 AbortSpeaking。",
+    "SEI-A2: 退避表形态——`kAutoConnectBackoffS` 首定义为 5 元素递增秒序列 `{5,10,20,40,60}` + `kAutoConnectSteadyRetryS` 命名常量值 60；重写 K6-A2 tooth5（旧齿钉 `[3]` 长度与 `{5,10,20}`）并显式申报。回引 PROPOSAL T1 改法 4。",
+    "SEI-A3: 长跑与退出——task 体内无 `attempt < 3` 字面；三个退出条件（成功 / bail / 网络断请求位）各在世；`auto_connect_in_flight_` 所有退出路径必清（K6 既有不变量保绿）。设计态红 = 3 次即 exit。",
+    "SEI-A4: 人工意向位——四个人工入口（HandleToggleChatEvent / HandleStartListeningEvent / HandleEndVoiceSessionEvent / HandleWakeWordDetectedEvent）区内 `pending_manual_intent_` 置位命中各 ≥ 1 且不再是裸 return；task 体内查意向位 + 截短退避 + 连上后 Schedule 补投三件在世。回引 PROPOSAL T1 改法 4 的承重配套。设计态红 = 长跑期人工入口永久 no-op。",
+    "SEI-B1: 门禁分叉——validate_display({view:control, data:{action:end_session}}, self_push=True)[0] 为 True（反转既有 RDG-A5 断言并显式申报）；validate_display(缺省 relay) 仍为 False（must-stay-green，与 test_points_e2e_spike 同判据）；add_points/redeem_points 在 self_push 下仍恒拒（正锚，防豁免口误扩）。回引契约 §1.4 / §1.5。",
+    "SEI-B2: 截获-自推——引擎 display 流投一块 control/end_session → relay 输出不含该块（不透传）+ 设备腿恰收一帧自推 control/end_session（_push_display_payload 单源、过 display_schema）。回引契约 §1.4 截获转发类。",
+    "SEI-B3: 回环防护——front 自推的那一帧不再被 relay 路径二次截获（假 socket 双跑一轮，帧数恒 1）。",
+    "SEI-B4: prompt 承载三面相等——workspace-kidpal AGENTS.md 含告别回合纪律关键词（拜拜/不用了 → control/end_session）+ home 行语义已收窄；OPENCLAW_SYSTEM_PROMPT_CARRIER 声明面按 ADR-001 不变式同批对账（沿 test_261022_m5_k1 / test_261023 先例形态）。回引契约 §1.6、arch §5.5.5。"
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/session_end_intent_longretry.acceptance.c",
+    "server/acceptance/test_session_end_intent.acceptance.py"
+  ],
+  "redBaselineCommand": "host: wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf（仓根起）；server: python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance（仓根起）",
+  "redBaselineResult": "由 acceptance-author 冻结时实跑回填；本包设计态红 = SEI-A1/A2/A3/A4 + SEI-B1/B2/B3/B4 对应实现缺席；SEI-B1 的 relay 侧与 test_points_e2e_spike 判据天然保绿。",
+  "exitCriteria": [
+    "KSE-E1: Pod 内冻结验收覆盖 SEI-A1–A4 与 SEI-B1–B4 全部断言；红基线与变异证据齐全；relay 侧与 points spike 两条天然保绿齿逐条列证。",
+    "KSE-E2: 冻结齿反转显式申报——test_record_dialogue_guide.acceptance.py 的 self_push=True + end_session 由 assertFalse 改 assertTrue，断言消息随裁定改写；boot_auto_connect.acceptance.c 的 K6-A2 tooth5 按新退避表重写。每条列出「旧钉什么 → 新钉什么 → 为什么」。",
+    "KSE-E3: 部署面承载——workspace-kidpal AGENTS.md 与 OPENCLAW_SYSTEM_PROMPT_CARRIER 的静态语义三面相等不变式保绿（ADR-001）；prompt 落 ECS 后与仓内制品一致。",
+    "KSE-E4: 一轮真机轮 B（human 持板）全绿：B1 说「拜拜」全链通（模型产薄意图 → front 截获 → 自推 → 设备结束会话且麦克风关）；B2 60s 自动关闭真机首次发生且长讲不被误收；B3 拔网线 / 重启 front 两种离线形态下的长重试自愈；B4 离线期按键与唤醒在恢复后补投不丢；B5 离线 30 分钟电量差记录回填；B6 引擎 24h 日切形态（测试环境临时调小 close_connection_no_voice_time 复现，不改生产值）。",
+    "KSE-E5: 三源日志互证（设备 KPLOG / front systemd / 引擎 docker）；证据落本包 current/。"
+  ],
+  "iterationBudget": 3,
+  "fixBudget": 4,
+  "supervisorBlockBudget": 2,
+  "contractRefs": [
+    "docs/contracts/interface-contract.md#§1.4-end_session",
+    "docs/contracts/interface-contract.md#§1.5",
+    "docs/contracts/interface-contract.md#§1.6"
+  ],
+  "docRefs": [
+    "delivery/workstreams/261115-session-channel-resident/PROPOSAL.md",
+    "delivery/review/261115-arch-review-session-channel-resident/PROPOSAL.md",
+    "delivery/review/261115-arch-review-session-channel-resident/package-split.md",
+    "docs/requirements.md",
+    "docs/architecture.md",
+    "docs/contracts/interface-contract.md",
+    "docs/decisions/ADR.md"
+  ],
+  "docsSyncRequired": false,
+  "docsSyncReason": "契约 §1.4/§1.5/§1.6 与 arch §5.2/§6.4 已随架构批冻结；本包只兑现实现与 prompt 承载，不改 spec 语义。",
+  "docsOwner": "integrator",
+  "securityReviewRequired": false,
+  "adrRequired": false,
+  "requiredLayers": ["unit", "acceptance-offline", "firmware-build", "live-manual"],
+  "mutationRequired": true,
+  "mutationEvidence": {"perAcceptance": []},
+  "crossEnd": {
+    "counterparts": [
+      {"path": "server/gateway/display_schema.py", "symbol": "validate_display"},
+      {"path": "server/gateway/front/front_app.py", "symbol": "pump_upstream_to_client"},
+      {"path": "server/gateway/front/front_app.py", "symbol": "_push_display_payload"},
+      {"path": "firmware/main/mcp_server.cc", "symbol": "McpServer::DoTool"}
+    ],
+    "exempt": ""
+  },
+  "changeManifest": [
+    "firmware/main/mcp_server.cc",
+    "firmware/main/application.cc",
+    "firmware/main/application.h",
+    "firmware/main/test/session_end_intent_longretry.acceptance.c",
+    "firmware/main/test/boot_auto_connect.acceptance.c",
+    "server/gateway/display_schema.py",
+    "server/gateway/front/front_app.py",
+    "server/acceptance/test_session_end_intent.acceptance.py",
+    "server/acceptance/test_record_dialogue_guide.acceptance.py",
+    "server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md",
+    "server/deploy/OPENCLAW_SYSTEM_PROMPT_CARRIER"
+  ],
+  "impactedTestsSeed": [
+    {"path": "server/acceptance/test_record_dialogue_guide.acceptance.py", "kind": "frozen-inversion", "note": "self_push=True + end_session 由 assertFalse 改 assertTrue（显式申报，非静默改齿）；relay 侧断言保绿。"},
+    {"path": "server/acceptance/test_points_e2e_spike.acceptance.py", "kind": "must-stay-green", "note": "缺省 self_push=False 的 relay 拒转判据天然保绿，不得顺手改。"},
+    {"path": "firmware/main/test/boot_auto_connect.acceptance.c", "kind": "frozen-rebaseline", "note": "K6-A2 tooth5 从 `[3]` 长度 + `{5,10,20}` 重写为 `{5,10,20,40,60}` + 恒 60s；其余 K6 守卫断言保绿。"}
+  ],
+  "uiux": {"uiuxRequired": false, "uiuxLevel": 0, "designRefs": [], "sharedUiRefs": []},
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": ["delivery/workstreams/261115-session-channel-resident/"],
+  "riskTier": "medium",
+  "riskRationale": "end_session 三段补链中 prompt 与 front 截获是 additive、设备侧只改一个 case 分支；display_schema 的 self_push 豁免口从 1 值扩到 2 值但 relay 恒拒不变；长重试改退避表形态与 task 循环边界，守卫三条件不变；新增人工意向位只在离线期活跃、稳态零路径。",
+  "gateProfile": ["evidence-integrity", "test-quality", "state-machine", "mcp-tool-contract"],
+  "mergeOrder": 78,
+  "dependsOn": ["261116-channel-resident-core"],
+  "launchPreconditions": [
+    {
+      "predicate": "P1 已合 main（统一会话结束处理器与常驻模型守卫语义在场）",
+      "scope": "package:261116-channel-resident-core",
+      "status": "pending",
+      "evidence": "待 P1 合并后回填"
+    }
+  ],
+  "decisionCoverage": [
+    {"decision": "B1 · end_session 改「front 截获 + 机械自推单源」", "summary": "relay 直转恒拒；self_push 豁免口扩至 end_session；设备 case 0 收口统一处理器。", "sourceRefs": ["docs/contracts/interface-contract.md#§1.4-end_session", "docs/contracts/interface-contract.md#§1.5"], "landsIn": "exitCriteria:KSE-E1"},
+    {"decision": "B2 · 告别回合 prompt 纪律（home 收窄）", "summary": "孩子明确告别 → 口语一句 + control/end_session；不得用 home 承载告别。", "sourceRefs": ["docs/contracts/interface-contract.md#§1.6"], "landsIn": "exitCriteria:KSE-E3"},
+    {"decision": "B3 · 自动重连封顶长跑 {5,10,20,40,60} + 恒 60s", "summary": "3 次即止退役；守卫三条件与零第二条重连路径保持。", "sourceRefs": ["docs/architecture.md#§6.4"], "landsIn": "exitCriteria:KSE-E1"},
+    {"decision": "B4 · 人工意向位（离线期入口置意向、截短退避、连上后补投）", "summary": "长跑期人工入口不再永久 no-op，孩子那一次动作不丢。", "sourceRefs": ["docs/architecture.md#§6.4"], "landsIn": "exitCriteria:KSE-E1"},
+    {"decision": "B5 · end_session 页面落点按 OQ3=c", "summary": "三条结束通道同落点；不新增 page-landing 特例分支。", "sourceRefs": ["docs/contracts/interface-contract.md#§1.4-end_session", "docs/architecture.md#§5.2"], "landsIn": "exitCriteria:KSE-E4"}
+  ],
+  "crossPackageBehaviors": [
+    {"topic": "统一会话结束处理器（六触发源收口）", "owner": "261116-channel-resident-core", "carriedBy": "261116-channel-resident-core", "note": "P2 的 end_session 触发源必须收口到 P1 建立的处理器，不另起收尾路径。"},
+    {"topic": "常驻模型下的守卫三条件语义", "owner": "261116-channel-resident-core", "carriedBy": "261116-channel-resident-core", "note": "P2 的长重试守卫语义以 P1 的常驻模型为基线。"}
+  ],
+  "notes": "本包是 2 包列车的 P2（mergeOrder 78），必须从 P1 合并后的 main 起分支。与 P1 在 application.cc 改不相交函数区（本包 = TryStartAutoConnect task 体 + 四个人工入口守卫行）。引擎侧零 diff；prompt 静态承载 = server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md，部署由 agent 按 kidpal-ecs-gateway 规程执行。真机轮 B 由 human 持板。"
+}
