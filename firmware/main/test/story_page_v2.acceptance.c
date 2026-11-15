@@ -1013,7 +1013,9 @@ TEST_CASE("story_page_v2: LIST 态 v1.47 决策表——六手势+空列表特�
                  "page=COVER(%d)——逐层返回「列表 → 封皮」缺失（仍 GLOBAL 一步到家 = 封皮"
                  "下沉未接线）", act, v.page, KSPV2_ACT_COVER_BACK, KSPV2_PAGE_COVER));
 
-    /* tooth 4: BOOT 短按 = CURSOR_NEXT(3)（旧码 GLOBAL=-2 错位）。 */
+    /* tooth 4: BOOT 短按 = CURSOR_NEXT(3)（旧码 GLOBAL=-2 错位）。
+     * 2026-11-15 acceptance-author 最小修：tooth 3 留下 COVER 页态导致 tooth 4 误判；tooth 4 前复位 LIST（K4 pod-retro 教训①同族） */
+    v.page = KSPV2_PAGE_LIST;
     act = kidpal_story_page_input(&v, KEY_ID_BOOT, KEY_GESTURE_CLICK);
     TEST_ASSERT_TRUE_MESSAGE(act == KSPV2_ACT_CURSOR_NEXT,
         kspv2_fm("SPV2-A1 RED: LIST 态 BOOT 短按动作码 = %d, 期望 CURSOR_NEXT(=%d)——"

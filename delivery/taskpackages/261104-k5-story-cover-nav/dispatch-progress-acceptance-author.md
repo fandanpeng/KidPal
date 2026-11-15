@@ -150,3 +150,25 @@ COVER_BACK=14；`kidpal_story_list_load(v,list)`（只填缓存、page 零重置
 | `server/gateway/front/front_app.py`（多段） | 五调用点 + ctx/delete/expand 实况（§② 必读，部分在清单外行号） |
 | `tools/asset-pipeline/gen_art_spiffs.mjs` | KAP1 头格式与 WHITELIST 结构（C9 断言形状） |
 | `docs/ui/V9/story-cover.png` | 封皮覆盖带坐标（页级 PNG = 布局权威） |
+
+## 8. 冻结件缺陷最小修（2026-11-15，builder 轮后回派）
+
+- **缺陷**：`firmware/main/test/story_page_v2.acceptance.c` SPV2-A1 跨用例状态残留——
+  tooth 3（:1009）`kidpal_story_page_input(&v, KEY_ID_KEY, KEY_GESTURE_LONG_PRESS)` 按本包
+  新冻结语义把 `v.page` 置为 COVER(7)；tooth 4（:1017）未复位页态，同一 `v` 上发 BOOT 短按
+  落在 COVER 行 → GLOBAL(-2)，断言期望 CURSOR_NEXT(3)。此断言与 KCN-C3 冻结的「COVER BOOT
+  族 = GLOBAL」+「LIST KEY 长 → COVER_BACK 且 page=COVER」互斥，任何实现都不可能同时满足
+  （K4 pod-retro 教训①同族：跨用例一致性缺陷）。红基线期未暴露——当时 tooth 3 先红、测试
+  中止，从未跑到 tooth 4。
+- **修正（最小、纯 additive）**：tooth 4 之前加一行 `v.page = KSPV2_PAGE_LIST;` + 一行逐字
+  留痕注释。其余断言一字未改、未删 tooth、未弱化任何断言。
+- **复跑（host 全量）**：`espidf_wsl.sh build` 编译绿（error 零）→ host_infra_test.elf
+  `301 Tests 3 Failures`，3 红全为 p1_auxbar_style AB-A1/A2/A4 存量族（本包未触碰）；
+  SPV2-A1 转 PASS，K5 本批验收面全绿。
+- **同族隐患扫描（只报告不改）**：story_page_v2 内 SPV2-A4（tooth 循环逐次 view_init +
+  显式页态）、A6（显式 screen 复位 + open_reader 重调）、A7（逐段 view_init + 显式页态）、
+  A8（view_init 重调）、B1/SLP-SLA5（渲染前显式页态）均无残留；story_cover_nav 的
+  KCN-C3/C4/C5/C10 每条 tooth 前均 `kcn_view_cover` / `view_init` / 显式 `v.page` 复位，
+  KCN-C4 的逐层序列是刻意状态推进（每步断言 page 期望值）；chrome_ghost CG-A2 与
+  keybar KB-A3 迁入断言均为纯函数参数驱动、无共享页态；RSL-A10 为源码切片区断（无状态）。
+  未发现其它同族「tooth 间状态残留」隐患。

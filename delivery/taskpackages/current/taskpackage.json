@@ -152,6 +152,7 @@
     "firmware/main/display/lcd_display.cc",
     "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc",
     "firmware/main/mcp_server.cc",
+    "firmware/main/mcp_server.h",
     "firmware/main/application.cc",
     "firmware/main/test/story_cover_nav.acceptance.c",
     "firmware/main/test/story_page_v2.acceptance.c",
@@ -324,5 +325,5 @@
       "note": "K5 只收导航并集，PROPOSAL §5 全项由主线程另组织跨包真机+真实 QQ 轮，不留给 K5 单 Pod 自证。"
     }
   ],
-  "notes": "影响面机械辅证：图索引确认 story_page/kidpal_render_node/keybar/application 发送单点、front _push_story_list 的六个调用者与 display_schema story_list floor；ADR-018 明确否决 story_cover view/cover_total。相邻冻结锚非零命中：story_page_v2、record_session_live、keybar_three_slot、chrome_ghost、server M4K1/M4K3 story_list 断言； landed 契约的后台 restore:true 与旧实现/注释存在差距，由 acceptance-author 留痕重锚而非改契约。K5 依赖 K2 与 K4，借 K4 的传递依赖保证排在 K3 后，mergeOrder=76。2026-11-15 Step 1g ARCH-ADVISORY 预评校准（planner 已落 plan.md 技术方案节）：封皮落 story_page.c 子态（删 manifest 的 story_cover.c/.h 与 firmware/main/CMakeLists.txt，无新源文件）；生成件名按命名律改为 ic_coin_52_52.bin；补 boards .cc 与 chrome_ghost.test.c；display_schema/front 的薄载荷与 restore 对齐属实现落地（契约 §1.3③/§1.5 已 LANDED，无需改契约文本）。human 2026-11-15 两项裁定：① 归档失败离页帧（front_app.py:1728）保持 restore=False 按「离页导航帧」例外处理 + review-packet 留痕 + ARQ 建议契约措辞排除；② BOOT 从 P3 进 P4 的封皮入口 reset 走板级 BOOT 钩子（waveshare-s3-rlcd-4.2.cc → McpServer::StoryEnterCover）。"
+  "notes": "影响面机械辅证：图索引确认 story_page/kidpal_render_node/keybar/application 发送单点、front _push_story_list 的六个调用者与 display_schema story_list floor；ADR-018 明确否决 story_cover view/cover_total。相邻冻结锚非零命中：story_page_v2、record_session_live、keybar_three_slot、chrome_ghost、server M4K1/M4K3 story_list 断言； landed 契约的后台 restore:true 与旧实现/注释存在差距，由 acceptance-author 留痕重锚而非改契约。K5 依赖 K2 与 K4，借 K4 的传递依赖保证排在 K3 后，mergeOrder=76。2026-11-15 Step 1g ARCH-ADVISORY 预评校准（planner 已落 plan.md 技术方案节）：封皮落 story_page.c 子态（删 manifest 的 story_cover.c/.h 与 firmware/main/CMakeLists.txt，无新源文件）；生成件名按命名律改为 ic_coin_52_52.bin；补 boards .cc 与 chrome_ghost.test.c；display_schema/front 的薄载荷与 restore 对齐属实现落地（契约 §1.3③/§1.5 已 LANDED，无需改契约文本）。human 2026-11-15 两项裁定：① 归档失败离页帧（front_app.py:1728）保持 restore=False 按「离页导航帧」例外处理 + review-packet 留痕 + ARQ 建议契约措辞排除；② BOOT 从 P3 进 P4 的封皮入口 reset 走板级 BOOT 钩子（waveshare-s3-rlcd-4.2.cc → McpServer::StoryEnterCover）。2026-11-15 扩单（architect ARCH-ADVISORY 评估 APPROVE，planner 落 manifest）：append `firmware/main/mcp_server.h`——StoryEnterCover 为板级入口 reset 所需新增公有类方法，声明必须落 mcp_server.h（waveshare-s3-rlcd-4.2.cc:148 → mcp_server.cc:1534 成对），1g 按「McpServer 新缝」口径起草时未把类声明头文件展开进粗 glob。同批 architect 复核 builder 的 StoryEnterCover 实现偏离（不用 ScheduleStoryRender）成立且必要：该路径会先置 s_local_page=STORY 导致板级 cycle_next 算出 HOME 跳错页，builder 改主任务内 cache_story 同步后由 cycle_next 以封皮态渲 P4，四页循环/layer/日志/K0a 冻结面零改。三条留痕风险交 review-packet：A 归档失败离页帧（restore=False 例外）到设备按非 restore 完整帧落封皮而非列表；B restore 在 READER/RECORDING/STAMP 驻留时会多一次基层重绘（页态零重置成立，闪帧观察项）；C 封皮渲染未含「小伴」，归 uiuxLevel 4 design review 偏差项。"
 }
