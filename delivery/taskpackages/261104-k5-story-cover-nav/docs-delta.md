@@ -1,6 +1,6 @@
 # docs-delta · 261104-k5-story-cover-nav
 
-- **docsSyncRequired**：`false`（TaskPackage 声明；docs-sync 闸 PASS，2026-11-15 final 终验轮 r3）
+- **docsSyncRequired**：`false`（TaskPackage 声明；docs-sync 闸 PASS，2026-11-15 final 终验轮 r5〔真机轮修复后重跑〕）
 - **docsOwner**：integrator
 - **ADR**：`adrRequired=false`，本包未产出新 ADR，`docs/decisions/ADR.md` 零变更（引用既有 ADR-018，不改文本）。
 
@@ -21,5 +21,5 @@
 
 ## 影响面记（供 reviewer 对账）
 
-- 本次 docs-sync 判定与 `docs-sync` 治理闸 PASS 一致（闸读 `docsSyncRequired=false`，本文件给出人工复核理由）。final r3 逐闸确认 docs-sync PASS、reason =「封皮、P4 分层、story_list 共享帧、restore 与会话语境均已由 v1.71 和 landed 架构/契约冻结」。
+- 本次 docs-sync 判定与 `docs-sync` 治理闸 PASS 一致（闸读 `docsSyncRequired=false`，本文件给出人工复核理由）。final r5 逐闸确认 docs-sync PASS、reason =「封皮、P4 分层、story_list 共享帧、restore 与会话语境均已由 v1.71 和 landed 架构/契约冻结」。真机轮三 commit（视觉对齐 + 导航帧接管 + 回归断言）均在已冻结设计/契约内落地，`docs/` 仍零 diff。
 - pod-events 中一条 friction（`acceptance-coverage-check.mjs` 不认 `--change-id`，与 mutation-check 同族旗标不一致）候选 ARQ，属治理机检工具面建议，与本包 canonical docs 无关，交主线程评估。

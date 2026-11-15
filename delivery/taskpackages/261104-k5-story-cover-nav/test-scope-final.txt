@@ -61,3 +61,9 @@ server/tests/test_reminder_units.py
 #   - server/acceptance 下 test_points_*（device_ui/e2e_spike/ledger_core）/ test_schedule_grid_restore：装载 display_schema.py，但本包 display_schema 改动为 story_list view 内的 `data=={}` 早退（additive、view 隔离），不触 points/schedule floor；不纳入圈定，理由如实登记。
 #   - firmware/main/test/acceptance/archive/*：归档退役面（「移位即退役」口径），非现役执行面。
 # server 面 live 用例按既有 `-m "not live"` 口径 deselected，不在此处放宽。
+#
+# ── 真机轮修复后复核（2026-11-15，integrator）──
+# 复核无变化：真机轮三 commit（54dd605e / a467bd39 / ca5fa9e7）仅改 story_page.c / mcp_server.cc / 既有冻结件
+# story_cover_nav.acceptance.c / story_page_v2.acceptance.c（后两者已在清单）；重跑 detect_changes
+# （since=03630b65，direction=both，depth=2）仍 275 seed 符号 / 297 impacted 节点，无新增受影响测试文件；
+# 25 条清单继续覆盖（final r5 @ ca5fa9e7 以本清单跑绿）。
