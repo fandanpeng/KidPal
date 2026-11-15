@@ -959,13 +959,21 @@ static void rn_points_outline(lv_obj_t *scr, int x, int y, int w, int h)
 #define RN_POINTS_ART_SLOTS      3   /* pt_cat_34_28 / ic_coin_36_36 / sc_*_42_42 */
 
 typedef struct {
-    const char *name;
+    /* K4G-L1：存**文件名副本**而非指针——场景标名每次由调用方局部缓冲拼出
+     * （<symbol>.bin），存指针会悬垂且同名误判。空串 = 槽未占用。 */
+    char name[32];
     lv_image_dsc_t dsc;
     uint32_t *px;
     int st; /* 0=未试 1=可用 2=不可用 */
 } rn_points_art_cache_t;
 
 static rn_points_art_cache_t s_rn_points_art[RN_POINTS_ART_SLOTS];
+
+/* K4G-L1 守卫（编译期）：槽名字段必须容得下最长场景文件名
+ * （"sc_choco_42_42.bin" = 18 字符 + NUL）。缓冲一旦被收窄，此处编译失败，
+ * 而不是运行时把文件名静默截断成不存在的资产（= 场景标又变成不画）。 */
+static_assert(sizeof(s_rn_points_art[0].name) >= 24,
+              "points art cache name buffer too small for scene asset filenames");
 
 static const lv_image_dsc_t *rn_points_art_dsc(int slot_index, const char *asset,
                                                int max_w, int max_h)
@@ -977,7 +985,7 @@ static const lv_image_dsc_t *rn_points_art_dsc(int slot_index, const char *asset
         return NULL;
     }
     slot = &s_rn_points_art[slot_index];
-    if (slot->name != NULL && strcmp(slot->name, asset) == 0) {
+    if (slot->name[0] != '\0' && strcmp(slot->name, asset) == 0) {
         if (slot->st == 2) {
             return NULL; /* 同名的不可用资产：记住失败，不再逐帧重试 */
         }
@@ -985,24 +993,24 @@ static const lv_image_dsc_t *rn_points_art_dsc(int slot_index, const char *asset
             return &slot->dsc;
         }
     }
-    if (slot->name != NULL) {
+    if (slot->name[0] != '\0') {
         /* 槽内是旧资产（场景标换目标）：释放旧像素缓冲，同一槽按新名重载。 */
         if (slot->px != NULL) {
             lv_free(slot->px);
         }
         slot->px = NULL;
-        slot->name = NULL;
+        slot->name[0] = '\0';
         slot->st = 0;
     }
     if (kidpal_art_load(asset, &img) != 0 || img.w <= 0 || img.h <= 0 ||
         img.w > max_w || img.h > max_h) {
-        slot->name = asset; /* 记住失败的资产名：不逐帧重试，也不逐出他槽 */
+        snprintf(slot->name, sizeof(slot->name), "%s", asset); /* 记住失败的资产名：不逐帧重试，也不逐出他槽 */
         slot->st = 2;
         return NULL;
     }
     slot->px = (uint32_t *)lv_malloc((size_t)img.w * img.h * sizeof(uint32_t));
     if (slot->px == NULL) {
-        slot->name = asset;
+        snprintf(slot->name, sizeof(slot->name), "%s", asset);
         slot->st = 2;
         return NULL;
     }
@@ -1019,7 +1027,7 @@ static const lv_image_dsc_t *rn_points_art_dsc(int slot_index, const char *asset
     slot->dsc.header.stride = (uint32_t)img.w * 4u;
     slot->dsc.data          = (const uint8_t *)slot->px;
     slot->dsc.data_size     = (uint32_t)(img.w * img.h * 4);
-    slot->name = asset;
+    snprintf(slot->name, sizeof(slot->name), "%s", asset);
     slot->st = 1;
     return &slot->dsc;
 }
@@ -1103,17 +1111,20 @@ static void rn_render_points_progress_line(lv_obj_t *scr,
      * 底边距基线 12px 不压线，与 pt-cat 同一悬空纪律；整体略大于猫咪 34×28 属设计
      * 预期——「场景标要像目标不像小图标」。K4：场景标随激活目标变化——逻辑标识
      * （sc-choco/sc-movie/sc-wheel/sc-gift/sc-flag）经 kidpal_points_scene_asset 单源
-     * 映射为 assets.h 符号名（= <name>.bin 根名）；未知标识不画（绝不猜图）。
-     * 资产不可用回落 = 不画（不画方块）。 */
+     * 映射为 assets.h 符号名（= <name>.bin 根名，契约不带后缀）；kidpal_art_load 按
+     * 文件名读 spiffs，故此处补 `.bin` 后缀后再进槽（K4G-L1：漏后缀 = 场景标全不画）。
+     * 未知标识不画（绝不猜图）。资产不可用回落 = 不画（不画方块）。 */
     {
         const char *scene_bin = kidpal_points_scene_asset(target_asset);
 
         if (scene_bin != NULL) {
+            char scene_file[32];
             int tgt_x = RNP_LINE_X1;            /* 目标分值位 = 刻度末端 */
             int wheel_x = tgt_x - 21;           /* 42 宽中心对目标刻度 */
             int wheel_y = RNP_LINE_Y - 42 - 12; /* 底边 = 基线 - 12px（V9 统一悬空口径） */
 
-            (void)rn_points_art_image(scr, RN_POINTS_ART_SLOT_SCENE, scene_bin, 42, 42,
+            snprintf(scene_file, sizeof(scene_file), "%s.bin", scene_bin);
+            (void)rn_points_art_image(scr, RN_POINTS_ART_SLOT_SCENE, scene_file, 42, 42,
                                       wheel_x, wheel_y);
         }
     }

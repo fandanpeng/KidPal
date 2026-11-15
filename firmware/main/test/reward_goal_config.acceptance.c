@@ -545,6 +545,14 @@ TEST_CASE("reward goal config: host wiring and render node anchors (K4G-H5)",
         strstr((const char *)rn, "strcmp"),
         "K4G-H5 RED: kidpal_render_node.cc 场景槽仍按指针相等命中 —— 须改 strcmp 按名比较"
         "（方案 A：按名重载，RAM 零增长）。");
+    /* 真机轮缺陷回归守卫（2026-11-15 fixer 根因）：kidpal_points_scene_asset 按冻结
+     * 契约返回**符号名**（如 sc_wheel_42_42），而 kidpal_art_load 按**文件名**读
+     * spiffs——缺 ".bin" 后缀即加载失败，且失败会被槽缓存固化，切回游乐场也不画。 */
+    TEST_ASSERT_NOT_NULL_MESSAGE(
+        strstr((const char *)rn, "%s.bin"),
+        "K4G-H5 RED: kidpal_render_node.cc 未把 kidpal_points_scene_asset 的符号名合成 "
+        "\"%s.bin\" 文件名 —— 场景映射按冻结契约返回符号名，art loader 按文件名读 spiffs，"
+        "缺后缀即静默不画（加载失败被槽缓存固化，切回也不恢复）。");
     TEST_ASSERT_NULL_MESSAGE(
         strstr((const char *)rn, "slot->name == asset"),
         "K4G-H5 RED: kidpal_render_node.cc 仍存在 `slot->name == asset` 指针相等判据 —— "
