@@ -51,3 +51,13 @@ handoff: 与 TECH-261022-openclaw-prep-tax-memory-pressure 同批处置（OpenCl
 - **回流记账（human 指示「openclaw 侧配置记录在仓里」）**：声明批 `server/deploy/261114-openclaw-session-maintenance/session-maintenance-declaration.json` 已落仓——含两键目标值、drift_guard、当日 live 人工应用记录、重部署重放顺序；**如实记：主线程直写 server/deploy 实现面，跳过 dev-loop 的一次性记账操作**，正式双形态 apply/rollback 脚本 + acceptance 归下个部署批按 261025 骨架补齐，补齐前 deploy.sh 不得把本批当可执行批消费。
 - **残留待办**：①驱逐完成后复核 main/sessions < 预算 + doctor inspect；②63 个 archived 僵尸行留待升级 2.0.4 批（或上游 issue）处置，行本体为惰性元数据；③23:00 整点核验 `remote model catalog updated` 日志行绝迹（catalogRefresh=false 生效判据）。
 - **P0③ deriver 核查收口（18:40 CST）**：无积压、无需限速——honcho-redis keyspace 空（零待处理键）、deriver 自 07:05:54 后 11h 零处理零错误、CPU 0%；今晨 57s 摘要（summary_kidpal_5052）是 280 消息大会话的偶发单条摘要，非持续 backfill；记忆册所记 K4-E6 全量 backfill 运维轮仍属「未启动」而非「在途」。deriver 大摘要时占上游配额与单核，但在独立容器内，不直接阻塞网关事件循环。
+
+**验证回填（2026-11-15 12:11 CST，P0 三件销账，append）**：
+
+- **② catalog 关断 ✓**：2026-11-14 23:00 / 11-15 05:01 / 11:01 三个六小时刷新点全部静默，`remote model catalog updated` 计数 0。
+- **① session store ✓**：kidpal session_nodes=2（设备稳定会话 + 探针会话）、main=65；main/sessions 目录 58MB→**988KB**（2 个文件，墓碑驱逐完成）；11-14 19:00 起零 `cleanup failed`、零 `liveness heartbeat delayed`（31s 级阻塞绝迹）。
+- **真机闭环判据 ✓**：11-15 10:57~11:00 真机轮（积分记分 / 查分 / 设奖励），「识别文本→发送第一段语音」3~6s，无任何 30s 级冻结。10:59 切句事件（「新增奖励。」+「看海60分。」gap 1s）被上下文正确合并为单轮响应——常态时序自愈印证 TECH-261114-vad-split-points-double-add 的假设。
+- **③ deriver 观察项**：队列仍空；今晨新对话触发处理，出现 4 次 `httpx.ConnectError: All connection attempts failed`（连不上模型提供方，网络瞬断形态，重试自愈），独立容器不影响语音路径，保持观察。
+- **重启事件澄清**：11-15 共四次 gateway 重启（00:15/10:55/11:56/12:01）均来自 root SSH 会话，human 2026-11-15 确认「重启时我正常做的」——非故障信号、非凭据问题。12:01 三条 `cron.get` not found 为检查脚本按名查询、API 要求按 ID，任务本体健康（kidpal-reminder-plan 当时 14m 前刚 ok）。
+- **新观察**：11-15 11:00:28~59 出现 30 秒内 14 条 ASR 终句爆发（查字/字母场景），含空片段「。」穿透幻听过滤——既有 TECH-261014-engine-asr-hallucination-after-stop 形态，非回归；该形态（碎片风暴）纳入 TECH-261114-vad-split-points-double-add 的观察面。
+- **处置状态**：P0 ①②③ 全部销账；本条目残余 = main 库 archived 僵尸行 + 触发源丙（重维护评估同步卡循环）留待 OpenClaw 2.0.4 升级批。
