@@ -98,3 +98,45 @@
 **合并门**：`supervisor-verdict-gate` = **ESCALATE**（riskTier high 结构性；evidenceComplete=true，completedRounds=1）。前置升级闸会在合并期因 `deviceOutcome{userVisible:true, kidpal_render_node.cc, K4G-L1}` 缺 device-round-evidence 而拦停——预期。pod-retro 落盘，planner 收尾 commit `98619ffa`。
 
 **未跑 / 下一步**：K4G-L1 真机轮（真实 QQ 目标配置 + 看屏 + 不抢前台 + 时延 + RAM）与 K3 live 轮合并到下一个设备窗；K4 的 ECS 部署轮（points.py/SKILL/四枚资产）归主线程；合并序 K3 → K4，两包合并均需 human 批（supervisor 均 ESCALATE）。
+
+## 2026-11-15 · K3/K4 合并入 main（叠跑栈，单次 merge）
+
+**合并**：`merge-driver --pod 261104-k4-reward-goal-config --human-approval-ref 010e2fe8…`（human 2026-11-15 原话「合并吧，删了这种情况再观察一下」）→ merge commit `b8c53b89c11f`，main 簿记头 `22684638`。K3 的提交为 K4 合并提交的祖先（叠跑栈），无独立 K3 merge commit；K3 board 已归 merged，K4 board merged。
+
+**合并门**：K4 supervisor ESCALATE（high 结构性，completedRounds=2，final r2 承重轮 factOk）；前置升级闸 PASS（device-round-evidence K4G-L1 human-visual PASS，binary sha 35c71e…，sourceCommit 2127a19f 为 HEAD 祖先；human-approval-ref 五要素核验 OK）。
+
+**真机轮结果**：K4 目标配置全过程 + 场景标修复后看屏（摩天轮↔通用旗↔摩天轮）+ 不抢前台全 PASS；K4G-L1 闭环。K3 真实 QQ 加/查/删 PASS；**歧义删除未闭环**（三次「昨天/今天那条」被模型猜删，SKILL.md §5.1 + AGENTS.md 常驻纪律已部署但运行层未复测通过；main agent 模型 deepseek-v4-flash），按 human 裁定观察后续，已在 K3 device-round-evidence 与 review-packet 如实申报。
+
+**未做**：远程发布（`release-pr.mjs --publish` 只推 release/* 并开 PR，PR 合并仍 human）；K5 未开。
+
+**教训**：叠跑两个包在同一分支，使 merge-driver 的「单 pod diff ⊆ manifest」假设失效——本次以 K4 为栈代表合并、K3 作为祖先随批进入并单独归 board；后续叠跑应避免跨包 live 修复落在对方 manifest 之外。
+
+## 2026-11-15 · K5 launch 面准备（池树复用；列车最后一包）
+
+**调度判定**：K5（261104-k5-story-cover-nav，mergeOrder 76）dependsOn = [K2, K4]，两者均已 merged 本地 main（K2 @`76ed332e`、K4 @`b8c53b89`）；**LP13 核销**。WIP=1 串行链尾，本批单包。复用池树 `C:/AI/KidPal-pod-m2`（上一包 K4 已 merged；常驻分支 `dev/pod-m2` 先 rebase 到 main 清理两处分叉簿记——`8b0b0543`/`25deb165` 重放为 `78e4cbf2`/`03630b65`）。互斥租用检查通过：board 扫描无其他活跃 Pod 落在该树或 `dev/pod-m2` 分支。
+
+**门结果**：check-launch blocking 空（`--base-ref main`），launchPreconditions LP13 满足（见上）；settings-lint 3 files / 0 RED / 0 WARN；board 预填 queued + worktreePath=`C:/AI/KidPal-pod-m2`；启动卡落 `delivery/taskpackages/261104-k5-story-cover-nav/launch-card.md`。
+
+**基线锚（带锚引用三件齐；判停 = 消费前 git diff --quiet <SHA> HEAD -- <面域>）**：
+
+- server 面 = **447 passed / 0 failed / 33 subtests passed / 9 deselected** @ SHA `03630b65`（2026-11-15 实测，本段同日现跑；命令 = `python -m pytest -q --import-mode=importlib -m "not live" "C:/AI/KidPal-pod-m2/server/acceptance"`（仓根执行）；面域 = `server`）。旧锚 435 @`cad07f2c`（K4 launch 段）因 K3/K4 合并改 server/ 判停失效，本行取代。
+- firmware host 面 = **292 Tests / 3 Failures / 0 Ignored** @ SHA `03630b65`（2026-11-15 实测，本段同日现跑；执行目录 = `firmware/main/test/host_app`（HOST_TEST_CONVENTIONS [C4.4] 文档命令位）；命令 = 仓根 `wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build` 后 `cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf`；面域 = `firmware`）。3 红全 p1_auxbar 存量族（AB-A1 电池图标 / AB-A2 温度图标 / AB-A4 wifi 资产）。旧锚 292/3 @K4 final `c1de02fe` 判停：`git diff --quiet c1de02fe HEAD -- firmware/` 非零 → 重跑取代。交接卫生：已按换包协议删除 gitignored 的 `host_app/sdkconfig`，本次构建从 tracked `sdkconfig.defaults` 重生成（消 TECH-261014 陈旧假红类）。
+- 本包验收红基线（acceptance-author 新冻结件）恒现跑。
+
+**环境事实**：专属图索引 `C-AI-KidPal-pod-m2` ready（2026-11-15 实查，22215 节点 / 66109 边）。
+
+**human 遗留项**：① 列车级真机 + 真实 QQ 联合收口轮仍归主线程另组织（K5 只收导航并集）；② 远程发布仍归主线程/human；③ K3 歧义删除观察项未闭环（按 human 裁继续观察）。
+
+**教训留根（K4 pod-retro 转入 K5 intake）**：预算按次数量级给；冻结件跨用例一致性自检；manifest 含生成件须对照命名律；acceptance-coverage 闸不认 Unity 断言（沿 K2/K4 先例补真实守卫）。
+
+## 2026-11-15 · K5 离线收口（真机轮待设备窗；supervisor ESCALATE）
+
+**launch 面**：复用池树 `C:/AI/KidPal-pod-m2`；base ref `03630b65`；LP13 核销（K2 @`76ed332e`、K4 @`b8c53b89` 均 merged）。基线锚现跑：server 447 passed / 0 failed；host 292 Tests / 3 Failures（3 红全 p1_auxbar 存量族）。
+
+**设计与裁定**：Step 1g ARCH-ADVISORY 预评 → 封皮落 `story_page.c` 子态（`KSTORY_PAGE_COVER=7`，不建 story_cover.c），front 五调用点三处翻 `restore:true`、薄载荷口按已 landed 契约落地。human 2026-11-15 两项裁定：① 归档失败离页帧（`front_app.py:1728`）保持 `restore=False`，按「离页导航帧」例外处理 + 留痕 + ARQ 建议契约措辞排除；② BOOT 从 P3 进 P4 的封皮入口 reset 走**板级 BOOT 钩子**（`waveshare-s3-rlcd-4.2.cc` → `McpServer::StoryEnterCover`）。扩单一件：`firmware/main/mcp_server.h`（architect APPROVE，公有方法声明必须落头文件）。
+
+**离线证据**：冻结验收 11 条（KCN-C1..C5/C9/C10 + C6/C7/C8）+ 六件既有冻结件重锚；变异证据 10/10（每条 turnedRed / sensitive / restored 三真，实现面 zero-diff）；scoped round 2 8/8 全绿（invocationId `cb331f8a…`）；final 承重轮 r3 10 闸全跑零 skip（`unit` 182 passed、`acceptance` server 90 passed + 固件面 12 件、`firmware-build` 真编译 xiaozhi.bin，invocationId `8a33b02c…`，verifier-evidence-check factOk）；host 独立复跑 301 Tests / 3 Failures（零新增红）。
+
+**收口与门**：docs-delta 零 canonical 变更（requirements v1.71 / architecture / contracts 全零 diff）；closeout-check `--update-index` ok（INDEX +1 closed）；integrator commit `d6cb9ad8`。`supervisor-verdict-gate` = **ESCALATE**（riskTier high 结构性，evidenceComplete=true，completedRounds=3）。`pre-merge-escalation-gate` = **BLOCK**（`device-round-evidence-missing` + high + ESCALATE），属预期。
+
+**未跑 / 下一步**：① **K5S-E4 真机轮未跑**——BOOT 四页并集、封皮→列表→阅读逐层返回、封皮观感 design review（含「封皮未含小伴」偏差项）、语音「打开故事」端到端、restore 不抢前台真实时序（含 READER/RECORDING 驻留多一次基层重绘的闪帧观察）、**归档失败离页帧落封皮**的观感确认、删除/盖章计数并集；② 合并前置 = 人批 + `device-round-evidence.md` 逐 ref（S-F2.6-AC1..AC4）PASS；③ K5S-E5 跨包联合收口（整列车真机 + 真实 QQ）归主线程；④ 远程发布与 K4 ECS 部署轮归主线程；⑤ K3 歧义删除观察项仍在观察。pod-retro 已落（5 条教训，含 acceptance-coverage 标记形态与冻结件跨用例残留两次同族）。

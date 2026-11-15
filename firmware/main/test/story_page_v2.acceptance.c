@@ -47,7 +47,7 @@
  *        KSA_ACT_TTS_READ 退役（朗读 v1.52 已砍）。页枚举 additive:
  *          KSTORY_PAGE_DELETE = 4（LIST0/READER1/RECORDING2/STAMP3 之后追加）。
  *        决策表（矩阵逐格，v1.47 requirements §2.3）:
- *          LIST:    KEY 短=REC_SESSION / KEY 双=OPEN_READER / KEY 长=GLOBAL(回首页) /
+ *          LIST:    KEY 短=REC_SESSION / KEY 双=OPEN_READER / KEY 长=COVER_BACK(回封皮) /
  *                   BOOT 短=CURSOR_NEXT / BOOT 双=SCREEN_JUMP / BOOT 长=DELETE_ENTER
  *          DELETE:  KEY 短=DELETE_CONFIRM / KEY 双=NONE / KEY 长=NONE（不响应=消费
  *                   不动, 绝不 GLOBAL——漏网手势会被通用覆盖层列误映射 SESSION_TOGGLE,
@@ -184,7 +184,9 @@
  *          - 路由内读 data.restore 布尔（复用既有 helper mcp_json_get_bool,
  *            :444-446——absent/非 true 字面同判 false, 与契约 CCP D1「缺省（absent）
  *            或显式 false 设备行为完全不变」逐字对齐; 不另写第二套布尔解析）;
- *          - restore=true → 解析装载缓存（既有 view_init + g_story_list 路径）+
+ *          - restore=true → 解析装载缓存（2026-11-15 重锚: 由「既有 view_init + g_story_list
+ *            路径」改为 kidpal_story_list_load（只装缓存不导航, page 零重置; K5 plan D——旧
+ *            view_init 无条件重装会把活动子态重置成 LIST）+ g_story_list 路径）+
  *            kidpal_render_node_cache_story 同步（唯一缓存同步缝, 不给恢复性载荷
  *            另起第二条缓存路径——K7-A5「唯一缓存写点」同纪律）+ 若 [SL2]
  *            kidpal_render_node_story_on_screen() 真 → kidpal_render_node_refresh_
@@ -507,6 +509,10 @@ typedef struct {
 #define KSPV2_PAGE_RECORDING  2
 #define KSPV2_PAGE_STAMP      3
 #define KSPV2_PAGE_DELETE     4
+/* 2026-11-15（261104-k5-story-cover-nav frozen-rebaseline）: 封皮子态 additive 尾部追加
+ * （story_page.h KSTORY_PAGE_COVER = 7; plan B 技术裁定「只增不改」——封皮是 KP_PAGE_STORY
+ * 的一个子态）。快照数值 = KCN-C1 冻结值。 */
+#define KSPV2_PAGE_COVER      7
 
 /* 动作码闭集重钉（seam [K1]; 冻结数值, 见头注决策表）。 */
 #define KSPV2_ACT_DEGRADE        (-3)
@@ -523,6 +529,10 @@ typedef struct {
 #define KSPV2_ACT_READER_EXIT      9
 #define KSPV2_ACT_STOP_RECORD     10
 #define KSPV2_ACT_DISCARD_RECORD  11
+/* 2026-11-15（261104-k5-story-cover-nav frozen-rebaseline）: act 闭集尾部追加（冻结数值 =
+ * story_cover_nav.acceptance.c KCN-C3 权威）。COVER_BACK = LIST KEY 长按回封皮
+ * （S-F2.6-AC3 逐层返回；原 LIST KEY 长 = GLOBAL「一层即到家」口径随封皮下沉翻正）。 */
+#define KSPV2_ACT_COVER_BACK      14
 
 /* 决策点 3 冻结数值（seam [K2]/[K3]/[K4]）。 */
 #define KSPV2_DISAMBIG_MS        300u
@@ -993,12 +1003,19 @@ TEST_CASE("story_page_v2: LIST 态 v1.47 决策表——六手势+空列表特�
         "SPV2-A1 RED: LIST 态 KEY 双击动作码漂移——「KEY 双击进阅读」（S-F2.1 AC2）"
         "被输入表重写误伤");
 
-    /* tooth 3: KEY 长按 = GLOBAL（回首页, 列表 = P3 顶层一层到家; 补充规则出路口径）。 */
+    /* tooth 3: KEY 长按 = COVER_BACK（回封皮, S-F2.6-AC3 逐层返回「列表 → 封皮」）且页态
+     * 切封皮子态。2026-11-15 重锚（261104-k5-story-cover-nav）：原「KEY 长 = GLOBAL 一步到家」
+     * 口径随封皮下沉翻正为逐层返回（列表长按到封皮、封皮长按才到首页）。 */
+    act = kidpal_story_page_input(&v, KEY_ID_KEY, KEY_GESTURE_LONG_PRESS);
     TEST_ASSERT_TRUE_MESSAGE(
-        kidpal_story_page_input(&v, KEY_ID_KEY, KEY_GESTURE_LONG_PRESS) == KSPV2_ACT_GLOBAL,
-        "SPV2-A1 RED: LIST 态 KEY 长按不再交全局——「KEY 长按回首页」路径被误伤");
+        act == KSPV2_ACT_COVER_BACK && v.page == KSPV2_PAGE_COVER,
+        kspv2_fm("SPV2-A1 RED: LIST 态 KEY 长按 act=%d page=%d, 期望 COVER_BACK(=%d) 且 "
+                 "page=COVER(%d)——逐层返回「列表 → 封皮」缺失（仍 GLOBAL 一步到家 = 封皮"
+                 "下沉未接线）", act, v.page, KSPV2_ACT_COVER_BACK, KSPV2_PAGE_COVER));
 
-    /* tooth 4: BOOT 短按 = CURSOR_NEXT(3)（旧码 GLOBAL=-2 错位）。 */
+    /* tooth 4: BOOT 短按 = CURSOR_NEXT(3)（旧码 GLOBAL=-2 错位）。
+     * 2026-11-15 acceptance-author 最小修：tooth 3 留下 COVER 页态导致 tooth 4 误判；tooth 4 前复位 LIST（K4 pod-retro 教训①同族） */
+    v.page = KSPV2_PAGE_LIST;
     act = kidpal_story_page_input(&v, KEY_ID_BOOT, KEY_GESTURE_CLICK);
     TEST_ASSERT_TRUE_MESSAGE(act == KSPV2_ACT_CURSOR_NEXT,
         kspv2_fm("SPV2-A1 RED: LIST 态 BOOT 短按动作码 = %d, 期望 CURSOR_NEXT(=%d)——"
@@ -2221,9 +2238,14 @@ TEST_CASE("story_page_v2: K3 gating 叠加+K2 零偏移+restore wire 容忍 (SLP
     KSPV2_REQUIRE_ROOT();
 
     /* ---- 结构半: K3 [S4] gating 与 K2 消费面零偏移（must-stay-green） ---- */
-    /* tooth 1: 路由区 K3 [S4] gating 消费 + KIDPAL_LAYER_VOICE 记录语境判据在世
-     * （restore=true 亦不得绕过「记录语境前台绝不推前台」——谓词形态承载, SLA3
-     * tooth 3 钉 == 判定; 本齿钉 gate 判据在世 = 叠加的前提）。 */
+    /* tooth 1: 路由区 K3 [S4] gating 消费 + KIDPAL_LAYER_VOICE 判据在世
+     * （本齿只钉「gate 消费 + VOICE 层值仍被读出」两符号在世 = 结构前提；判定不动）。
+     * 意图收窄（261104-k5-story-cover-nav 真机轮, 2026-11-15）: 原意图「VOICE 前台即
+     * defer」已按真机证据收窄——显式导航帧（非 restore 完整帧）不再被 VOICE 前台吞,
+     * gate 的 voice_front 参对导航帧恒喂 0（kidpal_story_list_gate(0, ...)）;
+     * voice_front 仍被读出并写入 gate 日志（story_list_gate defer_front ...
+     * voice_front=%d）, 故 KIDPAL_LAYER_VOICE 在世判据仍成立。录音演出页保护由
+     * gate(0, RECORDING)==1 承载（SLA3 tooth 3 / KCN-C5 tooth 5 决策表）。 */
     region = kspv2_region_between("firmware/main/mcp_server.cc",
                                   "VRT_ROUTE_STORY_LIST", "VRT_ROUTE_STORY_TEXT");
     TEST_ASSERT_NOT_NULL_MESSAGE(region,

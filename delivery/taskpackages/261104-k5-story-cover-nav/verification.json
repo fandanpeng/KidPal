@@ -1,0 +1,89 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r5.json)",
+  "changeId": "261104-k5-story-cover-nav",
+  "phase": "final",
+  "round": 5,
+  "invocationId": "d74c065d-c675-44ca-bbae-740c5eb7b786",
+  "outcome": "ok",
+  "observedGateExit": 0,
+  "gatesRun": 10,
+  "roundNote": "rounds 承重序列 = r1（scoped，首轮红 ok:false）→ r2（scoped，8/8 绿）→ r3（final，真机轮前置终验）→ r4（scoped，真机轮三缺陷当轮修复后重跑，8/8 绿）→ r5（final，真机轮修复后终验重跑）。verifier-evidence-check preflightProducer 强制 round === 已完成数+1（连续序），故本次 final 取下一连续序 5；r3 为真机轮前 final，已被 r5 取代为当前承重 final",
+  "scopeFile": "delivery/taskpackages/261104-k5-story-cover-nav/test-scope-final.txt",
+  "scopeBasis": "detect_changes C-AI-KidPal-pod-m2 since=03630b65 (275 seed 符号 / 297 impacted 节点: firmware/main 181, server/gateway 75, server/acceptance 28, server/tests 2) ∪ acceptanceTestsFile ∪ impactedTestsSeed 7 条 ∪ crossEnd 共享缝 (front_app._push_story_list / _consume_kidpal_control, display_schema.validate_display) ∪ 安全余量；per-Pod 图索引可用，正常圈定（未降级）。真机轮修复后复核：implementation/test 改动集不变，25 条清单继续覆盖，无新增受影响测试文件",
+  "scopeEntries": 25,
+  "scopeRecheck": "复核无变化（真机轮三 commit 仅改 story_page.c / mcp_server.cc / 既有冻结件 story_cover_nav.acceptance.c / story_page_v2.acceptance.c；后两者已在清单）",
+  "evidenceRef": "delivery/taskpackages/261104-k5-story-cover-nav/verifier-evidence/rounds/r5.json",
+  "evidenceFact": {
+    "artifactType": "verifier-round-fact",
+    "authority": "bearing",
+    "producedBy": "verify.mjs",
+    "ok": true,
+    "startedAt": "2026-11-15T15:08:09.498Z",
+    "completedAt": "2026-11-15T15:08:46.345Z"
+  },
+  "gateSummary": [
+    { "gate": "taskpackage-required", "kind": "governance", "ok": true, "ms": 346, "timing": "scoped" },
+    { "gate": "change-manifest", "kind": "governance", "ok": true, "ms": 363, "timing": "scoped", "note": "pre-cutoff 存量放行声明" },
+    { "gate": "firmware-build", "kind": "structural", "ok": true, "ms": 11314, "timing": "scoped", "note": "真编译通过（xiaozhi.bin 0x329170，8% 余）" },
+    { "gate": "contract-lint", "kind": "structural", "ok": true, "ms": 106, "timing": "scoped", "note": "仅一条既有断链 warning" },
+    { "gate": "acceptance-coverage", "kind": "functional", "ok": true, "ms": 131, "timing": "scoped", "note": "10 acceptance id 全覆盖（KCN-C1..C5/C9/C10 + C6/C7/C8）" },
+    { "gate": "mutation-check", "kind": "functional", "ok": true, "ms": 141, "timing": "scoped", "note": "10 条 perAcceptance" },
+    { "gate": "docs-sync", "kind": "governance", "ok": true, "ms": 121, "timing": "scoped", "note": "docsSyncRequired=false，人工复核成立（docs-delta.md）" },
+    { "gate": "security", "kind": "security", "ok": true, "ms": 108, "timing": "scoped", "note": "securityReviewRequired=false" },
+    { "gate": "unit", "kind": "functional", "ok": true, "ms": 13033, "timing": "full", "note": "182 passed, 22 subtests, liveDeselected=0 (pytest, scope 交集)" },
+    { "gate": "acceptance", "kind": "functional", "ok": true, "ms": 11091, "timing": "full", "note": "90 passed, 3 subtests, liveDeselected=0; firmwareAcceptanceFiles=12, serverAcceptanceFiles=6" }
+  ],
+  "mechanicalCheck": {
+    "tool": ".claude/scripts/verifier-evidence-check.mjs",
+    "args": "--change-id 261104-k5-story-cover-nav --phase final --round 5 --invocation-id d74c065d-c675-44ca-bbae-740c5eb7b786",
+    "exit": 0,
+    "output": {
+      "ok": true,
+      "gate": "verifier-evidence",
+      "evidenceRef": "delivery/taskpackages/261104-k5-story-cover-nav/verifier-evidence/rounds/r5.json",
+      "factOk": true,
+      "observedGateExit": 0,
+      "phase": "final",
+      "round": 5
+    }
+  },
+  "hostRunner": {
+    "command": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && (cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf)",
+    "headAtRun": "ca5fa9e7",
+    "result": "301 Tests 3 Failures 0 Ignored",
+    "kcnTests": "KCN-C1/C2/C3/C4/C5/C9/C10 全 PASS（story_cover_nav.acceptance.c；C5 含真机轮新增 tooth 5「导航帧不得回喂 voice_front」）",
+    "rebaselinedTests": "SPV2-A1 / KB-A3 / CG-A2 / RSL-A10 全转 PASS；chrome_ghost.test TEST 3b PASS",
+    "threeFailures": [
+      "p1_auxbar_style.acceptance.c:522 AB-A1 ic_batt_15 消费点未接入",
+      "p1_auxbar_style.acceptance.c:608 AB-A2 ic_thermo_12 落位漂出授权域",
+      "p1_auxbar_style.acceptance.c:754 AB-A4 ic_wifi_14 消费点缺失"
+    ],
+    "conclusion": "3 红全 p1_auxbar 存量族，与本包 launch 基线 292/3 @03630b65 同族同项；301-292=9 = 本包新增测试件。零新增红。真机轮修复后 @HEAD ca5fa9e7 重建+复跑一致。"
+  },
+  "serverSuite": {
+    "acceptanceDir": "457 passed, 0 failed, 9 deselected, 33 subtests (server/acceptance/, -m 'not live')",
+    "fullServer": "819 passed, 0 failed, 9 deselected, 60 subtests (server/, -m 'not live')",
+    "scopeAcceptanceGate": "90 passed, 3 subtests, liveDeselected=0 (scope 内 6 件)"
+  },
+  "deviceOutcome": {
+    "declared": true,
+    "userVisible": true,
+    "acceptanceRefs": ["S-F2.6-AC1", "S-F2.6-AC2", "S-F2.6-AC3", "S-F2.6-AC4"],
+    "hostUncompilablePaths": [
+      "firmware/main/display/kidpal_render_node.cc",
+      "firmware/main/mcp_server.cc",
+      "firmware/main/application.cc",
+      "firmware/main/display/lcd_display.cc",
+      "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc"
+    ],
+    "deviceRoundEvidence": "device-round-evidence.md（K5S-E4 真机轮已跑；sourceCommit ca5fa9e7e97cfee24bfcee13464f53946b899a4a = 合并 HEAD；binarySha256 7f495a2862f7d7e02606024f36e0645bcbc0e7442feeb774763f0c8331cccbc6；S-F2.6-AC1..AC4 各 human-visual PASS 目击）",
+    "pathsInDiff": "五件申报路径均实际触达（kidpal_render_node.cc / mcp_server.cc / application.cc / lcd_display.cc / 板级 .cc），与 hostUncompilablePaths 逐条一致",
+    "note": "前置升级闸 deviceOutcome 判据可由 device-round-evidence.md 机器消费行满足；风险 A/B 为残余观察项（未构造时序/未量化），风险 C 已闭环"
+  },
+  "docsSync": {
+    "required": false,
+    "deltaRef": "delivery/taskpackages/261104-k5-story-cover-nav/docs-delta.md",
+    "conclusion": "requirements / architecture / contracts / docs/ui 四类零 diff"
+  },
+  "adr": { "required": false, "produced": [] }
+}

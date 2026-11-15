@@ -987,6 +987,13 @@ bool StoryDispatchAct(int act) {
              * 落屏（cache_story + refresh_story, 前台保持 LOCAL_PAGE、页点可见）。 */
             ScheduleStoryRender();
             return true;
+        case KSPV2_ACT_COVER_OPEN:
+        case KSPV2_ACT_COVER_BACK:
+            /* 封皮/列表层间导航（K5 逐层返回; S-F2.6-AC2/AC3）: 页态变更已由输入函数
+             * 就地完成（COVER_OPEN: page->LIST 进列表; COVER_BACK: page->COVER 回封皮）
+             * ——本地导航路径落屏（前台保持 LOCAL_PAGE、页点可见）。 */
+            ScheduleStoryRender();
+            return true;
         case KSPV2_ACT_STOP_RECORD:
             /* K3 [S5]: KEY 兜底收尾（短按 & 长按同义, v1.47 防毁稿）= 收尾保存——
              * 调 Application StopListening 面（MAIN_EVENT_STOP_LISTENING ->
@@ -1524,6 +1531,18 @@ void McpServer::EmitRenderReceipt(const std::string& business_id) {
 }
 
 
+void McpServer::StoryEnterCover() {
+    /* K5 封皮入口 reset（261104-k5-story-cover-nav; S-F2.6-AC1; human 2026-11-15 裁定
+     * = 板级 BOOT 钩子）。置封皮子态并经主任务同步渲染节点缓存（list/text 传 nullptr
+     * ——不改缓存数据与送达标志: 数据未达时封皮不画计数）。随后板级 cycle_next 以该
+     * 封皮态渲染 P4。 */
+    g_story_view.page = KSTORY_PAGE_COVER;
+    Application::GetInstance().Schedule([]() {
+        kidpal_render_node_cache_story(&g_story_view, nullptr, nullptr);
+    });
+}
+
+
 bool McpServer::HandleStoryKey(key_id_t key, key_gesture_t g) {
     /* 页内特例优先消费（spec §4.0「页内特例」列; seam [K1] v1.47 矩阵）：把 KEY/BOOT
      * 手势交进冻结消费面 kidpal_story_page_input，按其返回动作码驱动页态。页不拥有
@@ -1928,19 +1947,52 @@ void McpServer::AddCommonTools() {
                             g_story_pending_tries = 0;
                         }
                     }
+                    /* 261104 真机轮缺陷修（2026-11-15）：显式导航帧不被 VOICE 层吞。
+                     * 帧语义分两条路（plan D）：
+                     *   - restore=true = 后台数据更新（WS 建连恢复 / ctx 建立 / 归档
+                     *     成功 / 删除后对账）-> 只填缓存不导航（K3 规则原样保留）；
+                     *   - 非 restore 完整帧 = 显式导航帧（front 展开「打开故事」/
+                     *     归档失败离页帧）-> 接管前台，不受 voice_front 影响。
+                     * 旧判据把 gate 与 restore 并列，只要 VOICE 层在前台就只装缓存；
+                     * 而语音说「打开故事」时 voice_front 必然为 1，于是真机形态
+                     * （22:11:39）：front 已下发非 restore 完整帧
+                     * `story_list_dispatch items=16 counter=19 degrade=false`，板端
+                     * 仍打 `story_list_gate defer_front page=7 voice_front=1 restore=0`，
+                     * P4 永不切换。
+                     * 录音态保护保留，且按**到达时页态**判——下方非 restore 分支会把
+                     * page 改写为 COVER，用改写后的页态判会令保护恒不命中；到达时
+                     * page == KSTORY_PAGE_RECORDING 仍只装缓存（防盖录音演出）。
+                     * gate 决策表本体零改（RSL-A7 冻结，含 gate(1, LIST)==1）：本处
+                     * 只是不再把 voice_front 喂给导航帧判定。 */
+                    bool story_nav_takeover =
+                        !mcp_json_get_bool(data, "restore") &&
+                        kidpal_story_list_gate(0 /* 导航帧不看 voice_front */,
+                                               g_story_view.page) == 0;
                     {
+                        /* K5 story_list 共享帧消费（261104-k5-story-cover-nav; plan D /
+                         * 契约 §1.3③ D-07）: restore 帧只填缓存不导航（活动子态零重置——
+                         * 旧实现无条件 kidpal_story_view_init 会把 READER/STAMP/DELETE/
+                         * RECORDING/ORGANIZING 重置成 LIST, 放大 TECH-261022 churn）;
+                         * 非 restore 完整帧 = 进场帧进封皮（S-F2.6-AC4 语音「打开故事」
+                         * 不跳列表）。list_load 只装缓存、page 零重置。 */
                         bool was_delete = (g_story_view.page == KSTORY_PAGE_DELETE);
-                        kidpal_story_view_init(&g_story_view, parsed.get());
+                        (void)kidpal_story_list_load(&g_story_view, parsed.get());
                         g_story_list = *parsed;
                         if (stamp_hold) {
+                            /* list_load 不触碰盖章字段; 显式保持 STAMP 驻留原值。 */
                             g_story_view.page = KSTORY_PAGE_STAMP;
                             memcpy(g_story_view.last_saved_id, hold_saved_id,
                                    sizeof(hold_saved_id));
                             g_story_view.stamp_serial = hold_stamp_serial;
+                        } else if (story_nav_takeover) {
+                            /* 非 restore 导航帧且未被录音态保护挡下 -> 进封皮
+                             * （S-F2.6-AC4）；被挡下时页态保持录音演出原值不动。 */
+                            g_story_view.page = KSTORY_PAGE_COVER;
                         }
                         if (was_delete) {
-                            /* 云端重推到达时删除覆盖层仍在前台 -> view_init 已把页态
-                             * 重装回 LIST; 覆盖层随之关层（回列表, 不留幽灵弹窗）。 */
+                            /* 删除后重推到达时删除覆盖层仍在前台 -> list_load 不改页态;
+                             * 显式关层回列表（不留幽灵弹窗）。删除离页语义 = LIST。 */
+                            g_story_view.page = KSTORY_PAGE_LIST;
                             app.Schedule([]() {
                                 kidpal_render_node_dismiss_front_overlay();
                             });
@@ -1955,16 +2007,18 @@ void McpServer::AddCommonTools() {
                              corr_id, items_n, kidpal_story_counter(parsed.get()));
                     {
                         /* K3 [S4]: story_list 推送 gating（defer 包 260928-story-connect-
-                         * push-defer ①恢复重裁板端消费半, plan T5）——记录语境前台
-                         * （引导态/录音态/问答会话, 或视图已入录音态）只装缓存绝不推前台
-                         * （防 story_list 帧盖掉引导/录音演出, defer 真机缺陷形态的板端
-                         * 防护半）; 其余页态照旧推前台（K2 消费面零偏移红线: LIST 冷浏览/
-                         * READER/STAMP/DELETE 渲染不变）。
+                         * push-defer ①恢复重裁板端消费半, plan T5）——**导航帧只在录音
+                         * 演出页保护**（261104 真机轮修订：VOICE 层在前台不再单独构成
+                         * defer 理由, 见上方 story_nav_takeover 注）: 到达时页态为
+                         * KSTORY_PAGE_RECORDING -> 只装缓存绝不推前台（防 story_list
+                         * 帧盖掉录音演出）; 其余页态照旧推前台（K2 消费面零偏移红线:
+                         * LIST 冷浏览/READER/STAMP/DELETE 渲染不变）。
                          *
                          * [SL1] restore 分流（261010-p3-storylist-cold-start-restore;
                          * 复刻同文件 schedule restore 分支 :926-991 在役形态）：恢复性载荷
                          * （WS 建连恢复推送, 契约 §1.3③ D1）-> 只填 RAM 列表缓存、不接管
-                         * 前台（P3 在屏时仅重绘本页）; 缺省/显式 false -> 现行为零偏移。
+                         * 前台（P3 在屏时仅重绘本页）; 缺省/显式 false -> 显式导航帧
+                         * （接管前台, 见上方 story_nav_takeover 注）。
                          * 布尔解析复用 :444-446 在世 helper（absent/非 true 字面同判
                          * false = 契约缺省语义）。 */
                         int story_voice_front =
@@ -1977,15 +2031,13 @@ void McpServer::AddCommonTools() {
                          * 消退/页重进即按陈旧缓存重渲（R2 新故事 3→2 回退的直接来源）。 */
                         kidpal_render_node_cache_story(&g_story_view, &g_story_list,
                                                        &g_story_text);
-                        if (story_restore || stamp_hold ||
-                            kidpal_story_list_gate(story_voice_front,
-                                                   g_story_view.page) != 0) {
-                            /* restore 或记录语境前台 gated: 只装缓存（上方唯一缓存同步缝,
-                             * 不给恢复性载荷另起第二条缓存路径——K7-A5「唯一缓存写点」
-                             * 纪律）、零前台夹钳（不接管前台、不推 SERVER_PAGE——260928
-                             * 摘除理由的板端消解路径）。restore 且 P3 在屏（LIST 冷浏览）
-                             * -> 经重绘本页单入口仅重绘（自持锁、先缓存后调——.h :277
-                             * 在世契约）。 */
+                        if (story_restore || stamp_hold || !story_nav_takeover) {
+                            /* restore / 盖章驻留 / 录音演出页 gated: 只装缓存（上方唯一
+                             * 缓存同步缝, 不给恢复性载荷另起第二条缓存路径——K7-A5
+                             * 「唯一缓存写点」纪律）、零前台夹钳（不接管前台、不推
+                             * SERVER_PAGE——260928 摘除理由的板端消解路径）。restore 且
+                             * P3 在屏（LIST 冷浏览）-> 经重绘本页单入口仅重绘（自持锁、
+                             * 先缓存后调——.h :277 在世契约）。 */
                             if (!stamp_hold && story_restore && kidpal_render_node_story_on_screen()) {
                                 kidpal_render_node_refresh_story();
                             }

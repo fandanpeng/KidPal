@@ -386,6 +386,16 @@ set(HOST_ACCEPTANCE_SRCS
     # （smoke 末位 = 最先执行, 包 0 boundary 齿注册序守卫）。
     "../../reward_goal_config.acceptance.c"
 
+    # 包 261104-k5-story-cover-nav（故事封皮导航：P4 封皮 / 列表阅读下沉 / 逐层返回 /
+    # story_list 共享帧消费 / 书封资产）冻结验收。被测实现 display/story_page.c（已在册,
+    # additive 追加 KSTORY_PAGE_COVER + COVER 渲染/输入行 + kidpal_story_list_load）+
+    # display/keybar.c（已在册, P4 页槽改封皮行 + story_slots/过渡窗补 LIST）；设备 TU
+    # kidpal_render_node.cc / mcp_server.cc / application.cc / 板级 .cc 不进 host 构建,
+    # 由结构源锚 tree-scan 承载。**必须置于 host smoke acceptance 之前**（smoke 末位 =
+    # 最先执行, 包 0 boundary 齿注册序守卫; 本文件 KCN-C10 tooth 5 校验此序——登记行
+    # 缺失或未置于 smoke 之前即红）。
+    "../../story_cover_nav.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

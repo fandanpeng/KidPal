@@ -1146,8 +1146,13 @@ static void ksy_bubble(lv_obj_t *scr, const char *text, int x, int y)
 /* D3 v7 重排（261019 fixer）: 泛化为按名装载 + 每资产独立缓存槽（STAMP pose-jump /
  * 录音中 pose-record + rec_wave / 整理中 pose-think + qmark_trio + ic_wave_40 +
  * ic_cloud_40_t2 七消费点共用同一 loader, 零互相逐出）。max 入参按资产族给定
- * （姿态族 96; 声波/图标族 240 容 rec_wave 206x34）。 */
-#define KSTORY_ART_CACHE_SLOTS 7
+ * （姿态族 96; 声波/图标族 240 容 rec_wave 206x34）。
+ * 261104-k5-story-cover-nav：封皮大星徽 ic_coin_52_52 为第 8 枚并发消费点——7 槽已
+ * 被既有资产占满, 不扩容则封皮再加资产会静默不可用（plan F 风险点; 纯逻辑常量）。
+ * 2026-11-15 真机轮观感修：封皮再加「小伴右侧探头」pose_daily_96 与「左下云」
+ * doodle_cloud_52 两枚 -> 并发消费点 10 枚（录音 2 / 整理 4 / 盖章 1 / 封皮 3），
+ * 槽位扩到 12 留余量; 不扩容则第 9/10 枚落真机静默缺画（KCN-C9 tooth 4 只钉 >= 8）。 */
+#define KSTORY_ART_CACHE_SLOTS 12
 
 typedef struct {
     const char *name;        /* 已装载资产名（指针同址判命中; 字面静态存储期） */
@@ -1632,6 +1637,121 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
             }
             break;
         }
+        case KSTORY_PAGE_COVER: {
+            /* 故事封皮（TaskPackage 261104-k5-story-cover-nav; S-F2.6-AC1; 版式权威 =
+             * docs/ui/V9/story-cover.png; seam [C2]）。封皮是 P4 的一个子态——书封形态
+             * （rbox + 书脊线 + 原生几何，不做整页位图）+ 「星星记录本」标题 + 大星徽 +
+             * 已收集星星数（右上角）。渲染入参语义冻结:
+             *   list != NULL = 数据已送达 -> 画星星计数（含 ×0 诚实计数）;
+             *   list == NULL = 数据未达   -> 画书封 + 标题, **不画计数**（不显 ×0 误导;
+             *     S-F2.1 AC5/AC6 同型判据）, rc 恒 0（不因缺数据降级/黑屏）。
+             * 计数源恒 kidpal_story_counter(list)（total 优先；不另造 cover_total）。 */
+            lv_obj_t *book;
+            /* 书封外框（rbox: x=96..303 / y=40..223, 圆角 10, 3px 边框; 对齐 V9 母版
+             * 墨迹 bbox——真机轮 human 二次看屏打回三条之一）。 */
+            book = lv_obj_create(scr);
+            lv_obj_remove_style_all(book);
+            lv_obj_set_size(book, 207, 183);
+            lv_obj_set_pos(book, 96, 40);
+            lv_obj_set_style_radius(book, 10, 0);
+            lv_obj_set_style_bg_opa(book, LV_OPA_TRANSP, 0);
+            lv_obj_set_style_border_width(book, 3, 0);
+            lv_obj_set_style_border_color(book, lv_color_hex(KSY_COLOR_INK), 0);
+            lv_obj_set_style_border_opa(book, LV_OPA_COVER, 0);
+            lv_obj_clear_flag(book, LV_OBJ_FLAG_SCROLLABLE);
+            /* 书脊线（竖线 @x=118..119, 2px 宽, 自书封上边框 40 至下边 223, 全长 183——
+             * 与书封外框上下边框齐平；对齐 V9 母版）。 */
+            ksy_box(scr, 118, 40, 2, 183, KSY_COLOR_INK);
+            /* 大星徽（V9 母版 `ic-coin` 52px: 外圈 3.5px 实线 + 内圈 2px 细实线双圈 +
+             * 中心实心五角星, brief §5 / :132/:133; 中心 (210,79), 左 184 / 上 53）。
+             * 资产可用 -> 直接落产线件 ic_coin_52_52（与设计逐像素一致）;
+             * 资产缺（host 无 art 挂载）-> 原生双圈 + 实心星字形兜底, 同设计坐标与量级
+             * （KCN-C1 tooth 4 徽章带墨量锚; 不得为过测把徽章挪出断言带/缩小规避）。
+             * 旧 70px 大细环 + 14px ★ 小字退役（真机轮 human 看屏实证「大细环 + 一个小
+             * 星星、星没填充内圈」= 与 V9 双圈实心星不符）。 */
+            {
+                const lv_image_dsc_t *coin = kstory_art_dsc("ic_coin_52_52.bin", 96, 96);
+                if (coin != NULL) {
+                    lv_obj_t *im = lv_image_create(scr);
+                    lv_image_set_src(im, coin);
+                    lv_obj_set_pos(im, 184, 53);
+                } else {
+                    lv_obj_t *outer = lv_obj_create(scr);
+                    lv_obj_t *inner;
+                    lv_obj_remove_style_all(outer);
+                    lv_obj_set_size(outer, 52, 52);
+                    lv_obj_set_pos(outer, 184, 53); /* 中心 (210,79) */
+                    lv_obj_set_style_radius(outer, LV_RADIUS_CIRCLE, 0);
+                    lv_obj_set_style_border_width(outer, 4, 0); /* 外圈 ~3.5px 实线 */
+                    lv_obj_set_style_border_color(outer, lv_color_hex(KSY_COLOR_INK), 0);
+                    lv_obj_set_style_border_opa(outer, LV_OPA_COVER, 0);
+                    lv_obj_set_style_bg_opa(outer, LV_OPA_TRANSP, 0);
+                    lv_obj_clear_flag(outer, LV_OBJ_FLAG_SCROLLABLE);
+                    inner = lv_obj_create(scr);
+                    lv_obj_remove_style_all(inner);
+                    lv_obj_set_size(inner, 38, 38);
+                    lv_obj_set_pos(inner, 191, 60); /* 同心 (210,79) */
+                    lv_obj_set_style_radius(inner, LV_RADIUS_CIRCLE, 0);
+                    lv_obj_set_style_border_width(inner, 2, 0); /* 内圈 2px 细实线 */
+                    lv_obj_set_style_border_color(inner, lv_color_hex(KSY_COLOR_INK), 0);
+                    lv_obj_set_style_border_opa(inner, LV_OPA_COVER, 0);
+                    lv_obj_set_style_bg_opa(inner, LV_OPA_TRANSP, 0);
+                    lv_obj_clear_flag(inner, LV_OBJ_FLAG_SCROLLABLE);
+                    /* 中心实心五角星（★ = U+2605 实心星；20px 标题字体填充内圈）。 */
+                    ksy_label_font(scr, "★", 201, 68, KSY_COLOR_INK,
+                                   kidpal_font_title());
+                }
+            }
+            /* 「星星记录本」标题（徽章下方标题带, 20px；缺字经 fallback 链回退）。
+             * 真机轮三次看屏定标: label (165,121) -> 墨迹 x≈167..263 / y≈125..142,
+             * 与设计墨迹 160..266 / 125..142 对齐、中心 x≈215 ≈ 星徽中心 210 同列。 */
+            ksy_label_font(scr, "星星记录本", 165, 121, KSY_COLOR_INK, kidpal_font_title());
+            /* 星星计数「★ ×N」（右上角, 数据已送达才画）——计数源恒 total。
+             * 真机轮三次看屏定标: ★ 用 16px 正文字体（20px 墨宽 18.6 > 设计 14, 会压到
+             * 「×」起笔）, (349,17) -> 墨迹 ≈349..364 / 19..33、中线 26; 「×N」14px 落
+             * (367,19) -> 左缘 367 让开星右角, 墨中线 ≈25.5 与星中线对齐（原高约 4.5px）。 */
+            if (list != NULL) {
+                ksy_label_font(scr, "★", 349, 17, KSY_COLOR_INK, kidpal_font_body());
+                snprintf(buf, sizeof(buf), "×%d", kidpal_story_counter(list));
+                ksy_label(scr, buf, 367, 19, KSY_COLOR_INK);
+            }
+            /* 小伴右侧探头（brief §5 / :132 / V9 母版: 书封右沿外留 8px 缝、不压叠）:
+             * 复用 pose_daily_96 全姿态（96x96, 内容 bbox 74x83），等比缩绘 205/256
+             * (≈0.80 -> 内容 ~59x66)，pivot 置左上后落位，使内容左缘落 x≈318
+             * (= 书封右沿 310 + 8px 缝)、顶缘落 y≈161——对齐母版 bbox 318..378 / 161..227。
+             * 资产不可用静默降级（host 无 art 挂载 = 不画, 不崩；不硬造占位猫脸）。 */
+            {
+                const lv_image_dsc_t *cat = kstory_pose_dsc("pose_daily_96.bin");
+                if (cat != NULL) {
+                    lv_obj_t *ci = lv_image_create(scr);
+                    lv_image_set_src(ci, cat);
+                    lv_image_set_pivot(ci, 0, 0);
+                    lv_image_set_scale(ci, 205);
+                    lv_obj_set_pos(ci, 312, 152);
+                }
+            }
+            /* 角落涂鸦点缀（brief §3.1④ 装饰件, 非文字/说明; V9 母版左下云 + 左上「+」）:
+             * 左下云 = doodle_cloud_52 资产 **等比缩绘**（资产 ink bbox (4,8)-(50,40),
+             * 目标墨迹 30x21 -> scale 164/256≈0.64, pivot 置左上: ink 左 = 52+4×0.64≈55 /
+             * 顶 = 202+8×0.64≈207, 对齐母版 55..85 / 207..228）。旧 1:1 落 48,199 把 47x33
+             * 墨迹压进书封左边(96)——human 二次看屏打回。资产缺路径静默不画（沿用
+             * kstory_art_dsc 返回 NULL 判据）。
+             * 左上「+」= 原生十字两笔（母版 bbox 68..79 / 48..59）。均属装饰, 不进任何
+             * 验收断言带本体——只作封皮气氛, 不动书封/标题/星徽/计数的既有几何。 */
+            {
+                const lv_image_dsc_t *cl_im = kstory_art_dsc("doodle_cloud_52.bin", 96, 96);
+                if (cl_im != NULL) {
+                    lv_obj_t *ci = lv_image_create(scr);
+                    lv_image_set_src(ci, cl_im);
+                    lv_image_set_pivot(ci, 0, 0);
+                    lv_image_set_scale(ci, 164);
+                    lv_obj_set_pos(ci, 52, 202);
+                }
+            }
+            ksy_box(scr, 68, 52, 12, 3, KSY_COLOR_INK); /* 「+」横笔 */
+            ksy_box(scr, 72, 48, 3, 12, KSY_COLOR_INK); /* 「+」竖笔 */
+            break;
+        }
         case KSTORY_PAGE_STAMP: {
             kidpal_story_stamp_spec_t spec;
             int r;
@@ -1788,11 +1908,62 @@ int kidpal_story_view_init(kidpal_story_view_t *v, const kidpal_story_list_t *li
 }
 
 /* -------------------------------------------------------------------------- *
+ * kidpal_story_list_load — restore 缓存装载（TaskPackage 261104-k5-story-cover-nav;
+ * seam 权威 = story_cover_nav.acceptance.c 文件头 [C5]）
+ *
+ * 与 kidpal_story_view_init 的区别：**只装缓存、不动 page / rec 子态 / 盖章字段**。
+ * restore 帧常态化后 view_init 的无条件重装会把活动子态（READER/STAMP/DELETE/
+ * RECORDING/ORGANIZING）重置成 LIST（放大 TECH-261022 churn）——本缝即 plan D 的
+ * 「从 view_init 重装改为只装缓存不导航」。cursor 收敛到合法界（原有越界/陈旧值
+ * 不残留）；count==0 -> 0（空列表零光标）。
+ * ------------------------------------------------------------------------ */
+
+int kidpal_story_list_load(kidpal_story_view_t *v, const kidpal_story_list_t *list)
+{
+    int rows = KSTORY_LIST_ROWS_PER_SCREEN;
+    int i;
+
+    if (v == NULL || list == NULL) {
+        return -1; /* 不盲装（调用方降级） */
+    }
+    v->count = list->count;
+    v->counter = kidpal_story_counter(list);
+    v->screens = (v->count + rows - 1) / rows;
+    if (v->screens < 1) {
+        v->screens = 1;
+    }
+    /* cursor 钳制到 [0, count-1]；count==0 -> 0。 */
+    if (v->count <= 0) {
+        v->cursor = 0;
+    } else if (v->cursor < 0) {
+        v->cursor = 0;
+    } else if (v->cursor >= v->count) {
+        v->cursor = v->count - 1;
+    }
+    /* 影子 id 闭集刷新（与 view_init 同款；restore 后删除确认仍按键窗口 id 取值）。 */
+    s_ksy_item_ids_n = 0;
+    {
+        int cap = (list->count < KSTORY_LIST_MAX) ? list->count : KSTORY_LIST_MAX;
+        for (i = 0; i < cap; i++) {
+            ksy_copy_str(s_ksy_item_ids[i], sizeof(s_ksy_item_ids[i]), list->items[i].id);
+        }
+        s_ksy_item_ids_n = cap;
+    }
+    /* page / rec_seconds / rec_substate / stamp_serial / archive_pend / cancel_count /
+     * pending_delete_id 一律零触碰——restore 帧只填缓存、活动子态零重置。 */
+    return 0;
+}
+
+/* -------------------------------------------------------------------------- *
  * kidpal_story_page_input — P3 页内输入特例（seam [K1]: v1.47 矩阵逐格, 动作码
  * 闭集 = story_page.h kidpal_story_act_t 冻结数值; 旧 KSA_* 闭集随 archive 验收退役）。
  *
- * 决策表（矩阵逐格, v1.47 requirements §2.3）:
- *   LIST:    KEY 短=REC_SESSION / KEY 双=OPEN_READER / KEY 长=GLOBAL(回首页) /
+ * 决策表（矩阵逐格, v1.47 requirements §2.3 + K5 S-F2.6-AC2/AC3）:
+ *   COVER:   KEY 短=COVER_OPEN(page->LIST) / KEY 长=GLOBAL(回首页) / KEY 双=NONE /
+ *            BOOT 短·双·长=GLOBAL(4 页循环 wrap 回 P1) —— 封皮是 P4 主入口, 单击进列表、
+ *            BOOT 交全局翻页（页循环四页成立）
+ *   LIST:    KEY 短=REC_SESSION / KEY 双=OPEN_READER / KEY 长=COVER_BACK(page->COVER,
+ *            逐层返回「列表 -> 封皮」, 原 GLOBAL「一层即到家」随封皮下沉重锚) /
  *            BOOT 短=CURSOR_NEXT / BOOT 双=SCREEN_JUMP / BOOT 长=DELETE_ENTER
  *   DELETE:  KEY 短=DELETE_CONFIRM / KEY 双=NONE / KEY 长=NONE（不响应=消费不动,
  *            绝不 GLOBAL——漏网手势会被通用覆盖层列误映射 SESSION_TOGGLE）/ BOOT
@@ -1842,7 +2013,10 @@ int kidpal_story_page_input(kidpal_story_view_t *v, key_id_t key, key_gesture_t 
                 return KSPV2_ACT_OPEN_READER;
             }
             if (key == KEY_ID_KEY && g == KEY_GESTURE_LONG_PRESS) {
-                return KSPV2_ACT_GLOBAL; /* 回首页（列表 = P3 顶层, 长按一层即到家） */
+                /* 逐层返回：列表 -> 封皮（S-F2.6-AC3；原「一层即到家」口径随封皮
+                 * 下沉改为逐层）。并置 page=COVER，再往上一按由 COVER 行交全局。 */
+                v->page = KSTORY_PAGE_COVER;
+                return KSPV2_ACT_COVER_BACK;
             }
             if (key == KEY_ID_BOOT && g == KEY_GESTURE_CLICK) {
                 if (v->count <= 0) {
@@ -2007,6 +2181,31 @@ int kidpal_story_page_input(kidpal_story_view_t *v, key_id_t key, key_gesture_t 
 
         case KSTORY_PAGE_STAMP:
             return KSPV2_ACT_GLOBAL; /* 盖章帧页内零语义（零回归守卫） */
+
+        case KSTORY_PAGE_COVER:
+            /* 封皮页输入行（TaskPackage 261104-k5-story-cover-nav; S-F2.6-AC2/AC3;
+             * seam [C3] 冻结数值）:
+             *   KEY 短=COVER_OPEN(13) 且 page->LIST（进星星记录本列表, 模块子页）;
+             *   KEY 长=GLOBAL（回首页, 4 页循环 wrap 由全局层承载）;
+             *   KEY 双=NONE（封皮无双击语义——消费不动, 不漏网误开）;
+             *   BOOT 短·双·长=GLOBAL（翻回 P1 首页, 4 页循环成立; 封皮是 P4 主入口,
+             *     页循环在模块内仅对列表/阅读断开——它们把 BOOT 让给页内浏览/翻屏）。
+             * COVER 不进 300ms 单双击消歧（kidpal_story_debounce_gate 只认 LIST）——
+             * 封皮单击零延迟直发进列表。 */
+            if (key == KEY_ID_KEY && g == KEY_GESTURE_CLICK) {
+                v->page = KSTORY_PAGE_LIST;
+                return KSPV2_ACT_COVER_OPEN;
+            }
+            if (key == KEY_ID_KEY && g == KEY_GESTURE_DOUBLE_CLICK) {
+                return KSPV2_ACT_NONE; /* 封皮无双击语义 */
+            }
+            if (key == KEY_ID_KEY && g == KEY_GESTURE_LONG_PRESS) {
+                return KSPV2_ACT_GLOBAL; /* 封皮长按 -> 交全局回首页 */
+            }
+            if (key == KEY_ID_BOOT) {
+                return KSPV2_ACT_GLOBAL; /* BOOT 短/双/长 -> 4 页循环 wrap 回 P1 */
+            }
+            return KSPV2_ACT_GLOBAL;
 
         default:
             return KSPV2_ACT_GLOBAL;

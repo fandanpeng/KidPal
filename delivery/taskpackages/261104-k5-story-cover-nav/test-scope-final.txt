@@ -1,0 +1,69 @@
+# test-scope 圈定清单 · 261104-k5-story-cover-nav · final（integrator Step 4 范围圈定，2026-11-15）
+# 合成来源 = taskpackage.acceptanceTestsFile ∪ impactedTestsSeed（7 条）∪ detect_changes（project C-AI-KidPal-pod-m2，since=03630b65 / merge_base 03630b65，direction=both，depth=2：42 changed files / 275 seed 符号 / 297 impacted 节点，其中 server/acceptance 28、server/gateway 75、server/tests 2、firmware/main 181）
+#   ∪ crossEnd 共享缝回归（_push_story_list / _consume_kidpal_control / validate_display）∪ 共享 seam（story_page/keybar/kidpal_render_node/mcp_server/application 改动直连的渲染/缓存/导航/语境面）∪ 安全余量。
+# 格式 = 仓根相对测试文件路径一行一件（# 注释）；执行面 = server 面 pytest 按文件圈定真跑（acceptance 闸跑 acceptance/*、unit 闸跑 tests/*），firmware 面 = host runner 全量单 ELF（host_infra_test.elf）一次覆盖下列全部 .c/.test.c（acceptance 闸对 firmware 只作结构/runner 存在性核对）。
+# 范围性质 = 影响面圈定清单（不是全量回归替代物，也不缩到只剩本包档）；floor 含本包冻结件 + 对端共享冻结面。
+
+# ── 本包冻结验收件（acceptanceTestsFile，新件）──
+firmware/main/test/story_cover_nav.acceptance.c
+server/acceptance/test_story_cover_nav.acceptance.py
+
+# ── impactedTestsSeed · 冻结件重锚（5 固件 + 2 服务端）──
+firmware/main/test/story_page_v2.acceptance.c
+firmware/main/test/record_session_live.acceptance.c
+firmware/main/test/keybar_three_slot.acceptance.c
+firmware/main/test/chrome_ghost.acceptance.c
+firmware/main/test/chrome_ghost.test.c
+server/acceptance/test_m4k1_story_cloud_link.acceptance.py
+server/acceptance/test_m4k3_record_session_live.acceptance.py
+
+# ── detect_changes 映射测试（impact 图直接到达的测试节点）──
+# story_page_v2.acceptance.c host_infra_read_pixel（已在上）；m4k1/m4k3（已在上）；server/tests 命中 = test_reminder_units（front_app/mcp_relay 装载，见下安全余量）与 test_engine_round_close_units（builtins._Log.info 撞库噪声，见排除项）。
+
+# ── 共享缝 · story 模块渲染/缓存（story_page.c 改动直连：COVER 分支 / list_load / counter / 输入表）──
+firmware/main/test/story_page_v2.test.c
+firmware/main/test/story_cache.acceptance.c
+firmware/main/test/story_typography.acceptance.c
+
+# ── 共享缝 · 页面导航与板级 BOOT（board hook / cycle_next / 四点并集 / wrap）──
+firmware/main/test/four_page_skeleton.acceptance.c
+
+# ── 共享缝 · 设备 TU 源锚 tree-scan（kidpal_render_node.cc / application.cc / mcp_server.cc 改动面，源锚齿扫真实工作树）──
+firmware/main/test/record_session_lifecycle.acceptance.c
+firmware/main/test/record_dialogue_guide.acceptance.c
+firmware/main/test/record_dialogue_v7_fix.test.c
+
+# ── 共享缝 · front 故事/记录收口（_story_finish_session 归档 restore:true / discard 不重推 / story_list 帧）──
+server/acceptance/test_record_cancel_lifecycle.acceptance.py
+server/acceptance/test_record_dialogue_guide.acceptance.py
+server/acceptance/test_record_front_polish.acceptance.py
+
+# ── 服务端单元面（直装载/源读改动模块）──
+# test_story_units.py 直载 story.py + display_schema.py；test_story_cancel_lifecycle_units.py 直载 front_app.py；test_archive_guard_units.py 源读 front_app.py。
+server/tests/test_story_units.py
+server/tests/test_story_cancel_lifecycle_units.py
+server/tests/test_archive_guard_units.py
+
+# ── 安全余量 · 跨包共享渲染面（kidpal_render_node.cc / keybar.c 改动可能波及 points / 场景标消费点）──
+firmware/main/test/points_device_ui.acceptance.c
+firmware/main/test/reward_goal_config.acceptance.c
+
+# ── 安全余量 · 服务端单元（front_app + mcp_relay 装载；impact hop2）──
+server/tests/test_reminder_units.py
+
+# ── 非测试件登记（不入 scope 过滤，仅作圈定依据留痕）──
+# 结构性触发 = firmware/main/test/host_app/main/CMakeLists.txt 变动（story_cover_nav 登记序）→ 跑 host runner 全量；本清单 .c 集合即其行为面。
+# 资产 = firmware/main/assets/spiffs_root/ic_coin_52_52.bin（KAP1 52×52，KCN-C9 机检覆盖）；生成件 = tools/simulator/.../assets.c|.h（纯追加）。
+# 设备轮未跑 = K5S-E4（BOOT 四页并集/逐层返回手感/封皮观感 design review/语音「打开故事」端到端/restore 不抢前台真实时序/删除盖章计数），待 device-round-evidence.md。
+#
+# 排除项（如实留痕）：
+#   - server/tests/test_engine_round_close_units.py：detect_changes 命中 = builtins._Log.info 名称撞库噪声（其装载 engine-patch/connection.py，与被改 story/front 面无调用关系），不入 scope。
+#   - server/acceptance 下 test_points_*（device_ui/e2e_spike/ledger_core）/ test_schedule_grid_restore：装载 display_schema.py，但本包 display_schema 改动为 story_list view 内的 `data=={}` 早退（additive、view 隔离），不触 points/schedule floor；不纳入圈定，理由如实登记。
+#   - firmware/main/test/acceptance/archive/*：归档退役面（「移位即退役」口径），非现役执行面。
+# server 面 live 用例按既有 `-m "not live"` 口径 deselected，不在此处放宽。
+#
+# ── 真机轮修复后复核（2026-11-15，integrator）──
+# 复核无变化：真机轮三 commit（54dd605e / a467bd39 / ca5fa9e7）仅改 story_page.c / mcp_server.cc / 既有冻结件
+# story_cover_nav.acceptance.c / story_page_v2.acceptance.c（后两者已在清单）；重跑 detect_changes
+# （since=03630b65，direction=both，depth=2）仍 275 seed 符号 / 297 impacted 节点，无新增受影响测试文件；
+# 25 条清单继续覆盖（final r5 @ ca5fa9e7 以本清单跑绿）。
