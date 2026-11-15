@@ -150,6 +150,11 @@ REVISION LOG
              _delete_entry_locked）缺席；kidpal-points-write/SKILL.md 不在位；manifest 无
              points skill 条目。A7 的 deploy/verify 表驱动与 A2 的部分 usage 断言为
              must-stay-green 回归守卫（绿现状即既有语义，非空过）。
+  2026-11-15 tighten-only additive（acceptance-author，planner 派）：K3Q-A5 新增
+             test_k3q_a5_relative_time_not_stable_locator —— 钉死 fixer 补齐的 §5.1
+             「相对时间不是稳定定位符」纪律（删除前先 recent / 恰好一条候选才删 /
+             候选 ≥2 一次性报错）。既有断言零改动、删除行 0；源事件 = 真机 2026-11-15
+             实证「删掉昨天那条」在 3 条候选时被猜着删除（违反 S-F6.4-AC3/AC4）。
 """
 
 from __future__ import annotations
@@ -843,6 +848,27 @@ class K3qA5SkillDiscipline(unittest.TestCase):
         self.assertTrue(
             oneshot,
             "K3Q-A5 RED: skill 未明文「歧义一次性普通文本报错、不依赖多轮澄清问答」。")
+
+    def test_k3q_a5_relative_time_not_stable_locator(self):
+        """coverage: K3Q-A5 / S-F6.4-AC3、AC4 —— 相对时间不是稳定定位符：删除前先 recent、
+        确保唯一候选才删、候选 ≥2 一律一次性报错（真机 2026-11-15 实证：3 条候选时被猜着删）。"""
+        self.assertIn(
+            "相对时间不是稳定定位符", self.text,
+            "K3Q-A5 RED: SKILL.md 缺 §5.1「相对时间不是稳定定位符」纪律 —— 真机 2026-11-15 "
+            "实证「删掉昨天那条」在 3 条候选时被猜着删除，违反 S-F6.4-AC3（稳定定位删除）/ "
+            "AC4（一次性可判，不靠多轮澄清）。")
+        self.assertIn(
+            "恰好一条", self.text,
+            "K3Q-A5 RED: SKILL.md 未写「`recent` 回执里恰好一条候选才可 delete」——"
+            "候选不唯一时的删除是模型的猜测，不是账本事实。")
+        self.assertTrue(
+            re.search(r"≥\s*2[\s\S]{0,80}报错", self.text),
+            "K3Q-A5 RED: SKILL.md 未写「候选 ≥2 一律一次性普通文本报错」——"
+            "多候选时必须把候选（index + entry_id）列给家长重述，不得挑一条删。")
+        self.assertTrue(
+            re.search(r"删除前[^\n]{0,40}recent", self.text),
+            "K3Q-A5 RED: SKILL.md 未写「删除前恒先跑 recent」前置动作 ——"
+            "自然语言定位必须先经账本列举再判断唯一性。")
 
 
 # =========================================================================== #
