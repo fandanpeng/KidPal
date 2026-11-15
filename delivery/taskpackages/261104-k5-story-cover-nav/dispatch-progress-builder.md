@@ -106,3 +106,142 @@ page→COVER」。SPV2-A1 tooth 4 在 tooth 3 留下的 COVER 态上要求 `CURS
 | `server/gateway/front/front_app.py`（多段） | `_push_story_list` 五调用点 / `_expand_points_nav_intent` 先例 / build_display_tool_calls Q7 / `_story_finish_session`。 |
 | `firmware/main/test/chrome_ghost.acceptance.c` / `keybar_three_slot.acceptance.c` / `story_page_v2.acceptance.c` / `record_session_live.acceptance.c` | 重锚断言逐条核对（只读）。 |
 | `tools/asset-pipeline/gen_assets.mjs` / `gen_art_spiffs.mjs` | 资产管线 job/白名单结构，产出纯追加。 |
+
+## 8. 变异证据轮（builder · mutation evidence · append-only · 2026-11-15）
+
+> 目的：证明 `taskpackage.acceptance[]` 每条功能验收对实现**敏感**——把实现临时改坏 → 目标冻结验收变红 → 精确还原。
+> 方法：每条只施加一个最小**行为级**变异，单独 build/run（host 7 条）或 pytest（server 3 条），记录目标 case 的 `:FAIL` 原文；随后 `git checkout -- <file>` 精确还原。
+> 基线（还原态）：host `301 Tests 3 Failures`（仅存量 p1_auxbar AB-A1/A2/A4）；server `10 passed`。
+> 末轮 GOLDEN（全部还原后重跑）：host `301 Tests 3 Failures`（KCN-C1..C10 全 PASS）；server `10 passed`。合计 8 轮 host rebuild+run + 3 轮 server pytest + 4 次逐件复绿。
+
+### 8.1 逐条结果
+
+| 验收 | 变异（文件·改动） | 目标红原文（摘） | 连带红 | 还原后 |
+|---|---|---|---|---|
+| KCN-C1 | `keybar.c` PAGE_P4 页槽行「打开/下一页」→「说话·双击看/下移」 | `:676 ... KCN-C1 RED: P4 页槽键帽 (左=说话·双击看, 右=下移) 期望 (打开, 下一页)` | KB-A3（允许） | golden:597 PASS |
+| KCN-C2 | `story_page.c` COVER 计数块 `if(list!=NULL)`→`if(1)`（NULL 仍画计数） | `:749 ... KCN-C2 RED: 数据未达（list==NULL）时封皮仍画计数（带墨 82）` | 无 | golden:701 PASS |
+| KCN-C3 | `story_page.c` COVER KEY 短去 `v->page=LIST` | `:797 ... KCN-C3 RED: COVER KEY 短按 act=13 page=7, 期望 COVER_OPEN(=13) 且 page=LIST(0)` | 无 | golden:781 PASS |
+| KCN-C4 | `story_page.c` COVER KEY 长加 `v->page=LIST`（返回 GLOBAL 但页态错） | `:893 ... KCN-C4 RED: 封皮长按 act=-2 page=0, 期望 GLOBAL 且页态由全局层接管` | 无 | golden:864 PASS |
+| KCN-C5 | `story_page.c` `kidpal_story_list_load` NULL 检查后加 `v->page=LIST` | `:971 ... KCN-C5 RED: list_load 改动了 page（7 -> 0）` | 无 | golden:929 PASS |
+| KCN-C9 | `story_page.c` `#define KSTORY_ART_CACHE_SLOTS` 8→7 | `:1094 ... KCN-C9 RED: KSTORY_ART_CACHE_SLOTS = 7 < 8` | 无 | golden:1033 PASS |
+| KCN-C10 | `story_page.c` `kidpal_story_counter` 恒返回 `list->count`（items 顶替 total） | `:1148 ... KCN-C10 RED: counter 语义漂移（total=0->0 / 2->2 / 12(items=2)->2）` | C5 tooth1 + SPV2-A7 + SPV2-A8（同 counter-total 族，见 §8.2） | golden:1124 PASS |
+| C6 | `display_schema.py` 删 story_list floor 的 `if data=={}` 早退 | `:356 ... C6 RED: story_list 薄载荷 ... 被真门拒绝 (story_list items must be an array)` | 无（front_expands 子测仍绿） | `-k c6` 2 passed |
+| C7 | `front_app.py` 删除后重推 `restore=True`→缺省 False | `:450 ... C7 RED: 删除执行后重推（:1047）未带 restore:true` | 无 | `-k c7` 5 passed |
+| C8 | `front_app.py` 记录语境分支 `source_page=="story"`→`in("story","story_cover")` | `:550 ... 'accumulate' != 'chat' ... C8 RED: story_cover 误切记录语境（routing != chat）` | 无（story/unknown 子测仍绿） | `-k c8` 3 passed |
+
+### 8.2 偏差与说明
+
+- **C8 派发单建议打 `application.cc`**：该建议打不中 server 冻结件——C8 的唯一冻结承载 = `server/acceptance/test_story_cover_nav.acceptance.py`（真跑 `pump_client_to_upstream`），`application.cc` 是设备 TU、不进 host/server 构建、无任何冻结断言读它。故 C8 变异落在真实 seam `front_app.py` 的 `session_ctx` 记录语境分支（把 story_cover 误纳入 story → routing 变 accumulate），行为级且只红 `test_c8_story_cover_plain_qa`。
+- **C10 变异选择**：先试 `kidpal_story_counter` 恒返回 count（dispatch 建议口径），能打红 C10 tooth1，但连带 C5 tooth1 + SPV2-A7 + SPV2-A8。因 C10 是**回归锚**（其「封皮计数只信 story_list.total」与这些断言同源），该连带全落在 counter-total 语义族内，逐条如实申报。另试过 `CMakeLists` 登记序变异（C10「host 登记序」tooth5），只能红 C10 但会把 host_infra smoke boundary 一起打红（smoke 执行序副作用，属**出族**连带），故弃用、以 counter 变异为准。
+- **C1 连带 KB-A3**：prompt 明示允许。
+- **C6** 只红 `test_c6_story_list_thin_payload_floor`（薄载荷放行半）；`test_c6_front_expands_thin_payload_not_downgrade` 走 `_expand_story_nav_intent` 不经该早退，保持绿——两半同属 C6 族，已覆盖主断言。
+- C2/C3/C4/C5/C9 五条变异各自**只红目标 case**（逐轮 `301 Tests 4 Failures` = 3 存量 + 目标）。
+
+### 8.3 还原与工作树证据
+
+每次变异后 `git checkout -- <file>`，`git diff --stat <file>` 为空。轮末（全部还原、golden 重跑后）：
+```
+$ git status --porcelain
+ M delivery/taskpackages/261104-k5-story-cover-nav/pod-events.jsonl    # 非本 agent 产出（并行会话追加）
+$ git diff --stat -- firmware/ server/ tools/                          # 空（实现面零改动）
+$ git diff --stat -- '*acceptance*' 'server/acceptance/' docs/         # 空（验收/文档零改动）
+```
+实现面与验收/文档面净零改动成立。
+
+### 8.4 机读 JSON 数组（与任务 package `acceptance[]` 逐字对齐）
+
+```json
+[
+ {
+  "acceptance": "KCN-C1: 封皮四件（书封形态两向长墨段 / 标题「星星记录本」在墨 / 星星计数在墨 / 大星徽在墨）+ 四点页点第 4 实心 + 覆盖层态页点隐藏 + 键帽（打开 / 下一页）。回引 S-F2.6-AC1、requirements §2.4。设计态红 = 封皮 COVER 渲染分支与键帽行未落",
+  "turnedRed": true, "sensitive": true, "restored": true,
+  "mutation": "firmware/main/display/keybar.c PAGE_P4 页槽行由「打开 / 下一页」改回列表残留行「说话·双击看 / 下移」",
+  "command": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
+  "evidence": "story_cover_nav.acceptance.c:676: ...(KCN-C1):FAIL ... KCN-C1 RED: P4 页槽键帽 (左=说话·双击看, 右=下移) 期望 (打开, 下一页)——封皮键帽「打开 / 下一页」未落（S-F2.6-AC1; 现状 (说话·双击看, 下移) = 列表行残留） || 汇总 301 Tests 5 Failures",
+  "restoredCheck": "golden:597 封皮四件+四点第4实心+键帽 (KCN-C1):PASS",
+  "collateral": "KB-A3 同红（允许，prompt 明示）"
+ },
+ {
+  "acceptance": "KCN-C2: 封皮计数两态（数据已送达如实显示含 ×0 / 数据未达 rc=0 且计数带零墨不误显）+ render_node P4 分支出现 KSTORY_PAGE_COVER 分派。回引 S-F2.6-AC1 补充规则、S-F2.1-AC5/AC6。设计态红 = COVER 分支缺席",
+  "turnedRed": true, "sensitive": true, "restored": true,
+  "mutation": "firmware/main/display/story_page.c COVER 渲染分支计数块 `if (list != NULL)` 改为 `if (1)`（数据未达 list==NULL 时仍画计数）",
+  "command": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
+  "evidence": "story_cover_nav.acceptance.c:749: ...(KCN-C2):FAIL ... KCN-C2 RED: 数据未达（list==NULL）时封皮仍画计数（带墨 82）——篇数未知不能显 ×0 误导（S-F2.1-AC6 同型判据） || 汇总 301 Tests 4 Failures",
+  "restoredCheck": "golden:701 封皮计数两态 (KCN-C2):PASS",
+  "collateral": "无（仅 C2）"
+ },
+ {
+  "acceptance": "KCN-C3: 手势矩阵（COVER KEY 短→COVER_OPEN 进列表 / BOOT→GLOBAL / KEY 长→GLOBAL / KEY 双=NONE；LIST KEY 长→COVER_BACK；READER KEY 长→LIST；COVER 不进 300ms 双击消歧）。回引 S-F2.6-AC2/AC3、S-F2.1-AC2、requirements §2.3。设计态红 = COVER case 与新动作码缺席",
+  "turnedRed": true, "sensitive": true, "restored": true,
+  "mutation": "firmware/main/display/story_page.c COVER KEY 短按块去掉 `v->page = KSTORY_PAGE_LIST;`（返回 COVER_OPEN 但不进列表）",
+  "command": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
+  "evidence": "story_cover_nav.acceptance.c:797: ...(KCN-C3):FAIL ... KCN-C3 RED: COVER KEY 短按 act=13 page=7, 期望 COVER_OPEN(=13) 且 page=LIST(0)——封皮 KEY 短按不进列表（S-F2.6-AC2） || 汇总 301 Tests 4 Failures",
+  "restoredCheck": "golden:781 手势矩阵 COVER/LIST/READER (KCN-C3):PASS",
+  "collateral": "无（仅 C3）"
+ },
+ {
+  "acceptance": "KCN-C4: 页态逐层返回序列（阅读→列表→封皮→首页，每按一次只上一层）+ 板级 BOOT 入口 reset 结构锚（StoryEnterCover 调用点存在）。回引 S-F2.6-AC3/AC1、PROPOSAL §5。设计态红 = 入口 reset seam 缺席",
+  "turnedRed": true, "sensitive": true, "restored": true,
+  "mutation": "firmware/main/display/story_page.c COVER KEY 长按块加 `v->page = KSTORY_PAGE_LIST;`（action 仍 GLOBAL 但页态错留 LIST，逐层返回第 2 层破）",
+  "command": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
+  "evidence": "story_cover_nav.acceptance.c:893: ...(KCN-C4):FAIL ... KCN-C4 RED: 封皮长按 act=-2 page=0, 期望 GLOBAL 且页态由全局层接管（封皮->首页） || 汇总 301 Tests 4 Failures",
+  "restoredCheck": "golden:864 页态逐层返回序列 (KCN-C4):PASS",
+  "collateral": "无（仅 C4；C3 tooth2 只校 act 不校 page，保持绿）"
+ },
+ {
+  "acceptance": "KCN-C5: restore 三态（restore 帧只填缓存不导航且活动子态零重置 / 非 restore 完整帧 = 进场帧进封皮 / 畸形帧降级）+ kidpal_story_list_load 不改 page + mcp 路由结构锚（restore 分支不调 view_init）。回引 S-F2.6-AC1/AC4、S-F2.1-AC6、D-07/D-08。设计态红 = list_load 缺席、mcp 仍 view_init",
+  "turnedRed": true, "sensitive": true, "restored": true,
+  "mutation": "firmware/main/display/story_page.c kidpal_story_list_load 在 NULL 检查后加 `v->page = KSTORY_PAGE_LIST;`（restore 帧导航，破「只填缓存不导航」）",
+  "command": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
+  "evidence": "story_cover_nav.acceptance.c:971: ...(KCN-C5):FAIL ... KCN-C5 RED: list_load 改动了 page（7 -> 0）——restore 帧必须只填缓存不导航、活动子态零重置（plan D; TECH-261022 churn 防线） || 汇总 301 Tests 4 Failures",
+  "restoredCheck": "golden:929 restore 三态与缓存装载 (KCN-C5):PASS",
+  "collateral": "无（仅 C5）"
+ },
+ {
+  "acceptance": "KCN-C9: ic_coin_52_52.bin（KAP1 头、52x52、stride 7）+ 产线三处白名单登记 + KSTORY_ART_CACHE_SLOTS>=8。回引 S-F2.6、D-09、K5S-E3 离线半。设计态红 = 资产未产出、槽未扩容",
+  "turnedRed": true, "sensitive": true, "restored": true,
+  "mutation": "firmware/main/display/story_page.c `#define KSTORY_ART_CACHE_SLOTS` 8→7（资产缓存槽未扩容）",
+  "command": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
+  "evidence": "story_cover_nav.acceptance.c:1094: ...(KCN-C9):FAIL ... KCN-C9 RED: KSTORY_ART_CACHE_SLOTS = 7 < 8——7 枚已被既有资产占满, 封皮再加资产会静默不可用（plan F 风险点; 须扩容为纯逻辑常量） || 汇总 301 Tests 4 Failures",
+  "restoredCheck": "golden:1033 ic_coin 资产与产线白名单 (KCN-C9):PASS",
+  "collateral": "无（仅 C9；源扫描 tooth4）"
+ },
+ {
+  "acceptance": "KCN-C10: 回归锚（封皮计数只信 story_list.total / 删除同步减 / K0a 阅读键零回归 / 记录语境入口）+ host 登记序。回引 S-F2.1-AC1..AC7、S-F2.2-AC1、S-F2.3-AC1/AC2、S-F2.4-AC2、D-01。设计态红 = 登记序与新 seam 缺席",
+  "turnedRed": true, "sensitive": true, "restored": true,
+  "mutation": "firmware/main/display/story_page.c kidpal_story_counter 改为恒返回 list->count（以 items.length 顶替 total）",
+  "command": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
+  "evidence": "story_cover_nav.acceptance.c:1148: ...(KCN-C10):FAIL ... KCN-C10 RED: counter 语义漂移（total=0->0 / 2->2 / 12(items=2)->2）——星星计数须恒信 story_list.total（契约 §1.3③ / S-F2.4-AC2 现存篇数） || 汇总 301 Tests 7 Failures",
+  "restoredCheck": "golden:1124 回归锚+登记序 (KCN-C10):PASS",
+  "collateral": "连带 C5 tooth1 + SPV2-A7 + SPV2-A8（同一 counter-total 语义族；C10 为回归锚，其「计数只信 total」与这些断言同源，连带在族内）"
+ },
+ {
+  "acceptance": "C6: display_schema 放行 {\"view\":\"story_list\",\"data\":{}} 薄载荷 + 其余畸形仍拒 + 白名单零扩（无 story_cover view）+ front _expand_story_nav_intent 展开为非 restore 完整帧且 Q7 不误杀自展帧。回引 S-F2.6（契约 §1.3③/§1.5）。设计态红 = 薄载荷口与展开 seam 缺席",
+  "turnedRed": true, "sensitive": true, "restored": true,
+  "mutation": "server/gateway/display_schema.py story_list floor 删除 `if data == {}: return (True, \"ok\")` 早退（薄载荷不再放行）",
+  "command": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance/test_story_cover_nav.acceptance.py -k c6",
+  "evidence": "test_story_cover_nav.acceptance.py:356: AssertionError: False is not true : C6 RED: story_list 薄载荷 `{'view':'story_list','data':{}}` 被真门拒绝 (story_list items must be an array) —— 契约 §1.3③/§1.5「增认 data:{} 导航薄载荷」未落地 || 1 failed, 1 passed, 8 deselected",
+  "restoredCheck": "还原后 -k c6: `2 passed, 8 deselected`",
+  "collateral": "无（仅 test_c6_story_list_thin_payload_floor；front_expands 子测仍绿）"
+ },
+ {
+  "acceptance": "C7: 五调用点 restore 判定（ctx 建立 / 删除后 / 归档成功翻 true；WS 建连保持 true；归档失败离页帧保持 False = human 2026-11-15 裁定「离页导航帧例外」）。回引 S-F2.6-AC1/AC4、D-07。设计态红 = 三处未翻 true",
+  "turnedRed": true, "sensitive": true, "restored": true,
+  "mutation": "server/gateway/front/front_app.py 删除执行后重推（:1074）`_push_story_list(websocket, restore=True)` 改回缺省 `_push_story_list(websocket)`（restore=False）",
+  "command": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance/test_story_cover_nav.acceptance.py -k c7",
+  "evidence": "test_story_cover_nav.acceptance.py:450: AssertionError: False is not true : C7 RED: 删除执行后重推（:1047）未带 restore:true —— 对账重推只填缓存不抢前台被破。 || 1 failed, 4 passed, 5 deselected",
+  "restoredCheck": "还原后 -k c7: `5 passed, 5 deselected`",
+  "collateral": "无（仅 test_c7_delete_repush_restore_true）"
+ },
+ {
+  "acceptance": "C8: 语境三分（story_cover 普通问答不 acc.start / 不推 story_list / 不注记录信号；story 列表仍记录语境；未知 source_page 拒绝并 warning）。回引 S-F2.6-AC4（契约 §四）。设计态红 = story_cover 语境未接线",
+  "turnedRed": true, "sensitive": true, "restored": true,
+  "mutation": "server/gateway/front/front_app.py session_ctx 记录语境分支 `source_page == \"story\"` 扩为 `source_page in (\"story\",\"story_cover\")`（story_cover 误切记录语境）",
+  "command": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance/test_story_cover_nav.acceptance.py -k c8",
+  "evidence": "test_story_cover_nav.acceptance.py:550: AssertionError: 'accumulate' != 'chat' ... C8 RED: story_cover 误切记录语境（routing != chat）—— 封皮发起普通问答, 不得 acc.start（S-F2.6-AC4 / 契约 §四「普通问答语境」）。 || 1 failed, 2 passed, 7 deselected",
+  "restoredCheck": "还原后 -k c8: `3 passed, 7 deselected`",
+  "collateral": "无（仅 test_c8_story_cover_plain_qa；story/unknown 子测仍绿）"
+ }
+]
+```
+
