@@ -1148,8 +1148,11 @@ static void ksy_bubble(lv_obj_t *scr, const char *text, int x, int y)
  * ic_cloud_40_t2 七消费点共用同一 loader, 零互相逐出）。max 入参按资产族给定
  * （姿态族 96; 声波/图标族 240 容 rec_wave 206x34）。
  * 261104-k5-story-cover-nav：封皮大星徽 ic_coin_52_52 为第 8 枚并发消费点——7 槽已
- * 被既有资产占满, 不扩容则封皮再加资产会静默不可用（plan F 风险点; 纯逻辑常量）。 */
-#define KSTORY_ART_CACHE_SLOTS 8
+ * 被既有资产占满, 不扩容则封皮再加资产会静默不可用（plan F 风险点; 纯逻辑常量）。
+ * 2026-11-15 真机轮观感修：封皮再加「小伴右侧探头」pose_daily_96 与「左下云」
+ * doodle_cloud_52 两枚 -> 并发消费点 10 枚（录音 2 / 整理 4 / 盖章 1 / 封皮 3），
+ * 槽位扩到 12 留余量; 不扩容则第 9/10 枚落真机静默缺画（KCN-C9 tooth 4 只钉 >= 8）。 */
+#define KSTORY_ART_CACHE_SLOTS 12
 
 typedef struct {
     const char *name;        /* 已装载资产名（指针同址判命中; 字面静态存储期） */
@@ -1657,22 +1660,45 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
             lv_obj_clear_flag(book, LV_OBJ_FLAG_SCROLLABLE);
             /* 书脊线（竖线 @x=104, 自书封内顶 34 至 241——书封形态结构件）。 */
             ksy_box(scr, 104, 34, 3, 207, KSY_COLOR_INK);
-            /* 大星徽（双圈印章原生几何 + ic_coin_52_52 资产 best-effort 覆盖）:
-             * 原生双圈 + 中心五角星保证 host 无资产挂载时徽章带仍有墨（KCN-C1 tooth 4）;
-             * ic_coin_52_52 资产在设备挂载时叠加（D-09 产线件），不可用静默降级。 */
+            /* 大星徽（V9 母版 `ic-coin` 52px: 外圈 3.5px 实线 + 内圈 2px 细实线双圈 +
+             * 中心实心五角星, brief §5 / :132/:133; 中心 (210,79), 左 184 / 上 53）。
+             * 资产可用 -> 直接落产线件 ic_coin_52_52（与设计逐像素一致）;
+             * 资产缺（host 无 art 挂载）-> 原生双圈 + 实心星字形兜底, 同设计坐标与量级
+             * （KCN-C1 tooth 4 徽章带墨量锚; 不得为过测把徽章挪出断言带/缩小规避）。
+             * 旧 70px 大细环 + 14px ★ 小字退役（真机轮 human 看屏实证「大细环 + 一个小
+             * 星星、星没填充内圈」= 与 V9 双圈实心星不符）。 */
             {
-                lv_obj_t *ring = lv_obj_create(scr);
-                lv_obj_remove_style_all(ring);
-                lv_obj_set_size(ring, 70, 70);
-                lv_obj_set_pos(ring, 164, 52);
-                lv_obj_set_style_radius(ring, LV_RADIUS_CIRCLE, 0);
-                lv_obj_set_style_border_width(ring, 4, 0);
-                lv_obj_set_style_border_color(ring, lv_color_hex(KSY_COLOR_INK), 0);
-                lv_obj_set_style_border_opa(ring, LV_OPA_COVER, 0);
-                lv_obj_set_style_bg_opa(ring, LV_OPA_TRANSP, 0);
-                lv_obj_clear_flag(ring, LV_OBJ_FLAG_SCROLLABLE);
-                ksy_label(scr, "★", 186, 74, KSY_COLOR_INK);
-                ksy_art_image(scr, "ic_coin_52_52.bin", 96, 96, 167, 61);
+                const lv_image_dsc_t *coin = kstory_art_dsc("ic_coin_52_52.bin", 96, 96);
+                if (coin != NULL) {
+                    lv_obj_t *im = lv_image_create(scr);
+                    lv_image_set_src(im, coin);
+                    lv_obj_set_pos(im, 184, 53);
+                } else {
+                    lv_obj_t *outer = lv_obj_create(scr);
+                    lv_obj_t *inner;
+                    lv_obj_remove_style_all(outer);
+                    lv_obj_set_size(outer, 52, 52);
+                    lv_obj_set_pos(outer, 184, 53); /* 中心 (210,79) */
+                    lv_obj_set_style_radius(outer, LV_RADIUS_CIRCLE, 0);
+                    lv_obj_set_style_border_width(outer, 4, 0); /* 外圈 ~3.5px 实线 */
+                    lv_obj_set_style_border_color(outer, lv_color_hex(KSY_COLOR_INK), 0);
+                    lv_obj_set_style_border_opa(outer, LV_OPA_COVER, 0);
+                    lv_obj_set_style_bg_opa(outer, LV_OPA_TRANSP, 0);
+                    lv_obj_clear_flag(outer, LV_OBJ_FLAG_SCROLLABLE);
+                    inner = lv_obj_create(scr);
+                    lv_obj_remove_style_all(inner);
+                    lv_obj_set_size(inner, 38, 38);
+                    lv_obj_set_pos(inner, 191, 60); /* 同心 (210,79) */
+                    lv_obj_set_style_radius(inner, LV_RADIUS_CIRCLE, 0);
+                    lv_obj_set_style_border_width(inner, 2, 0); /* 内圈 2px 细实线 */
+                    lv_obj_set_style_border_color(inner, lv_color_hex(KSY_COLOR_INK), 0);
+                    lv_obj_set_style_border_opa(inner, LV_OPA_COVER, 0);
+                    lv_obj_set_style_bg_opa(inner, LV_OPA_TRANSP, 0);
+                    lv_obj_clear_flag(inner, LV_OBJ_FLAG_SCROLLABLE);
+                    /* 中心实心五角星（★ = U+2605 实心星；20px 标题字体填充内圈）。 */
+                    ksy_label_font(scr, "★", 201, 68, KSY_COLOR_INK,
+                                   kidpal_font_title());
+                }
             }
             /* 「星星记录本」标题（徽章下方标题带, 居中 20px；缺字经 fallback 链回退）。 */
             ksy_label_font(scr, "星星记录本", 150, 148, KSY_COLOR_INK, kidpal_font_title());
@@ -1682,6 +1708,28 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
                 snprintf(buf, sizeof(buf), "×%d", kidpal_story_counter(list));
                 ksy_label(scr, buf, 344, 8, KSY_COLOR_INK);
             }
+            /* 小伴右侧探头（brief §5 / :132 / V9 母版: 书封右沿外留 8px 缝、不压叠）:
+             * 复用 pose_daily_96 全姿态（96x96, 内容 bbox 74x83），等比缩绘 205/256
+             * (≈0.80 -> 内容 ~59x66)，pivot 置左上后落位，使内容左缘落 x≈318
+             * (= 书封右沿 310 + 8px 缝)、顶缘落 y≈161——对齐母版 bbox 318..378 / 161..227。
+             * 资产不可用静默降级（host 无 art 挂载 = 不画, 不崩；不硬造占位猫脸）。 */
+            {
+                const lv_image_dsc_t *cat = kstory_pose_dsc("pose_daily_96.bin");
+                if (cat != NULL) {
+                    lv_obj_t *ci = lv_image_create(scr);
+                    lv_image_set_src(ci, cat);
+                    lv_image_set_pivot(ci, 0, 0);
+                    lv_image_set_scale(ci, 205);
+                    lv_obj_set_pos(ci, 312, 152);
+                }
+            }
+            /* 角落涂鸦点缀（brief §3.1④ 装饰件, 非文字/说明; V9 母版左下云 + 左上「+」）:
+             * 左下云 = doodle_cloud_52 资产（内容左缘落 x≈55 / 顶缘 y≈207, 对齐母版）;
+             * 左上「+」= 原生十字两笔（母版 bbox 68..79 / 48..59）。均属装饰, 不进任何
+             * 验收断言带本体——只作封皮气氛, 不动书封/标题/星徽/计数的既有几何。 */
+            ksy_art_image(scr, "doodle_cloud_52.bin", 96, 96, 48, 199);
+            ksy_box(scr, 68, 52, 12, 3, KSY_COLOR_INK); /* 「+」横笔 */
+            ksy_box(scr, 72, 48, 3, 12, KSY_COLOR_INK); /* 「+」竖笔 */
             break;
         }
         case KSTORY_PAGE_STAMP: {
