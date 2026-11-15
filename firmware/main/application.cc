@@ -1332,6 +1332,16 @@ void Application::HandleStateChangedEvent() {
                         selected_id = cand;
                     }
                 }
+                /* K5 封皮普通问答语境（261104-k5-story-cover-nav; S-F2.6-AC4 / 契约 §四）:
+                 * P4 封皮子态 -> source_page="story_cover"（front 闭集普通问答, 不切记录
+                 * 语境、不推 story_list）。列表子态仍为 "story" 记录语境（
+                 * kidpal_story_ctx_source_page 映射零改——[S1] 签名不动）。判据用会话页态
+                 * 镜像只读 getter（VOICE 前台时 kidpal_render_node_story_substate 恒 -1,
+                 * 不能用）。 */
+                if (pts_page == KP_PAGE_STORY &&
+                    kidpal_render_node_story_session_substate() == KSTORY_PAGE_COVER) {
+                    source_page = "story_cover";
+                }
                 protocol_->SendKidpalSessionCtx(source_page, selected_id);
             }
 

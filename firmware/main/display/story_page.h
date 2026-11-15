@@ -82,7 +82,13 @@ typedef enum {
      * 「整理期间以思考态盖住延迟」的页态载体，docs/ui/V7/state-organizing）——
      * 非交互过渡态：KEY／BOOT 均不响应；离态 = story_text 到达（既有渲染路径）。
      * seam 权威 = record_dialogue_guide.acceptance.c 文件头 [G2]/[G4]。 */
-    KSTORY_PAGE_ORGANIZING = 6
+    KSTORY_PAGE_ORGANIZING = 6,
+    /* additive 尾部追加（TaskPackage 261104-k5-story-cover-nav; 冻结数值 = 7）:
+     * 故事封皮子页态（requirements v1.71 S-F2.6 故事封皮与分层导航）——封皮是
+     * KP_PAGE_STORY 的一个子态（s_local_page 全程 KP_PAGE_STORY，四点页点第 4 实心 +
+     * 页循环在模块内断开自然成立）；列表/阅读是其子页。逐层返回：阅读→列表→封皮→
+     * 首页。seam 权威 = story_cover_nav.acceptance.c 文件头 [C1]。既有值零改（0..6）。 */
+    KSTORY_PAGE_COVER = 7
 } kidpal_story_page_t;
 
 typedef struct {
@@ -144,7 +150,14 @@ typedef enum {
      * seam [G3]）: RECORDING+rec_substate=1 引导播报中 KEY 短/长按——打断引导播报、
      * 回常规录音聆听（消费方 = mcp_server StoryDispatchAct -> AbortSpeaking + 继续聆听;
      * 页态保持 RECORDING、子态复位 0、零 cancel/归档副作用）。 */
-    KSPV2_ACT_INTERRUPT_GUIDE = 12
+    KSPV2_ACT_INTERRUPT_GUIDE = 12,
+    /* additive 尾部追加（TaskPackage 261104-k5-story-cover-nav; 冻结数值 = 13/14;
+     * seam 权威 = story_cover_nav.acceptance.c 文件头 [C3]）: 封皮/列表层间导航——
+     *   COVER_OPEN = 13: 封皮 KEY 短按 -> 进列表（输入函数并置 page = LIST）;
+     *   COVER_BACK = 14: 列表 KEY 长按 -> 回封皮（输入函数并置 page = COVER）。
+     * 不复用 GLOBAL 表达「回封皮」（逐层返回需区分「回上一层」与「回首页」）。 */
+    KSPV2_ACT_COVER_OPEN = 13,
+    KSPV2_ACT_COVER_BACK = 14
 } kidpal_story_act_t;
 
 /* ---- ⑥ 空态文案单源（notes 边角③: 列表态空态渲染入口两处——story_page.c 与
@@ -181,6 +194,13 @@ int kidpal_story_text_parse(const char *data_json, kidpal_story_text_t *out);
 
 /* ---- 视图与输入 (seam [K1]) ---- */
 int kidpal_story_view_init(kidpal_story_view_t *v, const kidpal_story_list_t *list);
+/* restore 缓存装载（TaskPackage 261104-k5-story-cover-nav; seam 权威 =
+ * story_cover_nav.acceptance.c 文件头 [C5]）: 只装 count / counter(=counter(list)) /
+ * screens / 影子 id（s_ksy_item_ids）+ cursor 钳制到 [0, count-1]（count==0 -> 0）;
+ * **page / rec 子态 / 盖章字段零触碰**（restore 帧只填缓存不导航、活动子态零重置,
+ * TECH-261022 churn 防线；非 restore 完整帧 = list_load + page=COVER 由调用方置）。
+ * NULL v 或 NULL list -> -1（调用方降级, 不盲装）; 成功 -> 0。 */
+int kidpal_story_list_load(kidpal_story_view_t *v, const kidpal_story_list_t *list);
 int kidpal_story_page_input(kidpal_story_view_t *v, key_id_t key, key_gesture_t g);
 int kidpal_story_on_control(kidpal_story_view_t *v, int ctrl_action);
 

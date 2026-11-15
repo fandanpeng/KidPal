@@ -644,11 +644,13 @@ async def _push_story_list(websocket, restore: bool = False) -> None:
     （total=现存篇数 + items 最新 ≤16 窗口），本缝只做接线、不重算。front 自推不经 relay
     （Q7 天然豁免——直调 _push_display_payload，与引擎侧 build_display_tool_calls 无关）。
 
-    restore（契约 §1.3③ D1 生产纪律）：仅 WS 建连恢复推送路径传 restore=True——下行
-    data 带 `restore: true`（板端 restore 分流载体：只填 RAM 列表缓存、不接管前台、P3
-    在屏仅重绘本页）；②归档后（:573 一带）/③删除后（:223）的主动推送缺省 restore=False
-    ——下行 data **不带** restore 键（契约缺省语义：absent 或显式 false 设备行为完全
-    一致，主动展示接管前台既有行为零偏移）。"""
+    restore（契约 §1.3③ D1 生产纪律；K5 261104-k5-story-cover-nav 收口）：后台数据更新
+    三时点（WS 建连恢复 / 归档成功后 / 删除执行后）恒传 restore=True——下行 data 带
+    `restore: true`（板端 restore 分流载体：只填 RAM 列表缓存、不接管前台、P3 在屏仅重绘
+    本页；活动子态零重置）。**离页导航帧例外**（归档失败补的故事列表页面退出帧，见
+    _story_finish_session:1728 一带）保持 restore=False——该帧是「把设备从困死的整理态
+    带回列表」的导航帧, 不是后台数据更新, 翻 true 设备只填缓存不接管前台 -> 困死复现
+    （human 2026-11-15 裁定「离页导航帧例外」）。"""
     payload = gw_story.list_stories(STORIES_DIR)
     if restore:
         payload["data"]["restore"] = True
@@ -709,6 +711,31 @@ def _expand_points_nav_intent(payload) -> "dict | None":
     except Exception as e:  # noqa: BLE001 — state 读失败不炸中继（原样交机械门降级）
         log.warning("points_nav_expand_err corr_id=%s view=%s err=%s",
                     gw_mcp.corr_id(), view, type(e).__name__)
+        return None
+
+
+def _expand_story_nav_intent(payload) -> "dict | None":
+    """「打开故事」导航薄载荷 -> front 截获展开为完整 story_list 帧（进封皮）。
+
+    契约 §1.3③/§1.5 生产纪律（2026-11-15 增认 `data:{}` 导航薄载荷；TaskPackage
+    261104-k5-story-cover-nav / D-08）：显式「打开故事」只发
+    `{"view":"story_list","data":{}}`；完整载荷由 front 依据 story.py 现算产生。
+    展开帧**不带 restore**（显式打开 = 主动展示，进场帧 -> 设备进封皮 S-F2.6-AC4；
+    restore 帧只填缓存不导航）。其它形状返回 None，原样走既有 relay 链交 display_schema
+    机械门裁决。展开结果 = front 机械产物（build_display_tool_calls 置 front_expanded），
+    不经引擎侧单源降级（Q7 判据 `and not front_expanded`）。
+    """
+    if not isinstance(payload, dict):
+        return None
+    if payload.get("view") != "story_list":
+        return None
+    if payload.get("data") != {}:
+        return None
+    try:
+        return gw_story.list_stories(STORIES_DIR)  # 完整帧（total + items 最新 ≤16 窗口）
+    except Exception as e:  # noqa: BLE001 — 读列表失败不炸中继（原样交机械门降级）
+        log.warning("story_nav_expand_err corr_id=%s err=%s",
+                    gw_mcp.corr_id(), type(e).__name__)
         return None
 
 
@@ -1020,7 +1047,7 @@ async def _consume_kidpal_control(session_id, obj, websocket, upstream=None) -> 
                     log.warning("story_record_ctx_inject_err err=%s", type(e).__name__)
             if ctx_push_edge:
                 try:
-                    await _push_story_list(websocket)  # ①恢复 = 引导态会话建立同拍
+                    await _push_story_list(websocket, restore=True)  # ①恢复 = 引导态会话建立同拍（K5: restore:true 只填缓存不导航）
                 except Exception:  # noqa: BLE001 — 推送失败不阻断 ctx 拦截消费
                     log.warning("story_ctx_push failed session_id=%s (ctx 拦截语义优先)",
                                 session_id)
@@ -1044,7 +1071,7 @@ async def _consume_kidpal_control(session_id, obj, websocket, upstream=None) -> 
         return True
     if mtype == "kidpal_story_delete":
         gw_story.delete_story(STORIES_DIR, obj.get("id"), corr_id=session_id)
-        await _push_story_list(websocket)  # 删除执行后重推对账（三时点③）
+        await _push_story_list(websocket, restore=True)  # 删除执行后重推对账（三时点③; K5: restore:true 只填缓存不导航）
         return True
     if mtype == "kidpal_points_delete":
         # 契约 §四 kidpal_points_delete（2026-11-04 LANDED；K2D-A1）：设备按键确认后
@@ -1470,6 +1497,14 @@ def build_display_tool_calls(blocks: list) -> list:
                 if expanded_points is not None:
                     payload = expanded_points
                     front_expanded = True
+                else:
+                    # story_list 导航薄载荷截获展开（契约 §1.3③/§1.5；S-F2.6-AC4）：
+                    # 恰 `{"view":"story_list","data":{}}` 由 front 依据 story.py 现算展开为
+                    # 完整非 restore 帧（显式「打开故事」= 主动展示进封皮）。
+                    expanded_story = _expand_story_nav_intent(payload)
+                    if expanded_story is not None:
+                        payload = expanded_story
+                        front_expanded = True
         if payload is not None:
             # front 展开的完整 points 帧即 front 机械产物，走自推通路语义（self_push）
             # ——积分来源门禁不放行引擎侧完整帧，但不得自拒 front 自己的展开结果。
@@ -1482,7 +1517,7 @@ def build_display_tool_calls(blocks: list) -> list:
             # 积分来源门禁（契约 §1.5，K0PTS-A3）由 display_schema 承载：引擎侧完整
             # points 帧在 validate_display 被拒，走下方同款友好 text 降级（front 展开的
             # 完整帧带 self_push 语义，不落此分支）。
-            if payload.get("view") in _STORY_SINGLE_SOURCE_VIEWS:
+            if payload.get("view") in _STORY_SINGLE_SOURCE_VIEWS and not front_expanded:
                 display = _display_wire_arguments(
                     _friendly_downgrade_view("story_single_source"))
             else:
@@ -1736,7 +1771,7 @@ async def _story_finish_session(session_id, acc, legs) -> "dict | None":
     for device_ws, _engine_ws in list(legs):
         try:
             await _push_display_payload(device_ws, gw_story.story_text(record))
-            await _push_story_list(device_ws)
+            await _push_story_list(device_ws, restore=True)  # 三时点② 归档成功（K5: restore:true 只填缓存不导航）
         except Exception as e:  # noqa: BLE001 — 单腿失败不连坐其它腿
             log.warning("story_finish_push_err corr_id=%s err=%s",
                         session_id, type(e).__name__)

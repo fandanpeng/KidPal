@@ -987,6 +987,13 @@ bool StoryDispatchAct(int act) {
              * 落屏（cache_story + refresh_story, 前台保持 LOCAL_PAGE、页点可见）。 */
             ScheduleStoryRender();
             return true;
+        case KSPV2_ACT_COVER_OPEN:
+        case KSPV2_ACT_COVER_BACK:
+            /* 封皮/列表层间导航（K5 逐层返回; S-F2.6-AC2/AC3）: 页态变更已由输入函数
+             * 就地完成（COVER_OPEN: page->LIST 进列表; COVER_BACK: page->COVER 回封皮）
+             * ——本地导航路径落屏（前台保持 LOCAL_PAGE、页点可见）。 */
+            ScheduleStoryRender();
+            return true;
         case KSPV2_ACT_STOP_RECORD:
             /* K3 [S5]: KEY 兜底收尾（短按 & 长按同义, v1.47 防毁稿）= 收尾保存——
              * 调 Application StopListening 面（MAIN_EVENT_STOP_LISTENING ->
@@ -1524,6 +1531,18 @@ void McpServer::EmitRenderReceipt(const std::string& business_id) {
 }
 
 
+void McpServer::StoryEnterCover() {
+    /* K5 封皮入口 reset（261104-k5-story-cover-nav; S-F2.6-AC1; human 2026-11-15 裁定
+     * = 板级 BOOT 钩子）。置封皮子态并经主任务同步渲染节点缓存（list/text 传 nullptr
+     * ——不改缓存数据与送达标志: 数据未达时封皮不画计数）。随后板级 cycle_next 以该
+     * 封皮态渲染 P4。 */
+    g_story_view.page = KSTORY_PAGE_COVER;
+    Application::GetInstance().Schedule([]() {
+        kidpal_render_node_cache_story(&g_story_view, nullptr, nullptr);
+    });
+}
+
+
 bool McpServer::HandleStoryKey(key_id_t key, key_gesture_t g) {
     /* 页内特例优先消费（spec §4.0「页内特例」列; seam [K1] v1.47 矩阵）：把 KEY/BOOT
      * 手势交进冻结消费面 kidpal_story_page_input，按其返回动作码驱动页态。页不拥有
@@ -1929,18 +1948,30 @@ void McpServer::AddCommonTools() {
                         }
                     }
                     {
+                        /* K5 story_list 共享帧消费（261104-k5-story-cover-nav; plan D /
+                         * 契约 §1.3③ D-07）: restore 帧只填缓存不导航（活动子态零重置——
+                         * 旧实现无条件 kidpal_story_view_init 会把 READER/STAMP/DELETE/
+                         * RECORDING/ORGANIZING 重置成 LIST, 放大 TECH-261022 churn）;
+                         * 非 restore 完整帧 = 进场帧进封皮（S-F2.6-AC4 语音「打开故事」
+                         * 不跳列表）。list_load 只装缓存、page 零重置。 */
                         bool was_delete = (g_story_view.page == KSTORY_PAGE_DELETE);
-                        kidpal_story_view_init(&g_story_view, parsed.get());
+                        bool story_restore = mcp_json_get_bool(data, "restore");
+                        (void)kidpal_story_list_load(&g_story_view, parsed.get());
                         g_story_list = *parsed;
                         if (stamp_hold) {
+                            /* list_load 不触碰盖章字段; 显式保持 STAMP 驻留原值。 */
                             g_story_view.page = KSTORY_PAGE_STAMP;
                             memcpy(g_story_view.last_saved_id, hold_saved_id,
                                    sizeof(hold_saved_id));
                             g_story_view.stamp_serial = hold_stamp_serial;
+                        } else if (!story_restore) {
+                            /* 非 restore 完整帧 = 进场帧 -> 进封皮（S-F2.6-AC4）。 */
+                            g_story_view.page = KSTORY_PAGE_COVER;
                         }
                         if (was_delete) {
-                            /* 云端重推到达时删除覆盖层仍在前台 -> view_init 已把页态
-                             * 重装回 LIST; 覆盖层随之关层（回列表, 不留幽灵弹窗）。 */
+                            /* 删除后重推到达时删除覆盖层仍在前台 -> list_load 不改页态;
+                             * 显式关层回列表（不留幽灵弹窗）。删除离页语义 = LIST。 */
+                            g_story_view.page = KSTORY_PAGE_LIST;
                             app.Schedule([]() {
                                 kidpal_render_node_dismiss_front_overlay();
                             });
