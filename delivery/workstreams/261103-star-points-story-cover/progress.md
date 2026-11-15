@@ -128,3 +128,15 @@
 **human 遗留项**：① 列车级真机 + 真实 QQ 联合收口轮仍归主线程另组织（K5 只收导航并集）；② 远程发布仍归主线程/human；③ K3 歧义删除观察项未闭环（按 human 裁继续观察）。
 
 **教训留根（K4 pod-retro 转入 K5 intake）**：预算按次数量级给；冻结件跨用例一致性自检；manifest 含生成件须对照命名律；acceptance-coverage 闸不认 Unity 断言（沿 K2/K4 先例补真实守卫）。
+
+## 2026-11-15 · K5 离线收口（真机轮待设备窗；supervisor ESCALATE）
+
+**launch 面**：复用池树 `C:/AI/KidPal-pod-m2`；base ref `03630b65`；LP13 核销（K2 @`76ed332e`、K4 @`b8c53b89` 均 merged）。基线锚现跑：server 447 passed / 0 failed；host 292 Tests / 3 Failures（3 红全 p1_auxbar 存量族）。
+
+**设计与裁定**：Step 1g ARCH-ADVISORY 预评 → 封皮落 `story_page.c` 子态（`KSTORY_PAGE_COVER=7`，不建 story_cover.c），front 五调用点三处翻 `restore:true`、薄载荷口按已 landed 契约落地。human 2026-11-15 两项裁定：① 归档失败离页帧（`front_app.py:1728`）保持 `restore=False`，按「离页导航帧」例外处理 + 留痕 + ARQ 建议契约措辞排除；② BOOT 从 P3 进 P4 的封皮入口 reset 走**板级 BOOT 钩子**（`waveshare-s3-rlcd-4.2.cc` → `McpServer::StoryEnterCover`）。扩单一件：`firmware/main/mcp_server.h`（architect APPROVE，公有方法声明必须落头文件）。
+
+**离线证据**：冻结验收 11 条（KCN-C1..C5/C9/C10 + C6/C7/C8）+ 六件既有冻结件重锚；变异证据 10/10（每条 turnedRed / sensitive / restored 三真，实现面 zero-diff）；scoped round 2 8/8 全绿（invocationId `cb331f8a…`）；final 承重轮 r3 10 闸全跑零 skip（`unit` 182 passed、`acceptance` server 90 passed + 固件面 12 件、`firmware-build` 真编译 xiaozhi.bin，invocationId `8a33b02c…`，verifier-evidence-check factOk）；host 独立复跑 301 Tests / 3 Failures（零新增红）。
+
+**收口与门**：docs-delta 零 canonical 变更（requirements v1.71 / architecture / contracts 全零 diff）；closeout-check `--update-index` ok（INDEX +1 closed）；integrator commit `d6cb9ad8`。`supervisor-verdict-gate` = **ESCALATE**（riskTier high 结构性，evidenceComplete=true，completedRounds=3）。`pre-merge-escalation-gate` = **BLOCK**（`device-round-evidence-missing` + high + ESCALATE），属预期。
+
+**未跑 / 下一步**：① **K5S-E4 真机轮未跑**——BOOT 四页并集、封皮→列表→阅读逐层返回、封皮观感 design review（含「封皮未含小伴」偏差项）、语音「打开故事」端到端、restore 不抢前台真实时序（含 READER/RECORDING 驻留多一次基层重绘的闪帧观察）、**归档失败离页帧落封皮**的观感确认、删除/盖章计数并集；② 合并前置 = 人批 + `device-round-evidence.md` 逐 ref（S-F2.6-AC1..AC4）PASS；③ K5S-E5 跨包联合收口（整列车真机 + 真实 QQ）归主线程；④ 远程发布与 K4 ECS 部署轮归主线程；⑤ K3 歧义删除观察项仍在观察。pod-retro 已落（5 条教训，含 acceptance-coverage 标记形态与冻结件跨用例残留两次同族）。
