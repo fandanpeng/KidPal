@@ -342,6 +342,7 @@ def _seed(stories_dir: Path, n: int):
 # C6 — display_schema 放行薄载荷 + 畸形仍拒 + 白名单零扩 + front 截获展开      #
 # ========================================================================== #
 
+# coverage: C6 — display_schema 放行薄载荷 + 畸形仍拒 + 白名单零扩 + front 展开非 restore 完整帧
 class StoryCoverThinPayloadFloor(unittest.TestCase):
     """coverage: S-F2.6 — story_list `data:{}` 导航薄载荷只进封皮（契约 §1.3③ / §1.5）。"""
 
@@ -413,6 +414,7 @@ class StoryCoverThinPayloadFloor(unittest.TestCase):
 # C7 — 五调用点 restore 判定（D-07 / 契约 §1.3③ 生产纪律）                       #
 # ========================================================================== #
 
+# coverage: C7 — 五调用点 restore 判定（ctx/删除/归档成功翻 true; WS 建连保持 true; 归档失败离页帧 False）
 class StoryListRestoreCallSites(unittest.TestCase):
     """coverage: S-F2.6-AC1 / S-F2.6-AC4 — 后台推送恒 restore:true; 离页导航帧例外 False。"""
 
@@ -529,6 +531,7 @@ class StoryListRestoreCallSites(unittest.TestCase):
 # C8 — 语境三分（契约 §四 kidpal_session_ctx; D-08）                            #
 # ========================================================================== #
 
+# coverage: C8 — 语境三分（story_cover 普通问答 / story 记录语境 / 未知 source_page 拒绝并 warning）
 class SessionCtxThreeWay(unittest.TestCase):
     """coverage: S-F2.6-AC4 — story_cover 普通问答 / story 记录语境 / 未知值拒绝。"""
 

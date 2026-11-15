@@ -593,6 +593,7 @@ static void kcn_view_cover(kidpal_story_view_t *v, const kidpal_story_list_t *l)
  * ========================================================================== */
 /* coverage: S-F2.6-AC1 -- 封皮四件（书封/标题/星星计数/键帽）+ 四点第4实心 */
 /* coverage: S-F2.6 -- 故事封皮与分层导航（主承载 AC1 四件） */
+/* coverage: KCN-C1 */
 TEST_CASE("story_cover_nav: 封皮四件+四点第4实心+键帽 (KCN-C1)",
           "[story_cover_nav][KCN-C1][behavior]")
 {
@@ -696,6 +697,7 @@ TEST_CASE("story_cover_nav: 封皮四件+四点第4实心+键帽 (KCN-C1)",
 /* coverage: S-F2.1-AC5 -- 封皮计数数据已送达如实显示（含 ×0） */
 /* coverage: S-F2.1-AC6 -- 封皮计数数据未达不显示（不显 ×0 误导） */
 /* coverage: S-F2.6 -- 封皮计数两态与列表同型判据 */
+/* coverage: KCN-C2 */
 TEST_CASE("story_cover_nav: 封皮计数两态 (KCN-C2)",
           "[story_cover_nav][KCN-C2][behavior][structural]")
 {
@@ -775,6 +777,7 @@ TEST_CASE("story_cover_nav: 封皮计数两态 (KCN-C2)",
 /* coverage: S-F2.6-AC3 -- 列表 KEY 长回封皮（逐层返回一层） */
 /* coverage: S-F2.1-AC2 -- 列表 KEY 长按路径随封皮下沉改逐层（不再一步到家） */
 /* coverage: S-F2.6 -- 手势矩阵封皮/列表/阅读三行 */
+/* coverage: KCN-C3 */
 TEST_CASE("story_cover_nav: 手势矩阵 COVER/LIST/READER (KCN-C3)",
           "[story_cover_nav][KCN-C3][behavior]")
 {
@@ -857,6 +860,7 @@ TEST_CASE("story_cover_nav: 手势矩阵 COVER/LIST/READER (KCN-C3)",
 /* coverage: S-F2.6-AC3 -- 阅读→列表→封皮→首页逐层返回, 每按一次只上一层 */
 /* coverage: S-F2.6-AC1 -- 首翻 P4 见封皮（板级 BOOT 入口 reset 结构锚） */
 /* coverage: S-F2.6 -- 页态序列 */
+/* coverage: KCN-C4 */
 TEST_CASE("story_cover_nav: 页态逐层返回序列 (KCN-C4)",
           "[story_cover_nav][KCN-C4][behavior][structural]")
 {
@@ -921,6 +925,7 @@ TEST_CASE("story_cover_nav: 页态逐层返回序列 (KCN-C4)",
 /* coverage: S-F2.6-AC4 -- 语音「打开故事」= 非 restore 完整帧进封皮（不跳列表） */
 /* coverage: S-F2.1-AC6 -- restore 只填缓存（冷启动恢复口径, 不抢前台） */
 /* coverage: S-F2.6 -- restore 三态 */
+/* coverage: KCN-C5 */
 TEST_CASE("story_cover_nav: restore 三态与缓存装载 (KCN-C5)",
           "[story_cover_nav][KCN-C5][behavior][structural]")
 {
@@ -1024,6 +1029,7 @@ TEST_CASE("story_cover_nav: restore 三态与缓存装载 (KCN-C5)",
  * RED today: 资产缺、白名单缺项、slots=7。
  * ========================================================================== */
 /* coverage: S-F2.6 -- 书封与 ic-coin 走既有资产管线（D-09） */
+/* coverage: KCN-C9 */
 TEST_CASE("story_cover_nav: ic_coin 资产与产线白名单 (KCN-C9)",
           "[story_cover_nav][KCN-C9][asset][structural]")
 {
@@ -1114,6 +1120,7 @@ TEST_CASE("story_cover_nav: ic_coin 资产与产线白名单 (KCN-C9)",
 /* coverage: S-F2.3 -- 回看记录回归 */
 /* coverage: S-F2.4-AC2 -- 删除同步减计数回归 */
 /* coverage: S-F2.1 -- 看星星记录本列表回归锚 */
+/* coverage: KCN-C10 */
 TEST_CASE("story_cover_nav: 回归锚+登记序 (KCN-C10)",
           "[story_cover_nav][KCN-C10][behavior][structural]")
 {

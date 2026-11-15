@@ -172,3 +172,24 @@ COVER_BACK=14；`kidpal_story_list_load(v,list)`（只填缓存、page 零重置
   KCN-C4 的逐层序列是刻意状态推进（每步断言 page 期望值）；chrome_ghost CG-A2 与
   keybar KB-A3 迁入断言均为纯函数参数驱动、无共享页态；RSL-A10 为源码切片区断（无状态）。
   未发现其它同族「tooth 间状态残留」隐患。
+
+## 9. 验收覆盖标记补齐（2026-11-15，acceptance-coverage 闸红回派）
+
+- **触发**：`verify.mjs --phase=scoped` 的 `acceptance-coverage` 闸红，`missingCoverage` =
+  KCN-C1…C5、KCN-C9、KCN-C10、C6、C7、C8。根因 = 闸判据 `hasCoverageMarker()` 只认紧随
+  `coverage:` / `covers:` / `@coverage` 之后的**字面 id**（`(?:coverage|covers|@coverage)\s*:?\s*<id>\b`）；
+  原文件仅有 `coverage: S-F2.6-AC1 -> KCN-C1` 指向式写法与 TEST_CASE 名里的 `(KCN-C1)`，均不匹配。
+- **动作（纯追加注释，断言语义/实现零改）**：
+  - `firmware/main/test/story_cover_nav.acceptance.c`：在 7 个对应 TEST_CASE 上方注释块内各加一行——
+    `/* coverage: KCN-C1 */`、`/* coverage: KCN-C2 */`、`/* coverage: KCN-C3 */`、`/* coverage: KCN-C4 */`、
+    `/* coverage: KCN-C5 */`、`/* coverage: KCN-C9 */`、`/* coverage: KCN-C10 */`。
+  - `server/acceptance/test_story_cover_nav.acceptance.py`：三个测试类上方各加一行
+    `# coverage: C6` / `# coverage: C7` / `# coverage: C8`（Python 语法合法）。
+- **复跑**：
+  - `node .claude/scripts/acceptance-coverage-check.mjs delivery/taskpackages/261104-k5-story-cover-nav/taskpackage.json`
+    → `ok: true`（exit 0，10 个 id 全绿，structural/suiteGates 均空）；无其它缺项。
+  - host 全量：`espidf_wsl.sh build` 编译绿（error 零，仅既有 truncation warning）→
+    `host_infra_test.elf` `301 Tests 3 Failures 0 Ignored`，3 红全为 p1_auxbar 存量族。
+  - server：`pytest -q --import-mode=importlib -m "not live" server/acceptance` →
+    `457 passed, 9 deselected, 33 subtests passed`。
+- 未提交（planner 代提）。

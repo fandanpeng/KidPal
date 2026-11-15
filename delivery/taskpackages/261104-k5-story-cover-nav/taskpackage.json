@@ -62,8 +62,7 @@
     "KCN-C10: 回归锚（封皮计数只信 story_list.total / 删除同步减 / K0a 阅读键零回归 / 记录语境入口）+ host 登记序。回引 S-F2.1-AC1..AC7、S-F2.2-AC1、S-F2.3-AC1/AC2、S-F2.4-AC2、D-01。设计态红 = 登记序与新 seam 缺席",
     "C6: display_schema 放行 {\"view\":\"story_list\",\"data\":{}} 薄载荷 + 其余畸形仍拒 + 白名单零扩（无 story_cover view）+ front _expand_story_nav_intent 展开为非 restore 完整帧且 Q7 不误杀自展帧。回引 S-F2.6（契约 §1.3③/§1.5）。设计态红 = 薄载荷口与展开 seam 缺席",
     "C7: 五调用点 restore 判定（ctx 建立 / 删除后 / 归档成功翻 true；WS 建连保持 true；归档失败离页帧保持 False = human 2026-11-15 裁定「离页导航帧例外」）。回引 S-F2.6-AC1/AC4、D-07。设计态红 = 三处未翻 true",
-    "C8: 语境三分（story_cover 普通问答不 acc.start / 不推 story_list / 不注记录信号；story 列表仍记录语境；未知 source_page 拒绝并 warning）。回引 S-F2.6-AC4（契约 §四）。设计态红 = story_cover 语境未接线",
-    "重锚件（本批冻结面）：story_page_v2（LIST KEY 长按 GLOBAL→COVER_BACK，view_init page==LIST 语义不变）+ keybar_three_slot（P4 页槽行改「打开/下一页」+ 新增 LIST 子态键帽行）+ record_session_live（[S1] 签名不动，补 story_cover 结构齿 RSL-A10）+ chrome_ghost（过渡窗在途集补 LIST）+ server M4K1（时点②③ restore 翻 true）+ server M4K3（恰一帧语义不变，补 restore=True）"
+    "C8: 语境三分（story_cover 普通问答不 acc.start / 不推 story_list / 不注记录信号；story 列表仍记录语境；未知 source_page 拒绝并 warning）。回引 S-F2.6-AC4（契约 §四）。设计态红 = story_cover 语境未接线"
   ],
   "acceptanceTestsFile": [
     "firmware/main/test/story_cover_nav.acceptance.c",
