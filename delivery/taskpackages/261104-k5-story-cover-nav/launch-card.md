@@ -25,9 +25,9 @@
 - **跨包串行**：K4→K5 共用资产管线；K4 已产场景资产并合并，本包后序补 `ic-coin` 与书封——生成器、资产清单和生成件不得整文件重生成（K4 已有「纯追加 + 其余还原」先例）。
 - **验证形态申报（机器消费行，闸按顶格前缀解析）**：
 
-验证形态申报（JSON）：{"schemaVersion":1,"precedents":{},"deviceOutcome":{"userVisible":true,"acceptanceRefs":["S-F2.6-AC1","S-F2.6-AC2","S-F2.6-AC3","S-F2.6-AC4"],"hostUncompilablePaths":["firmware/main/display/kidpal_render_node.cc"],"reason":"封皮层、P4 子页层级与逐层返回落在设备渲染面（render_node/story_page），host 不可编；K5S-E4 真机导航并集轮逐项看屏"}}
+验证形态申报（JSON）：{"schemaVersion":1,"precedents":{},"deviceOutcome":{"userVisible":true,"acceptanceRefs":["S-F2.6-AC1","S-F2.6-AC2","S-F2.6-AC3","S-F2.6-AC4"],"hostUncompilablePaths":["firmware/main/display/kidpal_render_node.cc","firmware/main/mcp_server.cc","firmware/main/application.cc","firmware/main/display/lcd_display.cc","firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc"],"reason":"封皮层、P4 子页层级、逐层返回与板级 BOOT 封皮入口钩子落在设备渲染面（render_node/story_page/lcd_display/board），host 不可编；K5S-E4 真机导航并集轮逐项看屏"}}
 
-  - **Step 1g 校准义务**：申报的 host 不可编路径必须实际出现在本包合并 diff 中（闸判 `device-outcome-path-not-in-diff`）。Step 1g 预评实读后若确定封皮实现不触 `kidpal_render_node.cc`，planner 必须以实际触达的登记路径（`firmware/main/mcp_server.cc` / `firmware/main/application.cc` / `firmware/main/display/lcd_display.cc`）改写本行并留痕。真机轮证据 = `device-round-evidence.md` 机器消费行，每个申报 ref 须有 PASS 目击。
+  - **2026-11-15 human 裁定（入口 reset）**：BOOT 从 P3 翻进 P4 的「必须看到封皮」reset 走**板级 BOOT 钩子**（`firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc` 的 PAGE_NEXT 分支判当前页 = P3 时调 McpServer 新缝），故本行按预估 diff 申报五个设备 TU；该路径命中 `verify-gates.deviceOutcomeGate.hostUncompilablePrefixes`（`firmware/main/boards/`）。Step 1g 后若实际 diff 集变化，planner 以实际触达集改写本行并留痕（闸判 `device-outcome-path-not-in-diff` 的兜底面 = 至少一个申报路径在 diff 中）。真机轮证据 = `device-round-evidence.md` 机器消费行，每个申报 ref 须有 PASS 目击。
 - **环境事实**：复用池树 `C:/AI/KidPal-pod-m2`（常驻分支 `dev/pod-m2` = `03630b65`）；专属图索引 `C-AI-KidPal-pod-m2` ready（2026-11-15 实查，22215 节点 / 66109 边）。
 - **固件严格模式默认开**：VERIFY_FW_BUILD_REQUIRED=1（无关闭留痕即开，此声明行随卡走不得省；final 相位恒跑真编译）。
 - **会话标识**：VS Code 扩展会话内联 planner（2026-11-15 起；点火后回填 pid / 终端标识）。
