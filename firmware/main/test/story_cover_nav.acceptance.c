@@ -919,6 +919,13 @@ TEST_CASE("story_cover_nav: 页态逐层返回序列 (KCN-C4)",
  *   tooth 3 行为: 畸形帧降级——kidpal_story_list_parse("{}")==-1、NULL==-1。
  *   tooth 4 结构: story 路由区改用 list_load + page=COVER, 且不再 view_init（旧实现
  *           无条件重装会把活动子态重置成 LIST）。
+ *   tooth 5 结构（2026-11-15 真机轮回归）: 显式导航帧不被 VOICE 前台吞——story 路由区
+ *           gate 的 voice_front 参恒喂字面 0（导航帧不看 voice_front），且**不得**回喂
+ *           story_voice_front；story_nav_takeover 与录音态保护 KSTORY_PAGE_RECORDING
+ *           同区共现（到达时页态驱动, gate(0, RECORDING)==1 仍在）。
+ *           真机形态: front 已下发 `story_list_dispatch items=16 counter=19 degrade=false`，
+ *           板端却打 `story_list_gate defer_front page=7 voice_front=1 restore=0`——
+ *           VOICE 前台判据把显式导航帧吞成「只装缓存」、P4 永不切换。本 tooth 即防该形态复潮。
  * RED today: list_load weak 哨兵 -9999; 路由区仍 view_init。
  * ========================================================================== */
 /* coverage: S-F2.6-AC1 -- restore 帧只填缓存不导航 / 非 restore 完整帧进封皮 */
@@ -1016,6 +1023,46 @@ TEST_CASE("story_cover_nav: restore 三态与缓存装载 (KCN-C5)",
             kcn_fm("KCN-C5 RED: story 路由区仍调用 kidpal_story_view_init %d 处——"
                    "restore 必须从 view_init 重装改为只装缓存不导航（页态零重置）",
                    view_init_n));
+        free(region);
+    }
+
+    /* tooth 5（结构源锚代理 · 2026-11-15 真机轮回归）: 显式导航帧不被 VOICE 前台吞。
+     *   正锚: 路由区 gate 的 voice_front 参恒喂字面 0（kidpal_story_list_gate(0, ...)）——
+     *         导航帧判定不看 voice_front;
+     *   负锚: **不得**回喂 story_voice_front（kidpal_story_list_gate(story_voice_front,
+     *         ...) = 0 处）——真机缺陷形态（导航帧被 voice_front 吞）复潮的精确判别;
+     *   保护仍在: story_nav_takeover 与 KSTORY_PAGE_RECORDING 同区共现——接管判据由
+     *         到达时页态驱动, 录音演出页仍走 gate(0, RECORDING)==1 只装缓存（KCN-C3
+     *         决策表 / RSL-A7 gate 半）。gate 函数本体零改（RSL-A7 冻结）。
+     * 真机形态（22:11:39）: front 已下发非 restore 完整帧
+     *   `story_list_dispatch items=16 counter=19 degrade=false`，
+     * 板端却打 `story_list_gate defer_front page=7 voice_front=1 restore=0`——显式导航帧
+     * 被 VOICE 前台判据吞成「只装缓存」、P4 永不切换。语音「打开故事」时 voice_front 必为
+     * 1，故回喂 voice_front 会让 gate 恒判 defer = 本齿要拦的复潮形态。 */
+    {
+        char *region = kcn_region_between("firmware/main/mcp_server.cc",
+                                          "case VRT_ROUTE_STORY_LIST:",
+                                          "case VRT_ROUTE_STORY_TEXT:");
+        int fed_voice, nav_zero;
+        TEST_ASSERT_NOT_NULL_MESSAGE(region,
+            "KCN-C5 RED(infra): story 路由区锚漂移（真机回归齿）——须复核本断言锚");
+        fed_voice = kcn_count_in(region, "kidpal_story_list_gate(story_voice_front");
+        nav_zero = kcn_count_in(region, "kidpal_story_list_gate(0");
+        /* 负锚先判: 回喂即红, 直接对应「若有人把 story_voice_front 重新喂回 gate」。 */
+        TEST_ASSERT_TRUE_MESSAGE(fed_voice == 0,
+            kcn_fm("KCN-C5 RED: story 路由区仍把 story_voice_front 回喂 gate（%d 处）——"
+                   "导航帧被 voice_front 吞 = 2026-11-15 真机形态复潮（front 已下发 "
+                   "story_list_dispatch degrade=false, 板端仍 defer_front page=7 "
+                   "voice_front=1 restore=0, P4 永不切换）", fed_voice));
+        TEST_ASSERT_TRUE_MESSAGE(nav_zero >= 1,
+            "KCN-C5 RED: story 路由区无 kidpal_story_list_gate(0——显式导航帧未按"
+            "「不看 voice_front」判；导航帧被 voice_front 吞 = 2026-11-15 真机形态复潮");
+        TEST_ASSERT_TRUE_MESSAGE(strstr(region, "story_nav_takeover") != NULL,
+            "KCN-C5 RED: story 路由区无 story_nav_takeover——导航帧接管判据缺失或被"
+            "改写为按 voice_front 判（导航帧被 voice_front 吞 = 2026-11-15 真机形态复潮）");
+        TEST_ASSERT_TRUE_MESSAGE(strstr(region, "KSTORY_PAGE_RECORDING") != NULL,
+            "KCN-C5 RED: story 路由区无 KSTORY_PAGE_RECORDING——录音演出页保护随导航帧"
+            "接管改造被拆（录音态到达帧须仍只装缓存, 防 story_list 帧盖掉录音演出）");
         free(region);
     }
 }

@@ -2238,9 +2238,14 @@ TEST_CASE("story_page_v2: K3 gating 叠加+K2 零偏移+restore wire 容忍 (SLP
     KSPV2_REQUIRE_ROOT();
 
     /* ---- 结构半: K3 [S4] gating 与 K2 消费面零偏移（must-stay-green） ---- */
-    /* tooth 1: 路由区 K3 [S4] gating 消费 + KIDPAL_LAYER_VOICE 记录语境判据在世
-     * （restore=true 亦不得绕过「记录语境前台绝不推前台」——谓词形态承载, SLA3
-     * tooth 3 钉 == 判定; 本齿钉 gate 判据在世 = 叠加的前提）。 */
+    /* tooth 1: 路由区 K3 [S4] gating 消费 + KIDPAL_LAYER_VOICE 判据在世
+     * （本齿只钉「gate 消费 + VOICE 层值仍被读出」两符号在世 = 结构前提；判定不动）。
+     * 意图收窄（261104-k5-story-cover-nav 真机轮, 2026-11-15）: 原意图「VOICE 前台即
+     * defer」已按真机证据收窄——显式导航帧（非 restore 完整帧）不再被 VOICE 前台吞,
+     * gate 的 voice_front 参对导航帧恒喂 0（kidpal_story_list_gate(0, ...)）;
+     * voice_front 仍被读出并写入 gate 日志（story_list_gate defer_front ...
+     * voice_front=%d）, 故 KIDPAL_LAYER_VOICE 在世判据仍成立。录音演出页保护由
+     * gate(0, RECORDING)==1 承载（SLA3 tooth 3 / KCN-C5 tooth 5 决策表）。 */
     region = kspv2_region_between("firmware/main/mcp_server.cc",
                                   "VRT_ROUTE_STORY_LIST", "VRT_ROUTE_STORY_TEXT");
     TEST_ASSERT_NOT_NULL_MESSAGE(region,

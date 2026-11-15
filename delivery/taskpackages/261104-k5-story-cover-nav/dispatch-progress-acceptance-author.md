@@ -193,3 +193,39 @@ COVER_BACK=14；`kidpal_story_list_load(v,list)`（只填缓存、page 零重置
   - server：`pytest -q --import-mode=importlib -m "not live" server/acceptance` →
     `457 passed, 9 deselected, 33 subtests passed`。
 - 未提交（planner 代提）。
+
+## 10. 真机轮回归断言补钉（2026-11-15，acceptance-author 回派）
+
+- **缺口**：真机实证（22:11:39）front 已下发非 restore 完整帧
+  `story_list_dispatch items=16 counter=19 degrade=false`，板端却打
+  `story_list_gate defer_front page=7 voice_front=1 restore=0`——VOICE 前台判据把显式导航帧
+  吞成「只装缓存」, P4 永不切换。既有断言只查符号存在, 若有人把 `story_voice_front` 重新喂回
+  gate, 现有用例仍会全绿（无判别力）。
+- **补钉（折进 KCN-C5, 不新开 id）**：`firmware/main/test/story_cover_nav.acceptance.c` 的
+  KCN-C5 新增 tooth 5（:1029-1067）, 用与既有结构齿同款 `kcn_region_between` 切片,
+  对 `firmware/main/mcp_server.cc` 的 `case VRT_ROUTE_STORY_LIST:`→`case VRT_ROUTE_STORY_TEXT:`
+  区断言四件：
+  1. 负锚（先判）`kidpal_story_list_gate(story_voice_front` = 0 处（禁回喂; 回喂即红）；
+  2. 正锚 `kidpal_story_list_gate(0` >= 1 处（导航帧不看 voice_front）；
+  3. `story_nav_takeover` 在场；
+  4. `KSTORY_PAGE_RECORDING` 同区共现（录音演出页保护仍在; 到达时页态驱动, gate(0,RECORDING)==1）。
+  失败消息锚定「导航帧被 voice_front 吞 = 2026-11-15 真机形态复潮」。coverage 标记仍沿用既有
+  `/* coverage: KCN-C5 */`（无新 id, 不扩 mutation-check 证据面）。
+- **顺带注释意图收窄**：SLP-SLA4 tooth 1 的 `KIDPAL_LAYER_VOICE` 结构判据原注释意图
+  「VOICE 前台即 defer」已按真机证据收窄——只改注释意图说明, 判定/断言条件/测试逻辑一字未改
+  （文件 = `story_page_v2.acceptance.c`；派发单给的 `record_session_live.acceptance.c` 无 SLP-SLA4,
+  该 id 实落 story_page_v2, 见偏离 D5）。
+- **正向 PASS 证据**：host 全量 `301 Tests 3 Failures 0 Ignored`, KCN-C5 `:PASS`（注释意图改后
+  SLP-SLA4 亦 `:PASS`）, 3 红全为 p1_auxbar_style AB-A1/A2/A4 存量族（本包未触碰）。
+- **反向变红证据**：shade-root 复演——把 `kidpal_story_list_gate(0` 改成
+  `kidpal_story_list_gate(story_voice_front` 的 `mcp_server.cc` 副本置入临时仓根后跑同一 ELF,
+  KCN-C5 `:FAIL`（:1052）「story 路由区仍把 story_voice_front 回喂 gate（1 处）——导航帧被
+  voice_front 吞 = 2026-11-15 真机形态复潮…」。**未触碰实现文件**：仓库 `mcp_server.cc`
+  sha256 前后恒 `a69ef4bf…`, `git diff` 为空（=`git checkout` 还原等价且零残留风险; 另存
+  `c:/tmp/k5_mcp_fixed.cc` 作双保险）。
+- **coverage 闸**：`acceptance-coverage-check.mjs` → `ok: true`（10 个 id 仍全绿, KCN-C5 在列）。
+- **偏离 D5**：派发单写「record_session_live.acceptance.c 的 SLP-SLA4 tooth 1」, 实查 SLP-SLA4
+  位于 `story_page_v2.acceptance.c:2218`（record_session_live 对应的是 RSL-A7, 其 gate 决策表断言
+  `gate(1,LIST)==1` 属函数本体, 本次修复 gate 本体零改, 无需动）。按「SLP-SLA4 tooth 1 +
+  KIDPAL_LAYER_VOICE 结构判据」唯一可定位, 改在 story_page_v2 的注释。
+- 未提交（planner 代提）。
