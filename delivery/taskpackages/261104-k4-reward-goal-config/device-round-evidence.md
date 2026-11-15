@@ -34,4 +34,4 @@
 
 ## 四、机器消费行（前置升级闸 deviceOutcome 判据）
 
-device-round-evidence（JSON）：{"schemaVersion":1,"changeId":"261104-k4-reward-goal-config","sourceCommit":"2127a19ffb4835df3c7c5abddb0748f5f0235837","binaryRef":"firmware/build/xiaozhi.bin","binarySha256":"35c71e1637ea632497d57379e1c3d1bf17121514619cc8f66a189423cfbfdde2","observations":[{"acceptanceRef":"K4G-L1","result":"PASS","method":"human","observer":"human","observedAt":"2026-11-15T12:05:00+08:00","note":"真实 QQ 目标配置全过程（新增/切换/删激活拒绝/切回/删非激活成功/4 拒/200 接受/删预置拒）+ 设备看屏刻度 60 与 40、场景标摩天轮↔通用旗↔摩天轮（.bin 修复后复验）、其他页不抢前台；human 收口「可以了，合并吧」"}]}
+device-round-evidence（JSON）：{"schemaVersion":1,"changeId":"261104-k4-reward-goal-config","sourceCommit":"2127a19ffb4835df3c7c5abddb0748f5f0235837","binaryRef":"firmware/build/xiaozhi.bin","binarySha256":"35c71e1637ea632497d57379e1c3d1bf17121514619cc8f66a189423cfbfdde2","observations":[{"acceptanceRef":"K4G-L1","result":"PASS","method":"human-visual","observer":"human","observedAt":"2026-11-15T12:05:00+08:00","note":"真实 QQ 目标配置全过程（新增/切换/删激活拒绝/切回/删非激活成功/4 拒/200 接受/删预置拒）+ 设备看屏刻度 60 与 40、场景标摩天轮↔通用旗↔摩天轮（.bin 修复后复验）、其他页不抢前台；human 收口「可以了，合并吧」"}]}
