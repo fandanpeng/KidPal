@@ -110,3 +110,21 @@
 **未做**：远程发布（`release-pr.mjs --publish` 只推 release/* 并开 PR，PR 合并仍 human）；K5 未开。
 
 **教训**：叠跑两个包在同一分支，使 merge-driver 的「单 pod diff ⊆ manifest」假设失效——本次以 K4 为栈代表合并、K3 作为祖先随批进入并单独归 board；后续叠跑应避免跨包 live 修复落在对方 manifest 之外。
+
+## 2026-11-15 · K5 launch 面准备（池树复用；列车最后一包）
+
+**调度判定**：K5（261104-k5-story-cover-nav，mergeOrder 76）dependsOn = [K2, K4]，两者均已 merged 本地 main（K2 @`76ed332e`、K4 @`b8c53b89`）；**LP13 核销**。WIP=1 串行链尾，本批单包。复用池树 `C:/AI/KidPal-pod-m2`（上一包 K4 已 merged；常驻分支 `dev/pod-m2` 先 rebase 到 main 清理两处分叉簿记——`8b0b0543`/`25deb165` 重放为 `78e4cbf2`/`03630b65`）。互斥租用检查通过：board 扫描无其他活跃 Pod 落在该树或 `dev/pod-m2` 分支。
+
+**门结果**：check-launch blocking 空（`--base-ref main`），launchPreconditions LP13 满足（见上）；settings-lint 3 files / 0 RED / 0 WARN；board 预填 queued + worktreePath=`C:/AI/KidPal-pod-m2`；启动卡落 `delivery/taskpackages/261104-k5-story-cover-nav/launch-card.md`。
+
+**基线锚（带锚引用三件齐；判停 = 消费前 git diff --quiet <SHA> HEAD -- <面域>）**：
+
+- server 面 = **447 passed / 0 failed / 33 subtests passed / 9 deselected** @ SHA `03630b65`（2026-11-15 实测，本段同日现跑；命令 = `python -m pytest -q --import-mode=importlib -m "not live" "C:/AI/KidPal-pod-m2/server/acceptance"`（仓根执行）；面域 = `server`）。旧锚 435 @`cad07f2c`（K4 launch 段）因 K3/K4 合并改 server/ 判停失效，本行取代。
+- firmware host 面 = **292 Tests / 3 Failures / 0 Ignored** @ SHA `03630b65`（2026-11-15 实测，本段同日现跑；执行目录 = `firmware/main/test/host_app`（HOST_TEST_CONVENTIONS [C4.4] 文档命令位）；命令 = 仓根 `wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build` 后 `cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf`；面域 = `firmware`）。3 红全 p1_auxbar 存量族（AB-A1 电池图标 / AB-A2 温度图标 / AB-A4 wifi 资产）。旧锚 292/3 @K4 final `c1de02fe` 判停：`git diff --quiet c1de02fe HEAD -- firmware/` 非零 → 重跑取代。交接卫生：已按换包协议删除 gitignored 的 `host_app/sdkconfig`，本次构建从 tracked `sdkconfig.defaults` 重生成（消 TECH-261014 陈旧假红类）。
+- 本包验收红基线（acceptance-author 新冻结件）恒现跑。
+
+**环境事实**：专属图索引 `C-AI-KidPal-pod-m2` ready（2026-11-15 实查，22215 节点 / 66109 边）。
+
+**human 遗留项**：① 列车级真机 + 真实 QQ 联合收口轮仍归主线程另组织（K5 只收导航并集）；② 远程发布仍归主线程/human；③ K3 歧义删除观察项未闭环（按 human 裁继续观察）。
+
+**教训留根（K4 pod-retro 转入 K5 intake）**：预算按次数量级给；冻结件跨用例一致性自检；manifest 含生成件须对照命名律；acceptance-coverage 闸不认 Unity 断言（沿 K2/K4 先例补真实守卫）。
