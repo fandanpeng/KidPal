@@ -63727,4 +63727,3 @@ const lv_image_dsc_t ic_coin_52_52 = {
   .data_size = 5408,
   .data = ic_coin_52_52_map,
 };
-
