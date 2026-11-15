@@ -1163,3 +1163,53 @@ const char *kidpal_points_ui_selected_id(void)
 {
     return s_points_ui_selected_id;
 }
+
+/* ========================================================================== *
+ * K4 奖励场景 additive seam 实现（TaskPackage 261104-k4-reward-goal-config；
+ * seam 权威 = firmware/main/test/reward_goal_config.acceptance.c [G1]/[G2]）。
+ * 上方 K0/K2 实现零触碰——只增不改/移。
+ * ========================================================================== */
+
+/* ---- [G1] 契约逻辑标识 -> assets.h 符号名（落盘 <name>.bin 根名） ----
+ * 唯一单源映射表：契约 §1.3⑦ asset 闭集五值。表内全是编译期字符串字面量，
+ * 直接返回指针合法（调用方不 free）。未知 / NULL / 空串 -> NULL（绝不猜图；
+ * 已淘汰标识 sc-castle 同样落空，不得回用）。 */
+const char *kidpal_points_scene_asset(const char *target_asset)
+{
+    if (target_asset == NULL || target_asset[0] == '\0') {
+        return NULL;
+    }
+    if (strcmp(target_asset, "sc-choco") == 0) {
+        return "sc_choco_42_42";
+    }
+    if (strcmp(target_asset, "sc-movie") == 0) {
+        return "sc_movie_42_42";
+    }
+    if (strcmp(target_asset, "sc-wheel") == 0) {
+        return "sc_wheel_42_42";
+    }
+    if (strcmp(target_asset, "sc-gift") == 0) {
+        return "sc_gift_42_42";
+    }
+    if (strcmp(target_asset, "sc-flag") == 0) {
+        return "sc_flag_42_42";
+    }
+    return NULL;
+}
+
+/* ---- [G2] 刻度几何：分值 -> 进度线横坐标 ----
+ * 非法入参返回 -1（调用方不画）；points <= 0 钳在起点；其余按比例整数除。
+ * 用 long long 计算中间积，避免大分值 × 大轨道宽溢出 int。 */
+int kidpal_points_scale_x(int target_points, int points, int track_w, int *x_out)
+{
+    if (target_points <= 0 || track_w <= 0 || x_out == NULL) {
+        return -1;
+    }
+    if (points <= 0) {
+        *x_out = 0;
+        return 0;
+    }
+    *x_out = (int)(((long long)points * (long long)track_w) /
+                   (long long)target_points);
+    return 0;
+}

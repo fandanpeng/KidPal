@@ -1,0 +1,36 @@
+# test-scope 圈定清单 · 261104-k4-reward-goal-config · final（integrator Step 4 范围圈定，2026-11-15）
+# 合成来源 = taskpackage.acceptanceTestsFile ∪ impactedTestsSeed（11 条）∪ detect_changes（project C-AI-KidPal-pod-m2，since=cad07f2c / merge_base cad07f2c，direction=both，depth=2：31 changed files / 157 seed 符号 / 48 impacted 节点）
+#   ∪ 共享 seam 回归（crossEnd: server/gateway/front/front_app.py#_push_display_payload、firmware/main/display/view_router.c#kidpal_display_route）∪ 安全余量。
+# 格式 = 仓根相对测试文件路径一行一件（# 注释）；执行面 = server 面 pytest 按文件圈定，firmware 面 = host runner 全量单 ELF（host_infra_test.elf）一次覆盖下列全部 .c。
+# 范围性质 = 影响面圈定清单（不是全量回归替代物，也不缩到只剩本包档）；floor 含本包冻结件 + 对端共享冻结面。
+
+# ── 本包冻结验收件（acceptanceTestsFile）──
+server/acceptance/test_reward_goal_config.acceptance.py
+firmware/main/test/reward_goal_config.acceptance.c
+
+# ── impactedTestsSeed · K1 账本基线 / K3 QQ 通道回归（server 面：target 三动词复用同一 CLI 与 exit 分界）──
+server/acceptance/test_points_ledger_core.acceptance.py
+server/acceptance/test_qq_points_channel.acceptance.py
+server/tests/test_points_goal_units.py
+server/tests/test_points_spike_units.py
+
+# ── impactedTestsSeed · K2/K0 设备侧冻结面回归（points_page.c 改动后出厂态与四键形状零偏移）──
+firmware/main/test/points_device_ui.acceptance.c
+firmware/main/test/points_spike.acceptance.c
+
+# ── 共享 seam 回归 · view_router 路由面（crossEnd 对端 kidpal_display_route，零 diff 但属共享缝）──
+firmware/main/test/four_page_skeleton.acceptance.c
+
+# ── 安全余量 · host 基础设施冒烟（CMakeLists 新件注册序在 smoke 之前的结构守卫）──
+firmware/main/test/host_infra_smoke.acceptance.c
+
+# ── 历史参照（只读不重开）：KAP1 格式与既有资产闭集；archive 面按「移位即退役」口径非现役执行面，列此只作参照登记 ──
+firmware/main/test/acceptance/archive/ui_art_integration.acceptance.c
+
+# ── 非测试件登记（不入 scope 过滤，仅作圈定依据留痕）──
+# 结构性触发 = firmware/main/test/host_app/main/CMakeLists.txt 变动 → 跑 host runner 全量（本清单 .c 集合即其行为面）。
+# 设备轮未跑 = device-round-evidence.md（K4G-L1，待 human 设备窗；host 不可编路径 kidpal_render_node.cc）。
+#
+# 排除项（如实留痕）：detect_changes impacted 另含 server/tests/test_engine_round_close_units.py（经 builtins._Log.info 名称撞库的噪声命中，与 points 面无调用关系，不入 scope）
+#   与 firmware/main/test/acceptance/red-baseline/*.py（oracle 脚本，非现役测试面）。
+# server/acceptance/test_qq_points_channel.acceptance.py 的 K3 live 用例按既有 `-m "not live"` 口径 deselected，不在此处放宽。

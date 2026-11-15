@@ -48,3 +48,53 @@
 **final 终验**：scope 圈定清单 `delivery/taskpackages/261104-k2-points-device-ui/test-scope-final.txt`（detect_changes C-AI-KidPal-pod-m2 专属索引 since=b96b978d 正常圈定）；final round 2 承重（invocationId 3fb1729b-b9fa-47bd-9629-d71f696776f2）10 闸全跑零 skip——firmware-build 真编译 fresh 绿、unit 154 passed / acceptance 73 passed / 3 subtests，verifier-evidence-check factOk:true；round 1 留痕（scope 清单注记格式缺陷致 acceptance 闸 executor-skipped，格式修正后重跑）。host 287/3 判停续用（c1de02fe..HEAD firmware 零差异）。圈定合跑零误伤（8 件 server 面逐件实测 154/0）。
 
 **closeout**：docs-delta.md（零文档变更）+ review-packet.md（demo 对账 E1/E2/E5 绿、E3/E4 pending 真机轮）+ overlap-probe.json（no-overlap；deviceOutcome required=true：device-round-evidence 待真机轮 + protocol.cc 申报登记集收窄项交 planner）落包目录；closeout-check PASS indexProjection inserted；pod-closed 事件 8f95f0f2 在 pod-events.jsonl。制品与三件测试面改动随后由 integrator commit 进 dev/pod-m2（不 push）。merge 门交 planner 跑 supervisor 闸；K2PTS-L1/L2/L3 真机轮（含 K1L-L1/L2 挂接）human 在场安排。
+
+## 2026-11-14 · K3 launch 面准备（pod-m2 树复用）
+
+**调度判定**：K3（261104-k3-qq-points-channel，mergeOrder 74）dependsOn = [K1, K2] 均已 merged（main 76ed332e，K1 @ ae7725cf），WIP=1 串行链下一包 = K3；复用池树 `C:/AI/KidPal-pod-m2`（上一包 K2 已 merged，常驻分支 dev/pod-m2=45518ac2=main）。互斥租用检查通过：devloop/pods 扫描无其他活跃 Pod 落在该树或 dev/pod-m2 分支。**LP11 判定**：K1/K2 merged 双证满足；「真实 QQ 验证窗口 + 设备联调条件」为 human 在场条件，设备轮阶段前确认（真实歧义输入不卡死是必做证据）。树交接卫生核过（tracked 净、untracked 无残留；本包 changeManifest 全 server，不涉固件构建）。**上一包留根**：K2 pod-retro 六教训与流程债交 planner intake 逐条评估；K2 真机轮（K2PTS-L1/L2/L3 + K1L-L1/L2 挂接）与 K3 的 K3Q-E4 设备观察共用同一 human 设备窗。
+
+**门结果**：check-launch blocking 空（--base-ref main），launchPreconditions 余 LP11 pending（human 条件，见上）；settings-lint 3 files 0 RED 0 WARN；board 预填 queued + worktreePath=C:/AI/KidPal-pod-m2（portfolio-reconcile 95 pods reconciled）；启动卡落 `delivery/taskpackages/261104-k3-qq-points-channel/launch-card.md`。
+
+**基线锚（带锚引用三件齐；判停 = 消费前 git diff --quiet <SHA> HEAD -- <面域>）**：
+
+- server 面 = **415 passed / 0 failed / 33 subtests passed / 9 deselected** @ SHA `45518ac2`（2026-11-14 实测，本段同日现跑；命令 = `python -m pytest -q --import-mode=importlib -m "not live" "C:/AI/KidPal-pod-m2/server/acceptance"`（仓根执行）；量测时 HEAD = 45518ac2；面域 = `server`）。旧锚 b96b978d（411/0）因 K1/K2 改 server/ 判停失效，本行取代。
+- firmware host 面 = **287 Tests / 3 Failures / 0 Ignored**（3 红全 p1_auxbar AB 存量族；量测态 = K2 final `c1de02fe`）。判停 2026-11-14：`git diff --quiet c1de02fe HEAD -- firmware/` 之外另核 `76ed332e..HEAD -- firmware/` 为空（合并后无固件改动）→ 引用不重跑；本包 changeManifest 零固件文件，验证不涉 host build。
+- 本包验收红基线（acceptance-author 新冻结件）恒现跑，无缓存可言。
+
+**环境事实**：专属图索引 `C-AI-KidPal-pod-m2` ready（2026-11-14 index_status 实查，21960 节点 / 64713 边，K2 固件面入图）。
+
+**human 遗留项**：① 真实 QQ 验证窗口与设备联调窗口需 human 在场（LP11）；② K2 真机轮与 K3 设备观察建议合并一次设备窗；③ 远程发布与部署轮仍归主线程/human，与本包 launch 无涉。
+
+**勘误（2026-11-14，K3 launch 段上文两处修正；append-only 不改旧行）**：上文「K2 真机轮…与 K3 设备观察共用同一 human 设备窗」「human 遗留项②K2 真机轮与 K3 设备观察建议合并一次设备窗」有误——K2 真机轮 + 复验轮**已跑完并全 PASS**（2026-11-06 首轮 / 2026-11-14 复验轮，`delivery/taskpackages/261104-k2-points-device-ui/device-round-evidence.md` §一/§五，human 收口原话「可以了，合并吧」，合并 @ 76ed332e）。其中 `K1L-L1 外部写入不抢前台` 已实证 front `points_observe` 观察 CLI 写入并自推恰一帧 restore，K3 的 QQ 写入可复用该观察缝。K3 仍需**自己的**真实 QQ 设备观察轮（QQ 消息 → front push → 设备不抢前台/积分页原地刷新，K3Q-E4），该轮需 human 在场（LP11）。
+
+## 2026-11-15 · K4 launch 面准备（pod-m2 树复用；叠跑 K3，human override）
+
+**调度判定**：K4（261104-k4-reward-goal-config，mergeOrder 75）dependsOn = [K1, K2, K3]。实况 = K1/K2 merged，**K3 未 merged**（supervisor ESCALATE，等 human 批 + 真实 QQ 设备轮）。LP12 要求「K4 等 K1、K2、K3 merged 后方可 launch」——human 2026-11-15 原话「继续开发K4，中国时间明天上午到时候一块验证」构成**明确 override**：K4 叠在未合并的 K3 之上开工，base ref = `cad07f2c`（K3 HEAD），合并序仍钉死 K3 → K4。K4 合并门前必须先完成 K3 合并与 K3 的 live 证据。K3 的 live 轮（K3Q-E4）与 K4 的真机轮（K4G-E4）合并到 2026-11-16 上午一次设备窗。
+
+**K3 当前状态（交接事实）**：离线闭环完成（scoped 8/8、final 10/10、supervisor ESCALATE）；已部署到 ECS（`cad07f2c`，drift 0，front 重启、openclaw-gateway 重启后 skill 可见、QQ dad/mom 双通道 READY、CLI `show/recent` 实测可用）。未合并。
+
+**门结果**：check-launch blocking 空（--base-ref main）；LP12 pending 按上述 override 处理；settings-lint 3 files 0 RED 0 WARN；board 预填 queued + worktreePath=C:/AI/KidPal-pod-m2；启动卡落 `delivery/taskpackages/261104-k4-reward-goal-config/launch-card.md`。
+
+**基线锚（带锚引用三件齐；判停 = 消费前 git diff --quiet <SHA> HEAD -- <面域>）**：
+
+- server 面 = **435 passed / 0 failed / 33 subtests passed / 9 deselected** @ SHA `cad07f2c`（2026-11-15 实测，本段同日现跑；命令 = `python -m pytest -q --import-mode=importlib -m "not live" "C:/AI/KidPal-pod-m2/server/acceptance"`（仓根执行）；面域 = `server`）。该基线含 K3 的 server 改动。
+- firmware host 面 = **287 Tests / 3 Failures / 0 Ignored**（3 红全 p1_auxbar AB 存量族；量测态 = K2 final `c1de02fe`）。判停 2026-11-15：`git diff --quiet 76ed332e HEAD -- firmware/` exit 0 → 引用不重跑；K4 动 firmware 后该引用失效，builder 必须重跑并判新增红。
+- 本包验收红基线（acceptance-author 新冻结件）恒现跑。
+
+**环境事实**：专属图索引 `C-AI-KidPal-pod-m2` ready（2026-11-15 实查，随树增量）。
+
+**human 遗留项**：① K3 合并批（supervisor ESCALATE 需 approve-escalated-merge）；② 2026-11-16 上午设备窗：K3 真实 QQ 加兑查删/歧义/重复 + K4 目标配置与刻度联动，一次跑完；③ K4 合并排 K3 之后；④ 远程发布仍归主线程/human。
+
+## 2026-11-15 · K4 离线收口（叠跑 K3；真机轮待设备窗）
+
+**final 终验**：scope 圈定清单 `delivery/taskpackages/261104-k4-reward-goal-config/test-scope-final.txt`（12 件：本包 2 冻结件 + 11 条 impacted 种子去 1 非测试件 + crossEnd seam + smoke 余量）；final round 1 承重（invocationId `7d3f9c1e-5b2a-4e8f-9a61-c2d4b8f0a7e3`）10 闸全跑零 skip——firmware-build 真编译生成 xiaozhi.bin、unit 110 passed、acceptance 41 passed（firmwareAcceptanceFiles=5 / serverAcceptanceFiles=3）、verifier-evidence-check factOk:true。host 全量 **292 Tests / 3 Failures**（3 红全 p1_auxbar 存量族 AB-A1/A2/A4；292−287=5 = K4G-H1..H5 全 PASS，零新增红）。
+
+**实现**：四枚场景资产（`sc_choco/sc_movie/sc_gift/sc_flag_42_42.bin`，各 268B，纯追加 4A/0M；`sc_wheel` 复用 K2 件）+ `kidpal_points_scene_asset` 五键映射 + `kidpal_points_scale_x` 刻度几何 + render_node 3 槽 strcmp 按名重载 + pointstarget 三扁平动词（target-add/switch/delete）+ SKILL.md 目标管理改写。commit `e87310de`。
+
+**冻结件修正与扩单（如实留痕）**：K4G-A1 不可满足断言、K4G-A7 与 A2 冲突——acceptance-author 最小修正并重冻（revision log 在案）；`read_state` additive 两键致 K0 精确三键断言失效——architect 扩单 APPROVE 后 append `server/tests/test_points_spike_units.py` 并按最小 diff 改（投影 equality + 出厂两键 + receipts 负断言）。commit `63d24c5f` / 扩单在 `e87310de`。
+
+**closeout**：docs-delta.md（零 canonical 变更，理由成立）+ review-packet.md（无 BLOCKING/SHOULD，3 NIT；design-review 文本证据在场；8 条未覆盖面全部如实申报"未跑"）+ verification.json + closeout-check --update-index exit 0。integrator commit `e68713a1`。
+
+**合并门**：`supervisor-verdict-gate` = **ESCALATE**（riskTier high 结构性；evidenceComplete=true，completedRounds=1）。前置升级闸会在合并期因 `deviceOutcome{userVisible:true, kidpal_render_node.cc, K4G-L1}` 缺 device-round-evidence 而拦停——预期。pod-retro 落盘，planner 收尾 commit `98619ffa`。
+
+**未跑 / 下一步**：K4G-L1 真机轮（真实 QQ 目标配置 + 看屏 + 不抢前台 + 时延 + RAM）与 K3 live 轮合并到下一个设备窗；K4 的 ECS 部署轮（points.py/SKILL/四枚资产）归主线程；合并序 K3 → K4，两包合并均需 human 批（supervisor 均 ESCALATE）。

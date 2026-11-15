@@ -377,6 +377,15 @@ set(HOST_ACCEPTANCE_SRCS
     # 齿注册序守卫）。
     "../../points_device_ui.acceptance.c"
 
+    # 包 261104-k4-reward-goal-config（奖励场景与激活目标：四预置场景美术 + QQ 自定义/
+    # 切换/删除 + 唯一激活与刻度/兑换联动）冻结验收。seam [G1] asset→bin 名映射 /
+    # [G2] 刻度几何的强符号源 = display/points_page.c（已在册，additive 尾部追加，本行
+    # 不重复登记该文件）；[G3] 设备 TU 源锚 kidpal_render_node.cc 不进 host 构建，由
+    # TEST 5 tree-scan 承载。builder FIRST ACTION：本行登记后本件才进 host runner
+    # （TEST 5 校验注册序——登记行缺失即红）。**必须置于 host smoke acceptance 之前**
+    # （smoke 末位 = 最先执行, 包 0 boundary 齿注册序守卫）。
+    "../../reward_goal_config.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

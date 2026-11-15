@@ -120,3 +120,5 @@
 | [261104-k0a-four-page-skeleton](261104-k0a-four-page-skeleton/) | 2026-11-04 | delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md | closed | 261103-star-points-story-cover |
 | [261104-k0-points-e2e-spike](261104-k0-points-e2e-spike/) | 2026-11-04 | delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md | closed | 261103-star-points-story-cover |
 | [261104-k2-points-device-ui](261104-k2-points-device-ui/) | 2026-11-04 | delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md | closed | 261103-star-points-story-cover |
+| [261104-k3-qq-points-channel](261104-k3-qq-points-channel/) | 2026-11-04 | delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md | closed | 261103-star-points-story-cover |
+| [261104-k4-reward-goal-config](261104-k4-reward-goal-config/) | 2026-11-04 | delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md | closed | 261103-star-points-story-cover |

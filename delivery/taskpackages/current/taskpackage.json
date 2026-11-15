@@ -1,6 +1,6 @@
 {
-  "changeId": "261104-k2-points-device-ui",
-  "title": "设备积分本——points_home/points_ledger 全页、keyset 取页、删除确认、积分语境与语音闭环",
+  "changeId": "261104-k4-reward-goal-config",
+  "title": "奖励场景与激活目标——四预置美术、QQ 自定义/切换/删除、唯一激活与刻度/兑换联动",
   "rigor": "full",
   "sourceType": "proposal",
   "origin": {
@@ -10,92 +10,78 @@
     "upstreamFrozen": "sha1:4eca114e6998e14e",
     "workstream": "261103-star-points-story-cover"
   },
-  "subsystem": "firmware points_page、keybar/view/mcp/protocol/application + front 积分语境摘要",
-  "story": "S-F6.1 · 看积分进度与最近记录（AC1–AC6）+ S-F6.2 · 浏览详细账本与删除误记（AC1–AC5）+ S-F6.3 · 设备语音记账与兑换（AC1–AC6）+ NFR-OFF-1/NFR-PERF-4。",
-  "planRef": "delivery/taskpackages/261104-k2-points-device-ui/plan.md",
+  "subsystem": "points 目标配置 + QQ skill 扩展 + 1bpp 场景资产 + firmware 进度线刻度",
+  "story": "S-F6.5 · 奖励场景与激活目标配置（AC1–AC4）+ S-F6.1 · 看积分进度与最近记录（AC2、AC3）+ S-F6.3 · 设备语音记账与兑换（AC3 切目标后金额）+ S-F6.4 · QQ 家长记账与更正（AC4、AC5）。",
+  "planRef": "delivery/taskpackages/261104-k4-reward-goal-config/plan.md",
   "sourceRefs": [
-    "S-F6.1-AC1",
+    "S-F6.5-AC1",
+    "S-F6.5-AC2",
+    "S-F6.5-AC3",
+    "S-F6.5-AC4",
     "S-F6.1-AC2",
     "S-F6.1-AC3",
-    "S-F6.1-AC4",
-    "S-F6.1-AC5",
-    "S-F6.1-AC6",
-    "S-F6.2-AC1",
-    "S-F6.2-AC2",
-    "S-F6.2-AC3",
-    "S-F6.2-AC4",
-    "S-F6.2-AC5",
-    "S-F6.3-AC1",
-    "S-F6.3-AC2",
     "S-F6.3-AC3",
-    "S-F6.3-AC4",
-    "S-F6.3-AC5",
-    "S-F6.3-AC6",
-    "docs/requirements.md#§2.3",
-    "docs/requirements.md#NFR-OFF-1",
-    "docs/requirements.md#NFR-PERF-4",
-    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-02",
-    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-03",
-    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-04",
-    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-07",
-    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-08",
-    "delivery/workstreams/261103-star-points-story-cover/task_plan.md#K2",
+    "S-F6.4-AC4",
+    "S-F6.4-AC5",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-09",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.2-OQ-2",
+    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.2-OQ-3",
+    "delivery/workstreams/261103-star-points-story-cover/task_plan.md#K4",
+    "docs/architecture.md#§5.5.2",
     "docs/contracts/interface-contract.md#§1.3⑦",
-    "docs/contracts/interface-contract.md#§1.3⑧",
-    "docs/contracts/interface-contract.md#§四-kidpal_session_ctx",
-    "docs/contracts/interface-contract.md#§四-kidpal_points_delete",
-    "docs/contracts/interface-contract.md#§四-kidpal_points_page"
+    "docs/ui/kidpal-ui-design-v9.html",
+    "docs/ui/UIUX-DESIGN-BRIEF.md"
   ],
   "acceptanceRefs": [
-    "docs/requirements.md#S-F6.1",
-    "docs/requirements.md#S-F6.2",
-    "docs/requirements.md#S-F6.3",
-    "docs/requirements.md#§2.3",
-    "docs/requirements.md#NFR-OFF-1",
-    "docs/requirements.md#NFR-PERF-4"
+    "docs/requirements.md#S-F6.5",
+    "docs/requirements.md#S-F6.1-AC2",
+    "docs/requirements.md#S-F6.1-AC3",
+    "docs/requirements.md#S-F6.3-AC3",
+    "docs/requirements.md#S-F6.4-AC4",
+    "docs/requirements.md#S-F6.4-AC5"
   ],
   "acceptance": [
-    "K2PTS-P1: 积分主页四态决策表与进度线画法数据面——NULL=未达（不显示数字与进度线）、balance=0 且 recent 空=空账（显 0 与目标）、零余额有分录=正常、超目标仍=正常（单页结构不新增页）、负值=NEGATIVE；progress 画法：正常 pos/solid=余额、超目标 overshoot=1 越标延伸、负余额钳位 pos=0/solid=0 且 frame.balance 只读保持 −40（数字如实、画法钳位两不混）、空账照画。回引 S-F6.1-AC1/AC4/AC5、契约 §1.3⑦、D-02/D-03。设计态红 = home_state/progress seam 未落（weak 哨兵 −99）",
-    "K2PTS-P2: home/ledger 键位决策表逐格（主页 KEY 短=语音/双=账本/长=回首页；账本 KEY 长=回主页/BOOT 短=光标/双=翻屏/长=删除入口；账本 BOOT 永不离页；主页 BOOT=NONE 尊重 K0a 四页骨架冻结域）+ kidpal_points_debounce_gate 消歧门（仅积分主页挂起、P4 不越域、越界防御）。回引 S-F6.1-AC6、S-F6.2-AC1、§2.3 手势矩阵。设计态红 = 键表/gate seam 未落",
-    "K2PTS-P3: 删除确认子态——KEY 短=确认/BOOT 三手势=取消/其余不响应；idle_step 累计 10 秒静默取消（9999→0、恰 10000→1 双向边界）；resend_due 5000ms/上限 3；kidpal_points_delete_reconcile_hit 隐式 ack：pending 命中权威 items=不冲销、权威重推不含=冲销、空账重推=冲销（确认动作绝不本地删缓存）。回引 S-F6.2-AC3/AC4、契约 §四 kidpal_points_delete、D-03。设计态红 = 删除子态 seam 未落",
-    "K2PTS-P4: kidpal_points_ledger_state_apply 分页纪律——reset=true 先清旧分页再装首页（全字段随帧替换）、同版本续页累加、跨版本 reset=false 拒绝且零扰动；next_request 全量遍历（cursor 原样回传/known_revision 带版本/无缓存=-1 不带键/limit=6 不继承 story 16 条窗口）；screen_total 以 page_total 为准非 cached_count（items 1 条 vs total 5 有区分度）。回引 S-F6.2-AC1、契约 §四 kidpal_points_page、K1 producer 形状。设计态红 = apply/next_request seam 未落",
-    "K2PTS-P5: kidpal_points_selected_id_injectable——命中最近权威 items=1、未命中/空/NULL=0（设备不造 id）、frame NULL=-1。回引 D-08、契约 §四 selected_id 只读注入。设计态红 = 注入 seam 未落",
-    "K2PTS-P6: 键帽逐字与页点——LEDGER=「问一问/下移」、DELETE_CONFIRM=「删掉/算了」（逐字对照 V9 points-ledger.png / points-delete-confirm.png，WF-F2-05 同族）、NONE=-1 回落页槽表；kidpal_keybar_dots 覆盖层页点消失回归半（overlay=1 隐藏不抹 total/active）。回引 S-F6.2-AC3、uiAcceptanceRefs 六帧。设计态红 = points_slots seam 未落",
-    "K2PTS-P7: 结构锚消费闭环（源扫描级）——mcp_server.cc 引用 home_state / ledger_state_apply /（points_slots 或 KPTS_SUBSTATE_DELETE_CONFIRM）；protocol.cc|h 引用 \"kidpal_points_delete\" 删除上行驱动方；\"selected_id\" 与 \"points_ledger\" 语境字面三文件任一在世（不锁语境映射家——story_page.c 落点自由度见申报）；CMake 登记守（本件 + points_page.c）。回引 K2D-E1 消费闭环。设计态红 = mcp 接线/驱动方/登记缺席",
-    "K2D-A1: kidpal_points_delete 消费——存在 id → 恰一帧 home(restore:true, balance=−35 不钳位, revision+1) + 恰一帧 ledger(restore:true, reset:true, 无 target, 不含已删 id)；重复/不存在 id 幂等 no-op 仍重推且零写账；非法 id（空串/非 str/None/纯空白）拒绝审计（WARNING 含 points_delete）零重推；story 目录零波及。回引 S-F6.2-AC4/AC5 数据面、D-03、契约 §四。设计态红 = 消费分支未落",
-    "K2D-A2: 积分语境有界注入——POINTS_CTX_SIGNAL_TYPE=\"kidpal_points_context\"（冻结 wire）+ ctx(points_home) 恰注一帧有界摘要（余额 39/目标 40/游乐场/最近分录，第 4 条旧分录不得入摘要，种子 5+2+3+29=39 与目标分值 40 不撞值）；ctx(points_ledger)+selected_id 命中附分录摘要（29/10→39 可辨值）；未命中不伪造；注入失败不阻断拦截消费。回引 S-F6.3 补充规则、D-08、契约 §四。设计态红 = POINTS_CTX_SIGNAL_TYPE 缺席",
-    "K2D-A3: 语境闭集路由与零回归——ctx(points_home/points_ledger) 停留 chat、零 story_list、零 record 信号；未知值记 WARNING（含值）且绝不回退成 story；ctx(story) 切累积态 + 恰一帧 story_list + 恰一帧 record 信号（M4K1-A2 零回归半：行为半保持 must-stay-green，本件只新增记 WARNING 要求）。回引 契约 §四 闭集、S-F6.3。设计态红 = 未知值拒绝日志缺席",
-    "K2D-A4: 不完整句零写入与单写入口——普通 stt 帧 False 不拦截且零写盘；非 control 载荷意图缝拒绝；缺事由/零分/布尔分值意图零写入（K0 冻结回归半）；单写入口锚：_consume_kidpal_control 源内零 add/redeem 调用、全模块 gw_points.add_points( 恰 1 处（D-10 front 半）。回引 S-F6.3-AC1 消费面半、D-04、NFR-OFF-1。K0 现状即绿（回归守卫半），绿非空过、区分性断言逐条注明"
+    "K4G-A1: 自定义分值 5/200 接受、4/201 拒绝且 state 零写入；入库可激活、asset 恒 sc-flag。回引 S-F6.5-AC2。设计态红 = target-add 子命令缺席",
+    "K4G-A2: 四预置逐个禁删、激活中自定义禁删（提示先切换）、非激活可删、未知 id 拒绝，全零写入。回引 S-F6.5-AC4（+AC1 回归）。设计态红 = target-delete 子命令缺席",
+    "K4G-A3: 切换后标量 active_target 单点唯一、list 恰一命中、build_points_home target 四键随切。回引 S-F6.5-AC3。设计态红 = target-switch 子命令缺席",
+    "K4G-A4: 切目标不扣分——balance 与分录数不变、revision +1、零新分录、回执回显 balance。回引 S-F6.5-AC3 / S-F6.1-AC3。设计态红 = target-switch 子命令缺席",
+    "K4G-A5: 切后旧分值 redeem 拒绝零写入、新分值成功落负向分录且事由取新目标名。回引 S-F6.3-AC3。设计态红 = target-switch 子命令缺席",
+    "K4G-A6: 切目标不改写既有兑换分录 reason 快照。回引 S-F6.5-AC3。设计态红 = target-switch 子命令缺席",
+    "K4G-A7: 三回执单行 key=value、禁 delta/entry_id、switch 回显 balance；未知/重复/缺值/缺必填旗标 exit 2，语义拒绝 exit 1 + stderr + stdout 无成功回执。回引 S-F6.4-AC4。设计态红 = target 三子命令缺席",
+    "K4G-A8: target-add / target-switch 同 command_id 重放返首次结果、不新增目标、不重复 bump revision。回引 S-F6.5-AC2 / S-F6.4-AC4。设计态红 = target 子命令缺席",
+    "K4G-A9: SKILL.md 旧硬阻断句消失、frontmatter 覆盖目标管理、§2 含三 target 动词、§5 含四类目标错误、「先 targets 拿 id 不自编」纪律。回引 S-F6.5 / S-F6.4-AC4。设计态红 = SKILL.md 旧阻断句仍在",
+    "K4G-H1: 五键 asset→bin 名映射全覆盖；sc-castle/未知/空串/NULL 返回 NULL 不猜图。回引 S-F6.5-AC1/AC2。设计态红 = kidpal_points_scene_asset 未落",
+    "K4G-H2: 5 与 200 两档刻度几何（0/target/越标延伸）+ 非法入参 -1 + progress 越目标同页结构回归。回引 S-F6.5-AC3 / S-F6.1-AC2。设计态红 = kidpal_points_scale_x 未落",
+    "K4G-H3: 四枚新 bin + sc_wheel 只读：长 268、magic KAP1、format1、42×42、stride6、墨位 0<ink<全墨。回引 S-F6.5-AC1/AC2、arch §5.5.2。设计态红 = 四枚新 bin 未产出",
+    "K4G-H4: 出厂态回归（默认游乐场 40 / sc-wheel / 五逻辑标识可解析可映射）——must-stay-green。回引 S-F6.5-AC1 / S-F6.1-AC2",
+    "K4G-H5: host 注册序（本件在 smoke 前）、points_page.c 在册、两 seam 头/实现落点、render_node 用映射+strcmp 且无 slot->name == asset。回引 S-F6.5-AC3。设计态红 = CMakeLists 未登记 / seam 未落"
   ],
   "acceptanceTestsFile": [
-    "firmware/main/test/points_device_ui.acceptance.c",
-    "server/acceptance/test_points_device_ui.acceptance.py"
+    "server/acceptance/test_reward_goal_config.acceptance.py",
+    "firmware/main/test/reward_goal_config.acceptance.c"
   ],
-  "redBaselineCommand": "host：cd firmware/main/test/acceptance/red-baseline && wsl -d Ubuntu-24.04 -- bash -c 'gcc -std=c11 -Wall -Wextra -I. -o /tmp/k2p_red_final ../../points_device_ui.acceptance.c runner.c && echo COMPILE_OK && /tmp/k2p_red_final'（C 类实编独立冒烟通道，k0pts 同款，未落新脚手架）；server：python -m pytest -q --import-mode=importlib server/acceptance/test_points_device_ui.acceptance.py（仓根执行）",
-  "redBaselineResult": "acceptance-author 冻结实跑 2026-11-05 @ dev/pod-m2（Pod 池树）：host = COMPILE_OK + 7 Tests / 7 Failures + RUN_RED（红因全为实现缺席：TEST1-6 weak 哨兵 −99 对应 seam 未落、TEST7 mcp_server 无 home_state 接线；无测试自身错误红）；server = 3 failed, 1 passed（A1 消费缺席 / A2 POINTS_CTX_SIGNAL_TYPE 缺席 / A3 WARNING 日志缺席；A4 绿=K0 冻结回归半，非空过）。全量回归零新增红：python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance/ → 3 failed, 412 passed, 9 deselected, 33 subtests（3 红全在本包新文件；412=b96b978d 基线 411+本件 A4，基线无一转红）。host 全量 278/3（p1_auxbar 存量族）未触碰（本件未登记进构建，登记守归 builder FIRST ACTION）。planner 未复跑（交 builder/verifier 轮复核）",
+  "redBaselineCommand": "server: python -m pytest -q --import-mode=importlib server/acceptance/test_qq_points_channel.acceptance.py server/acceptance/test_reward_goal_config.acceptance.py（仓根）；host: wsl -d Ubuntu-24.04 -- bash -c \"cd C:/AI/KidPal-pod-m2/firmware/main/test/host_app && ./espidf_wsl.sh build\" + build/host_infra_test.elf（builder 登记 CMakeLists 后首跑）",
+  "redBaselineResult": "acceptance-author 冻结实跑 + planner 独立复跑 2026-11-15 @ cad07f2c：server = 11 failed / 20 passed（红因全为实现缺席：target 三子命令缺席、SKILL.md 旧硬阻断句仍在；20 passed = K3 既有零回归）；host = 新件已 -fsyntax-only RC 0 通过编译通道，但 CMakeLists 登记被 scope 权限拦（角色边界非越权），行为齿红基线待 builder 第一步登记后首跑；既有 host 基线 287 Tests / 3 Failures（3 红 p1_auxbar 存量族）。",
   "exitCriteria": [
-    "K2D-E1: Pod 内冻结验收覆盖积分主页四态、最近三条、越目标/负余额、详细账本单行与全量分页、键位、删除确认和冷启动恢复；红基线、变异证据及既有冻结件修订留痕齐全。",
-    "K2D-E2: host 与 server 离线证据证明 restore/显式打开分流、revision 重置清缓存、selected_id 只读注入、删除幂等对账和不完整句零写入；既有故事与 schedule 路由零新增红。",
-    "K2D-E3: 一轮真机覆盖完整语音加分/兑换、只提事件不记账、金额不匹配与余额不足拒答、短窗重复、断网可见失败、删除后重算与负余额、冷启动恢复；设备看屏与三源日志互证。",
-    "K2D-E4: 六张 V9 积分帧完成 design review，长原因、大分值、越目标和负余额不破坏 400×300 1bpp 版面；NFR-PERF-4 只记录实测，不写死阈值。",
-    "K2D-E5: 实际 diff 限于 changeManifest，K1 权威账本不被设备重算或持久化；review-packet 含 demo 对账与未覆盖面申报，K3 的 QQ 推送和 K4 的目标切换复用本包 restore/进度线缝。"
+    "K4G-E1: 四预置 `sc-choco/sc-movie/sc-wheel/sc-gift` 与自定义 `sc-flag` 经既有母版→栅格化→KAP1 管线产出，资产标识、1bpp 内容和设备装载证据一致；不新增字体或重排分区。",
+    "K4G-E2: 真实 QQ 证据覆盖新增 5/200 边界内自定义、出界拒绝、切换唯一激活、非激活自定义删除、预置删除拒绝和激活自定义先切换再删；歧义仍普通文本一次报错。",
+    "K4G-E3: server 与 host 验收证明目标切换只改激活配置、不自动扣分，历史兑换名目不变；切换后语音/QQ 兑换只认新分值，设备刻度与场景标同步伸缩。",
+    "K4G-E4: 一轮真机看四预置、通用标记、大分值与越目标版面，QQ 切目标时其他页不抢前台、积分页原地刷新；V9 design review 与资源预算证据在场。切目标刷新在既有真机证据中顺带记录与 NFR-PERF-4 相同的“QQ 消息→积分页原地刷新”实测时延字段，不写死阈值。",
+    "K4G-E5: K1/K2/K3 的账本、渲染和 QQ 回归零新增红；本包不建设备设置页、不做逐自定义美术、不承接 K5 的 `ic-coin` 封皮资产或导航范围。"
   ],
   "iterationBudget": 3,
   "fixBudget": 4,
   "supervisorBlockBudget": 2,
   "contractRefs": [
     "docs/contracts/interface-contract.md#§1.3⑦",
-    "docs/contracts/interface-contract.md#§1.3⑧",
     "docs/contracts/interface-contract.md#§1.4",
-    "docs/contracts/interface-contract.md#§四-kidpal_session_ctx",
-    "docs/contracts/interface-contract.md#§四-kidpal_points_delete",
-    "docs/contracts/interface-contract.md#§四-kidpal_points_page"
+    "docs/contracts/interface-contract.md#§1.5"
   ],
   "docRefs": [
     "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md",
     "delivery/workstreams/261103-star-points-story-cover/review.md",
     "delivery/workstreams/261103-star-points-story-cover/task_plan.md",
-    "delivery/taskpackages/261104-k2-points-device-ui/plan.md",
+    "delivery/taskpackages/261104-k4-reward-goal-config/plan.md",
     "docs/requirements.md",
     "docs/architecture.md",
     "docs/contracts/interface-contract.md",
@@ -104,13 +90,10 @@
     "docs/ui/UIUX-DESIGN-BRIEF.md",
     "docs/ui/V9/points-home.png",
     "docs/ui/V9/points-home-empty.png",
-    "docs/ui/V9/points-home-nodata.png",
-    "docs/ui/V9/points-home-negative.png",
-    "docs/ui/V9/points-ledger.png",
-    "docs/ui/V9/points-delete-confirm.png"
+    "docs/ui/V9/points-home-negative.png"
   ],
   "docsSyncRequired": false,
-  "docsSyncReason": "积分页面、键位、语音、删除、分页和离线语义均已由 v1.71 与 landed 架构/契约冻结，本包只实现与验收。",
+  "docsSyncReason": "四预置、资产闭集、OQ-2/OQ-3、唯一激活和刻度/兑换联动均已由 v1.71、架构与契约冻结。",
   "docsOwner": "integrator",
   "securityReviewRequired": false,
   "adrRequired": false,
@@ -124,162 +107,223 @@
   "mutationEvidence": {
     "perAcceptance": [
       {
-        "acceptance": "K2PTS-P1: 积分主页四态决策表与进度线画法数据面——NULL=未达（不显示数字与进度线）、balance=0 且 recent 空=空账（显 0 与目标）、零余额有分录=正常、超目标仍=正常（单页结构不新增页）、负值=NEGATIVE；progress 画法：正常 pos/solid=余额、超目标 overshoot=1 越标延伸、负余额钳位 pos=0/solid=0 且 frame.balance 只读保持 −40（数字如实、画法钳位两不混）、空账照画。回引 S-F6.1-AC1/AC4/AC5、契约 §1.3⑦、D-02/D-03。设计态红 = home_state/progress seam 未落（weak 哨兵 −99）",
+        "acceptance": "K4G-A1: 自定义分值 5/200 接受、4/201 拒绝且 state 零写入；入库可激活、asset 恒 sc-flag。回引 S-F6.5-AC2。设计态红 = target-add 子命令缺席",
         "turnedRed": true,
         "sensitive": true,
-        "mutation": "实放（2026-11-05 builder 轮1）：points_page.c 四态 EMPTY 分支翻转为 NORMAL → RED「K2PTS-P1:FAIL: Expected 1 Was 2 … balance=0 且 recent 空未判确认空账态」；全量 285 Tests 4 Failures。已还原，复验 287/3 无 K2PTS 红",
-        "affectedTest": "host firmware/main/test/points_device_ui.acceptance.c TEST 1（K2PTS-P1）"
+        "restored": true,
+        "mutation": "add_custom_target 下界 MIN-1（放行 4）（变异后该测试 1 failed；复原后当时仍红=冻结件缺陷（已由 acceptance-author 修正），修后 11 passed）",
+        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_reward_goal_config.acceptance.py",
+        "affectedTest": "K4gA1CustomBounds::test_k4g_a1_custom_points_bounds_5_200"
       },
       {
-        "acceptance": "K2PTS-P2: home/ledger 键位决策表逐格（主页 KEY 短=语音/双=账本/长=回首页；账本 KEY 长=回主页/BOOT 短=光标/双=翻屏/长=删除入口；账本 BOOT 永不离页；主页 BOOT=NONE 尊重 K0a 四页骨架冻结域）+ kidpal_points_debounce_gate 消歧门（仅积分主页挂起、P4 不越域、越界防御）。回引 S-F6.1-AC6、S-F6.2-AC1、§2.3 手势矩阵。设计态红 = 键表/gate seam 未落",
+        "acceptance": "K4G-A2: 四预置逐个禁删、激活中自定义禁删（提示先切换）、非激活可删、未知 id 拒绝，全零写入。回引 S-F6.5-AC4（+AC1 回归）。设计态红 = target-delete 子命令缺席",
         "turnedRed": true,
         "sensitive": true,
-        "mutation": "实放（2026-11-05 builder 补证）：points_page.c kidpal_points_home_key_action 的 KPTS_GESTURE_KEY_DOUBLE 分支 return OPEN_LEDGER→VOICE_SESSION → RED「K2PTS-P2 RED: ... gesture=1 ...」（points_device_ui.acceptance.c:1035）。sha256 963401f0…前=后；复跑 287/3、TEST 2 PASS",
-        "affectedTest": "host TEST 2（K2PTS-P2）"
+        "restored": true,
+        "mutation": "去掉 delete_target 的 active 守卫（变异后 1 failed；复原 1 passed）",
+        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_reward_goal_config.acceptance.py",
+        "affectedTest": "K4gA2DeletePolicy::test_k4g_a2_delete_policy_presets_and_active"
       },
       {
-        "acceptance": "K2PTS-P3: 删除确认子态——KEY 短=确认/BOOT 三手势=取消/其余不响应；idle_step 累计 10 秒静默取消（9999→0、恰 10000→1 双向边界）；resend_due 5000ms/上限 3；kidpal_points_delete_reconcile_hit 隐式 ack：pending 命中权威 items=不冲销、权威重推不含=冲销、空账重推=冲销（确认动作绝不本地删缓存）。回引 S-F6.2-AC3/AC4、契约 §四 kidpal_points_delete、D-03。设计态红 = 删除子态 seam 未落",
+        "acceptance": "K4G-A3: 切换后标量 active_target 单点唯一、list 恰一命中、build_points_home target 四键随切。回引 S-F6.5-AC3。设计态红 = target-switch 子命令缺席",
         "turnedRed": true,
         "sensitive": true,
-        "mutation": "实放（2026-11-05 builder 补证）：points_page.h KPTS_DELETE_IDLE_MS 10000UL→5000UL → RED「K2PTS-P3 RED: 9999ms ...」（:1111）。LF 归一 sha256 99fcc5c7…==HEAD blob；TEST 3 复跑 PASS",
-        "affectedTest": "host TEST 3（K2PTS-P3）"
+        "restored": true,
+        "mutation": "set_active_target 的 active_target 改为自赋值（变异后 1 failed；复原 1 passed）",
+        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_reward_goal_config.acceptance.py",
+        "affectedTest": "K4gA3UniqueActive::test_k4g_a3_unique_active_and_home_target_sync"
       },
       {
-        "acceptance": "K2PTS-P4: kidpal_points_ledger_state_apply 分页纪律——reset=true 先清旧分页再装首页（全字段随帧替换）、同版本续页累加、跨版本 reset=false 拒绝且零扰动；next_request 全量遍历（cursor 原样回传/known_revision 带版本/无缓存=-1 不带键/limit=6 不继承 story 16 条窗口）；screen_total 以 page_total 为准非 cached_count（items 1 条 vs total 5 有区分度）。回引 S-F6.2-AC1、契约 §四 kidpal_points_page、K1 producer 形状。设计态红 = apply/next_request seam 未落",
+        "acceptance": "K4G-A4: 切目标不扣分——balance 与分录数不变、revision +1、零新分录、回执回显 balance。回引 S-F6.5-AC3 / S-F6.1-AC3。设计态红 = target-switch 子命令缺席",
         "turnedRed": true,
         "sensitive": true,
-        "mutation": "实放（2026-11-05 builder 轮1）：points_page.h KPTS_PAGE_REQ_LIMIT 6→16（继承 story 窗口）→ RED「K2PTS-P4:FAIL: Expected 6 Was 16 … 契约 §四缺省 6」；全量 285 Tests 4 Failures。已还原，复验绿",
-        "affectedTest": "host TEST 4（K2PTS-P4）"
+        "restored": true,
+        "mutation": "删掉 target-switch 的 revision += 1（变异后 1 failed；复原 1 passed）",
+        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_reward_goal_config.acceptance.py",
+        "affectedTest": "K4gA4NoDeduction::test_k4g_a4_switch_does_not_deduct"
       },
       {
-        "acceptance": "K2PTS-P5: kidpal_points_selected_id_injectable——命中最近权威 items=1、未命中/空/NULL=0（设备不造 id）、frame NULL=-1。回引 D-08、契约 §四 selected_id 只读注入。设计态红 = 注入 seam 未落",
+        "acceptance": "K4G-A5: 切后旧分值 redeem 拒绝零写入、新分值成功落负向分录且事由取新目标名。回引 S-F6.3-AC3。设计态红 = target-switch 子命令缺席",
         "turnedRed": true,
         "sensitive": true,
-        "mutation": "实放（2026-11-05 builder 补证）：points_page.c kidpal_points_selected_id_injectable 未命中路径 return 0→1（非权威 id 放行）→ RED「K2PTS-P5 RED: ... id ... points_ledger items ...」（:1326）。sha256 963401f0…前=后；复跑 PASS",
-        "affectedTest": "host TEST 5（K2PTS-P5）"
+        "restored": true,
+        "mutation": "_resolve_active 恒返回出厂目标（变异后 1 failed；复原 1 passed）",
+        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_reward_goal_config.acceptance.py",
+        "affectedTest": "K4gA5PostSwitchRedeem::test_k4g_a5_post_switch_redeem_new_value_only"
       },
       {
-        "acceptance": "K2PTS-P6: 键帽逐字与页点——LEDGER=「问一问/下移」、DELETE_CONFIRM=「删掉/算了」（逐字对照 V9 points-ledger.png / points-delete-confirm.png，WF-F2-05 同族）、NONE=-1 回落页槽表；kidpal_keybar_dots 覆盖层页点消失回归半（overlay=1 隐藏不抹 total/active）。回引 S-F6.2-AC3、uiAcceptanceRefs 六帧。设计态红 = points_slots seam 未落",
+        "acceptance": "K4G-A6: 切目标不改写既有兑换分录 reason 快照。回引 S-F6.5-AC3。设计态红 = target-switch 子命令缺席",
         "turnedRed": true,
         "sensitive": true,
-        "mutation": "实放（2026-11-05 builder 补证）：keybar.c kidpal_keybar_points_slots LEDGER 左槽「问一问」→「问一问?」→ 双红「Expected '问一问' Was '问一问?'」（points_device_ui.acceptance.c:1362 + keybar_three_slot.acceptance.c:1049）。sha256 673de98e…前=后；两处复跑 PASS",
-        "affectedTest": "host TEST 6（K2PTS-P6）+ keybar_three_slot.acceptance.c K2PTS-P6 齿"
+        "restored": true,
+        "mutation": "switch 时改写既有分录 reason（变异后 1 failed；复原 1 passed）",
+        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_reward_goal_config.acceptance.py",
+        "affectedTest": "K4gA6HistorySnapshot::test_k4g_a6_history_reason_snapshot_kept"
       },
       {
-        "acceptance": "K2PTS-P7: 结构锚消费闭环（源扫描级）——mcp_server.cc 引用 home_state / ledger_state_apply /（points_slots 或 KPTS_SUBSTATE_DELETE_CONFIRM）；protocol.cc|h 引用 \"kidpal_points_delete\" 删除上行驱动方；\"selected_id\" 与 \"points_ledger\" 语境字面三文件任一在世（不锁语境映射家——story_page.c 落点自由度见申报）；CMake 登记守（本件 + points_page.c）。回引 K2D-E1 消费闭环。设计态红 = mcp 接线/驱动方/登记缺席",
+        "acceptance": "K4G-A7: 三回执单行 key=value、禁 delta/entry_id、switch 回显 balance；未知/重复/缺值/缺必填旗标 exit 2，语义拒绝 exit 1 + stderr + stdout 无成功回执。回引 S-F6.4-AC4。设计态红 = target 三子命令缺席",
         "turnedRed": true,
         "sensitive": true,
-        "mutation": "实放（2026-11-05 builder 补证）：mcp_server.cc kidpal_points_home_state 接线字面改名（移除消费引用）→ RED「K2PTS-P7 RED: mcp_server.cc 无 kidpal_points_home_state 接线」（:1437，结构齿读盘无需重编）。sha256 671d7381…前=后；复跑 PASS",
-        "affectedTest": "host TEST 7（K2PTS-P7，源扫描）"
+        "restored": true,
+        "mutation": "target-add 回执插入 entry_id=（变异后 1 failed；复原后当时仍红=与 A2 的冻结件冲突（已由 acceptance-author 修正），修后 11 passed）",
+        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_reward_goal_config.acceptance.py",
+        "affectedTest": "K4gA7ReceiptsAndErrors::test_k4g_a7_target_receipts_no_delta_entry_id"
       },
       {
-        "acceptance": "K2D-A1: kidpal_points_delete 消费——存在 id → 恰一帧 home(restore:true, balance=−35 不钳位, revision+1) + 恰一帧 ledger(restore:true, reset:true, 无 target, 不含已删 id)；重复/不存在 id 幂等 no-op 仍重推且零写账；非法 id（空串/非 str/None/纯空白）拒绝审计（WARNING 含 points_delete）零重推；story 目录零波及。回引 S-F6.2-AC4/AC5 数据面、D-03、契约 §四。设计态红 = 消费分支未落",
+        "acceptance": "K4G-A8: target-add / target-switch 同 command_id 重放返首次结果、不新增目标、不重复 bump revision。回引 S-F6.5-AC2 / S-F6.4-AC4。设计态红 = target 子命令缺席",
         "turnedRed": true,
         "sensitive": true,
-        "mutation": "实放（2026-11-05 builder 轮1）：front_app.py 幂等 no-op 跳过重推 → RED「K2D-A1 RED: 幂等 no-op 未重推 home」；单跑 1 failed, 3 passed。已还原，复验 4 passed",
-        "affectedTest": "server K2d*Acceptance::test_k2d_a1…（幂等 no-op 重推断言）"
+        "restored": true,
+        "mutation": "关掉 add_custom_target 的 command_id 重放分支（变异后 1 failed；复原 1 passed）",
+        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_reward_goal_config.acceptance.py",
+        "affectedTest": "K4gA8Idempotency::test_k4g_a8_target_command_id_idempotent"
       },
       {
-        "acceptance": "K2D-A2: 积分语境有界注入——POINTS_CTX_SIGNAL_TYPE=\"kidpal_points_context\"（冻结 wire）+ ctx(points_home) 恰注一帧有界摘要（余额 39/目标 40/游乐场/最近分录，第 4 条旧分录不得入摘要，种子 5+2+3+29=39 与目标分值 40 不撞值）；ctx(points_ledger)+selected_id 命中附分录摘要（29/10→39 可辨值）；未命中不伪造；注入失败不阻断拦截消费。回引 S-F6.3 补充规则、D-08、契约 §四。设计态红 = POINTS_CTX_SIGNAL_TYPE 缺席",
+        "acceptance": "K4G-A9: SKILL.md 旧硬阻断句消失、frontmatter 覆盖目标管理、§2 含三 target 动词、§5 含四类目标错误、「先 targets 拿 id 不自编」纪律。回引 S-F6.5 / S-F6.4-AC4。设计态红 = SKILL.md 旧阻断句仍在",
         "turnedRed": true,
         "sensitive": true,
-        "mutation": "实放（2026-11-05 builder 补证）：front_app.py _build_points_ctx_summary 移除 recent 窗口（全量注入）→ RED「K2D-A2 RED: 摘要含第 4 条（超出 recent 3 条窗口的）分录 —— 注入必须有界」（test_points_device_ui.acceptance.py:598）。sha256 1a149a3c…前=后；复跑 4 passed",
-        "affectedTest": "server K2dPointsContextInjectionAcceptance::test_k2d_a2_points_context_bounded_injection_with_selected_id"
+        "restored": true,
+        "mutation": "SKILL §8 写回旧硬阻断句（变异后 1 failed；复原 1 passed）",
+        "command": "python -m pytest -q --import-mode=importlib server/acceptance/test_reward_goal_config.acceptance.py",
+        "affectedTest": "K4gA9SkillTargetManagement::test_k4g_a9_skill_md_target_management"
       },
       {
-        "acceptance": "K2D-A3: 语境闭集路由与零回归——ctx(points_home/points_ledger) 停留 chat、零 story_list、零 record 信号；未知值记 WARNING（含值）且绝不回退成 story；ctx(story) 切累积态 + 恰一帧 story_list + 恰一帧 record 信号（M4K1-A2 零回归半：行为半保持 must-stay-green，本件只新增记 WARNING 要求）。回引 契约 §四 闭集、S-F6.3。设计态红 = 未知值拒绝日志缺席",
+        "acceptance": "K4G-H1: 五键 asset→bin 名映射全覆盖；sc-castle/未知/空串/NULL 返回 NULL 不猜图。回引 S-F6.5-AC1/AC2。设计态红 = kidpal_points_scene_asset 未落",
         "turnedRed": true,
         "sensitive": true,
-        "mutation": "实放（2026-11-05 builder 补证）：front_app.py 未知 source_page 分支内加 story 累积态回退（story 域零触碰）→ RED「'accumulate' != 'chat'」（:731）。sha256 1a149a3c…前=后；复跑 4 passed",
-        "affectedTest": "server K2dSourcePageClosureAcceptance::test_k2d_a3_source_page_closure_guard_and_story_zero_regression"
+        "restored": true,
+        "mutation": "kidpal_points_scene_asset(\"sc-wheel\") 返回 NULL（变异后 H1=FAIL；重编还原后 H1..H5 全 PASS）",
+        "command": "wsl -d Ubuntu-24.04 -- bash -c \"cd C:/AI/KidPal-pod-m2/firmware/main/test/host_app && ./espidf_wsl.sh build\" && ./build/host_infra_test.elf",
+        "affectedTest": "host TEST 1 (K4G-H1)"
       },
       {
-        "acceptance": "K2D-A4: 不完整句零写入与单写入口——普通 stt 帧 False 不拦截且零写盘；非 control 载荷意图缝拒绝；缺事由/零分/布尔分值意图零写入（K0 冻结回归半）；单写入口锚：_consume_kidpal_control 源内零 add/redeem 调用、全模块 gw_points.add_points( 恰 1 处（D-10 front 半）。回引 S-F6.3-AC1 消费面半、D-04、NFR-OFF-1。K0 现状即绿（回归守卫半），绿非空过、区分性断言逐条注明",
+        "acceptance": "K4G-H2: 5 与 200 两档刻度几何（0/target/越标延伸）+ 非法入参 -1 + progress 越目标同页结构回归。回引 S-F6.5-AC3 / S-F6.1-AC2。设计态红 = kidpal_points_scale_x 未落",
         "turnedRed": true,
         "sensitive": true,
-        "mutation": "实放（2026-11-05 builder 补证）：front_app.py 注释行使 gw_points.add_points( 源扫描计数 1→2 → RED「front 的 add_points 调用点 != 1 —— 薄意图截获是唯一写账入口」（:852）。sha256 1a149a3c…前=后；复跑 4 passed",
-        "affectedTest": "server K2dZeroWriteAcceptance::test_k2d_a4_incomplete_sentence_zero_write_and_single_write_entry"
+        "restored": true,
+        "mutation": "刻度分母改 target+1（变异后 H2=FAIL；重编还原后全 PASS）",
+        "command": "wsl -d Ubuntu-24.04 -- bash -c \"cd C:/AI/KidPal-pod-m2/firmware/main/test/host_app && ./espidf_wsl.sh build\" && ./build/host_infra_test.elf",
+        "affectedTest": "host TEST 2 (K4G-H2)"
+      },
+      {
+        "acceptance": "K4G-H3: 四枚新 bin + sc_wheel 只读：长 268、magic KAP1、format1、42×42、stride6、墨位 0<ink<全墨。回引 S-F6.5-AC1/AC2、arch §5.5.2。设计态红 = 四枚新 bin 未产出",
+        "turnedRed": true,
+        "sensitive": true,
+        "restored": true,
+        "mutation": "翻转 sc_flag_42_42.bin magic 首字节（变异后 H3=FAIL；复原 H3=PASS（无需重编））",
+        "command": "wsl -d Ubuntu-24.04 -- bash -c \"cd C:/AI/KidPal-pod-m2/firmware/main/test/host_app && ./espidf_wsl.sh build\" && ./build/host_infra_test.elf",
+        "affectedTest": "host TEST 3 (K4G-H3)"
+      },
+      {
+        "acceptance": "K4G-H4: 出厂态回归（默认游乐场 40 / sc-wheel / 五逻辑标识可解析可映射）——must-stay-green。回引 S-F6.5-AC1 / S-F6.1-AC2",
+        "turnedRed": true,
+        "sensitive": true,
+        "restored": true,
+        "mutation": "kidpal_points_scene_asset(\"sc-wheel\") 返回 NULL（与 H1 同一变异；变异后 H4=FAIL；还原后全 PASS）",
+        "command": "wsl -d Ubuntu-24.04 -- bash -c \"cd C:/AI/KidPal-pod-m2/firmware/main/test/host_app && ./espidf_wsl.sh build\" && ./build/host_infra_test.elf",
+        "affectedTest": "host TEST 4 (K4G-H4)"
+      },
+      {
+        "acceptance": "K4G-H5: host 注册序（本件在 smoke 前）、points_page.c 在册、两 seam 头/实现落点、render_node 用映射+strcmp 且无 slot->name == asset。回引 S-F6.5-AC3。设计态红 = CMakeLists 未登记 / seam 未落",
+        "turnedRed": true,
+        "sensitive": true,
+        "restored": true,
+        "mutation": "槽命中判据改回 slot->name == asset（去掉 strcmp）（变异后 H5=FAIL；复原 H5=PASS（源扫，无需重编））",
+        "command": "wsl -d Ubuntu-24.04 -- bash -c \"cd C:/AI/KidPal-pod-m2/firmware/main/test/host_app && ./espidf_wsl.sh build\" && ./build/host_infra_test.elf",
+        "affectedTest": "host TEST 5 (K4G-H5)"
       }
     ],
-    "note": "11/11 变异实放转红后字节级还原（sha256 前=后，终态 MUTATION_CLEAN 零命中）；真机语音与删除证据（K2PTS-L1/L2）不被 host 变异证据替代。live-manual 三段（K2PTS-L1/L2/L3）以冻结件头 coverage: 标记承载、不进本数组（K0 先例），K2PTS-L2 含 K1L-L1/L2 真机轮挂接（human 2026-11-05 意向）。acceptance 串 = planner 自现行 acceptance[] 程序复制（K1 教训②，非人工誊写）"
+    "note": "逐 acceptance 变异证据由 builder 真实执行（13 处变异覆盖 14 个 id，每处还原并复跑）；A1/A7 复原后当时的红因是冻结件自身缺陷，已由 acceptance-author 修正并重冻；planner 按 acceptance[] 原文串程序化回填。"
   },
   "crossEnd": {
     "counterparts": [
       {
         "path": "server/gateway/front/front_app.py",
-        "symbol": "_consume_kidpal_control"
-      },
-      {
-        "path": "server/gateway/front/front_app.py",
         "symbol": "_push_display_payload"
       },
       {
-        "path": "server/gateway/display_schema.py",
-        "symbol": "validate_display"
+        "path": "firmware/main/display/view_router.c",
+        "symbol": "kidpal_display_route"
       }
     ],
     "exempt": ""
   },
   "changeManifest": [
-    "firmware/main/display/points_page.c",
-    "firmware/main/display/points_page.h",
-    "firmware/main/display/keybar.c",
-    "firmware/main/display/keybar.h",
-    "firmware/main/display/view_router.c",
-    "firmware/main/display/view_router.h",
-    "firmware/main/mcp_server.cc",
-    "firmware/main/application.cc",
-    "firmware/main/protocols/protocol.h",
-    "firmware/main/protocols/protocol.cc",
-    "firmware/main/CMakeLists.txt",
-    "firmware/main/test/points_device_ui.acceptance.c",
-    "firmware/main/test/record_session_live.acceptance.c",
-    "firmware/main/test/keybar_three_slot.acceptance.c",
-    "firmware/main/test/host_app/main/CMakeLists.txt",
+    "server/gateway/points.py",
     "server/gateway/front/front_app.py",
-    "server/acceptance/test_points_device_ui.acceptance.py",
-    "firmware/main/display/story_page.c",
-    "firmware/main/display/story_page.h",
-    "firmware/main/display/kidpal_render_node.cc",
-    "firmware/main/display/kidpal_render_node.h",
-    "firmware/main/display/lcd_display.cc",
-    "server/acceptance/test_points_e2e_spike.acceptance.py",
-    "server/deploy/engine-patch/connection.py",
-    "server/deploy/kidpal-agent-prompt.txt",
+    "server/deploy/openclaw-skills/workspace-main/kidpal-points-write/SKILL.md",
+    "server/acceptance/test_reward_goal_config.acceptance.py",
+    "server/tests/test_points_goal_units.py",
+    "tools/asset-pipeline/gen_assets.mjs",
     "tools/asset-pipeline/gen_art_spiffs.mjs",
     "tools/simulator/LvglWindowsSimulator/assets/assets.c",
-    "firmware/main/assets/spiffs_root/pt_cat_34_28.bin",
-    "firmware/main/assets/spiffs_root/sc_wheel_42_42.bin",
-    "firmware/main/test/ui_art_integration.acceptance.c",
-    "firmware/main/test/retract_p4_three_page.acceptance.c",
-    "server/deploy/openclaw-skills/workspace-kidpal/kidpal-points-answer/SKILL.md",
-    "server/deploy/manifest.yaml",
-    "server/deploy/openclaw-skills/README.md",
-    "server/deploy/261017-openclaw-kidpal-skills/kidpal-agent-skills-declaration.json",
-    "server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md",
-    "server/acceptance/test_261017_openclaw_kidpal_skills.acceptance.py",
-    "firmware/main/assets/spiffs_root/ic_coin_36_36.bin"
+    "tools/simulator/LvglWindowsSimulator/assets/assets.h",
+    "firmware/main/assets/spiffs_root/sc_choco_42_42.bin",
+    "firmware/main/assets/spiffs_root/sc_movie_42_42.bin",
+    "firmware/main/assets/spiffs_root/sc_gift_42_42.bin",
+    "firmware/main/assets/spiffs_root/sc_flag_42_42.bin",
+    "firmware/main/display/points_page.c",
+    "firmware/main/display/points_page.h",
+    "firmware/main/display/kidpal_render_node.cc",
+    "firmware/main/test/reward_goal_config.acceptance.c",
+    "firmware/main/test/host_app/main/CMakeLists.txt",
+    "server/tests/test_points_spike_units.py"
   ],
   "impactedTestsSeed": [
     {
-      "path": "firmware/main/test/record_session_live.acceptance.c",
-      "kind": "frozen-rebaseline",
-      "note": "K0a 已改枚举驱动；本包只扩 points_ledger 子页语境，保持 story 记录语境和原发送时点。"
-    },
-    {
-      "path": "firmware/main/test/keybar_three_slot.acceptance.c",
-      "kind": "frozen-rebaseline",
-      "note": "K0a 的四点与 P3 主页槽为基线；详细账本/删除子态按 v1.71 收紧，覆盖层页点消失不变。"
-    },
-    {
-      "path": "firmware/main/test/story_page_v2.acceptance.c",
+      "path": "server/acceptance/test_points_ledger_core.acceptance.py",
       "kind": "regression",
-      "note": "删除确认可复用同族机制，故事列表/阅读/盖章数据与行为不并入积分。"
+      "note": "K1 目标存储与不变量基线：余额、历史分录、单 writer、revision 语义不得因配置命令放松。"
     },
     {
-      "path": "server/acceptance/test_m4k1_story_cloud_link.acceptance.py",
+      "path": "server/acceptance/test_qq_points_channel.acceptance.py",
       "kind": "regression",
-      "note": "新增 points_home/points_ledger/story_cover 等值的普通语境处理不得改变 story 的记录语境归档。"
+      "note": "K3 加/兑/查/删与普通错误回复保持；三个 target 动词复用同一 CLI 与 exit2/exit1 分界，不得新建第二通道。"
+    },
+    {
+      "path": "server/acceptance/test_reward_goal_config.acceptance.py",
+      "kind": "new",
+      "note": "5/200 边界内外、预置禁删、激活自定义禁删、唯一激活、切换零分录（balance 与 entries 长度不变、revision+1）、切后 redeem 只认新分值、旧分值拒答且 state 零写入。"
+    },
+    {
+      "path": "server/tests/test_points_goal_units.py",
+      "kind": "new",
+      "note": "CLI 层单测：_parse_flags 未知/重复/缺值 → exit 2；范围与语义拒绝 → exit 1；回执单行 key=value 与 %XX 只编码空白；target 回执不含 delta/entry_id。"
+    },
+    {
+      "path": "firmware/main/test/points_device_ui.acceptance.c",
+      "kind": "frozen-rebaseline",
+      "note": "K2 默认游乐场 40 起始基线；四态、负余额、restore 不抢前台断言只可 additive 扩展，不得削弱。"
+    },
+    {
+      "path": "firmware/main/test/points_spike.acceptance.c",
+      "kind": "regression",
+      "note": "K0/K1 设备侧契约面：出厂 target_asset == \"sc-wheel\"、四键容量；points_page.c 改动后出厂态与四键形状必须零偏移。"
+    },
+    {
+      "path": "firmware/main/test/reward_goal_config.acceptance.c",
+      "kind": "new",
+      "note": "host 可编层：五键 asset→bin 名映射全覆盖且未知标识返回 NULL 不猜图；points=5 与 200 两档进度线伸缩与越目标版面；直读 spiffs_root 四枚新 bin 做 KAP1 头/尺寸/stride/墨量机检。"
+    },
+    {
+      "path": "firmware/main/test/acceptance/archive/ui_art_integration.acceptance.c",
+      "kind": "regression-reference",
+      "note": "KAP1 格式与既有资产闭集历史参照，只读不重开；新增资产 additive，现役加载/降级行为不变。"
+    },
+    {
+      "path": "firmware/main/test/host_app/main/CMakeLists.txt",
+      "kind": "structural",
+      "note": "CMakeLists 变动 → 跑全量 host runner（不只 scoped 子集），并核新 acceptance 位于 host smoke 之前。"
+    },
+    {
+      "path": "device-round-evidence.md",
+      "kind": "live-manual",
+      "note": "render_node.cc 属 host 不可编登记路径：四预置 + sc-flag 逐一目检、切目标时其他页不抢前台、积分页原地刷新并记录与 NFR-PERF-4 同款时延字段、RAM 资源预算实测。"
+    },
+    {
+      "path": "server/tests/test_points_spike_units.py",
+      "kind": "regression",
+      "note": "K0 单元基线：read_state additive 两键使 test_missing_file_is_zero_state 的精确三键 equality 失效；按 architect 扩单评估改投影 equality + 出厂两键值 + receipts 不外泄负断言，只动该测试体。"
     }
   ],
   "uiux": {
@@ -288,10 +332,7 @@
     "designRefs": [
       "docs/ui/V9/points-home.png",
       "docs/ui/V9/points-home-empty.png",
-      "docs/ui/V9/points-home-nodata.png",
-      "docs/ui/V9/points-home-negative.png",
-      "docs/ui/V9/points-ledger.png",
-      "docs/ui/V9/points-delete-confirm.png"
+      "docs/ui/V9/points-home-negative.png"
     ],
     "sharedUiRefs": [
       "docs/ui/kidpal-ui-design-v9.html",
@@ -300,10 +341,7 @@
     "uiAcceptanceRefs": [
       "points-home",
       "points-home-empty",
-      "points-home-nodata",
-      "points-home-negative",
-      "points-ledger",
-      "points-delete-confirm"
+      "points-home-negative"
     ],
     "designReviewRequired": true,
     "designReviewEvidenceRequired": true,
@@ -315,110 +353,103 @@
     "delivery/workstreams/261103-star-points-story-cover/"
   ],
   "riskTier": "high",
-  "riskRationale": "跨设备/front/云端持久账本实现新页面族、语音写入和删除上行，含全局键位、会话状态机和真实儿童交互，故为 high。",
+  "riskRationale": "目标配置直接决定兑换金额并跨 QQ、持久状态、front、资产管线和设备进度线；错误会导致错误扣账或目标/显示不一致，故为 high。",
   "gateProfile": [
     "evidence-integrity",
     "test-quality",
     "state-machine",
     "mcp-tool-contract"
   ],
-  "mergeOrder": 73,
+  "mergeOrder": 75,
   "dependsOn": [
-    "261104-k1-points-ledger-core"
+    "261104-k1-points-ledger-core",
+    "261104-k2-points-device-ui",
+    "261104-k3-qq-points-channel"
   ],
   "decisionCoverage": [
     {
-      "decision": "D-02 · 单页积分主页与完整账本子页",
-      "summary": "points_page 从 spike 最小实现换为正式主页与详细账本，覆盖四态、最近三条、单行分录和全量可及。",
-      "sourceRefs": [
-        "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-02"
-      ],
-      "landsIn": "exitCriteria:K2D-E1"
-    },
-    {
-      "decision": "D-03 / OQ-1 · 删除后重算与负余额如实显示",
-      "summary": "设备只发删除并消费权威重推，负数不藏、不钳位显示；兑换资格仍由 K1 判定。",
-      "sourceRefs": [
-        "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-03",
-        "S-F6.1-AC5",
-        "S-F6.2-AC4"
-      ],
-      "landsIn": "exitCriteria:K2D-E3"
-    },
-    {
-      "decision": "D-04 · 完整语音句、短窗去重、设备语音不开放删除",
-      "summary": "完整句成功跳页，不完整句普通对话不落账；删除只走按键确认和私有上行。",
-      "sourceRefs": [
-        "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-04"
-      ],
-      "landsIn": "exitCriteria:K2D-E3"
-    },
-    {
-      "decision": "D-06 · 云端真相源与断网可见失败",
-      "summary": "RAM 缓存可恢复重建，但不写 NVS/SD 账本或离线队列，断网写/删有可见失败。",
-      "sourceRefs": [
-        "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-06"
-      ],
-      "landsIn": "exitCriteria:K2D-E3"
-    },
-    {
-      "decision": "D-07 · 恢复只填缓存，主动语音成功例外跳页",
-      "summary": "restore 与显式导航分流，其他页推送不抢前台，积分页在屏原地刷新。",
-      "sourceRefs": [
-        "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-07"
-      ],
-      "landsIn": "exitCriteria:K2D-E2"
-    },
-    {
-      "decision": "D-08 · session_ctx、删除与分页私有帧消费",
-      "summary": "积分主页/详细账本语境、selected_id、kidpal_points_delete 与 keyset 请求按 landed 契约落地。",
-      "sourceRefs": [
-        "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-08"
-      ],
-      "landsIn": "exitCriteria:K2D-E2"
-    },
-    {
-      "decision": "D-05 · QQ 家长通道复证",
-      "summary": "本包提供 restore/原地刷新消费缝，正式 QQ 加/兑/查/删由 K3 承接。",
-      "sourceRefs": [
-        "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-05"
-      ],
-      "landsIn": "package:261104-k3-qq-points-channel"
-    },
-    {
-      "decision": "D-09 · 场景资产与刻度联动",
-      "summary": "本包建立进度线消费缝，四预置/自定义美术和切目标伸缩由 K4 承接。",
+      "decision": "D-09 · 书封/场景资产走既有管线",
+      "summary": "本包承担四预置与自定义通用旗标，封皮 ic-coin 归 K5；稳定资产标识来自契约闭集。",
       "sourceRefs": [
         "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-09"
       ],
-      "landsIn": "package:261104-k4-reward-goal-config"
+      "landsIn": "exitCriteria:K4G-E1"
+    },
+    {
+      "decision": "OQ-2 · 禁止删除激活自定义目标",
+      "summary": "预置不可删，激活自定义必须先切换，任何路径不出现暂无目标页。",
+      "sourceRefs": [
+        "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.2-OQ-2"
+      ],
+      "landsIn": "exitCriteria:K4G-E2"
+    },
+    {
+      "decision": "OQ-3 · 自定义目标 5–200 正整数",
+      "summary": "边界内外经真实 QQ 和 server 双侧验证，出界一次性报错。",
+      "sourceRefs": [
+        "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.2-OQ-3"
+      ],
+      "landsIn": "exitCriteria:K4G-E2"
+    },
+    {
+      "decision": "S-F6.5 AC3 · 唯一激活与刻度伸缩",
+      "summary": "切目标只改激活配置，设备进度线随新分值伸缩且 restore 不抢前台。",
+      "sourceRefs": [
+        "S-F6.5-AC3",
+        "S-F6.1-AC2"
+      ],
+      "landsIn": "exitCriteria:K4G-E3"
+    },
+    {
+      "decision": "S-F6.3 AC3 · 切目标后兑换只认新分值",
+      "summary": "旧目标分值不再兑换，切目标本身不产生负向分录，历史名目保持快照。",
+      "sourceRefs": [
+        "S-F6.3-AC3"
+      ],
+      "landsIn": "exitCriteria:K4G-E3"
+    },
+    {
+      "decision": "D-10 · 配置仍走 points.py 单 writer",
+      "summary": "QQ 只整理命令，目标配置校验和持久化由同一执行器承载。",
+      "sourceRefs": [
+        "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-10"
+      ],
+      "landsIn": "exitCriteria:K4G-E2"
+    },
+    {
+      "decision": "D-01 · 故事封皮资产与导航",
+      "summary": "封皮 ic-coin 与 P4 层级导航不在本包，统一由 K5 承接。",
+      "sourceRefs": [
+        "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-01"
+      ],
+      "landsIn": "package:261104-k5-story-cover-nav"
     }
   ],
   "crossPackageBehaviors": [
     {
-      "topic": "K1 权威账本到设备只读渲染与删除/分页上行",
+      "topic": "K1 目标存储到 K4 完整配置行为",
       "owner": "261104-k1-points-ledger-core",
-      "carriedBy": "261104-k2-points-device-ui",
-      "note": "K2 不重算余额、不本地持久化；删除和分页只消费 landed 私有帧及权威重推。"
+      "carriedBy": "261104-k4-reward-goal-config",
+      "note": "K1 提供合法存储与校验，K4 用真实 QQ 完成自定义/切换/删除及切目标后兑换联动。"
     },
     {
-      "topic": "source_page 的 points_ledger 子页扩展",
-      "owner": "261104-k0a-four-page-skeleton",
-      "carriedBy": "261104-k2-points-device-ui",
-      "note": "K0a 已建立枚举驱动，本包补详细账本与 selected_id，K5 后续补 story_cover，不回退数字页位。"
+      "topic": "K3 QQ skill 的目标配置扩展",
+      "owner": "261104-k3-qq-points-channel",
+      "carriedBy": "261104-k4-reward-goal-config",
+      "note": "沿用同一 skill、CLI 和普通错误回复，不新建第二 QQ 通道或 ask_user 流程。"
     },
     {
-      "topic": "QQ/目标切换的 restore 与进度线消费缝",
+      "topic": "K2 进度线缝的场景资产与刻度消费",
       "owner": "261104-k2-points-device-ui",
-      "carriedBy": "261104-k3-qq-points-channel",
-      "note": "K3 复证 QQ 到账不抢前台，K4 复证目标切换后刻度/场景标更新；两包都不另写设备渲染分支。"
+      "carriedBy": "261104-k4-reward-goal-config",
+      "note": "K4 补资产与切换行为，K2 的四态/restore/负余额基线不回退。"
     },
     {
-      "topic": "积分与故事星星的独立性",
-      "owner": "261104-k2-points-device-ui",
+      "topic": "资产管线的 K4/K5 串行分工",
+      "owner": "261104-k4-reward-goal-config",
       "carriedBy": "261104-k5-story-cover-nav",
-      "note": "K2 不动故事 total，K5 封皮计数仍复用 story_list.total，任何包不得把两套数字合并。"
+      "note": "K4 只产四场景与 sc-flag，K5 后序在同一管线补 ic-coin 与书封，避免并行修改生成器与资产清单。"
     }
   ],
-  "notes": "影响面机械辅证：图索引确认 application.cc 会话发送单点、mcp_server display 路由族、view_router 既有 7 view 数值码和 front _consume_kidpal_control；K0/K1 已建立 points 最小生产消费，本包为串行正式化。相邻冻结锚非零命中：record_session_live、keybar_three_slot、story_page_v2、server session_ctx 族；K0a 已重锚的面以新基线为准，不重复回改旧三页断言。常量交叉扫描：删除确认 10 秒、消歧约 300ms 沿 spec，分页 limit 不钉死为 story 16，负余额只在删除重算后显示；NFR-PERF-4 不拍死数值。"
+  "notes": "影响面机械辅证：架构 §5.5.2 与 tools/asset-pipeline 实读确认 gen_assets.mjs→gen_art_spiffs.mjs→firmware/main/assets/spiffs_root 的既有产线；契约 target.asset 闭集为 sc-choco/sc-movie/sc-wheel/sc-gift/sc-flag，V9 已把游乐场定稿为 sc-wheel，不得回用 sc-castle。相邻冻结锚：K1 目标存储、K2 默认 40、K3 QQ skill、ui_art_integration KAP1 格式均保留；新增资产 additive，不新增字体/分区，不为自定义奖励名猜图。K4 等 K1–K3 merged，mergeOrder=75。 2026-11-15 Step 1g architect 预评 + planner 裁定：渲染落点必须扩 firmware/main/display/kidpal_render_node.cc（host 不可编 → deviceOutcome userVisible:true）；资产只新增 4 枚（sc_wheel_42_42 是 K2 已交付件），落盘名按命名律 sc_*_42_42.bin；scripts/** 删除（skill 无脚本）；CLI 用扁平动词 target-add/target-switch/target-delete + 既有 targets；渲染缓存取 3 槽 + strcmp 重载；v9 母版五符号在位，docs/ui/** 不进 manifest。 [扩单 2026-11-15] changeManifest append server/tests/test_points_spike_units.py——依据 = architect 扩单评估（APPROVE）：K4 read_state additive 两键使 K0 存量精确三键 equality 失效，按 K1 同文件扩单先例改断言形态，不改实现、不改冻结件；硬边界 = 只许改 test_missing_file_is_zero_state 一个测试体 + docstring。"
 }

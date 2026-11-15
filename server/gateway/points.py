@@ -23,10 +23,15 @@ state 文件形状（本包正式形态；K0 三键形态为其子集，向后�
     {"revision": int, "balance": int, "entries": [<六键分录>, ...]
      [, "targets": [<四键自定义目标>, ...]      # 仅当存在自定义目标时落盘
       , "active_target": "<目标 id>"            # 仅当非出厂默认时落盘
-      , "receipts": {"<command_id>": <六键分录>}]}  # 仅当有回执时落盘
+      , "receipts": {"<command_id>": <六键分录>        # add / redeem 的传输幂等回执
+                     "delete:<command_id>": {"id", "deleted": True,
+                                             "revision", "balance"}}]}  # delete 回执
 `entries` 恒为 (occurred_at, id) 时间倒序；`balance` 恒等于全部 delta 之和
 （read_state 从分录重算，不信任磁盘上的 balance 副本）；逐条 balance_before/
 balance_after 由写入路径按**时间序**全量重算（删除亦然，允许负余额 —— OQ-1）。
+`receipts` 两族共表、键前缀隔离：add/redeem 走裸 command_id，delete 走
+`delete:<command_id>`——`_replay_receipt`（只看裸键）永远看不到删除回执，反之
+本模块读删除回执时也校验 `deleted` 键在场，两族不串味。
 """
 
 from __future__ import annotations
@@ -96,6 +101,9 @@ PAGE_LIMIT_DEFAULT = 6
 PAGE_LIMIT_MIN = 1
 PAGE_LIMIT_MAX = 50
 
+# QQ 家长通道 recent 回执行数（261104-k3；缺省 5、区间与分页同一把尺 1–50）。
+RECENT_LIMIT_DEFAULT = 5
+
 # 分录六键统一形状（契约 §1.3⑦⑧ 共用；写盘/校验/形状自检同一处单源）。
 ENTRY_KEYS = frozenset(
     {"id", "delta", "reason", "occurred_at", "balance_before", "balance_after"})
@@ -106,6 +114,8 @@ TARGET_KEYS = ("id", "name", "points", "asset")
 _STATE_LOCK = threading.Lock()
 
 _CLI_INT_RE = re.compile(r"^[0-9]+$")
+# 分录 id 形状（执行器生成 = "pt_" + uuid4().hex；QQ 通道回执的稳定定位把据此校验）。
+_POINT_ENTRY_ID_RE = re.compile(r"^pt_[0-9a-f]+$")
 
 
 # --------------------------------------------------------------------------- #
@@ -404,18 +414,22 @@ def _load_full(path) -> dict:
 
 
 def read_state(path) -> dict:
-    """读取账本状态：{"revision", "balance", "entries"}（entries 时间倒序）。
+    """读取账本状态：{"revision", "balance", "entries", "custom_targets", "active_target"}。
 
-    文件不存在 -> 零状态（revision 0 / balance 0 / entries []）。
+    文件不存在 -> 零状态（revision 0 / balance 0 / entries [] / 出厂激活目标）。
     文件存在但不可解析 / 形状违约 -> ValueError（绝不静默当空账覆盖真账本——数据丢失面）。
     `balance` 恒由分录重算（磁盘上的 balance 只是副本，不是权威）。逐条前后余额按持久值
     返回（写入路径负责重算；读取侧不在读时「修正」陈旧链，以免掩盖写入缺陷）。
+    K4 追加两键（**纯 additive**，K0/K1 三键消费方零影响）：`custom_targets` = 自定义
+    目标列表（只读副本）、`active_target` = 当前激活目标 id（唯一激活 = 标量单点）。
     """
     full = _load_full(path)
     return {
         "revision": full["revision"],
         "balance": full["balance"],
         "entries": full["entries"],
+        "custom_targets": [dict(t) for t in full["custom_targets"]],
+        "active_target": full["active_target"],
     }
 
 
@@ -647,46 +661,198 @@ def redeem_points(path, points, *, now=None, command_id=None) -> dict:
     return dict(stored)
 
 
-def delete_entry(path, entry_id) -> dict:
+# 删除回执在 state.receipts 里的键命名空间（add/redeem 用裸 command_id；前缀隔离
+# 保证 `_replay_receipt` 永远看不到删除回执——两族互不串味）。
+_DELETE_RECEIPT_PREFIX = "delete:"
+
+
+def _delete_receipt_key(command_id: str) -> str:
+    return _DELETE_RECEIPT_PREFIX + command_id
+
+
+def _replay_delete_receipt(full: dict, command_id):
+    """同 command_id 的删除重放 -> 首次结果；无回执 / 形状不符 -> None。
+
+    形状不符（缺 `deleted` 键）= 该裸键是 add/redeem 的分录回执，绝不能当删除结果读
+    （command_id 字面量恰好以命名空间前缀开头时的隔离守卫）。
+    """
+    stored = full["receipts"].get(_delete_receipt_key(command_id))
+    if not isinstance(stored, dict) or "deleted" not in stored:
+        return None
+    return dict(stored)
+
+
+def _validate_delete_locator(entry_id, index) -> None:
+    """定位符的 state-free 校验（互斥 + 形状 + 正整数）。
+
+    挡在 `_critical` 之前：语义拒绝路径零文件副作用（不建目录、不建 `.lock`）。
+    越界（需要账本长度）留给 `_delete_entry_locked` 在临界区内判。
+    """
+    if (entry_id is None) == (index is None):
+        raise ValueError(
+            "delete needs exactly one locator: --entry-id pt_<hex> 或 --index <序号>")
+    if index is not None:
+        if not _is_positive_int(index):
+            raise ValueError(f"delete index must be a positive integer, got {index!r}")
+        return
+    if not isinstance(entry_id, str) or not entry_id.strip():
+        raise ValueError(
+            f"delete_entry entry_id must be a non-empty string, got {entry_id!r}")
+
+
+def _delete_entry_locked(path, entry_id=None, index=None, command_id=None) -> dict:
+    """**只许在 `_critical` 内调用**：序号→id 换算与删除在同一临界区一次做完。
+
+    排序权威 = `_entry_sort_key` / `_sorted_desc`（与设备 ledger 分页、recent 回执
+    同一把尺）——若「先读序号、再进锁删」，两次操作之间的新写入会让序号静默漂移、
+    删错账（TOCTOU）。index 为 1 起的时间倒序序号（= recent 回执的 index）。
+
+    command_id（keyword-only，缺省 None = 无传输幂等语义）：同 id 重放 -> **直接返回
+    首次结果**、不再删除、不递增 revision。重放判定在**序号换算之前**——首删后序号已
+    漂移，若先换算就会删到另一条（`--index 2` 重放的真实误删面）。`deleted=false` 的
+    幂等 no-op **不记回执**（no-op 恒零写入，冻结契约与文档同钉）。
+    """
+    _validate_delete_locator(entry_id, index)
+    full = _load_full(path)
+    if command_id is not None:
+        replayed = _replay_delete_receipt(full, command_id)
+        if replayed is not None:
+            log.info(
+                "points_delete_replay corr_id=%s command_id=%s entry_id=%s revision=%d",
+                uuid.uuid4().hex, command_id, replayed.get("id"), full["revision"])
+            return replayed
+    target_id = entry_id
+    if index is not None:
+        entries = full["entries"]          # `_load_full` 已按 (occurred_at, id) 倒序
+        if index > len(entries):
+            raise ValueError(
+                f"delete index {index} out of range "
+                f"(ledger holds {len(entries)} entries)")
+        target_id = entries[index - 1]["id"]
+    if _find_entry(full["entries"], target_id) is None:
+        log.info(
+            "points_delete corr_id=%s entry_id=%s deleted=false revision=%d balance=%d",
+            uuid.uuid4().hex, target_id, full["revision"], full["balance"])
+        return {
+            "id": target_id,
+            "deleted": False,
+            "revision": int(full["revision"]),
+            "balance": int(full["balance"]),
+        }
+    full["entries"] = _recompute_chain(
+        [entry for entry in full["entries"] if entry["id"] != target_id])
+    full["revision"] = int(full["revision"]) + 1
+    receipt = {
+        "id": target_id,
+        "deleted": True,
+        "revision": int(full["revision"]),
+        "balance": sum(int(entry["delta"]) for entry in full["entries"]),
+    }
+    if command_id is not None:
+        key = _delete_receipt_key(command_id)
+        existing = full["receipts"].get(key)
+        if isinstance(existing, dict) and "deleted" not in existing:
+            # 病态撞键（调用方的 command_id 字面量恰好以命名空间前缀开头，且该裸键已
+            # 被 add/redeem 的分录回执占用）：绝不覆盖它——add/redeem 的传输幂等优先，
+            # 本条删除回执降级为不持久（下次重放即普通删除，退回无重放守卫生效前的行为）。
+            log.warning(
+                "points_delete_receipt_degraded corr_id=%s command_id=%s "
+                "reason=namespace_collision",
+                uuid.uuid4().hex, command_id)
+        else:
+            full["receipts"][key] = dict(receipt)
+    _write_state(path, full)
+    revision = receipt["revision"]
+    balance = receipt["balance"]
+
+    log.info(
+        "points_delete corr_id=%s entry_id=%s deleted=true revision=%d balance=%d",
+        uuid.uuid4().hex, target_id, revision, balance)
+    return receipt
+
+
+def delete_entry(path, entry_id=None, *, index=None, command_id=None) -> dict:
     """删除一条误记分录并按时间序重算全部前后余额（契约 §四 kidpal_points_delete）。
 
     - 形状合法且存在 -> 移除该分录、全量重算、revision +1，返回回执
       {"id", "deleted": True, "revision", "balance"}（允许负余额 —— OQ-1）；
     - 形状合法但不存在 -> 幂等 no-op：**不写账**、revision 不变、回执 "deleted": False
       （front 据此仍重推对账帧）；
-    - 非法 id（非 str / 空串 / 纯空白）-> ValueError（拒绝并审计）。
-    """
-    if not isinstance(entry_id, str) or not entry_id.strip():
-        raise ValueError(
-            f"delete_entry entry_id must be a non-empty string, got {entry_id!r}")
-    with _critical(path):
-        full = _load_full(path)
-        if _find_entry(full["entries"], entry_id) is None:
-            log.info(
-                "points_delete corr_id=%s entry_id=%s deleted=false revision=%d balance=%d",
-                uuid.uuid4().hex, entry_id, full["revision"], full["balance"])
-            return {
-                "id": entry_id,
-                "deleted": False,
-                "revision": int(full["revision"]),
-                "balance": int(full["balance"]),
-            }
-        full["entries"] = _recompute_chain(
-            [entry for entry in full["entries"] if entry["id"] != entry_id])
-        full["revision"] = int(full["revision"]) + 1
-        _write_state(path, full)
-        revision = int(full["revision"])
-        balance = sum(int(entry["delta"]) for entry in full["entries"])
+    - 非法 id（非 str / 空串 / 纯空白）/ 定位符缺失或重复 / index 非正整数或越界
+      -> ValueError（拒绝并审计，**零写入**）。
 
-    log.info(
-        "points_delete corr_id=%s entry_id=%s deleted=true revision=%d balance=%d",
-        uuid.uuid4().hex, entry_id, revision, balance)
-    return {"id": entry_id, "deleted": True, "revision": revision, "balance": balance}
+    定位符二选一：`entry_id`（稳定 id，QQ 通道首选）或 keyword-only `index`（1 起
+    时间倒序序号，= recent 回执的 index）。command_id（keyword-only，缺省 None）作
+    传输幂等：同 id 重放返首次结果、不二次删除（`delete:<command_id>` 命名空间回执，
+    与 add/redeem 的裸 command_id 回执同表隔离）。换算与删除同在一个 `_critical`
+    临界区内（`_delete_entry_locked`），防 TOCTOU 删错账。
+    """
+    _validate_delete_locator(entry_id, index)   # 拒绝路径零文件副作用（锁外挡）
+    with _critical(path):
+        return _delete_entry_locked(
+            path, entry_id=entry_id, index=index, command_id=command_id)
 
 
 # --------------------------------------------------------------------------- #
 # 目标配置存储（S-F6.5 AC1/AC2/AC4 存储半；OQ-2/OQ-3）                           #
 # --------------------------------------------------------------------------- #
+
+# 目标命令回执在 state.receipts 里的键命名空间（K4；与 add/redeem 的裸 command_id、
+# delete 的 "delete:" 前缀三族互不串味——前缀隔离保证另一族重放查询永远看不到本族回执）。
+_TARGET_RECEIPT_PREFIX = "target:"
+
+
+def _target_receipt_key(command_id: str) -> str:
+    return _TARGET_RECEIPT_PREFIX + command_id
+
+
+def _replay_target_receipt(full: dict, command_id, kind=None):
+    """同 command_id 的目标命令重放 -> 首次结果；无回执 / 形状不符 / kind 不符 -> None。
+
+    形状守卫：值必须带 `kind` 键（裸 command_id 被 add/redeem 分录回执占用时绝不
+    当目标回执读）；kind 不符（同一 command_id 先 target-add 后 target-delete）= 不是
+    同一命令的重试，退回普通执行而不是抛一个错位的「首次结果」。
+    """
+    if command_id is None:
+        return None
+    stored = full["receipts"].get(_target_receipt_key(command_id))
+    if not isinstance(stored, dict) or "kind" not in stored:
+        return None
+    if kind is not None and stored.get("kind") != kind:
+        return None
+    if not isinstance(stored.get("target"), dict):
+        return None
+    return dict(stored)
+
+
+def _store_target_receipt(full: dict, command_id, receipt: dict) -> None:
+    """记录目标命令回执（**只许在 `_critical` 内调用**）。
+
+    病态撞键守卫：若该前缀键已被非目标回执占用（调用方 command_id 字面量恰好以
+    "target:" 开头且该裸键已落 add/redeem 分录回执），绝不覆盖——分录回执的传输
+    幂等优先，本条目标回执降级为不持久（下次重放即普通执行，与 delete 同款处理）。
+    """
+    if command_id is None:
+        return
+    key = _target_receipt_key(command_id)
+    existing = full["receipts"].get(key)
+    if isinstance(existing, dict) and "kind" not in existing:
+        log.warning(
+            "points_target_receipt_key_collision corr_id=%s command_id=%s",
+            uuid.uuid4().hex, command_id)
+        return
+    full["receipts"][key] = dict(receipt)
+
+
+def _target_command_receipt(path, command_id, kind=None):
+    """只读查询：该 command_id 已记录的目标命令回执（无 -> None）。
+
+    写路径未改 K1 三函数的返回形状（既有 unit 逐字断言），CLI 层据本查询取回
+    权威 revision：首写 = 本次 bump 后的版本；重放 = 首次写入的版本（同一回执单源）。
+    """
+    if command_id is None:
+        return None
+    return _replay_target_receipt(_load_full(path), command_id, kind)
 
 
 def get_active_target(path) -> dict:
@@ -701,11 +867,13 @@ def list_targets(path) -> list:
     return _all_targets(full)
 
 
-def add_custom_target(path, name, points, *, now=None) -> dict:
+def add_custom_target(path, name, points, *, now=None, command_id=None) -> dict:
     """新增自定义奖励目标（OQ-3：name 非空 str；points 为 5–200 正整数）。
 
     id 由执行器生成（模型不产）、asset 恒 "sc-flag"（通用标记图）、revision +1。
     越界 / 畸形 raise ValueError 且**不写账**。
+    command_id（keyword-only，缺省 None = 无传输幂等语义）：同 id 重放 -> 返回首次
+    创建的同一目标（不新增、不重复 bump revision）——QQ 重试不会攒出重复目标。
     """
     if not isinstance(name, str) or not name.strip():
         raise ValueError("add_custom_target name must be a non-empty string")
@@ -717,9 +885,18 @@ def add_custom_target(path, name, points, *, now=None) -> dict:
             f"add_custom_target points must be within "
             f"{CUSTOM_TARGET_MIN_POINTS}-{CUSTOM_TARGET_MAX_POINTS}, got {points}")
     _coerce_now(now)
+    command_id = _coerce_command_id(command_id)
 
     with _critical(path):
         full = _load_full(path)
+        if command_id is not None:
+            replayed = _replay_target_receipt(full, command_id, "target-add")
+            if replayed is not None:
+                log.info(
+                    "points_target_add_replay corr_id=%s command_id=%s target_id=%s "
+                    "revision=%d", uuid.uuid4().hex, command_id,
+                    replayed["target"].get("id"), int(full["revision"]))
+                return dict(replayed["target"])
         target = {
             "id": _new_target_id(),
             "name": name.strip(),
@@ -728,6 +905,12 @@ def add_custom_target(path, name, points, *, now=None) -> dict:
         }
         full["custom_targets"] = list(full["custom_targets"]) + [target]
         full["revision"] = int(full["revision"]) + 1
+        _store_target_receipt(full, command_id, {
+            "id": target["id"],
+            "kind": "target-add",
+            "target": dict(target),
+            "revision": int(full["revision"]),
+        })
         _write_state(path, full)
         revision = int(full["revision"])
 
@@ -737,26 +920,45 @@ def add_custom_target(path, name, points, *, now=None) -> dict:
     return dict(target)
 
 
-def set_active_target(path, target_id, *, now=None) -> dict:
+def set_active_target(path, target_id, *, now=None, command_id=None) -> dict:
     """切换激活目标：revision +1、不产生任何分录（切目标不自动扣分）；未知 id 拒绝。
 
     历史兑换分录的 reason 快照是既有事实，切换不改写（arch 场景⑥E / K1L-E4）。
+    command_id（keyword-only，缺省 None = 无传输幂等语义）：同 id 重放 -> 返回首次
+    切换结果、不重复 bump revision（QQ 重试不会把版本号刷两遍）。
     """
     if not isinstance(target_id, str) or not target_id.strip():
         raise ValueError(
             f"set_active_target target_id must be a non-empty string, got {target_id!r}")
     _coerce_now(now)
+    command_id = _coerce_command_id(command_id)
 
     with _critical(path):
         full = _load_full(path)
+        if command_id is not None:
+            replayed = _replay_target_receipt(full, command_id, "target-switch")
+            if replayed is not None:
+                log.info(
+                    "points_target_switch_replay corr_id=%s command_id=%s target_id=%s "
+                    "revision=%d", uuid.uuid4().hex, command_id,
+                    replayed["target"].get("id"), int(full["revision"]))
+                return dict(replayed["target"])
         known_ids = {t["id"] for t in _all_targets(full)}
         if target_id not in known_ids:
             raise ValueError(f"set_active_target unknown target id {target_id!r}")
         full["active_target"] = target_id
         full["revision"] = int(full["revision"]) + 1
+        active = _resolve_active(full)
+        _store_target_receipt(full, command_id, {
+            "id": active["id"],
+            "kind": "target-switch",
+            "target": dict(active),
+            "active_target_id": active["id"],
+            "balance": sum(int(e["delta"]) for e in full["entries"]),
+            "revision": int(full["revision"]),
+        })
         _write_state(path, full)
         revision = int(full["revision"])
-        active = _resolve_active(full)
 
     log.info(
         "points_target_active corr_id=%s target_id=%s revision=%d",
@@ -764,27 +966,47 @@ def set_active_target(path, target_id, *, now=None) -> dict:
     return active
 
 
-def delete_target(path, target_id, *, now=None) -> dict:
-    """删除自定义目标（非激活）：revision +1；预置 / 激活中 / 未知 id 一律拒绝（OQ-2）。"""
+def delete_target(path, target_id, *, now=None, command_id=None) -> dict:
+    """删除自定义目标（非激活）：revision +1；预置 / 激活中 / 未知 id 一律拒绝（OQ-2）。
+
+    command_id（keyword-only，缺省 None = 无传输幂等语义）：同 id 重放 -> 返回首次
+    删除结果（deleted=true 与首次 revision 原样）、不再删除、不重复 bump revision。
+    """
     if not isinstance(target_id, str) or not target_id.strip():
         raise ValueError(
             f"delete_target target_id must be a non-empty string, got {target_id!r}")
     _coerce_now(now)
+    command_id = _coerce_command_id(command_id)
 
     with _critical(path):
         full = _load_full(path)
+        if command_id is not None:
+            replayed = _replay_target_receipt(full, command_id, "target-delete")
+            if replayed is not None:
+                log.info(
+                    "points_target_delete_replay corr_id=%s command_id=%s target_id=%s",
+                    uuid.uuid4().hex, command_id, replayed["target"].get("id"))
+                return {"id": replayed["target"].get("id"), "deleted": True,
+                        "revision": int(replayed.get("revision", full["revision"]))}
         if target_id in {t["id"] for t in PRESET_TARGETS}:
             raise ValueError(
                 f"delete_target refuses preset target {target_id!r} (presets are constants)")
         if target_id == full["active_target"]:
             raise ValueError(
                 f"delete_target refuses active target {target_id!r} "
-                "(switch to another target first)")
+                "(switch to another target first / 先切换到其他目标再删)")
         remaining = [t for t in full["custom_targets"] if t["id"] != target_id]
         if len(remaining) == len(full["custom_targets"]):
             raise ValueError(f"delete_target unknown target id {target_id!r}")
+        removed = next(t for t in full["custom_targets"] if t["id"] == target_id)
         full["custom_targets"] = remaining
         full["revision"] = int(full["revision"]) + 1
+        _store_target_receipt(full, command_id, {
+            "id": target_id,
+            "kind": "target-delete",
+            "target": dict(removed),
+            "revision": int(full["revision"]),
+        })
         _write_state(path, full)
         revision = int(full["revision"])
 
@@ -917,8 +1139,18 @@ def build_points_ledger_page(path, cursor=None, known_revision=None, limit=None)
 
 
 # --------------------------------------------------------------------------- #
-# 最小 add / redeem CLI（门 1 裁定：真实 QQ 最小 producer 的落点）                 #
+# QQ 家长通道 CLI（261104-k3；`python -m gateway.points`，先 cd /opt/kidpal/front）  #
+# 六子命令：add | redeem | delete | show | recent | targets                        #
+# 回执恒单行 key=value（skill 解析口径与冻结验收同一形态）；拒绝不伪造成功           #
 # --------------------------------------------------------------------------- #
+
+
+class _UsageError(Exception):
+    """用法/形状错误（无子命令 / 未知子命令 / 参数缺失或多余 / 非法选项）-> exit 2。
+
+    与语义拒绝（ValueError -> exit 1）分开：exit 2 = 「命令本身没说对，重说一遍」，
+    exit 1 = 「命令说清楚了但账本拒绝」（S-F6.4-AC4 一次性可判）。
+    """
 
 
 def _parse_cli_int(raw: str) -> int:
@@ -929,6 +1161,15 @@ def _parse_cli_int(raw: str) -> int:
     if value <= 0:
         raise ValueError(f"points value must be a positive integer, got {raw!r}")
     return value
+
+
+def _cli_value(value) -> str:
+    """回执值编码：只把空白字符转 `%XX`（中文与标点原样保留）。
+
+    回执是单行 key=value、以空白分词解析（skill 与冻结验收同一口径）；事由含空格时
+    只能编码空白位，否则一条回执会被拆成多个 token。值内容不改写、不截断。
+    """
+    return "".join(f"%{ord(ch):02X}" if ch.isspace() else ch for ch in str(value))
 
 
 def _emit(stream, text: str) -> None:
@@ -945,26 +1186,296 @@ def _cli_usage(stream) -> None:
     _emit(
         stream,
         "usage:\n"
-        "  python -m gateway.points add <points> <reason>\n"
-        "  python -m gateway.points redeem <points>\n"
+        "  python -m gateway.points add --points N --reason TEXT --command-id ID\n"
+        "  python -m gateway.points add <points> <reason>          (legacy positional)\n"
+        "  python -m gateway.points redeem --points N --command-id ID\n"
+        "  python -m gateway.points redeem <points>                (legacy positional)\n"
+        "  python -m gateway.points delete --entry-id pt_<hex> --command-id ID\n"
+        "  python -m gateway.points delete --index N --command-id ID\n"
+        "  python -m gateway.points show\n"
+        "  python -m gateway.points recent [--limit N]             (default 5, 1-50)\n"
+        "  python -m gateway.points targets\n"
+        "  python -m gateway.points target-add --name TEXT --points N --command-id ID\n"
+        "  python -m gateway.points target-switch --target-id ID --command-id ID\n"
+        "  python -m gateway.points target-delete --target-id ID --command-id ID\n"
         f"env: {POINTS_STATE_ENV} = points state file path (required)")
 
 
-def _entry_receipt_line(command: str, entry: dict) -> str:
-    """成功回执行（K3/K4 交接面：entry_id / delta / 权威余额 / 事由 / revision）。"""
+def _parse_flags(args, allowed) -> dict:
+    """手写旗标解析（不用 argparse：`--points -3` 必须进语义拒绝而非被当未知选项）。
+
+    未登记 token / 重复旗标 / 旗标缺值 -> _UsageError（exit 2）。
+    """
+    opts = {}
+    position = 0
+    while position < len(args):
+        token = args[position]
+        if token not in allowed:
+            raise _UsageError(f"unexpected argument {token!r}")
+        if token in opts:
+            raise _UsageError(f"duplicate option {token}")
+        if position + 1 >= len(args):
+            raise _UsageError(f"{token} requires a value")
+        opts[token] = args[position + 1]
+        position += 2
+    return opts
+
+
+def _require(opts: dict, names) -> None:
+    missing = [name for name in names if name not in opts]
+    if missing:
+        raise _UsageError("missing required option(s): " + ", ".join(missing))
+
+
+def _entry_receipt_line(command: str, entry: dict, *, revision=None,
+                        command_id=None) -> str:
+    """成功回执行（单行 key=value；skill 按此解析，不另算权威值）。
+
+    字段：entry_id / delta / 权威余额 / 事由 / **revision** / **command_id**
+    （revision 与 command_id 是 K3 补的——skill 要把 command_id 念给家长，让重复
+    成为可被发现的事实而非被静默吞掉）。短窗去重回执标 `duplicate=true`。
+    """
+    suffix = f" command_id={_cli_value(command_id)}" if command_id else ""
     if entry.get("duplicate") is True:
+        revision = entry.get("revision") if revision is None else revision
         return (f"points {command} duplicate=true balance={entry.get('balance')} "
-                f"reason=already_recorded")
-    return (f"points {command} ok entry_id={entry['id']} delta={entry['delta']:+d} "
-            f"balance={entry['balance_after']} reason={entry['reason']}")
+                f"revision={revision} reason=already_recorded{suffix}")
+    return (f"points {command} ok entry_id={entry['id']} delta={int(entry['delta']):+d} "
+            f"balance={int(entry['balance_after'])} "
+            f"reason={_cli_value(entry['reason'])} revision={revision}{suffix}")
+
+
+def _emit_entry_receipt(command: str, state_path: str, entry: dict,
+                        command_id) -> int:
+    """写成功后回执：revision 取写入后权威状态（同一把锁内的版本已落盘）。"""
+    if entry.get("duplicate") is True:
+        _emit(sys.stdout, _entry_receipt_line(command, entry, command_id=command_id))
+        return 0
+    revision = int(read_state(state_path)["revision"])
+    _emit(sys.stdout, _entry_receipt_line(
+        command, entry, revision=revision, command_id=command_id))
+    return 0
+
+
+def _cmd_add(state_path: str, argv) -> int:
+    """`add`：旗标形（--points/--reason/--command-id）或既有位置形 `add <points> <reason>`。"""
+    if argv and not argv[0].startswith("--"):
+        # K0/K1 既有调用形态零放宽（test_points_e2e_spike / 既有 unit 直接这样调）。
+        if len(argv) != 2:
+            raise _UsageError("positional form is: add <points> <reason>")
+        entry = add_points(state_path, _parse_cli_int(argv[0]), argv[1])
+        return _emit_entry_receipt("add", state_path, entry, None)
+    opts = _parse_flags(argv, ("--points", "--reason", "--command-id"))
+    _require(opts, ("--points", "--reason", "--command-id"))
+    entry = add_points(
+        state_path, _parse_cli_int(opts["--points"]), opts["--reason"],
+        command_id=opts["--command-id"])
+    return _emit_entry_receipt("add", state_path, entry, opts["--command-id"])
+
+
+def _cmd_redeem(state_path: str, argv) -> int:
+    """`redeem`：旗标形（--points/--command-id）或既有位置形 `redeem <points>`。
+
+    事由由执行器取「兑换<激活目标名>」，模型不提供；只认激活目标分值。
+    """
+    if argv and not argv[0].startswith("--"):
+        if len(argv) != 1:
+            raise _UsageError("positional form is: redeem <points>")
+        entry = redeem_points(state_path, _parse_cli_int(argv[0]))
+        return _emit_entry_receipt("redeem", state_path, entry, None)
+    opts = _parse_flags(argv, ("--points", "--command-id"))
+    _require(opts, ("--points", "--command-id"))
+    entry = redeem_points(
+        state_path, _parse_cli_int(opts["--points"]), command_id=opts["--command-id"])
+    return _emit_entry_receipt("redeem", state_path, entry, opts["--command-id"])
+
+
+def _cmd_delete(state_path: str, argv) -> int:
+    """`delete`：`--entry-id` 与 `--index` 互斥且恰给一个；序号由执行器锁内换算。"""
+    opts = _parse_flags(argv, ("--entry-id", "--index", "--command-id"))
+    _require(opts, ("--command-id",))
+    raw_id = opts.get("--entry-id")
+    raw_index = opts.get("--index")
+    command_id = opts["--command-id"]
+    entry_id = None
+    index = None
+    if (raw_id is None) == (raw_index is None):
+        raise ValueError(
+            "delete needs exactly one locator: --entry-id pt_<hex> 或 --index <序号>"
+            "（序号见 recent 回执）")
+    if raw_index is not None:
+        text = raw_index.strip()
+        if not _CLI_INT_RE.match(text) or int(text) <= 0:
+            raise ValueError(f"--index must be a positive integer, got {raw_index!r}")
+        index = int(text)
+    else:
+        entry_id = raw_id.strip() if isinstance(raw_id, str) else raw_id
+        if not isinstance(entry_id, str) or not _POINT_ENTRY_ID_RE.match(entry_id):
+            raise ValueError(
+                f"--entry-id must look like pt_<hex>, got {raw_id!r} "
+                "（可用 recent 回执里的 entry_id）")
+    receipt = delete_entry(state_path, entry_id, index=index, command_id=command_id)
+    _emit(sys.stdout,
+          f"points delete ok deleted={str(bool(receipt['deleted'])).lower()} "
+          f"entry_id={_cli_value(receipt['id'])} revision={int(receipt['revision'])} "
+          f"balance={int(receipt['balance'])} "
+          f"command_id={_cli_value(command_id)}")
+    return 0
+
+
+def _cmd_show(state_path: str, argv) -> int:
+    """`show`：只读单行（余额 / 版本 / 分录数 / 激活目标三键）。不创建 state 文件。"""
+    if argv:
+        raise _UsageError("show takes no arguments")
+    state = read_state(state_path)
+    target = get_active_target(state_path)
+    _emit(sys.stdout,
+          f"points show balance={int(state['balance'])} "
+          f"revision={int(state['revision'])} "
+          f"entries_total={len(state['entries'])} "
+          f"active_target_id={_cli_value(target['id'])} "
+          f"active_target_name={_cli_value(target['name'])} "
+          f"active_target_points={int(target['points'])}")
+    return 0
+
+
+def _cmd_recent(state_path: str, argv) -> int:
+    """`recent [--limit N]`：每条一行，**index 与 entry_id 同行**（index 1 = 最新）。
+
+    序号→id 的换算权收在执行器手里：模型只许把 recent 打出来的 entry_id 回喂
+    `delete --entry-id`，不得自己推断或编造 id。
+    """
+    opts = _parse_flags(argv, ("--limit",))
+    limit = RECENT_LIMIT_DEFAULT
+    if "--limit" in opts:
+        text = opts["--limit"].strip()
+        if not _CLI_INT_RE.match(text):
+            raise ValueError(f"--limit must be an integer, got {opts['--limit']!r}")
+        limit = int(text)
+        if limit < PAGE_LIMIT_MIN or limit > PAGE_LIMIT_MAX:
+            raise ValueError(
+                f"--limit must be within {PAGE_LIMIT_MIN}-{PAGE_LIMIT_MAX}, got {limit}")
+    state = read_state(state_path)
+    for position, entry in enumerate(state["entries"][:limit], 1):
+        _emit(sys.stdout,
+              f"recent index={position} entry_id={_cli_value(entry['id'])} "
+              f"delta={int(entry['delta']):+d} "
+              f"balance_before={int(entry['balance_before'])} "
+              f"balance_after={int(entry['balance_after'])} "
+              f"reason={_cli_value(entry['reason'])} "
+              f"occurred_at={_cli_value(entry['occurred_at'])}")
+    return 0
+
+
+def _cmd_targets(state_path: str, argv) -> int:
+    """`targets`：只读列举预置四目标 + 自定义目标（id/name/points/asset）。"""
+    if argv:
+        raise _UsageError("targets takes no arguments")
+    for target in list_targets(state_path):
+        _emit(sys.stdout,
+              f"target id={_cli_value(target['id'])} "
+              f"name={_cli_value(target['name'])} "
+              f"points={int(target['points'])} "
+              f"asset={_cli_value(target['asset'])}")
+    return 0
+
+
+# --------------------------------------------------------------------------- #
+# 目标配置子命令（K4；扁平动词——模型说得出、家长念得出）                          #
+# 回执恒单行 key=value，且**禁带 delta= / entry_id=**（防模型误读为记账）：       #
+# target-add     target_id= name= points= revision= command_id=              #
+# target-switch  target_id= active_target_id= balance= revision= command_id= #
+# target-delete  target_id= deleted=true revision= command_id=               #
+# --------------------------------------------------------------------------- #
+
+
+def _receipt_revision(state_path: str, command_id, receipt: dict) -> int:
+    """权威版本号：优先取本 command_id 的回执（首次写入时点），否则取当前状态。"""
+    revision = receipt.get("revision") if isinstance(receipt, dict) else None
+    if revision is None:
+        revision = read_state(state_path)["revision"]
+    return int(revision)
+
+
+def _cmd_target_add(state_path: str, argv) -> int:
+    """`target-add --name TEXT --points N --command-id ID`：预置场景外的自定义奖励。
+
+    5–200 正整数的范围校验**不在此重复**——单源 = add_custom_target（越界 ValueError
+    -> exit 1、锁外零写入）；本函数只做旗标解析与回执装配。
+    """
+    opts = _parse_flags(argv, ("--name", "--points", "--command-id"))
+    _require(opts, ("--name", "--points", "--command-id"))
+    command_id = opts["--command-id"]
+    target = add_custom_target(
+        state_path, opts["--name"], _parse_cli_int(opts["--points"]),
+        command_id=command_id)
+    receipt = _target_command_receipt(state_path, command_id, "target-add") or {}
+    _emit(sys.stdout,
+          f"points target-add ok target_id={_cli_value(target['id'])} "
+          f"name={_cli_value(target['name'])} points={int(target['points'])} "
+          f"revision={_receipt_revision(state_path, command_id, receipt)} "
+          f"command_id={_cli_value(command_id)}")
+    return 0
+
+
+def _cmd_target_switch(state_path: str, argv) -> int:
+    """`target-switch --target-id ID --command-id ID`：切换唯一激活目标（零分录）。
+
+    回执回显 **balance**——切换不扣分是家长可对账的事实，模型不得自行推断余额。
+    """
+    opts = _parse_flags(argv, ("--target-id", "--command-id"))
+    _require(opts, ("--target-id", "--command-id"))
+    command_id = opts["--command-id"]
+    active = set_active_target(state_path, opts["--target-id"], command_id=command_id)
+    receipt = _target_command_receipt(state_path, command_id, "target-switch") or {}
+    balance = receipt.get("balance")
+    if balance is None:
+        balance = read_state(state_path)["balance"]
+    _emit(sys.stdout,
+          f"points target-switch ok target_id={_cli_value(active['id'])} "
+          f"active_target_id={_cli_value(active['id'])} balance={int(balance)} "
+          f"revision={_receipt_revision(state_path, command_id, receipt)} "
+          f"command_id={_cli_value(command_id)}")
+    return 0
+
+
+def _cmd_target_delete(state_path: str, argv) -> int:
+    """`target-delete --target-id ID --command-id ID`：删除自定义目标（非激活）。"""
+    opts = _parse_flags(argv, ("--target-id", "--command-id"))
+    _require(opts, ("--target-id", "--command-id"))
+    command_id = opts["--command-id"]
+    result = delete_target(state_path, opts["--target-id"], command_id=command_id)
+    receipt = _target_command_receipt(state_path, command_id, "target-delete") or {}
+    _emit(sys.stdout,
+          f"points target-delete ok target_id={_cli_value(result['id'])} deleted=true "
+          f"revision={_receipt_revision(state_path, command_id, receipt)} "
+          f"command_id={_cli_value(command_id)}")
+    return 0
+
+
+_CLI_COMMANDS = {
+    "add": _cmd_add,
+    "redeem": _cmd_redeem,
+    "delete": _cmd_delete,
+    "show": _cmd_show,
+    "recent": _cmd_recent,
+    "targets": _cmd_targets,
+    "target-add": _cmd_target_add,
+    "target-switch": _cmd_target_switch,
+    "target-delete": _cmd_target_delete,
+}
 
 
 def main(argv=None) -> int:
-    """`python -m gateway.points add|redeem` 入口。
+    """`python -m gateway.points <子命令>` 入口（先 `cd /opt/kidpal/front`）。
 
-    state 路径单源 = os.environ[POINTS_STATE_ENV]（与 front 同一 env 名，无第二账本）。
-    成功（含短窗去重回执）exit 0；非法 / 拒绝 exit 非 0、不写账、说明写 stderr、不伪造
-    成功回执。删除 / 目标配置子命令与 QQ skill 接线归 K3/K4（本包只提供执行器面）。
+    退出码三分：0 = 成功（含短窗去重 / 删除幂等 no-op 回执）；1 = 语义拒绝（非法值、
+    歧义定位、越界、兑换门不过——**零写入**、说明走 stderr、stdout 无成功回执）；
+    2 = 用法/环境错误（无/未知子命令、参数缺失或多余、`KIDPAL_POINTS_STATE` 未设）。
+
+    state 路径单源 = os.environ[POINTS_STATE_ENV]（与 front 同一 env 名，无第二账本）；
+    本模块是唯一 writer——CLI 从不替调用方判断两次命令「像重复就不调」（传输幂等与
+    短窗语义去重都由执行器在锁内裁决）。
     """
     args = list(sys.argv[1:] if argv is None else argv)
     state_path = os.environ.get(POINTS_STATE_ENV)
@@ -974,30 +1485,29 @@ def main(argv=None) -> int:
             f"points: {POINTS_STATE_ENV} is not set — refusing to write "
             "(no state file configured, no second ledger)")
         return 2
-    if not args or args[0] not in ("add", "redeem"):
+    if not args:
         _cli_usage(sys.stderr)
         return 2
     command = args[0]
+    handler = _CLI_COMMANDS.get(command)
+    if handler is None:
+        _emit(sys.stderr, f"points: unknown subcommand {command!r}")
+        _cli_usage(sys.stderr)
+        return 2
     try:
-        if command == "add":
-            if len(args) != 3:
-                _cli_usage(sys.stderr)
-                return 2
-            points = _parse_cli_int(args[1])
-            entry = add_points(state_path, points, args[2])
-        else:
-            if len(args) != 2:
-                _cli_usage(sys.stderr)
-                return 2
-            points = _parse_cli_int(args[1])
-            entry = redeem_points(state_path, points)
+        return handler(state_path, args[1:])
+    except _UsageError as exc:
+        _emit(sys.stderr, f"points {command}: {exc}")
+        _cli_usage(sys.stderr)
+        return 2
     except ValueError as exc:
+        # 语义拒绝：不写账、不伪造成功回执（S-F6.4-AC4 一次性可判）。
         _emit(sys.stderr, f"points {command} rejected: {exc}")
         return 1
-
-    # 成功回执只陈述执行器真实落账结果（不宣称「已告知家长」等未发生的事）。
-    _emit(sys.stdout, _entry_receipt_line(command, entry))
-    return 0
+    except OSError as exc:
+        # 持久化层硬失败（磁盘/权限）：同样不伪造成功，说明写 stderr。
+        _emit(sys.stderr, f"points {command} failed: {exc}")
+        return 1
 
 
 if __name__ == "__main__":  # pragma: no cover — module CLI entry

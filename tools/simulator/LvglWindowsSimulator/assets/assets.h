@@ -78,3 +78,7 @@ extern const lv_image_dsc_t drop_baby; /* LV_COLOR_FORMAT_RGB565 */
 extern const lv_image_dsc_t time_10_24; /* LV_COLOR_FORMAT_RGB565 */
 extern const lv_image_dsc_t ic_batt_32; /* LV_COLOR_FORMAT_RGB565 */
 extern const lv_image_dsc_t ic_bell_13; /* LV_COLOR_FORMAT_RGB565 */
+extern const lv_image_dsc_t sc_choco_42_42; /* LV_COLOR_FORMAT_RGB565 */
+extern const lv_image_dsc_t sc_movie_42_42; /* LV_COLOR_FORMAT_RGB565 */
+extern const lv_image_dsc_t sc_gift_42_42; /* LV_COLOR_FORMAT_RGB565 */
+extern const lv_image_dsc_t sc_flag_42_42; /* LV_COLOR_FORMAT_RGB565 */

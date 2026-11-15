@@ -73,9 +73,22 @@ class _StateDirMixin(unittest.TestCase):
 
 class PointsStateTests(_StateDirMixin):
     def test_missing_file_is_zero_state(self):
+        """无 state 文件 = 出厂零状态。
+
+        2026-11-15 K4 扩单：read_state additive custom_targets/active_target（K1 内部态
+        两键提升为公开读面），按 architect 评估把精确三键 equality 改为投影 equality +
+        出厂两键 + receipts 负断言（三键零状态语义与形状纪律都不退让）。
+        """
+        state = points.read_state(self.state)
+        # K0 三键零状态语义不变；投影 equality 仍逐值钉死，不退化为 truthy 检查。
         self.assertEqual(
-            points.read_state(self.state),
+            {key: state[key] for key in ("revision", "balance", "entries")},
             {"revision": 0, "balance": 0, "entries": []})
+        # K4 additive 两键的出厂态值（无自定义目标 / 激活目标 = 出厂默认）。
+        self.assertEqual(state["custom_targets"], [])
+        self.assertEqual(state["active_target"], points.DEFAULT_TARGET["id"])
+        # 保留原精确 equality 的形状纪律：传输幂等回执是内部面，不得经公开读面外泄。
+        self.assertNotIn("receipts", state)
 
     def test_corrupt_json_raises_not_blank_ledger(self):
         Path(self.state).write_text("{not json", encoding="utf-8")

@@ -242,6 +242,27 @@ int  kidpal_points_ui_substate(void);
 void kidpal_points_ui_set_selected_id(const char *id); /* NULL/空串 = 清空 */
 const char *kidpal_points_ui_selected_id(void);        /* 恒非 NULL（无选中时为空串） */
 
+/* ========================================================================== *
+ * K4 奖励场景 additive seam（TaskPackage 261104-k4-reward-goal-config；
+ * seam 权威 = firmware/main/test/reward_goal_config.acceptance.c 文件头 [G1]/[G2]）。
+ * 冻结纪律：本节只增不改/移——上方 K0/K2 形状与函数签名零触碰。
+ * 纯逻辑、零芯片/FreeRTOS/LVGL 依赖（host_app linux target 与设备树同源），
+ * 使设备 TU kidpal_render_node.cc 只消费映射结果、不再持资产名字面量。
+ * ========================================================================== */
+
+/* ---- [G1] 契约逻辑标识 -> assets.h 符号名（= 落盘 <name>.bin 根名） ----
+ * 五键映射唯一单源（sc-choco/sc-movie/sc-wheel/sc-gift/sc-flag）。未知标识 /
+ * NULL / 空串 -> NULL（绝不猜图；调用方不画场景标）。返回值是编译期字面量，
+ * 调用方可安全长期持有指针。 */
+const char *kidpal_points_scene_asset(const char *target_asset);
+
+/* ---- [G2] 刻度几何：分值 -> 进度线横坐标 ----
+ * target_points <= 0 / track_w <= 0 / x_out == NULL -> -1（不画）；
+ * points <= 0 -> *x_out = 0；否则 *x_out = points * track_w / target_points
+ * （整数除法向下取整；points == target 恰落 track_w，points > target 越界延伸
+ * 到 track_w 之外，绘制裁切归 render_node/design）。成功 0。 */
+int kidpal_points_scale_x(int target_points, int points, int track_w, int *x_out);
+
 #ifdef __cplusplus
 }
 #endif
