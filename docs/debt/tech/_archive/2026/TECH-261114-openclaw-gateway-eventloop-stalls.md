@@ -2,13 +2,13 @@
 id: TECH-261114-openclaw-gateway-eventloop-stalls
 title: OpenClaw 网关事件循环 ~31s 级阻塞（两个实证触发源：kidpal session store 同步写+cleanup 失败循环、remote model catalog 刷新）——真机语音轮最差 33s 无响应
 domain: tech
-status: deferred
+status: closed
 severity: MAJOR
 owner: 主线程（OpenClaw 网关运维面）
 trigger: 下次 OpenClaw 运维/升级批；或 journalctl 再现 liveness heartbeat delayed / slow SQLite transaction hold；或 NFR-PERF-4 延迟定阈批
 opened: 2026-11-14
-closed: ""
-closedBy: ""
+closed: 2026-11-15
+closedBy: 主线程——P0 ①②③ 执行并验证通过（catalog 关断 11-14 23:00 至 11-15 23:00 五个检查点全静默 / 会话库 177→1 与墓碑 58MB→988KB 达标 / 11-15 真机轮 3-6s 无冻结、全天零 liveness 冻结零 cleanup failed）；残项转 TECH-261115-openclaw-upgrade-batch-residuals
 paths: []
 source: 2026-11-14 延迟专项分析（当日 K2 复验真机轮三源日志）——journalctl -u openclaw-gateway、/tmp/openclaw/openclaw-2026-11-14.log（JSON 明细）、引擎 docker logs、设备 KPLOG029
 handoff: 与 TECH-261022-openclaw-prep-tax-memory-pressure 同批处置（OpenClaw 升级 / ECS 运维面）；NFR-PERF-4 定阈时作为最差情形来源引用
@@ -61,3 +61,5 @@ handoff: 与 TECH-261022-openclaw-prep-tax-memory-pressure 同批处置（OpenCl
 - **重启事件澄清**：11-15 共四次 gateway 重启（00:15/10:55/11:56/12:01）均来自 root SSH 会话，human 2026-11-15 确认「重启时我正常做的」——非故障信号、非凭据问题。12:01 三条 `cron.get` not found 为检查脚本按名查询、API 要求按 ID，任务本体健康（kidpal-reminder-plan 当时 14m 前刚 ok）。
 - **新观察**：11-15 11:00:28~59 出现 30 秒内 14 条 ASR 终句爆发（查字/字母场景），含空片段「。」穿透幻听过滤——既有 TECH-261014-engine-asr-hallucination-after-stop 形态，非回归；该形态（碎片风暴）纳入 TECH-261114-vad-split-points-double-add 的观察面。
 - **处置状态**：P0 ①②③ 全部销账；本条目残余 = main 库 archived 僵尸行 + 触发源丙（重维护评估同步卡循环）留待 OpenClaw 2.0.4 升级批。
+
+**结项（2026-11-15，append）**：本条目贯穿的 P0 ①②③ 已执行并双日验证（11-14 晚操作 + 11-15 全天观察：11-15 真机轮 3-6s 无冻结、当天零 liveness 冻结 / 零 cleanup failed、23:00 检查点 catalog 静默）。未清残项（archived 僵尸行 / 重维护评估卡循环机制 / skill-collection-review cron）已转入 TECH-261115-openclaw-upgrade-batch-residuals，随 OpenClaw 2.0.4 升级批处置。
