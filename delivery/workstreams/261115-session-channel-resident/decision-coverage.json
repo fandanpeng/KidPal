@@ -10,7 +10,7 @@
     "拆包输入：FROZEN workstream PROPOSAL v1.0 + FROZEN 架构/契约 PROPOSAL v1.1（R2 GREEN）+ package-split.md（architect 拆包建议，2 包）。架构 §12 与契约 §四已 landed 并合并本地 main（7e4c44d8），P1 launchPreconditions 的「支撑语义已冻结」判据已 met。",
     "切法按 human 2026-11-16「冻结 + 按 2 包开工」：P1 261116-channel-resident-core（mergeOrder 77，riskTier high）→ 真机轮 A → P2 261117-session-end-intent-longretry（mergeOrder 78，riskTier medium，dependsOn P1）→ 真机轮 B。serial WIP=1，两包不并发。",
     "60s 超时归 P1 而非 P2：它是让通道常驻安全的补偿控制——P1 把通道做成常驻后，今天「约 137 秒通道超时」的意外兜底消失；若 60s producer 不同批落地，净效果是「孩子走开后麦克风永久常开」。",
-    "P2 依赖 P1 的统一会话结束处理器与常驻模型守卫语义；两包都改 application.cc，且在同一批函数内改不相交行段，具体为 HandleEndVoiceSessionEvent 与 HandleToggleChatEvent 被两包分别改不同行段（P1 = 收尾动作序，P2 = in-flight 守卫行）（P1 = 四条收尾路径 + HandleEndVoiceSessionEvent + CLOCK_TICK 消费区；P2 = TryStartAutoConnect task 体 + 四个人工入口守卫行），P2 从 P1 合并后的 main 起分支并重取行号锚。",
+    "P2 依赖 P1 的统一会话结束处理器与常驻模型守卫语义；两包都改 application.cc，且在同一批函数内改不相交行段；具体函数为 HandleEndVoiceSessionEvent 与 HandleToggleChatEvent（P1 改收尾动作序，P2 改 in-flight 守卫行）（P1 = 四条收尾路径 + HandleEndVoiceSessionEvent + CLOCK_TICK 消费区；P2 = TryStartAutoConnect task 体 + 四个人工入口守卫行），P2 从 P1 合并后的 main 起分支并重取行号锚。",
     "验收齿重写与反转均在两包 taskpackage 的 impactedTestsSeed / exitCriteria 显式申报：P1 退役 RC-B2/RC-A3 并重写三份 C 验收件；P2 反转 test_record_dialogue_guide 的 self_push end_session 断言并重写 K6-A2 tooth5。",
     "门 1 F-01 回修（architect PROPOSAL v1.2）：P1 的「listen stop 当刻取消残余累积」与 SAO-A2/M4K1-A2/SAO-A3 三条冻结 oracle 对撞（manual 模式 ASR 转写约 1.7s 后到，cancel 不可恢复）——改为分层收尾：pending_stop 受保护、由既有 10s sweep 的 pending 超时分支补 `_release_record_context` 释放（该分支原本不释放，常驻后会造成永久哑火）；ctx 边沿兜底改分态。accepted residual = 空 accum 结束后 ≤10s 内首次话语可能被抑制，已由真机 A5(a)/(b) 与留根 9 承载。"
   ],
@@ -132,7 +132,7 @@
       "text": "拆包制品已 commit 到专用 base ref（commit-before-launch）",
       "scope": "workstream",
       "status": "verified",
-      "evidence": "commit 214e7a2e/9812de57；base ref 现 = 03d14cb0（含门 1 修正轮 f1619d61 与 v1.2 canonical delta fa51381e/50eb6b56）"
+      "evidence": "commit 214e7a2e/9812de57 + 门 1 修正轮 f1619d61/003cb44b；base ref = 门 1 修正轮末端 commit，点火时由 launch 执行者回填当时 SHA"
     },
     {
       "text": "P1 已合 main（P2 的统一处理器与常驻模型守卫语义在场）",
