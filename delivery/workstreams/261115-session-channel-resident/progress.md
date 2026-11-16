@@ -36,3 +36,12 @@
 - **debt 处置**：`TECH-261114`（候选 A = T1）与 `TECH-261012`（心跳保活 = T5/T6）实现已 land、离线绿，但按 PROPOSAL §6「结项凭据必须真机」status 维持 `deferred`、仅刷新 trigger + 追加收口注记；真机后由主线程结项并 `debt-render.mjs` 归位。
 - **跨包交接（给 P2 `261117-session-end-intent-longretry`）**：SCR-A2 in-flight 守卫重锚、`mcp_server.cc` 注释双源、退避变事实长跑形态基线、end_session 三段补链 / 自动重连封顶——五项见 `verification.json.crossPackageHandoff` 与 `taskpackage.crossPackageBehaviors`。
 - **遗留 human 项**：**一轮真机轮 A（A1–A13，human 持板，front 由 agent 部署）**——本包 exitCriteria.KRC-E4 出口；三源日志互证、证据落本包 `current/`；未发生前不宣布 workstream 目的达成、不结项 debt。
+## 2026-11-17 · P1 收口卡在合并门（待人工）
+
+**状态**：`261116-channel-resident-core` 离线面全部完成（冻结验收 15 条全绿、final r2 十闸全绿、closeout-check exit 0、docs-delta / review-packet / pod-retro 齐；host 306/3 = 3 条上游存量红，server 473/0）。本地 `dev/pool-channel` 已提交，**未 push、未 merge**。
+
+**阻塞 1（需 human 持板）**：真机轮 A（A1–A13）+ high riskTier 的 ESCALATE 人批。合并门前置闸当前 BLOCK 于 `device-round-evidence-missing`。轮 A 三源证据交回后由 planner 落 `device-round-evidence.md` 并走人批合并链。
+
+**阻塞 2（工具缺口，需主线程修）**：`supervisor-gate-check.mjs` 的 G4 要求 `.claude/verify-logs/*.log` 非空，但 `verify.mjs` 仅在 gate 失败时写日志（`verify.mjs:288-290` 在 `if (!ok)` 内）——本 Pod 两轮全绿 → 零日志 → G4 结构性恒红 → 会话无法正常收尾。诊断与 patch 见 `delivery/taskpackages/261116-channel-resident-core/gate-tooling-gap-g4.md`；待裁清单见同目录 `pending-human-ruling.md`。`.claude/**` 对 agent 禁写，planner 无法自修。
+
+**debt 处置**：`TECH-261114` / `TECH-261012` 维持 `deferred`（按 PROPOSAL「结项凭据必须是真机」），仅刷 trigger + 追加收口注记；轮 A 通过后由主线程结项。
