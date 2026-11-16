@@ -396,6 +396,12 @@ set(HOST_ACCEPTANCE_SRCS
     # 缺失或未置于 smoke 之前即红）。
     "../../story_cover_nav.acceptance.c"
 
+    # 包 261116-channel-resident-core（通道常驻核心 P1）：SCR-A1..A7 冻结验收（四收尾点
+    # 收口负锚 + 统一处理器动作序 + 五真拆通道点保绿 + Idle 八件链保绿 + 60s producer +
+    # 心跳 no-op 位次 + 自愈巡检短路序）。纯树扫 application.cc（源锚代理）。
+    # **必须置于 host smoke acceptance 之前**（smoke 末位 = 最先执行, 包 0 boundary 齿注册序守卫）。
+    "../../session_channel_resident.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

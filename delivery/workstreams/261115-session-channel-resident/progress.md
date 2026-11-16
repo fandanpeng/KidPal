@@ -25,3 +25,14 @@
 **门结果**：`portfolio-reconcile --check-launch 261116-channel-resident-core --base-ref base/261115-session-channel-resident` = `ok:true / blocking:[] / warn:[]`；`settings-lint` = 0 RED / 0 WARN；`taskpackage-required` 仅缺 planner Step 7 自产的 `input-brief.md`（预期）。
 
 **遗留 human 项**：无（headless 拉起授权 = human 2026-11-16 明确选择「授权无审批 headless」）。
+
+## 2026-11-16 · P1 `261116-channel-resident-core` 收口（integrator）
+
+**收口状态**：P1 离线面全部转绿、待 supervisor 复核 + 前置升级闸 + merge-driver 本地合并；真机轮 A 未发生，故 workstream 效果段与两条 debt 结项均**未闭合**。
+
+- **final 终验**：round 2（`verifier-evidence/rounds/r2.json`，`ok:true / observedGateExit:0`）十闸全绿（含 `VERIFY_FW_BUILD_REQUIRED=1` 真编译）；`verifier-evidence-check` exit 0 / `factOk:true`。scoped r1 先绿，final 按 scope 圈定（`test-scope-final.txt`，25 条）跑。
+- **验收实跑**：host `306 Tests / 3 Failures / 0 Ignored`（3 红全为上游 `p1_auxbar_style` AB-A1/A2/A4，本包零新增红）；server `473 passed / 0 failed / 9 deselected`。scr 15 条 acceptance（SCR-A1..A7 + SCRF-B1..B6 含 B2b/B4b）全绿，15 条 per-acceptance 变异转红留痕。
+- **证据指针**：`delivery/taskpackages/261116-channel-resident-core/{review-packet.md, docs-delta.md, verification.json, verdict.json, test-scope-final.txt, verifier-evidence/rounds/r2.json}`。
+- **debt 处置**：`TECH-261114`（候选 A = T1）与 `TECH-261012`（心跳保活 = T5/T6）实现已 land、离线绿，但按 PROPOSAL §6「结项凭据必须真机」status 维持 `deferred`、仅刷新 trigger + 追加收口注记；真机后由主线程结项并 `debt-render.mjs` 归位。
+- **跨包交接（给 P2 `261117-session-end-intent-longretry`）**：SCR-A2 in-flight 守卫重锚、`mcp_server.cc` 注释双源、退避变事实长跑形态基线、end_session 三段补链 / 自动重连封顶——五项见 `verification.json.crossPackageHandoff` 与 `taskpackage.crossPackageBehaviors`。
+- **遗留 human 项**：**一轮真机轮 A（A1–A13，human 持板，front 由 agent 部署）**——本包 exitCriteria.KRC-E4 出口；三源日志互证、证据落本包 `current/`；未发生前不宣布 workstream 目的达成、不结项 debt。

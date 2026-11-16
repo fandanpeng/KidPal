@@ -5,7 +5,7 @@ domain: tech
 status: deferred
 severity: SHOULD
 owner: dev 批（固件面，/triage-change 路由）
-trigger: human 排期——2026-11-14 human 明示「还有开发任务没有完成，完成后再开始这个优化」；立包时建议与 TECH-261014 家族残余项（主循环 TLS 重连阻塞 / autoconnect 静默放弃 / session-end 通道未接线）合并一次 triage、共担一轮真机回归
+trigger: "待 P1 真机轮 A 真机凭据结项——261116-channel-resident-core（T1，候选 A「close 不断通道」）已实现、离线绿；A1 温通道按键进聆听 ≤0.82s 对照 KPLOG029 + A2 连续 5 次「结束→再说话」零冷通道零重建 burst。依据 workstream PROPOSAL §6「debt 结项凭据必须真机、不是合入」，收口记账归主线程（debt-render.mjs 归位）。原：2026-11-14 human 排期「开发任务完成后再开始」；建议与 TECH-261014 家族残余项合并 triage、共担一轮真机回归"
 opened: 2026-11-14
 closed: ""
 closedBy: ""
@@ -29,3 +29,7 @@ handoff: 见 trigger 的家族合并建议；交互评审点见正文候选 A
 **影响面**：每次「结束→再说话」循环（孩子高频操作形态）多付 0.75s~1.57s 冷启动税 + 一次 bootstrap burst；竞态窗内按键的孩子体感为「按了没反应」（与 TECH-261014-wakeword-connecting-voice-layer 的用户感知同族，该条 UI 面已由 261014 包修，本条是通道面残根）。
 
 **风险**：riskTier: medium——候选 A 触固件会话生命周期核心路径（application.cc 状态机 + 261010 收尾补偿语义），回归面覆盖各会话类型（问答 / 记录 / 查字 / 提醒推送）；B 为常数改动 riskTier low 但收益有限。立包按 /triage-change 判档，真机回归轮必配。
+
+---
+
+**收口注记（2026-11-16，integrator · 261116-channel-resident-core）**：候选 A 「close 不断通道」已在 P1 实现——`Application::CloseAudioChannel()` 历史名 helper、`HandleToggleChatEvent` Listening 分支、`WakeWordInvoke` Listening 分支、`HandleEndVoiceSessionEvent` 四路收口到统一会话结束处理器（发 `SendStopListening`、通道保持常驻），删除 `ScheduleResidentRebuild()` 与 `kResidentRebuildDelayS`；`SetPowerSaveLevel(LOW_POWER)` 一并移除。离线面已过：final r2 十闸全绿、固件真编译通过、server 全量 473 passed。**本条目未结项**：其成本证据（温 0.82s / 冷 1.57s）与收益均为真机现象，按 workstream PROPOSAL §6「debt 结项凭据必须真机、不是合入」待 P1 真机轮 A（A1 + A2）凭据，收口记账归主线程。status 维持 `deferred`（本次仅刷新 trigger 指向真机验证；债务账 status 闭集不含「verifying」形态，故不改闭集外的值）。

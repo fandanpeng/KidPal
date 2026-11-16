@@ -2087,7 +2087,7 @@ TEST_CASE("语音轮入口出口: 补充轮A2 旧通道拆除序 (VR-A10)",
  * helper（plan ⑥ 负锚禁止）或改经别的入口, 本齿 RED(infra) 返 acceptance-author
  * 复核, 不得由 builder/fixer 改齿。
  * ------------------------------------------------------------------------ */
-/* coverage: OCE-A1 -- 播报态关层结束会话（结构）: HandleEndVoiceSessionEvent 切区内含 audio_service_.ResetDecoder() / AbortSpeaking(kAbortReasonNone) / protocol_->CloseAudioChannel() / SetDeviceState(kDeviceStateIdle) / local_close_settle src=overlay_close / ScheduleResidentRebuild(), 且静音->abort->关通道三位次序冻结（plan ⑦-4/5/6 同 TCP 先例）; 板级 OVERLAY_CLOSE 切区零 app.ToggleChatState() 且含 app.EndVoiceSession() */
+/* coverage: OCE-A1 -- 播报态关层结束会话（结构）: HandleEndVoiceSessionEvent 切区内含 audio_service_.ResetDecoder() / AbortSpeaking(kAbortReasonNone) / protocol_->SendStopListening()（2026-11-16 P1 重锚, 原 protocol_->CloseAudioChannel()）/ SetDeviceState(kDeviceStateIdle) / local_close_settle src=overlay_close，且区内核内 protocol_->CloseAudioChannel() / SetPowerSaveLevel(LOW_POWER) / ScheduleResidentRebuild() 归 0（P1 负锚），静音->abort->发 listen stop 三位次序冻结（plan ⑦-4/5/6 同 TCP 先例）; 板级 OVERLAY_CLOSE 切区零 app.ToggleChatState() 且含 app.EndVoiceSession() */
 TEST_CASE("语音轮会话收尾: 播报态关层结束会话 (OCE-A1)",
           "[voice_round_ui][OCE-A1][structural]")
 {
@@ -2118,10 +2118,19 @@ TEST_CASE("语音轮会话收尾: 播报态关层结束会话 (OCE-A1)",
         kvr_count_in_slice(region, "AbortSpeaking(kAbortReasonNone)") >= 1,
         "OCE-A1 RED: HandleEndVoiceSessionEvent 区零 AbortSpeaking(kAbortReasonNone)"
         "——abort 帧缺失, 服务端 TTS 不停（plan ⑦-5; 不等 ack, 单向消息）");
+    /* 2026-11-16 重锚（261116-channel-resident-core P1）: 旧钉 protocol_->
+     * CloseAudioChannel() >=1（拆通道）+ ScheduleResidentRebuild() >=1（5s 重建）
+     * → 新钉 protocol_->SendStopListening() >=1（会话结束不发拆通道, 改发 listen stop
+     * 通知 front 收尾; §6.4 / ADR-019）+ 三条负锚（区内拆通道/5s 重建/降 LOW_POWER 归 0）。
+     * 旧钉什么 → 新钉什么 → 为什么 = 通道常驻后会话结束不拆通道, 三件套整条退役。 */
     TEST_ASSERT_TRUE_MESSAGE(
-        kvr_count_in_slice(region, "protocol_->CloseAudioChannel()") >= 1,
-        "OCE-A1 RED: HandleEndVoiceSessionEvent 区零 protocol_->CloseAudioChannel()"
-        "——本地关分类置位缺失, 断连会走 A 路径排自动重连（plan ⑦-6）");
+        kvr_count_in_slice(region, "protocol_->SendStopListening()") >= 1,
+        "OCE-A1 RED: HandleEndVoiceSessionEvent 区零 protocol_->SendStopListening()"
+        "——统一收口未发 listen stop（会话结束未通知 front 收尾; 契约 §四 listen）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        kvr_count_in_slice(region, "protocol_->CloseAudioChannel()") == 0,
+        "OCE-A1 RED: HandleEndVoiceSessionEvent 区仍 protocol_->CloseAudioChannel()"
+        "——收尾仍拆通道（会话结束 = 拆通道旧形态未收口; §6.4 / ADR-019）");
     TEST_ASSERT_TRUE_MESSAGE(
         kvr_count_in_slice(region, "SetDeviceState(kDeviceStateIdle)") >= 1,
         "OCE-A1 RED: HandleEndVoiceSessionEvent 区零 SetDeviceState(kDeviceStateIdle)"
@@ -2136,22 +2145,27 @@ TEST_CASE("语音轮会话收尾: 播报态关层结束会话 (OCE-A1)",
         "——关层收尾诊断口径未与 toggle_chat/discard_record/wake_invoke 区分"
         "（plan ⑦-9; 若实现经变量拼 src 字面而非日志字面, 返 acceptance-author 返钉）");
     TEST_ASSERT_TRUE_MESSAGE(
-        kvr_count_in_slice(region, "ScheduleResidentRebuild()") >= 1,
-        "OCE-A1 RED: HandleEndVoiceSessionEvent 区零 ScheduleResidentRebuild()——会话"
-        "收尾类本地关零常驻重建排程（收尾 T 秒内重建缺席; plan ⑦-9）");
+        kvr_count_in_slice(region, "ScheduleResidentRebuild()") == 0,
+        "OCE-A1 RED: HandleEndVoiceSessionEvent 区仍 ScheduleResidentRebuild()——常驻"
+        "重建排程未删（通道常驻后不重建; 261116 P1 整条退役）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        kvr_count_in_slice(region, "SetPowerSaveLevel(PowerSaveLevel::LOW_POWER)") == 0,
+        "OCE-A1 RED: HandleEndVoiceSessionEvent 区仍 SetPowerSaveLevel(LOW_POWER)——"
+        "收尾降省电档（通道仍在世, RC-B6 观测口径重定）");
 
     /* ---- tooth 3 (OCE-A1 派生位次): 静音 -> abort -> 关通道 冻结序——abort 帧先于
      * 关通道同 TCP 有序发出（SendKidpalStoryDiscard 先例同构）, 即时静音先于 abort
      * （plan ⑦-4/5/6 同步顺序）。 */
     i_reset = kvr_index_of(region, "audio_service_.ResetDecoder()");
     i_abort = kvr_index_of(region, "AbortSpeaking(kAbortReasonNone)");
-    i_close = kvr_index_of(region, "protocol_->CloseAudioChannel()");
+    i_close = kvr_index_of(region, "protocol_->SendStopListening()");
     TEST_ASSERT_TRUE_MESSAGE(
         i_reset >= 0 && i_abort >= 0 && i_close >= 0 &&
             i_reset < i_abort && i_abort < i_close,
         kvr_fm("OCE-A1 RED: 收尾三位次序破（ResetDecoder@%ld, AbortSpeaking@%ld, "
-               "CloseAudioChannel@%ld）——即时静音 -> abort 帧 -> 关通道冻结序"
-               "（plan ⑦-4/5/6）", i_reset, i_abort, i_close));
+               "SendStopListening@%ld）——即时静音 -> abort 帧 -> 发 listen stop 冻结序"
+               "（plan ⑦-4/5/6; 2026-11-16 P1 重锚: 末位由关通道改 listen stop）",
+               i_reset, i_abort, i_close));
     free(region);
 
     /* ---- tooth 4 (OCE-A1 负向 + 正向): 板级 OVERLAY_CLOSE 切区零 app.ToggleChatState()

@@ -636,6 +636,70 @@ def story_restore_enabled(raw: "str | None" = None) -> bool:
     return raw.strip().lower() not in _STORY_RESTORE_FALSE_SET
 
 
+# --- 通道心跳保活（TaskPackage 261116-channel-resident-core P1；契约 §四 kidpal_keepalive）---
+# 会话/通道解耦后（ADR-019），会话间隙本就零下行，设备「120s 无下行 = 死链」判据必然
+# 到期（TECH-261012 首按键失同步第一段根因）。front 每连接周期下行一条
+# {"type":"kidpal_keepalive"} 心跳，把设备侧语义从「有下行」升级为「有心跳」。
+# 极性（PROPOSAL §2A）: **代码默认开**、`0/false/off/no` 为**回滚开关**——与
+# KIDPAL_STORY_RESTORE_PUSH 先例极性相反（旧固件收到 keepalive 的唯一副作用是一条
+# WARN；默认关会让新固件退化成每 ~120s 判死 + 立即重连的 churn）。front 与固件必须
+# 同批上线，回滚剧本 = 两半一起回滚。
+CHANNEL_HEARTBEAT_ENV = "KIDPAL_CHANNEL_HEARTBEAT"
+CHANNEL_HEARTBEAT_INTERVAL_ENV = "KIDPAL_CHANNEL_HEARTBEAT_INTERVAL_S"
+# 回滚开关识别集（strip().lower() ∈ 本集 -> 关；其余一律开——代码默认开偏置）。
+_CHANNEL_HEARTBEAT_FALSE_SET = {"0", "false", "off", "no"}
+# 心跳周期（秒）缺省 30。模块级单源（import 期读一次 env；离线验收以短周期注入近似
+# 假时钟，GAP-1）。非正数/不可解析 -> 回退缺省 30（防 env 写坏把心跳打成忙循环）。
+_DEFAULT_CHANNEL_HEARTBEAT_INTERVAL_S = 30.0
+
+
+def _read_channel_heartbeat_interval_s(raw: "str | None" = None) -> float:
+    if raw is None:
+        raw = os.environ.get(CHANNEL_HEARTBEAT_INTERVAL_ENV)
+    try:
+        value = float(raw) if raw is not None else _DEFAULT_CHANNEL_HEARTBEAT_INTERVAL_S
+    except (TypeError, ValueError):
+        return _DEFAULT_CHANNEL_HEARTBEAT_INTERVAL_S
+    return value if value > 0 else _DEFAULT_CHANNEL_HEARTBEAT_INTERVAL_S
+
+
+CHANNEL_HEARTBEAT_INTERVAL_S = _read_channel_heartbeat_interval_s()
+
+
+def channel_heartbeat_enabled(raw: "str | None" = None) -> bool:
+    """通道心跳开关决策面（纯函数；default None = 读 os.environ）。
+
+    代码默认开: env unset / 非 str -> True（新固件必须收到心跳，否则每 ~120s 判死）；
+    strip().lower() ∈ {"0","false","off","no"} -> False（回滚开关，两半一起回滚）。
+    与 story_restore_enabled 同形（env 名常量 + 纯函数 + strip().lower() 识别集），
+    差异仅在缺省极性。定义位次必须在 ws_gateway 之前（test_m4k3 A7 落点位次齿）。
+    """
+    if raw is None:
+        raw = os.environ.get(CHANNEL_HEARTBEAT_ENV)
+    if not isinstance(raw, str):
+        return True
+    return raw.strip().lower() not in _CHANNEL_HEARTBEAT_FALSE_SET
+
+
+async def _channel_heartbeat_loop(websocket) -> None:
+    """每连接心跳 producer（契约 §四 kidpal_keepalive）。
+
+    **sleep-first**（先睡一个周期再发）——建连即发会往假设备腿/真设备腿注入额外帧，
+    破坏 test_m4k1 / test_m4k3 / test_record_cancel_lifecycle 三件「真跑 ws_gateway」
+    的零偏移前提。发送形态 = **裸 send_text**（心跳不是 display 帧: 不过 display_schema、
+    不走 kidpal/display mcp 封套）。发送/连接异常 -> 静默退出（`except Exception`;
+    CancelledError 是 BaseException，不被吞 = 收尾时能正常取消）。
+    """
+    payload = json.dumps({"type": "kidpal_keepalive"}, ensure_ascii=False)
+    try:
+        while True:
+            await asyncio.sleep(CHANNEL_HEARTBEAT_INTERVAL_S)
+            await websocket.send_text(payload)
+    except Exception as e:  # noqa: BLE001 — 心跳失败静默退出，不得拖垮连接收尾
+        log.warning("channel_heartbeat_err err=%s", type(e).__name__)
+        return
+
+
 async def _push_story_list(websocket, restore: bool = False) -> None:
     """front 机械推送 story_list 的下行缝（三时点：WS 建连恢复 / 归档成功后 / 删除执行后）。
 
@@ -866,6 +930,76 @@ def _points_observed_set(websocket, snapshot) -> None:
         pass
 
 
+# --------------------------------------------------------------------------- #
+# 261116-channel-resident-core P1（T6/T8）: 每连接「记录语境曾置位」标记          #
+# --------------------------------------------------------------------------- #
+# 语义 = 本连接是否进入过记录语境（ctx(story) 沿 / 引擎侧 start_recording 注入沿）。
+# 用途二处:
+#   T6 `listen stop` 分层收尾——记录语境从未置位（普通问答）时零动作零注入，防每轮
+#     问答打一帧无用 active=false；
+#   T8 非 story ctx 边沿兜底分态——只有「曾置位」才需要按 routing 分态释放。
+# 形态沿 _POINTS_OBSERVED 先例（WeakKeyDictionary 按 device websocket 建 + 属性回退，
+# 连接对象被回收即自动摘除）；值 = 该连接进入过记录语境的会话键集合（会话键 =
+# ws_gateway 每连接一个不可复用 uuid4，见 HWV-A11，故集合内通常只 1 个元素）。
+# 清位单点 = `_release_record_context`（出语境信号单源）——三条既有调用点与新增的
+# sweep / ctx 边沿调用点自动一致。
+_RECORD_CTX_SEEN = weakref.WeakKeyDictionary()
+
+
+def _record_ctx_seen_sids(device_ws, *, create=False):
+    try:
+        sids = _RECORD_CTX_SEEN.get(device_ws)
+        if sids is None and create:
+            sids = set()
+            _RECORD_CTX_SEEN[device_ws] = sids
+        return sids
+    except TypeError:  # 不可弱引用对象 -> 属性面回退（_points_observed 同款）
+        sids = getattr(device_ws, "_kidpal_record_ctx_seen", None)
+        if sids is None and create:
+            sids = set()
+            try:
+                setattr(device_ws, "_kidpal_record_ctx_seen", sids)
+            except Exception:  # noqa: BLE001 — 标记登记失败不阻断泵
+                return None
+        return sids
+
+
+def _record_ctx_mark(device_ws, session_id) -> None:
+    """记录「本连接进入过记录语境」（置位点 = ctx(story) 沿 / *_inject_record_context_enter）。"""
+    if not session_id:
+        return
+    sids = _record_ctx_seen_sids(device_ws, create=True)
+    if sids is not None:
+        sids.add(session_id)
+
+
+def _record_ctx_seen_get(device_ws, session_id) -> bool:
+    if not session_id:
+        return False
+    sids = _record_ctx_seen_sids(device_ws)
+    return bool(sids) and session_id in sids
+
+
+def _record_ctx_clear(session_id, legs=()) -> None:
+    """清位（单点 = `_release_record_context` 体内；ws_gateway 收尾另有兜底清）。
+
+    按**会话键跨连接**清: 会话键在每个连接唯一（HWV-A11），语义上仍等价于「按连接
+    清」。之所以不只按 legs 的 device_ws 清 = 泵直调/离线线束下「收 ctx 的 device ws」
+    与「归属腿 device ws」可能不是同一对象，逐腿清会留下残标记 -> 重复 ctx 触发二次
+    释放（SCRF-B4 幂等齿）。legs 的属性面回退对象无法枚举，故额外逐个清一遍。
+    """
+    if not session_id:
+        return
+    for device_ws in list(_RECORD_CTX_SEEN.keys()):
+        sids = _RECORD_CTX_SEEN.get(device_ws)
+        if sids:
+            sids.discard(session_id)
+    for device_ws, _engine_ws in list(legs or ()):
+        sids = _record_ctx_seen_sids(device_ws)
+        if sids:
+            sids.discard(session_id)
+
+
 async def _observe_points_revision(websocket) -> bool:
     """观察缝（GAP-1 producer 侧）：points.py 权威 revision 变化 -> 恰一帧 restore 推送。
 
@@ -989,6 +1123,38 @@ async def _push_points_connect(websocket) -> bool:
     return True
 
 
+async def _story_ctx_edge_fallback(session_id, device_ws) -> None:
+    """T8（261116-channel-resident-core P1）: 非 story 合法 ctx 边沿兜底**分态**。
+
+    只在「本连接记录语境曾置位」时动作（否则是普通问答语境，零行为——K1 闭集语义 /
+    K2D-A3 / C8 保绿的前提）。分态（F-01 承重: 在途转写不得被当刻毁掉）:
+      - `pending_stop` -> **不动作**（保护在途转写，≤ PENDING_STOP_SECONDS 上界交
+        `_story_timeout_sweep` 释放）；
+      - `accumulate` -> `cancel(reason="session_end_stale")` + 释放（常驻时代
+        cancel-on-disconnect 同族，沿 human 2026-10-21 裁定口径，不发明「弃录自动归档」）；
+      - `chat` 但标记真 -> 只释放（会话已不存在，语境仍活 = 引擎对该连接永久抑制）。
+    重复 ctx(非 story)：释放后标记已清 -> 零新增注入（幂等）。
+    """
+    if not _record_ctx_seen_get(device_ws, session_id):
+        return
+    acc = _get_story_acc()
+    routing = acc.routing(session_id)
+    if routing == "pending_stop":
+        log.info("session_end_boundary corr_id=%s src=ctx_edge routing=pending_stop "
+                 "action=protected", session_id)
+        return
+    legs = _session_legs(session_id) or list(_alert_legs)
+    if routing == "accumulate":
+        acc.cancel(session_id, reason="session_end_stale")
+        await _release_record_context(session_id, legs)
+        log.info("session_end_boundary corr_id=%s src=ctx_edge routing=accumulate "
+                 "action=cancel_release", session_id)
+        return
+    await _release_record_context(session_id, legs)
+    log.info("session_end_boundary corr_id=%s src=ctx_edge routing=chat "
+             "action=release_only", session_id)
+
+
 async def _consume_kidpal_control(session_id, obj, websocket, upstream=None) -> bool:
     """拦截设备→引擎的 KidPal 私有控制帧（契约 §四：网关消费并拦截、不下透引擎）。
 
@@ -1038,6 +1204,10 @@ async def _consume_kidpal_control(session_id, obj, websocket, upstream=None) -> 
             # story.py 零改动）：chat -> accumulate 沿 = 首帧 ctx, 才条件推送①。
             ctx_push_edge = acc.routing(session_id) != "accumulate"
             acc.start(session_id)
+            # 261116-channel-resident-core P1（T6/T8）: 本连接「记录语境曾置位」标记
+            # ——listen stop 分层收尾与 ctx 边沿兜底分态的判据（置位点之一；
+            # 另一处 = _inject_record_context_enter 调用点）。
+            _record_ctx_mark(websocket, session_id)
             if ctx_push_edge and upstream is not None:
                 # ADR-013 Package B：进语境等价信号注入引擎腿（幂等沿；失败不阻断拦截消费）。
                 try:
@@ -1063,11 +1233,20 @@ async def _consume_kidpal_control(session_id, obj, websocket, upstream=None) -> 
             except Exception as e:  # noqa: BLE001 — 注入失败不阻断 ctx 拦截语义
                 log.warning("points_ctx_inject_err corr_id=%s err=%s",
                             session_id, type(e).__name__)
+            # 261116-channel-resident-core P1（T8）: 非 story 合法 ctx 的边沿兜底分态
+            # ——points 两值的摘要注入照旧（零偏移），记录语境曾置位时才按 routing 动作。
+            await _story_ctx_edge_fallback(session_id, websocket)
         elif source_page not in ("home", "schedule", "story_cover"):
             # 契约 §四：未知 source_page 拒绝并记日志，**绝不回退成 story**（静默吞掉
             # 会让新增取值（如 K5 story_cover 之外的新值）的接线缺陷不可见）。
+            # 261116 P1（T8 负锚）: 未知值**不释放记录语境**——本 elif 行为逐字保留,
+            # 不得把未知值并入兜底释放分支（m4k3 A7 / K2D-A3 双钉）。
             log.warning("session_ctx unknown_source_page=%r corr_id=%s",
                         source_page, session_id)
+        else:
+            # 261116-channel-resident-core P1（T8）: home / schedule / story_cover 合法
+            # 非 story 取值——闭集零行为半保留（未置位时不动作），置位时走分态兜底。
+            await _story_ctx_edge_fallback(session_id, websocket)
         return True
     if mtype == "kidpal_story_delete":
         gw_story.delete_story(STORIES_DIR, obj.get("id"), corr_id=session_id)
@@ -1255,6 +1434,11 @@ async def _story_timeout_sweep_body(now=None) -> int:
     for sid in acc.pending_timed_out_sessions(now_dt):
         if acc.release_pending(sid):
             log.info("story_pending_timeout corr_id=%s released=true", sid)
+            # 261116-channel-resident-core P1（T7，承重缺口）: 通道常驻后连接级 teardown
+            # 不再兜底释放（会话结束不拆通道），本分支是记录语境释放的最后一扇门——
+            # 不补则引擎对该连接永久抑制 = 设备哑火。腿集形态逐字沿 _story_auto_finish
+            # （_session_legs(sid) or list(_alert_legs)）；story.py 三缝零改动。
+            await _release_record_context(sid, _session_legs(sid) or list(_alert_legs))
     finished = 0
     # ③ 自动收尾先于引导判定：第 2 轮计时到仍无回应即收尾（不再发第 3 轮引导）。
     # 应答窗（261022-p3-record-front-polish-fix 缺陷③；FROZEN CONTRACT A/C 节）：自动
@@ -1618,6 +1802,9 @@ async def pump_upstream_to_client(upstream, websocket, session_id=None) -> None:
                 # raw blocks through the same relay chain.
                 if await _relay_display_blocks_to_device(obj.get("blocks") or [], websocket,
                                                          session_id, upstream):
+                    # 261116-channel-resident-core P1（T6/T8）: 记录语境置位点之二
+                    # （引擎侧 start_recording 注入沿）——本连接进入过记录语境。
+                    _record_ctx_mark(websocket, session_id)
                     await _inject_record_context_enter(upstream)
                 continue
             text_field = obj.get("text") if isinstance(obj, dict) else None
@@ -1633,6 +1820,8 @@ async def pump_upstream_to_client(upstream, websocket, session_id=None) -> None:
                 # …and each display envelope to the device as its own mcp frame.
                 if await _relay_display_blocks_to_device(blocks, websocket, session_id,
                                                          upstream):
+                    # 记录语境置位点之二（fence 路径同族）。
+                    _record_ctx_mark(websocket, session_id)
                     await _inject_record_context_enter(upstream)
             else:
                 await websocket.send_text(frame)  # no text field (hello/state): verbatim
@@ -1682,6 +1871,10 @@ async def _release_record_context(session_id, legs) -> None:
         except Exception as e:  # noqa: BLE001 — 单腿失败降级留痕不连坐
             log.warning("story_record_ctx_exit_err corr_id=%s err=%s",
                         session_id, type(e).__name__)
+    # 261116-channel-resident-core P1（T6/T8）: 「记录语境曾置位」标记的清位**单点**——
+    # 三个既有调用点（空素材 / 归档拒绝 / 整理完成）与新增的 sweep 释放、ctx 边沿释放
+    # 自动一致（重复 ctx / 重复 listen stop 的幂等由此单源承载）。
+    _record_ctx_clear(session_id, legs)
 
 
 async def _story_finish_session(session_id, acc, legs) -> "dict | None":
@@ -1779,6 +1972,42 @@ async def _story_finish_session(session_id, acc, legs) -> "dict | None":
     return record
 
 
+async def _story_listen_stop_boundary(session_id, device_ws) -> None:
+    """T6（261116-channel-resident-core P1）: `listen stop` 会话收尾**分层**处理。
+
+    门控在外层（type/state == listen/stop）；本函数按 `acc.routing` 分态（F-01 承重）:
+      ① `chat` + 标记假 -> **零动作零注入**（普通问答；防每轮问答打一帧无用
+         active=false）；
+      ② `accumulate` + accum 非空 -> 已被 `_story_finish_session` 归档路径消费，
+         收尾三件不得再动（路由此时已回 chat + 标记已清，实际落到 ①/③）；
+      ③ `accumulate`（未消费，防御性）-> 不 cancel、不留残语境（交既有卡壳/自动
+         收尾 sweep）；
+      ④ `pending_stop`（accum 空挂起 / 重复 stop）-> **禁止 cancel、禁止释放**
+         （protected state，交 T7 的 10s sweep 释放）；
+      ⑤ `chat` + 标记真（discard 等旁路已 pop 会话、语境仍活）-> 只释放。
+
+    审计一行含冻结 token `session_end_boundary`（记 routing 分支 + 是否触发释放）。
+    """
+    if not session_id:
+        return
+    if not _record_ctx_seen_get(device_ws, session_id):
+        return
+    acc = _get_story_acc()
+    routing = acc.routing(session_id)
+    if routing == "pending_stop":
+        log.info("session_end_boundary corr_id=%s src=listen_stop routing=pending_stop "
+                 "action=protected", session_id)
+        return
+    if routing == "accumulate":
+        log.info("session_end_boundary corr_id=%s src=listen_stop routing=accumulate "
+                 "action=noop", session_id)
+        return
+    legs = _session_legs(session_id) or list(_alert_legs)
+    await _release_record_context(session_id, legs)
+    log.info("session_end_boundary corr_id=%s src=listen_stop routing=chat "
+             "action=release_only", session_id)
+
+
 async def pump_client_to_upstream(websocket, upstream, session_id=None) -> list:
     """Device->engine leg: reads starlette-style dict messages via await websocket.receive()
     ({"type": "websocket.receive", "text"/"bytes": ...}), forwards every frame to
@@ -1826,6 +2055,12 @@ async def pump_client_to_upstream(websocket, upstream, session_id=None) -> list:
                 if _story_stop_on_listen_stop(session_id, up_obj):
                     await _story_finish_session(session_id, _get_story_acc(),
                                                 [(websocket, upstream)])
+                # 261116-channel-resident-core P1（T6）: 会话收尾分层（契约 §四 listen /
+                # F-01）——消费点之后按 routing 分态；pending_stop 当刻绝不 cancel/释放。
+                # 门控先于任何动作（只投 kidpal_story_fetch 等帧的既有件不得被无谓触达）。
+                if (isinstance(up_obj, dict) and up_obj.get("type") == "listen"
+                        and up_obj.get("state") == "stop"):
+                    await _story_listen_stop_boundary(session_id, websocket)
                 acked, rid = on_device_receipt(text)
                 if acked:
                     acked_ids.append(rid)
@@ -2527,6 +2762,15 @@ async def ws_gateway(websocket: WebSocket):
                 await _push_schedule_connect(websocket)
             except Exception as e:  # noqa: BLE001 — 建连推送增强，不因它拒服务
                 log.warning("schedule_connect_push_err err=%s", type(e).__name__)
+            # 261116-channel-resident-core P1（T5）: 每连接下行心跳保活（契约 §四
+            # kidpal_keepalive）。落位 = 建连恢复推送之后、双泵收尾等待之前。
+            # 承重三条: ① 绝不进下面 asyncio.wait(FIRST_COMPLETED) 集合（无限任务会
+            # 永久拖住收尾 —— test_record_cancel_lifecycle RCL-A3 6s 限时齿即该错误的
+            # 唯一离线警报）；② 循环 sleep-first（见 _channel_heartbeat_loop）；③ 收尾
+            # finally 首行 cancel + 限时回收（与 _unregister_alert_legs 同块）。
+            heartbeat_task = None
+            if channel_heartbeat_enabled():
+                heartbeat_task = asyncio.create_task(_channel_heartbeat_loop(websocket))
             # 故事三时点 ①「建连即推」沿革（260928-story-connect-push-defer 摘除 ->
             # 261010-p3-storylist-cold-start-restore v1.63 赎回）：旧摘除理由 = 设备每会话
             # 重开 WS、建连即推无条件给设备打 story_list 帧，旧固件无条件渲染 P3 页盖掉
@@ -2556,6 +2800,11 @@ async def ws_gateway(websocket: WebSocket):
                         log.warning("ws_pump_ended corr_id=%s err=%s",
                                     session_id, type(_exc).__name__)
             finally:
+                # 261116-channel-resident-core P1（T5）: 心跳 task 回收先于其它收尾动作
+                # （首行 cancel + 限时 gather；心跳卡在 send_text 亦不拖住断开收尾）。
+                if heartbeat_task is not None:
+                    heartbeat_task.cancel()
+                    await asyncio.gather(heartbeat_task, return_exceptions=True)
                 _unregister_alert_legs(websocket)
                 # [SC-D] 会话腿映射摘除（与 _unregister_alert_legs 同生命周期；按
                 # device_ws 身份摘除本连接全部会话登记）。
@@ -2568,6 +2817,10 @@ async def ws_gateway(websocket: WebSocket):
                 except Exception as e:  # noqa: BLE001 — 清理钩子绝不影响断开收尾
                     log.warning("story_session_teardown corr_id=%s err=%s",
                                 session_id, type(e).__name__)
+                # 261116-channel-resident-core P1（T6）: 「记录语境曾置位」标记的连接级
+                # 兜底清（会话键不可复用 = 本连接唯一；WeakKeyDictionary 也会随对象回收
+                # 自动摘除，此行只为显式收尾与内存有界）。
+                _record_ctx_clear(session_id)
     except Exception as e:  # noqa: BLE001
         log.info("ws forward not available (engine down?): %s", type(e).__name__)
         await websocket.close(code=1011)

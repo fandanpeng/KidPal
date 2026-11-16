@@ -105,11 +105,15 @@ static bool s_sntp_started = false;
 static const int kAutoConnectBackoffS[3] = { 5, 10, 20 };
 
 /* -------------------------------------------------------------------------- *
- * 261010 [S9] 常驻重建 T 秒延迟（B 路径, 决策 29「永不休眠」）: 会话收尾类本地关后
- * 延迟重建常驻连接——值 5（退避表首档 5s 量级, plan 定值并冻结进验收件; 改值须回
- * planner 重冻结）。本 needle 首现即本定义。
+ * 261116-channel-resident-core（P1 T2）会话空闲超时阈值: 聆听态连续 60 秒无语音
+ * （VAD 电平恒静 + 非记录语境）即自动结束会话（requirements §2.1 结束三通道①）。
+ * 位置接替 P1 删除的常驻重建延迟常量（同区）。值 60 冻结进验收件
+ * session_channel_resident.acceptance.c SCR-A5；改值须回 planner 重冻结。
+ * 说明: 这是**唯一**的 60s 阈值常量——producer 只在本文件主循环 CLOCK_TICK 区消费,
+ * 不接纯模型会话状态机事件（voice_round_ui VQ-E1 tooth2 钉全 firmware/main 的该事件
+ * 符号命中文件数恰 2 = session_state_machine.h/.cc）。
  * ------------------------------------------------------------------------ */
-static const int kResidentRebuildDelayS = 5;
+static const int kSessionIdleTimeoutS = 60;
 
 /* -------------------------------------------------------------------------- *
  * 261022-diag-log-content（板端诊断日志内容增强）SystemInfo 打印门控状态：
@@ -397,6 +401,13 @@ void Application::Run() {
 
         if (bits & MAIN_EVENT_VAD_CHANGE) {
             if (GetDeviceState() == kDeviceStateListening) {
+                /* 261116-channel-resident-core（P1 T2）: 说话沿重置 60s 空闲计时——
+                 * 孩子一开口计时即清零（否则上一段静默累积到 60 会误收）。
+                 * 电平判据: 本回调只在沿上产生事件；起音沿 s_vad_speaking == true。
+                 * 不另写状态迁移归零（HandleStateChangedEvent 已承载）。 */
+                if (s_vad_speaking) {
+                    clock_ticks_ = 0;
+                }
                 auto led = Board::GetInstance().GetLed();
                 led->OnStateChanged();
                 /* K3 [S2]: 开口切录音态（S-F2.2-AC1 第一句即进录音态; notes ⑨）——
@@ -462,6 +473,42 @@ void Application::Run() {
                     s_sysinfo_last_print_ms = now_ms;
                     SystemInfo::PrintHeapStats();
                 }
+            }
+
+            /* 261116-channel-resident-core（P1 T2）: 60s 无语音超时 producer
+             * （requirements §2.1 结束三通道①）。判据四件（注释刻意不写判据原文的
+             * 符号字面——验收件按源文本计数，注释里的字面会稀释断言区分力）:
+             *   ① 设备态 == 聆听态（非聆听态不计时）
+             *   ② VAD 电平门（承重）: s_vad_speaking 是电平、VAD_CHANGE 只在起音沿
+             *      产生一次；一段无停顿的 90s 连续讲话只有一个上升沿，仅靠沿重置会在
+             *      第 60 秒误收（轮 A A7 直接翻车）。
+             *   ③ 空闲计时到阈值（状态迁移 / VAD 起音沿均归零）
+             *   ④ 记录语境硬豁免（requirements §2.1 v1.65；记录会话由引导/归档链收尾）
+             * 命中 -> 直接投统一收口处理器（主循环上下文 = 直调形态; 协议回调上下文
+             * 走事件位, 两类不混用）。审计行 token = session_idle_timeout。 */
+            if (GetDeviceState() == kDeviceStateListening && !s_vad_speaking &&
+                clock_ticks_ >= kSessionIdleTimeoutS &&
+                !kidpal_story_session_ctx_active()) {
+                ESP_LOGI(TAG, "session_idle_timeout corr_id=kdp-%u seconds=%d",
+                         static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu),
+                         clock_ticks_);
+                HandleEndVoiceSessionEvent();
+            }
+
+            /* 261116-channel-resident-core（P1 T4）: 通道自愈巡检（§6.4 常驻保活）。
+             * 会话间隙本就零下行, 设备侧「120 秒无下行 = 死链」判据必然到期
+             * （TECH-261012 首按键失同步第一段根因）——本巡检在 Idle 且通道未开时
+             * 复用既有自动建连任务补建。
+             * **守卫短路顺序是承重件**: 先判自动建连 in-flight 标志、再判通道开合——
+             * 顺序写反会让 in-flight 期（3 次退避 ≈35s）仍每秒走到通道判据，其内
+             * IsTimeout 的 ESP_LOGE 回到每秒一条；正确顺序 = 事实降频（因此本包零改
+             * protocol.cc）。注释刻意不写判据符号字面（源文本计数断言会因此稀释）。
+             * 隔离: 只经既有自动建连任务（判 + 起在主循环 handler 内）；本区零直连
+             * 建连调用、不新建 task = 零第二条重连路径。 */
+            if (GetDeviceState() == kDeviceStateIdle && protocol_ &&
+                !auto_connect_in_flight_ &&
+                !protocol_->IsAudioChannelOpened()) {
+                TryStartAutoConnect();
             }
         }
     }
@@ -614,21 +661,6 @@ void Application::TryStartAutoConnect() {
                  (unsigned)uxTaskGetStackHighWaterMark(NULL));
         vTaskDelete(NULL);
     }, "AutoConnect", 4096 * 2, this, 2, nullptr);
-}
-
-void Application::ScheduleResidentRebuild() {
-    /* [S9] 常驻重建缝（B 路径; 决策 29「永不休眠」）: 会话收尾类本地关后 T 秒
-     * （kResidentRebuildDelayS）重建常驻连接。延迟在独立短命线程内睡眠（不阻塞主
-     * 循环——helper 由主循环 handler / Schedule lambda 调用）; 到点经 Schedule( 回主
-     * 循环上下文排入 TryStartAutoConnect()（复用既有 AutoConnect task 守卫三条件与
-     * 退避——重建只经既有 AutoConnect task, 零第二条重连路径; 判 + 起在主循环, 与
-     * K6 [S1] 判设同源）。 */
-    std::thread([this]() {
-        vTaskDelay(pdMS_TO_TICKS(kResidentRebuildDelayS * 1000));
-        Schedule([this]() {
-            TryStartAutoConnect();
-        });
-    }).detach();
 }
 
 void Application::CheckAssetsVersion() {
@@ -921,6 +953,14 @@ void Application::InitializeProtocol() {
                 ESP_LOGW(TAG, "Invalid custom message format: missing payload");
             }
 #endif
+        } else if (strcmp(type->valuestring, "kidpal_keepalive") == 0) {
+            /* 契约 §四 心跳帧（261116-channel-resident-core P1 T3）: front 每连接周期
+             * 下行的裸心跳 JSON（非 display 帧）。no-op 直接返回——不得落 Unknown
+             * message type WARN（每 30s 一条会按 ~144KB/日 冲 SD 日志轮转预算）。
+             * 位次承重: 在 #endif（上一条件编译块尾，本分支不依赖该配置）之后、
+             * WARN 之前。注释不重抄帧 type 字面（验收件按源文本计数该字面，注释里的
+             * 重复会让「分支在位」断言失真）。 */
+            return;
         } else {
             ESP_LOGW(TAG, "Unknown message type: %s", type->valuestring);
         }
@@ -970,23 +1010,22 @@ void Application::StopListening() {
 }
 
 void Application::CloseAudioChannel() {
-    /* K3 [S5]: 录音态丢弃面（BOOT 任一手势）——断连即达 front ws_disconnect
-     * cancel 钩子（弹缓冲不落盘）; 不发 listen stop（丢弃不是归档）。 */
-    if (protocol_) {
-        protocol_->CloseAudioChannel();
-        /* 261010 [S9] 本地关收尾补偿（[S7] 令 OnDisconnected 对本地关提前 return，
-         * A 区 lambda 的 Idle 收尾 + LOW_POWER 剖面被抑制 → 设备态停留
-         * Listening/Speaking，常驻重建守卫 state!=Idle 直 return = 重建永不触发）:
-         * 主循环上下文（按键 dispatch 栈）内同步补回设备态 + 省电剖面（Connecting/
-         * Listening/Speaking→Idle 全合法, device_state_machine.cc:80-93）。收尾落
-         * 调用点，不入 helper（[S9] helper 区零 SetDeviceState 负锚）。 */
-        SetDeviceState(kDeviceStateIdle);
-        Board::GetInstance().SetPowerSaveLevel(PowerSaveLevel::LOW_POWER);
-        ESP_LOGI(TAG, "local_close_settle corr_id=kdp-%u src=discard_record state=idle",
-                 static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
-    }
-    /* 261010 [S9] 会话收尾类本地关 → T 秒内常驻重建（B 路径）。 */
-    ScheduleResidentRebuild();
+    /* 261116-channel-resident-core（P1 T1）: 本函数**名字为历史名、语义 = 会话收尾**
+     * （K3 [S5] 录音态丢弃面 / BOOT 任一手势）。通道常驻后会话结束不再拆通道：改投
+     * 统一会话结束处理器的事件位（MAIN_EVENT_END_VOICE_SESSION）。
+     *
+     * 形态二分（不得混用）: 本 helper 的调用上下文 = **协议接收任务**
+     * （OnIncomingJson -> McpServer::ParseMessage -> mcp 回调），跨任务禁止直调
+     * HandleEndVoiceSessionEvent()（后者碰 protocol_ / 状态机 / audio_service_），
+     * 故只投事件位，收尾在主循环下一拍单源执行（listen stop + Idle）。
+     *
+     * 丢弃面契约 §四 顺序约束（2026-11-16 重锚）: SendKidpalStoryDiscard() 由调用方
+     * 在本调用**之前**已在同一 TCP 上行；本 helper 投的事件位在主循环下一拍才发
+     * listen stop —— 帧先行、stop 后至，front 先按 discard 取消会话（routing 回 chat）
+     * 再消费 stop = 丢弃素材不会复活成归档。mcp_server.cc 因此零改动（守 P2 边界）。 */
+    ESP_LOGI(TAG, "local_close_settle corr_id=kdp-%u src=discard_record state=session_end_requested",
+             static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+    EndVoiceSession();
 }
 
 void Application::HandleToggleChatEvent() {
@@ -1029,15 +1068,13 @@ void Application::HandleToggleChatEvent() {
     } else if (state == kDeviceStateSpeaking) {
         AbortSpeaking(kAbortReasonNone);
     } else if (state == kDeviceStateListening) {
-        protocol_->CloseAudioChannel();
-        /* 261010 [S9] 本地关收尾补偿（同 CloseAudioChannel 丢弃面）: 主循环 handler
-         * 内同步补回 Idle + LOW_POWER 剖面。收尾落调用点，不入 helper。 */
-        SetDeviceState(kDeviceStateIdle);
-        Board::GetInstance().SetPowerSaveLevel(PowerSaveLevel::LOW_POWER);
-        ESP_LOGI(TAG, "local_close_settle corr_id=kdp-%u src=toggle_chat state=idle",
+        /* 261116-channel-resident-core（P1 T1）: KEY 单击结束会话——主循环上下文，
+         * 直调统一收口（保同步语义; 协议回调上下文才走事件位，两类不混用）。
+         * 不再拆通道 / 不降省电档 / 不排常驻重建。本路审计 token 留在调用点的日志行
+         * 上（四路诊断口径区分；注释不重抄 token 字面）。 */
+        ESP_LOGI(TAG, "local_close_settle corr_id=kdp-%u src=toggle_chat state=session_end",
                  static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
-        /* 261010 [S9] 会话收尾类本地关 → T 秒内常驻重建（B 路径）。 */
-        ScheduleResidentRebuild();
+        HandleEndVoiceSessionEvent();
     }
 }
 
@@ -1122,16 +1159,25 @@ void Application::HandleStopListeningEvent() {
 
 /* 261024-vq-overlay-close-end-session（TECH-261024 真机事故修复）: 覆盖层关层手势的
  * 统一会话结束处理器——三态（Connecting / Listening / Speaking）一律真正断会话,
- * 不是只打断停播。动作序列（plan ⑦, 主任务上下文同步序）:
+ * 不是只打断停播。
+ *
+ * 261116-channel-resident-core（P1 T1）重锚: 会话生命周期与 WS 通道生命周期解耦
+ * （§6.4 / ADR-019）——**会话结束不再拆通道**，本处理器成为全部会话结束触发源的
+ * 唯一收口点（四条本地关 + 主循环 60s 空闲超时 producer；云端 end_session 归 P2）。
+ * 动作序列（主任务上下文同步序）:
  *   ① protocol_ 判空 / ② auto_connect_in_flight_ 守卫（避免与后台 AutoConnect 抢
  *   websocket_）→ ③ 三态门 → ④ 仅 Speaking: ResetDecoder 即时静音（Idle 分支只停
  *   音频处理器、不清解码/播放队列, 旧队列会在 Idle 后继续出声, 必须显式补）→
- *   ⑤ 仅 Speaking: AbortSpeaking（abort 帧先发、与关通道同 TCP 有序, 沿用
- *   SendKidpalStoryDiscard 先例）→ ⑥ CloseAudioChannel（本地关分类置位,
- *   OnDisconnected 消费标记后不排自动重连、不异步再改 Idle）→ ⑦ 不等 abort ack
- *   （单向消息、协议无 ack 语义; 断连本身即服务端会话终止信号）→ ⑧ Idle →
- *   ⑨ LOW_POWER + local_close_settle(src=overlay_close) + 常驻重建 →
- *   ⑩ 不发 SendStopListening（那是录音收尾归档语义）。
+ *   ⑤ 仅 Speaking: AbortSpeaking（abort 帧与随后 listen stop 同 TCP 有序, 沿用
+ *   SendKidpalStoryDiscard 先例）→ ⑥ **send listen stop**（会话边界带内信号: 通知
+ *   front 收尾——录音会话归档 / 记录语境释放；通道保持常驻）→ ⑦ 不等任何 ack
+ *   （单向消息、协议无 ack 语义）→ ⑧ SetDeviceState(Idle) → ⑨ 收尾审计行（四路
+ *   诊断口径之一，本处理器 = 覆盖层关层来源）。**不降省电档、不排常驻重建**
+ *   （通道仍在世）。注释不重抄审计 token / 判据符号字面（验收件按源文本计数）。
+ *
+ * 收口形态二分（不得混用）: 协议回调上下文（本文件 CloseAudioChannel 历史名 helper）
+ * 走事件位投递（跨任务安全）; 主循环上下文（toggle / wake-invoke / CLOCK_TICK 60s
+ * producer）直调本函数（保同步语义）。
  *
  * 时序自证（关层落定先于 voice_end）: 本分支在主循环 MAIN_EVENT_SCHEDULE 之前跑 →
  * 置 Idle 只置 STATE_CHANGED 位 → 同轮 SCHEDULE 先执行 dismiss_front_overlay
@@ -1161,12 +1207,13 @@ void Application::HandleEndVoiceSessionEvent() {
         AbortSpeaking(kAbortReasonNone);
     }
 
-    protocol_->CloseAudioChannel();
+    /* 261116-channel-resident-core（P1 T1）: 会话结束 = 发 listen stop（会话边界带内
+     * 信号, 通知 front 收尾：录音会话归档 / 记录语境释放）, 通道保持常驻
+     * （§6.4 / ADR-019）。恰一次; 与 AbortSpeaking 同 TCP 有序。 */
+    protocol_->SendStopListening();
     SetDeviceState(kDeviceStateIdle);
-    Board::GetInstance().SetPowerSaveLevel(PowerSaveLevel::LOW_POWER);
     ESP_LOGI(TAG, "local_close_settle corr_id=kdp-%u src=overlay_close state=idle",
              static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
-    ScheduleResidentRebuild();
 }
 
 void Application::HandleWakeWordDetectedEvent() {
@@ -1511,17 +1558,13 @@ void Application::WakeWordInvoke(const std::string& wake_word) {
         });
     } else if (state == kDeviceStateListening) {
         Schedule([this]() {
-            if (protocol_) {
-                protocol_->CloseAudioChannel();
-            }
-            /* 261010 [S9] 本地关收尾补偿（同 CloseAudioChannel 丢弃面）: Schedule
-             * lambda = 主循环上下文，同步补回 Idle + LOW_POWER 剖面。收尾落调用点。 */
-            SetDeviceState(kDeviceStateIdle);
-            Board::GetInstance().SetPowerSaveLevel(PowerSaveLevel::LOW_POWER);
-            ESP_LOGI(TAG, "local_close_settle corr_id=kdp-%u src=wake_invoke state=idle",
+            /* 261116-channel-resident-core（P1 T1）: 编程唤起结束会话——lambda 体在
+             * 主循环上下文（= Schedule 排队），直调统一收口（保同步语义）。
+             * 不再拆通道 / 不降省电档 / 不排常驻重建。本路审计 token 留在调用点的
+             * 日志行上（四路诊断口径区分；注释不重抄 token 字面）。 */
+            ESP_LOGI(TAG, "local_close_settle corr_id=kdp-%u src=wake_invoke state=session_end",
                      static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
-            /* 261010 [S9] 会话收尾类本地关 → T 秒内常驻重建（B 路径）。 */
-            ScheduleResidentRebuild();
+            HandleEndVoiceSessionEvent();
         });
     }
 }

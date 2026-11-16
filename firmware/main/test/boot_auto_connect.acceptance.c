@@ -167,20 +167,18 @@
  *             P1 屏显不变）= deferred 设备轮（RC-A4）。
  *   coverage: RC-A2 分类互斥 -> test 8（分类写点单点 + OnDisconnected 消费先于回调 +
  *             A 区零 ScheduleResidentRebuild + 三会话收尾点零直调缝 + 全文件 helper
- *             恰 5 处——261024-vq-overlay-close-end-session 重钉 4→5, 定义 + 四调用点;
- *             第四调用点 HandleEndVoiceSessionEvent 未纳入零直调缝守卫 = 按该包
- *             plan ⑧-2 冻结口径, planner 可另案收紧）。真机半 = deferred 设备轮
- *             （RC-B4/B5 对账）。
- *   coverage: RC-A3 复用守卫 -> test 9（B helper 区复用 TryStartAutoConnect + 经
- *             Schedule( 回主循环 + 零 OpenAudioChannel/零退避消费/零 SetDeviceState
- *             + kResidentRebuildDelayS 定义消费下界 + A 区零 OpenAudioChannel）。
+ *             恰 0 处——2026-11-16 261116-channel-resident-core P1 重钉: 常驻重建机制
+ *             整条退役, 回潮守卫; 原 5 处口径见 REVISION 墓碑）。真机半 = deferred
+ *             设备轮（RC-B4/B5 对账）。
+ *   coverage: RC-A3 复用守卫 -> RETIRED 2026-11-16（261116-channel-resident-core P1:
+ *             B helper / kResidentRebuildDelayS 整条退役; 现代承载 =
+ *             session_channel_resident SCR-A1/SCR-A7; 见 TEST 9 墓碑）。
  *   coverage: RC-B1 永不休眠 -> test 10（板级文件零休眠接线 needle + 直连 sleep API
  *             零命中 + common 层休眠入口文件在世 canary + CanEnterSleepMode 既有门
  *             在世）。设计态绿（现状结构事实钉死; 变异敏感 = 板级加接线即红）。
- *   coverage: RC-B2 常驻重建 -> test 11（T=5 冻结进首定义片段 + 四会话收尾点各恰
- *             一次——261024-vq-overlay-close-end-session 追加 HandleEndVoiceSession-
- *             Event 第四项 + 各区既有 close token 零偏移锚）。真机半（收尾 T 秒内
- *             重建、跨夜提醒可达）= deferred 设备轮（RC-B4）。
+ *   coverage: RC-B2 常驻重建 -> RETIRED 2026-11-16（261116-channel-resident-core P1:
+ *             T=5 与四调用点常驻重建整条退役; 四收尾点收口的现代承载 =
+ *             session_channel_resident SCR-A1; 见 TEST 11 墓碑）。
  *   coverage: RC-B3 负锚 -> test 12（五路径零重建排程 + 既有 close token 在世）。
  *             实现前 trivially green（负锚在 B 缝在世后才承载）; 变异敏感 = 任一负锚
  *             区新增重建排程即红。
@@ -1183,8 +1181,8 @@ TEST_CASE("断线重连常驻: 服务端断自动重连排程 (RC-A1)",
  * MUST-STAY-GREEN 半：三会话收尾点区 + A 区 + OnDisconnected 区可切（锚在世）。
  * RED today：分类写点计数 0 ≠ 1（标记未落）。
  * ------------------------------------------------------------------------ */
-/* coverage: RC-A2 -- 服务端断路径与常驻重建路径触发分类互斥：分类写点单点（local_close_pending_ = true 恰 1）+ OnDisconnected 消费先于回调 + A 区零 ScheduleResidentRebuild + 三会话收尾点零直调 TryStartAutoConnect + 全文件 ScheduleResidentRebuild() 恰 5 处（定义 + 四调用点, 第四点 = HandleEndVoiceSessionEvent, 零泄漏面） */
-/* coverage: OCE-A2 -- 既有断言重钉（本文件承载面）: RC-A2 tooth 6 全文件 ScheduleResidentRebuild() 计数 4→5（定义 + 四会话收尾点, 第四点 = HandleEndVoiceSessionEvent）+ RC-B2 sites 数组追加第四项承载；verifier round 1 判红锚 = RC-A2 tooth6 重钉段 */
+/* coverage: RC-A2 -- 服务端断路径与常驻重建路径触发分类互斥：分类写点单点（local_close_pending_ = true 恰 1）+ OnDisconnected 消费先于回调 + A 区零 ScheduleResidentRebuild + 三会话收尾点零直调 TryStartAutoConnect + 全文件 ScheduleResidentRebuild() 恰 0 处（2026-11-16 P1 重钉: 常驻重建机制整条退役, 回潮守卫） */
+/* coverage: OCE-A2 -- 既有断言重钉（本文件承载面）: RC-A2 tooth 6 全文件 ScheduleResidentRebuild() 计数 4→5（261024）再 →0（2026-11-16 P1 整条退役）+ RC-B2 整条退役（见 TEST 11 墓碑）；verifier 判红锚 = RC-A2 tooth6 重钉段 */
 /* coverage: OCE-A3 -- 回归网（四族全绿 + host 全量零新增红 vs 冻结基线 236T3F）: 判据锚 = verifier round evidence（host 全量 runner 结果），本标记为覆盖登记、非本文件单断言承载 */
 TEST_CASE("断线重连常驻: 本地关分类互斥 (RC-A2)",
           "[boot_auto_connect][RC-A2][structural]")
@@ -1261,16 +1259,18 @@ TEST_CASE("断线重连常驻: 本地关分类互斥 (RC-A2)",
         free(region);
     }
 
-    /* tooth 6 (RED today; OCE-A2 重钉, 261024-vq-overlay-close-end-session):
-     * 全 application.cc ScheduleResidentRebuild() 恰 5 处（定义 + 四调用点;
-     * 泄漏到其它路径 = 分类面破）。重钉事由: 新增第四会话收尾点
-     * HandleEndVoiceSessionEvent（播报态关层结束会话, TECH-261024 修复）也调
-     * helper, 原计数恰 4 改后必红——「定义 + 三调用点」改钉「定义 + 四调用点」。 */
+    /* tooth 6 (重钉 2026-11-16, 261116-channel-resident-core P1; 原「全文件
+     * ScheduleResidentRebuild() 恰 5 = 定义 + 四调用点」)：
+     *   ！旧钉什么：全 application.cc 恰 5 处（定义 + 四会话收尾点）。
+     *   ！新钉什么：恰 0 处——P1 通道常驻后会话结束不再拆通道、不再 5s 重建，
+     *     ScheduleResidentRebuild 函数/常量/全部调用点整条删净（§6.4 / ADR-019）。
+     *   ！为什么：RC-B2 与 RC-A3 一并退役（见下方 TEST 11 / TEST 9 墓碑）；本齿改为
+     *     回潮守卫：任何重新引入常驻重建调用的改动 = 红。 */
     n = kac_count_in_file(KAC_APP_CC, KAC_B_HELPER_CALL_ND);
-    TEST_ASSERT_TRUE_MESSAGE(n == 5,
-        kac_fm("RC-A2 RED: application.cc ScheduleResidentRebuild() = %d 处（冻结恰 5: "
-               "定义 + 四会话收尾点, OCE-A2 重钉 261024-vq-overlay-close-end-session）"
-               "——触发点泄漏或缺失", n));
+    TEST_ASSERT_TRUE_MESSAGE(n == 0,
+        kac_fm("RC-A2 RED: application.cc ScheduleResidentRebuild() = %d 处（P1 冻结恰 0: "
+               "常驻重建机制整条退役）——通道常驻后仍排 5s 重建（拆而再建绕路回潮；"
+               "§6.4 / ADR-019 破）", n));
 }
 
 /* -------------------------------------------------------------------------- *
@@ -1279,7 +1279,22 @@ TEST_CASE("断线重连常驻: 本地关分类互斥 (RC-A2)",
  * MUST-STAY-GREEN 半：A 区既有零直连 OpenAudioChannel(（现状即绿）。
  * RED today：B helper 未实现（声明/定义/常量全零命中）。
  * ------------------------------------------------------------------------ */
-/* coverage: RC-A3 -- 重连复用 TryStartAutoConnect：B helper 区消费 kResidentRebuildDelayS + 排入 TryStartAutoConnect + 经 Schedule( 回主循环 + 区内 OpenAudioChannel(/kAutoConnectBackoffS/SetDeviceState( 恒 0（零第二条重连路径 / 零新退避消费 / 屏显零触碰）+ kResidentRebuildDelayS 定义消费下界 + A 区零 OpenAudioChannel（连接只经既有 AutoConnect task） */
+/* ========================================================================
+ * RETIRED 2026-11-16 (261116-channel-resident-core P1 — 通道常驻核心):
+ *   ！旧钉什么：RC-A3「重连复用 TryStartAutoConnect」——B helper
+ *     ScheduleResidentRebuild 区消费 kResidentRebuildDelayS + 排入
+ *     TryStartAutoConnect + 经 Schedule( 回主循环 + 区内零 OpenAudioChannel/零退避/
+ *     零 SetDeviceState；kResidentRebuildDelayS 定义消费下界；A 区零 OpenAudioChannel。
+ *   ！新钉什么：整条退役（无替代断言留在本件）。P1 删净常驻重建机制（§6.4 / ADR-019:
+ *     通道常驻 + 会话边界带内信号，会话结束不再拆通道），ScheduleResidentRebuild 函数 /
+ *     kResidentRebuildDelayS 常量 / 全部调用点归 0。「零第二条重连路径」的现代承载 =
+ *     session_channel_resident.acceptance.c SCR-A7（自愈巡检区零 OpenAudioChannel(）+
+ *     SCR-A1（四收尾点零 ScheduleResidentRebuild(）。
+ *   ！为什么：B helper 不再存在，原结构齿的每个 needle 都无法命中；保留即恒红假红。
+ * 墓碑保留代码供审计（#if 0 = 不编译不注册）。
+ * ======================================================================== */
+#if 0
+/* coverage: RC-A3 -- RETIRED（见上墓碑）。 */
 TEST_CASE("断线重连常驻: 重连复用守卫 (RC-A3)",
           "[boot_auto_connect][RC-A3][structural]")
 {
@@ -1340,6 +1355,7 @@ TEST_CASE("断线重连常驻: 重连复用守卫 (RC-A3)",
 
     free(helper);
 }
+#endif /* RC-A3 RETIRED (261116-channel-resident-core P1) */
 
 /* -------------------------------------------------------------------------- *
  * TEST 10 — RC-B1 永不休眠结构事实（板级零休眠接线 needle; 设计态绿——现状结构
@@ -1397,7 +1413,19 @@ TEST_CASE("断线重连常驻: 永不休眠结构事实 (RC-B1)",
  * MUST-STAY-GREEN 半：三调用点区既有 close token 在世（现状即绿）。
  * RED today：kResidentRebuildDelayS / ScheduleResidentRebuild 全仓零命中。
  * ------------------------------------------------------------------------ */
-/* coverage: RC-B2 -- 会话收尾类本地关 → T 秒内恰一次常驻重建排程：kResidentRebuildDelayS 首定义片段含 5（T 冻结值, 改值须回 planner 重冻结）+ 定义消费下界 + 四会话收尾点（:805/:849/:1189 plan 归类表 + HandleEndVoiceSessionEvent 261024-vq-overlay-close-end-session 追加, 各恰 1; builder 复核 :1189 语义后留痕为验收前提）各调 ScheduleResidentRebuild() 恰 1 + 各区既有 close token 零偏移锚 */
+/* ========================================================================
+ * RETIRED 2026-11-16 (261116-channel-resident-core P1 — 通道常驻核心):
+ *   ！旧钉什么：RC-B2「会话收尾 → T 秒内恰一次常驻重建」——kResidentRebuildDelayS
+ *     首定义含 5 + 定义消费下界 + 四会话收尾点各调 ScheduleResidentRebuild() 恰 1。
+ *   ！新钉什么：整条退役（无替代断言留在本件）。P1 通道常驻后会话结束不再拆通道、不再
+ *     5s 重建（§6.4 / ADR-019），kResidentRebuildDelayS 与 ScheduleResidentRebuild 全删。
+ *     「四收尾点收口」的现代承载 = session_channel_resident.acceptance.c SCR-A1（四区
+ *     负锚三件 + 正锚闭集 + src token）。
+ *   ！为什么：T=5 与「四调用点各恰 1」的每个 needle 都指向已删除机制；保留即恒红假红。
+ * 墓碑保留代码供审计（#if 0 = 不编译不注册）。
+ * ======================================================================== */
+#if 0
+/* coverage: RC-B2 -- RETIRED（见上墓碑）。 */
 TEST_CASE("断线重连常驻: 常驻重建T值冻结 (RC-B2)",
           "[boot_auto_connect][RC-B2][structural]")
 {
@@ -1474,6 +1502,7 @@ TEST_CASE("断线重连常驻: 常驻重建T值冻结 (RC-B2)",
         free(region);
     }
 }
+#endif /* RC-B2 RETIRED (261116-channel-resident-core P1) */
 
 /* -------------------------------------------------------------------------- *
  * TEST 12 — RC-B3 负锚：五条零重建路径（网络断关/Reboot/OTA/AEC/ResetProtocol）。
