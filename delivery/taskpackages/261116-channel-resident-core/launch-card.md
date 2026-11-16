@@ -4,7 +4,7 @@
 上一包留根：无（本 workstream 首包）。
 固件严格模式默认开：VERIFY_FW_BUILD_REQUIRED=1（无关闭留痕即开）。
 验证形态申报（JSON）：{"schemaVersion":1,"precedents":{},"deviceOutcome":{"userVisible":true,"acceptanceRefs":["docs/requirements.md#S-F1.4","docs/requirements.md#§2.1"],"hostUncompilablePaths":["firmware/main/application.cc","firmware/main/application.h"],"reason":"真机轮 A 由 human 持板验证会话收尾、通道保活、提醒出音与温/冷通道时延"}}
-会话标识：<点火后由 launch 执行者回填 pid / 终端标识 / 启动时刻>（叫停时核「进程确实已死」）
+会话标识：Git Bash pid 1807（`claude -p … --agent planner`，启动 2026-11-16 22:03:14）——叫停时核「进程确实已死」
 环境事实：本树已完成固件环境等价化（sdkconfig / dependencies.lock 已复制，managed_components 为指向 pod-m2 树的 junction）；专属图索引项目 = `C-AI-KidPal-pod-channel`（full）。
 命令行（两形态并列，标注适用条件）：
 ① 人在场交互式：`claude --settings .claude/dev-loop.settings.json --agent planner`
