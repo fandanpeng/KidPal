@@ -3,7 +3,8 @@
 本包 base ref：点火时 `git rev-parse base/261115-session-channel-resident`（= 包首提交父；常驻分支 `dev/pool-channel`）——包级 diff（终验 scope 圈定 / detect_changes / 白盒复核 / 合并范围）恒用此 ref，不用 main。
 上一包留根：无（本 workstream 首包）。
 固件严格模式默认开：VERIFY_FW_BUILD_REQUIRED=1（无关闭留痕即开）。
-验证形态申报（JSON）：{"schemaVersion":1,"precedents":{},"deviceOutcome":{"userVisible":true,"acceptanceRefs":["docs/requirements.md#S-F1.4","docs/requirements.md#§2.1"],"hostUncompilablePaths":["firmware/main/application.cc","firmware/main/application.h"],"reason":"真机轮 A 由 human 持板验证会话收尾、通道保活、提醒出音与温/冷通道时延"}}
+验证形态申报（JSON）：{"schemaVersion":1,"precedents":{},"deviceOutcome":{"userVisible":true,"acceptanceRefs":["docs/requirements.md#S-F1.4","docs/requirements.md#§2.1"],"hostUncompilablePaths":["firmware/main/application.cc"],"reason":"真机轮 A 由 human 持板验证会话收尾、通道保活、提醒出音与温/冷通道时延"}}
+验证形态申报修正（2026-11-16，收尾相位 planner，留痕）：原申报含 `firmware/main/application.h`，合并门判据报 `device-outcome-host-path-unregistered`（该路径不在 `.claude/verify-gates.json` deviceOutcomeGate.hostUncompilablePaths 登记集）。**修正 = 只列已登记的 `firmware/main/application.cc`**：行为本体承载在 .cc，头文件单独不构成独立设备结果面；用户可见结果与真机轮判据**零弱化**（轮 A A1–A13 仍为必需）。未改动 verify-gates 登记集（保护面，归主线程）。
 会话标识：Git Bash pid 1807（`claude -p … --agent planner`，启动 2026-11-16 22:03:14）——叫停时核「进程确实已死」
 环境事实：本树已完成固件环境等价化（sdkconfig / dependencies.lock 已复制，managed_components 为指向 pod-m2 树的 junction）；专属图索引项目 = `C-AI-KidPal-pod-channel`（full）。
 命令行（两形态并列，标注适用条件）：
