@@ -48,6 +48,19 @@ packet-id：`261115-arch-review-session-channel-resident` 的 FROZEN PROPOSAL §
 - **契约 diff 范围**：`git diff --stat` = 3 files / 55 insertions / 15 deletions；既有帧形状零改动、display 白名单仍 9、`kidpal_*` 上行帧字段零改动、引擎侧零 diff。
 - **与 FROZEN 包的关系**：本 summary 只汇总落地与实跑；独立核验归 landing-verifier 的 `landing-verdict.md`，合并放行归 `pre-merge-escalation-gate.mjs` 三件联立凭据。
 
+## 4. v1.2 增量落地（门 1 F-01 回修 · 2026-11-16）
+
+- **依据**：FROZEN PROPOSAL **v1.2**（R3 增量复核：F-01 **CLOSED** / BLOCK(F-04) → v1.2 补正 → R4 一句话闭合 **GREEN（F-04 闭合）**）。
+- **canonical delta（`docs/architecture.md` 五处）**：
+  1. §5.1.2 front 行「每语音会话收尾」改为**按 `acc.routing` 分层**：`chat` 不动作 / `accumulate` 归档优先 / **`pending_stop` 受保护、禁止当刻 cancel 与释放、交 10 秒巡检**（巡检 pending 分支补 `_release_record_context`）/ 防御性行不 cancel；原「残余累积态取消」撤销。
+  2. §5.1.2 同段 `kidpal_session_ctx` 边沿完整化改**分态**（`pending_stop` 不动作 / `accumulate` cancel+释放 / `chat` 标记真只释放）。
+  3. §5.2 场景② 括注改为「按累积器路由态分层释放；`pending_stop` 受保护、交 10 秒巡检释放，不在 stop 当刻取消」。
+  4. §8.1 新增风险行 **18**（记录会话空累积结束后 ≤10 秒的引擎抑制窗 = accepted residual；不得用提前释放消除）。
+  5. §12 既有行「改动面」列追加 F-01 回修子句，并把 §8.1 计数由「新增 15/16/17 三行」改为「**新增 15/16/17/18 四行**」（不新增行、不改 changeId）。
+- **canonical delta（`docs/decisions/ADR.md` 一处）**：ADR-019「关联」件计数 `新增 15/16/17` → **`新增 15/16/17/18 四行`**（与 §8.1 / §12 三处同数原子落）。
+- **契约面零改动**：`proposedContractDiff` 四处一字未改、`landing-manifest` 三件不变、V4/V5/V9–V12 预期值不变（依据：已落地契约现文 `grep -c 'pending_stop|记录语境释放|残余累积'` = 0；ADR-019 裁定六条无一条钉释放时点）。
+- **机械门（delta 落地后实跑）**：`landing-fidelity-check --preflight` = `ok:true` / `anchorCount:3` / `findings:[]` / `advisories:[]`；`--cite-check` = `ok:true` / `frozen:true`；`spec-anchor-check` = `ok:true` / `errors:[]` / `archSectionCount:48`；`contract-lint` = `ok:true`（唯一既有 warning 未新增）；三处计数 `grep -rn '15/16/17' docs/` 仅 arch §12 与 ADR 两文件、均「四行」。
+
 ```landing-manifest
 docs/architecture.md
 docs/contracts/interface-contract.md

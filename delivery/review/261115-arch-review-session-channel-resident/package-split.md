@@ -3,6 +3,7 @@
 > **性质**：本件是架构批 PROPOSAL 的**配套建议**，供主线程在 `/triage-change` 实现面收尾时消费（五档分流 = ③拆包）。它**不是** reviewed plan，也不替代 planner 的 intake——每包的 `plan.md` / TaskPackage / brief 仍由 planner 按其流程产出。本件的权威输入 = 同目录 `PROPOSAL.md`（§1 三层解耦模型 / §2 T1–T7 改法 / §2A 契约包三节）。
 > **human 约束（2026-11-15 原话）**：「确定好方案拆包不要拆的太碎」→ 本方案给 **2 包**（在 human 建议的 2–3 包区间下沿）。
 > **起草日期**：2026-11-16 · architect
+> **v1.2 修订（2026-11-16，随 PROPOSAL 门 1 F-01 回修同步）**：§2.3 front 要点由「四件」改「五件」（第 2 件重写为**按 `acc.routing` 分层**、撤销「listen stop 当刻取消残余累积」，新增第 3 件 = `_story_timeout_sweep_body` pending 分支补 `_release_record_context`）；§2.1 manifest 净影响与两条新负锚（`story.py` / `test_m4k1_story_cloud_link.acceptance.py`）；§2.4 SCRF-B2 重写 + 新增 B2b/B4b/B6；§4.3 真机 A5 判据按释放时点分层精确化（分 >10s 与 <10s 两子场景）。**包数、包边界、merge order、riskTier、部署时序均未变**——F-01 是 front 侧释放时点的修正，不改拆包形状。
 
 ---
 
@@ -57,11 +58,13 @@ firmware/main/test/host_app/CMakeLists.txt                   (新增验收目标
 ```
 server/gateway/front/front_app.py
 server/acceptance/test_session_channel_resident.acceptance.py  (新增)
+server/acceptance/test_m4k3_record_session_live.acceptance.py  (v1.2 升为非条件：:508 docstring 前提精确化 + 新增释放边沿姊妹齿；断言零删弱)
 server/acceptance/test_record_cancel_lifecycle.acceptance.py   (断连兜底降级为次路径，条件)
-server/acceptance/test_m4k3_record_session_live.acceptance.py  (条件)
 ```
 
-**显式不在 P1 manifest（负锚，planner 应据此判越界）**：`firmware/main/mcp_server.cc`（control case 0 归 P2）· `server/gateway/display_schema.py`（self_push 豁免口归 P2）· `server/deploy/openclaw-agents/**` 与 `OPENCLAW_SYSTEM_PROMPT_CARRIER`（告别纪律归 P2）· `firmware/main/protocols/protocol.cc` 与 `websocket_protocol.cc`（本批设计的关键取舍 = 阈值/判据/分类机制三处逻辑零改动；**条件例外**：若实现判定 `IsTimeout()` 的 `ESP_LOGE` 必须降频以避免自愈巡检每秒刷日志，则该文件入 manifest，由 builder 经 planner 带根因回评、architect 扩单留痕）· `server/deploy/engine-patch/**`（硬约束：human 未授权改引擎补丁）· `docs/**`（canonical 归架构批，实现包零写权）。
+**v1.2 修订对 manifest 的净影响（门 1 F-01）**：文件集合**未变**（`front_app.py` 与两件 py 验收本就在内），但 `front_app.py` 的改动面**净增一处** = `_story_timeout_sweep_body:1254-1257` 的 pending 分支补 `_release_record_context` 调用（详见 §2.3 第 3 件）。`server/gateway/story.py` **仍不在 manifest**——`release_pending` / `cancel` / `PENDING_STOP_SECONDS = 10.0` 三个纯逻辑缝的签名与判据逐字零改动，本包只新增 front 侧调用点。riskTier 维持 **high** 不变（该处属既有 high 判定中「记录语境抑制链单点」的同一面，未引入新面）。
+
+**显式不在 P1 manifest（负锚，planner 应据此判越界）**：`firmware/main/mcp_server.cc`（control case 0 归 P2）· `server/gateway/display_schema.py`（self_push 豁免口归 P2）· `server/deploy/openclaw-agents/**` 与 `OPENCLAW_SYSTEM_PROMPT_CARRIER`（告别纪律归 P2）· **`server/gateway/story.py`（v1.2 新增负锚：`release_pending` / `cancel` / `PENDING_STOP_SECONDS` 三缝签名与判据零改动）** · **`server/acceptance/test_m4k1_story_cloud_link.acceptance.py`（v1.2 新增负锚：SAO-A1/A2/A3 + M4K1-A2 是 F-01 的 must-stay-green 断言面，一条都不许动，只许跑绿留痕——见 SCRF-B6）** · `firmware/main/protocols/protocol.cc` 与 `websocket_protocol.cc`（本批设计的关键取舍 = 阈值/判据/分类机制三处逻辑零改动；**条件例外**：若实现判定 `IsTimeout()` 的 `ESP_LOGE` 必须降频以避免自愈巡检每秒刷日志，则该文件入 manifest，由 builder 经 planner 带根因回评、architect 扩单留痕）· `server/deploy/engine-patch/**`（硬约束：human 未授权改引擎补丁）· `docs/**`（canonical 归架构批，实现包零写权）。
 
 ### 2.2 固件侧改动要点（六件）
 
@@ -75,12 +78,26 @@ server/acceptance/test_m4k3_record_session_live.acceptance.py  (条件)
 5. **心跳帧显式 no-op 消费分支**：`OnIncomingJson`（:763-927）在 `else { ESP_LOGW("Unknown message type") }`（:924-926）**之前**新增 `kidpal_keepalive` 分支：只打一条 DEBUG 级（或不打）+ 直接 return。**必须显式**——否则每 30s 一条 WARN 冲 SD 日志 16MB 轮转预算（约 144 KB/日，9 天填满一个轮转窗）。
 6. **主循环 tick 自愈巡检**：同一个 CLOCK_TICK 消费区内新增 `state == Idle && protocol_ && !protocol_->IsAudioChannelOpened() && !auto_connect_in_flight_` → `TryStartAutoConnect()`。守卫三条件与「零第二条重连路径」不变量保持（只调既有 `TryStartAutoConnect`，不自建 task、不自己 `OpenAudioChannel`）。**降频**：每秒判一次即可，但 `IsTimeout()` 命中即打 `ESP_LOGE` → 实现必须让该日志只在跳变沿打一次（或把巡检判据改为每 5s 一次），否则死链期每秒一条 ERROR。
 
-### 2.3 front 侧改动要点（四件）
+### 2.3 front 侧改动要点（五件；v1.2 按门 1 F-01 修订，原「四件」的第 2/3 件重写 + 新增第 3 件）
 
 1. **每连接心跳 task**：在 `ws_gateway`（:2446-2573）内与双泵并列起一个 `asyncio.create_task`，周期 30s 向设备腿 `_push_display_payload` **之外**的裸 `websocket.send_text(json.dumps({"type":"kidpal_keepalive"}))`（心跳不是 display 帧，**不过** `display_schema`、不走 `kidpal/display` mcp 封套）。生命周期与双泵同：加入 `asyncio.wait` 集合**之外**（它是无限任务，不能进 FIRST_COMPLETED 集合，否则心跳永不结束会拖住收尾）——正确形态是 `finally` 里 `cancel()` + 限时回收。发送失败（连接已死）= 静默退出并让泵收尾。间隔与开关走模块级常量 + env：`KIDPAL_CHANNEL_HEARTBEAT`（**代码默认开**，`0/false/off/no` 关——极性说明见 §4 部署时序）与 `KIDPAL_CHANNEL_HEARTBEAT_INTERVAL_S`（默认 30）。
-2. **`listen stop` 每会话收尾三件**：在 `pump_client_to_upstream`（:1782-1840）既有 `_story_stop_on_listen_stop` 旁路消费点（:1826-1828）**之后**追加：① 记录语境释放——若本连接曾注入 `active=true`，注入 `{"type":"kidpal_record_context","active":false}`（复用 `_release_record_context` 单源，:1673-1684，幂等）；② 残余累积态取消——`acc.routing(session_id)` 仍为 `accumulate` 或 `pending_stop` 时 `acc.cancel(session_id, reason="session_end")`（**必须在 `_story_finish_session` 未消费本帧时才执行**，否则会把正在归档的会话取消掉）；③ 审计一行（含冻结 token，如 `session_end_boundary`）。**顺序承重**：归档路径优先、收尾兜底在后。
-3. **`kidpal_session_ctx` 边沿完整化（第二层防线）**：`_consume_kidpal_control`（:992-1177）的 ctx 分支今天只处理「进 `story`」（:1035-1053）与「points 两值注入摘要」（:1054-1065），对 `home`/`schedule`/`story_cover` **零动作**（:1066 的 elif 只做未知值拒绝）。改为：维护本连接的「当前记录语境」标记，收到 **非 `story`** 的合法 ctx 且该标记为真 → 释放记录语境 + 取消残余累积（覆盖 `listen stop` 丢失/乱序）。**这一层不是可选优化**：P1 之后连接级 teardown 不再是主路径，`listen stop` 一旦漏发（设备崩溃重启前的半帧、泵竞态），旧形态的兜底（断连取消）就没了，ctx 边沿是唯一第二道防线。
-4. **连接级 teardown 降为兜底（不删）**：`finally` 三件（腿双摘除 :2559-2562 + `acc.cancel(reason="ws_disconnect")` :2566-2570）**逐字保留**——引擎 24h 日切、网络断、front 重启三种形态仍会走它。改动只是它的**触发频率**从「每次语音会话」降为「每连接一次」，这正是 bootstrap burst 归零的收益来源（连接期一次性六件 :2486-2529 全部保持绑连接，零改动）。
+2. **`listen stop` 每会话收尾 = 按 `acc.routing(sid)` 分层，不在 stop 当刻无条件取消**（v1.2 重写；原「②残余累积态取消」动作**撤销**）。落点仍是 `pump_client_to_upstream`（:1782-1840）既有 `_story_stop_on_listen_stop` 旁路消费点（:1826-1828）**之后**，但动作按路由态分五支：
+
+   | `listen stop` 当刻 routing | 动作 | 记录语境释放 |
+   |---|---|---|
+   | `chat`（问答会话） | 无动作 | 不适用——**带本连接「记录语境曾置位」标记守卫**，标记为假则**零注入**（否则每轮问答都往引擎腿打一帧无用 `active=false`，纯噪声） |
+   | `accumulate` + accum 非空 | 已被 `_story_stop_on_listen_stop`→`_story_finish_session` 消费，**收尾三件不得再动该会话**（否则与归档竞态：双归档或毁稿） | 由 `_story_finish_session` 既有三个 `_release_record_context` 调用点（:1716/:1727/:1747）在**整理回合完成后**释放——261022 语义零改动，提前释放会复发孤儿幻听 |
+   | `accumulate` + accum 空 → `mark_pending` 落 `pending_stop` | **禁止 cancel、禁止释放**（protected state） | **≤10s**，由第 3 件的 sweep 释放点承载 |
+   | `pending_stop`（重复 stop，SAO-A3 形态） | 同上；`mark_pending` 幂等不重置挂起时刻 | 同上 |
+   | `accumulate` 且本帧未被归档路径消费（**结构上不可达**，防御性） | **不 cancel**，留既有卡壳引导 / 自动收尾 sweep（2 轮无回应 → 归档、不丢弃，S-F2.2 AC5） | 由 `_story_auto_finish`→`_story_finish_session` 既有释放点覆盖 |
+
+   收尾动作随之重述为三件：**① 分层释放**（按上表）**② 不当刻取消任何累积态** **③ 审计一行**（含冻结 token 如 `session_end_boundary`，记 routing 分支与是否触发释放）。
+   **为什么必须撤销当刻 cancel（F-01）**：`pending_stop`（录音态 KEY 收尾、accum 空、manual 形态转写约 **1.7s** 后才到，`front_app.py:577` docstring 实录）与「引导态无内容」在 listen-stop 那一刻**可观状态完全相同**，「本帧未被归档路径消费」这类守卫无法区分；当刻 `cancel` = `story.py:886-894` 的 `_sessions.pop` → 在途转写不可恢复 → 三式收尾之一的归档丢失，违反 S-F2.2 AC4 v1.65。断言级冲突三条 must-stay-green：SAO-A2（`test_m4k1_story_cloud_link.acceptance.py:1891`）+ M4K1-A2（同文件 `:849-882`，`len(files)==1`）+ SAO-A3（重复 stop 不双归档）。
+3. **`_story_timeout_sweep_body` 的 pending 分支补释放调用（v1.2 新增，F-01 的承重半）**：`:1254-1257` 今天只 `acc.release_pending(sid)` + 一条 `story_pending_timeout` 日志，**不调 `_release_record_context`**（全文该函数调用点仅 :1716/:1727/:1747，三处全在 `_story_finish_session` 内）。旧模型下这不是缺陷——设备随后断连，引擎侧 `_kidpal_record_context` 随连接消失；**P1 让通道常驻后兜底消失**，pending 超时只回 routing 不解除引擎抑制 = 该连接后续问答**永久哑火**。改法 = 在 `release_pending(sid)` 返回 True 的分支内追加 `await _release_record_context(sid, _session_legs(sid) or list(_alert_legs))`（腿集形态逐字沿 `_story_auto_finish:1353`）。守卫天然成立：`release_pending` 只对 `pending_stop` 返 True，而 `pending_stop` 只能由 `accumulate` 经 `mark_pending` 到达、`accumulate` 只能由 ctx(story) 或 `control/start_recording` 进入（两者都注入过 `active=true`）→ 不会对从未进记录语境的会话注入无谓帧。**`story.py` 侧零改动**（`release_pending` / `cancel` / `PENDING_STOP_SECONDS = 10.0` 三个纯逻辑缝签名与判据逐字保留，本包只新增 front 侧调用点）。
+4. **`kidpal_session_ctx` 边沿完整化（兜底层，v1.2 改为分态处置）**：`_consume_kidpal_control`（:992-1177）的 ctx 分支今天只处理「进 `story`」（:1035-1053）与「points 两值注入摘要」（:1054-1065），对 `home`/`schedule`/`story_cover` **零动作**（:1066 的 elif 只做未知值拒绝）。改为：维护本连接的「记录语境曾置位」标记，收到 **非 `story`** 的合法 ctx 且标记为真时**按 routing 分态**——`pending_stop` → **不动作**（保护在途转写，交第 3 件的 sweep；只记一条 INFO 说明延迟释放与 ≤10s 上界）；`accumulate` → `acc.cancel(session_id, reason="session_end_stale")` + 释放（= 常驻时代的 cancel-on-disconnect 同族兜底，沿 human 2026-10-21「cancel-on-disconnect 维持为兜底」裁定口径，**不发明「弃录自动归档」新需求语义**）；`chat` 但标记仍为真 → 只释放（防御性：routing 已被 sweep/finish 清而释放漏了）。**这一层不是可选优化**：P1 之后连接级 teardown 不再是主路径，`listen stop` 一旦漏发（设备崩溃重启前的半帧、泵竞态），旧形态的兜底就没了。但**它只在设备未发 `listen stop` 时可达**——所有正常结束路径都发 stop，故正常形态下本层恒不触发。
+5. **连接级 teardown 降为最外层兜底（不删）**：`finally` 三件（腿双摘除 :2559-2562 + `acc.cancel(reason="ws_disconnect")` :2566-2570）**逐字保留**——引擎 24h 日切、网络断、front 重启三种形态仍会走它。改动只是它的**触发频率**从「每次语音会话」降为「每连接一次」，这正是 bootstrap burst 归零的收益来源（连接期一次性六件 :2486-2529 全部保持绑连接，零改动）。
+
+> **v1.2 显式申报的 accepted residual（非缺陷，须写进 P1 的 review-packet 与真机轮 A 判据）**：记录会话以「accum 空」形态结束后 ≤10s 内，引擎侧记录语境抑制仍在世；若孩子在这 ≤10s 内立刻从非 story 页发起新问答会话并马上开口，该次话语可能被抑制（`listen start` 只清 `_kidpal_listen_closed`、不清 `_kidpal_record_context`）。**不得用「提前释放」消除它**——提前释放正是 261022 修掉的孤儿幻听缺陷（`_issue_finish_downlink:1661-1665` docstring 实录 KPLOG006 23:59:30「Thank you」被当普通对话派发并播报「我没听清/再说一遍」，盖过整理演出）。窗口上界 = 既有冻结常量 `PENDING_STOP_SECONDS = 10.0`；触发需三件同时成立（空 accum 结束 + 10s 内换会话 + 立刻开口）；后果 = 一次话语被抑制、再按 KEY 即恢复，**无数据损坏**。用一次可恢复的抑制换「录音态 KEY 收尾归档不丢」（S-F2.2 AC4 硬语义）是本批的有意识取舍。
 
 ### 2.4 P1 验收断言方向（acceptance；planner 与 acceptance-author 细化，本处只给方向与承重判据）
 
@@ -103,10 +120,13 @@ server/acceptance/test_m4k3_record_session_live.acceptance.py  (条件)
 **server 侧 python 离线验收（新增 `test_session_channel_resident.acceptance.py`）**
 
 - `SCRF-B1` 心跳：注入假时钟跑一个周期 → 设备腿恰收一帧 `{"type":"kidpal_keepalive"}`；env 置 `0` → 零帧（闸有效）；发送抛异常 → task 静默退出、双泵收尾不被拖住（`finally` 三件仍执行）。
-- `SCRF-B2` `listen stop` 会话收尾三件：问答会话（routing=`chat`）→ 收尾三件全 no-op、**零 `acc.cancel`**（正锚 + 负锚配对）；记录会话且 `_story_finish_session` 已消费 → 收尾**不重复 cancel**（归档优先）；记录会话未被归档路径消费（引导态、accum 空且已 `pending_stop`）→ `acc.cancel(reason="session_end")` 被调 + `active=false` 注入恰一帧。
-- `SCRF-B3` discard→stop 有序不归档：同一 session 依次投 `kidpal_story_discard` + `listen stop` → `acc.routing` 回 `chat`、`_story_finish_session` **未被调**、`STORIES_DIR` 文件数不变（**这是「丢弃即丢弃」的承重齿**）。
-- `SCRF-B4` ctx 边沿兜底：先投 ctx(story)（进语境、注入 `active=true` 恰一帧）→ 再投 ctx(home) → 注入 `active=false` 恰一帧 + 累积态已取消；重复 ctx(home) → 零新增注入（幂等）。
+- `SCRF-B2` `listen stop` **分层**收尾（v1.2 按门 1 F-01 重写；原第三分句「引导态 → `acc.cancel(reason="session_end")` 被调 + `active=false` 注入恰一帧」**撤销**，改为下方 B2b）：① 问答会话（routing=`chat`、记录语境标记为假）→ 收尾全 no-op、**零 `acc.cancel`、零引擎腿注入**（正锚 + 负锚配对；负锚防「每轮问答都打一帧无用 `active=false`」）；② 记录会话 accum 非空 → `_story_finish_session` 已消费本帧 → 收尾**不再动该会话**（零额外 cancel、零额外注入；释放由整理回合完成后的既有调用点承载）。
+- `SCRF-B2b` **`pending_stop` 受保护 + sweep 释放点**（v1.2 新增，F-01 的承重齿）：① ctx(story) → `listen stop`（accum 空）→ 断言 `acc.routing(sid) == "pending_stop"`、**`acc.cancel` 未被调**、**`active=false` 尚未注入（0 帧）**；② 以注入时钟跑 `_story_timeout_sweep(now = pending_since + 10s)` → 断言 `release_pending` 生效（routing 回 `chat`）**且 `active=false` 恰一帧注入该会话归属腿**（腿集 = `_session_legs(sid)`，用假腿对断言注入目标，不打进 `_alert_legs` 全局腿）；③ 反向：`now = pending_since + 9s` → 零释放零注入（10s 阈值判据有效、不提前）；④ 在 ② 之前先投一条 stt → 走 `_story_feed_from_stt` 恢复归档路径 → 断言归档恰一篇且 sweep 不再重复释放（`release_pending` 对非 pending 返 False）。
+- `SCRF-B3` discard→stop 有序不归档：同一 session 依次投 `kidpal_story_discard` + `listen stop` → `acc.routing` 回 `chat`、`_story_finish_session` **未被调**、`STORIES_DIR` 文件数不变（**这是「丢弃即丢弃」的承重齿**；v1.2 复核：discard 走 `cancel(reason="discard")` 独立路径，与分层收尾的 `pending_stop` 保护态互不相干，本齿零改动保绿）。
+- `SCRF-B4` ctx 边沿兜底 **`accumulate` 分支**（v1.2 收窄）：先投 ctx(story)（进语境、注入 `active=true` 恰一帧，routing=`accumulate`，**不发 `listen stop`**——模拟设备未发结束信号的异常形态）→ 再投 ctx(home) → 断言 `acc.cancel(reason="session_end_stale")` 被调 + 注入 `active=false` 恰一帧；重复 ctx(home) → 零新增注入（幂等）。
+- `SCRF-B4b` ctx 边沿兜底 **`pending_stop` 分支不动作**（v1.2 新增，防 F-01 从另一扇门复发）：ctx(story) → `listen stop`（accum 空、落 `pending_stop`）→ 立刻投 ctx(home) → 断言 **`acc.cancel` 未被调、`release_pending` 未被调、`active=false` 零注入、routing 仍 `pending_stop`**（在途转写受保护），只留一条延迟释放的 INFO 审计行；随后 10s sweep 照常释放（接 B2b ②）。
 - `SCRF-B5` 连接级 teardown 保绿（must-stay-green）：断开 → 腿双摘除 + `acc.cancel(reason="ws_disconnect")` 逐字不变。
+- `SCRF-B6` **既有冻结 oracle 全数保绿（v1.2 新增，F-01 的回归网）**：P1 的 front 半 verify 必须把下列**未改动**的既有验收文件整体跑绿并逐条留痕，任一红即 P1 不得进 integrator——`test_m4k1_story_cloud_link.acceptance.py` 的 SAO-A1 / **SAO-A2**（`:1891`，空累积 stop 不得回 chat）/ SAO-A3（重复 stop 不双归档）/ **M4K1-A2**（`:849-882`，真机序恰一篇归档）；`test_m4k3_record_session_live.acceptance.py` 的 M4K3-A7 四齿（含 `:508` `test_a7_ctx_non_story_pushes_zero_frames` 三断言）；`test_record_dialogue_guide.acceptance.py` 的 RDG-A6 sweep 家族（10s 语义）与 RDG-A7（`kidpal_speak` 提醒出音）。**允许的改动只有两类**：`:508` 的 docstring 前提精确化（「非 story 取值零行为」→「非 story 取值在记录语境未置位时零行为；置位时走分态兜底」）与新增姊妹齿；**不得删弱任何断言**（F-03 处置，PROPOSAL §2A impact 已显式登记）。
 
 ---
 
@@ -230,7 +250,7 @@ debt 四条结项 + requirements:48 ⚠️ 对账注记刷新（主线程路由�
 | A2 | 连续 5 次「结束 → 再说话」 | 5 次全走温通道；**零** `WS: Connecting` / `TLS 证书验证` / `Session ID` 行；front 日志核 bootstrap 六件（story_list restore / points_home / alert 腿 / 会话腿 / schedule 摘要注入 / schedule 推）**每连接恰一次**、零 burst | P1 |
 | A3 | 闲置 > 5 分钟后首按键 | 跨越旧 120s/137s 判死点；首按键仍走温通道、**一次即进聆听**（`TECH-261012`「连按两次才正常」形态消失）；SD 日志有心跳消费痕迹、**零** `Unknown message type` | P1 |
 | A4 | **会话间隙提醒必达且出音**（最重） | 会话结束回 Idle 后，让 front 推一条 `kidpal/alert` + `kidpal_speak`：提醒弹窗渲染 + 回执出队 + **语音真的播出来**。这是 ADR-003 + `_kidpal_listen_closed` 交互的承重实证（`speak_txt` 不经 `chat()`，理论上不受抑制，但必须真机确认） | P1 |
-| A5 | 记录会话全链回归（四式） | ① 引导态 KEY 结束 → **无归档**、列表条目数不变、下一次问答会话**不哑火**（记录语境已释放）② 录音态 KEY 收尾 → 归档成功 + `start_organizing` + `story_text` + 盖章 ③ 录音态 BOOT 丢弃 → **不入册**、列表不变、下一次问答不哑火 ④ 连续 2 轮引导无回应 → 自动收尾归档 | P1 |
+| A5 | 记录会话全链回归（四式） | ① 引导态 KEY 结束 → **无归档**、列表条目数不变、下一次问答会话**不哑火**（记录语境已释放）——**时点判据（v1.2 精确化，门 1 F-01）**：释放**不在 `listen stop` 当刻**，而是「≤10s 由 sweep 释放」或「若孩子在 10s 内已从非 story 页发起新会话则…仍等 sweep」（`pending_stop` 是受保护态，ctx 边沿对它**不动作**，防在途转写被毁）。故本项要**分两个子场景各测一次**：**(a) 间隔 > 10s**——引导态 KEY 结束、等 10s 以上再按 KEY 提问 → 必须正常应答（front 日志可见 `story_pending_timeout released=true` 紧跟一条 `active=false` 注入）；**(b) 间隔 < 10s**——引导态 KEY 结束后立刻（≤3s）按 KEY 提问 → **允许首次话语被抑制**（这是 PROPOSAL §6 留根 9 与 arch §8.1 风险行 ④ 的 accepted residual），但必须：再按一次 KEY 即正常应答、front 日志显示 ≤10s 后释放已发生、**且没有任何素材丢失或误归档**；实测该窗的真实长度与命中体感记入 review-packet（若 human 判不可接受 → 回 `/arch-change` 评估缩短 `PENDING_STOP_SECONDS`，那是既有冻结常量、改值须回 planner 重冻结）② 录音态 KEY 收尾 → 归档成功 + `start_organizing` + `story_text` + 盖章（**accum 非空路径，走 `_story_finish_session`，释放时点 = 整理回合完成后，零变化**）③ 录音态 BOOT 丢弃 → **不入册**、列表不变、下一次问答不哑火（discard 先于 stop 的 TCP 有序性；此路径 routing 已被 discard 打回 `chat`，不涉 `pending_stop` 保护态，释放应为当刻）④ 连续 2 轮引导无回应 → 自动收尾归档 | P1 |
 | A6 | 60s 无语音自动关闭 | 进会话后静置：60s ± 数秒内自动落 Idle、麦克风关（`EnableVoiceProcessing(false)`）、回原页（OQ3=c）；**这是真机首次发生**（requirements §2.1 ⚠️ 对账项闭环证据） | P1 |
 | A7 | 连续讲 > 60s 不被误收 | 孩子（或 human）连续讲 90s 以上，会话不被 60s 判据打断（VAD 沿重置生效） | P1 |
 | A8 | 录音态提醒排队例外 | 录音中让提醒到点 → 排队不弹；会话收尾回 Idle → 立刻弹（S-F1.4 + `RaiseReminderQueue` 保绿） | P1 |

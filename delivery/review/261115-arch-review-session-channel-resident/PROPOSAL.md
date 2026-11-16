@@ -1,6 +1,6 @@
 # PROPOSAL · 261115-arch-review-session-channel-resident
 
-> **状态：FROZEN v1.1 · 2026-11-16**（FROZEN 凭据 = human 2026-11-16 立项 ack + OQ1/OQ2/OQ3 三条裁 (a) + R1 四查 BLOCK(F1,F2,F3) → v1.1 修毕 → R2 靶向复核 GREEN + 主线程标冻。判档 = 主路径 Track B；契约四分类 = 主 `ACCOMPANIES_SPEC_CHANGE` + 次 `SPEC_CONTRACT_DRIFT`（authoritative 枚举 = `.claude/rules/contracts.md`）；Track A = 否。作者≠判官由 R1/R2 独立审链承载，契约无人签门、合并过机械凭据闸。human 裁断三条：OQ1 = (a) front 周期下行 `kidpal_keepalive` 心跳帧；OQ2 = (a) 三通道同落点、保持 OQ3=c 回答页驻留、契约 §1.4 表行措辞对账；OQ3 = (a) 接受引擎 24h 兜底断连为唯一剩余重建窗口。）**v1.1 修订摘要（R1 否回应改，逐 finding 对应；三项均由 architect 独立复核后采纳，复核命令与输出 verbatim 见文末「起草期实跑记录 ⑥」）**：**R1-F1**（契约 SSOT 事实错）= T4 改法 1 的 `state` 闭集条原拟注「`detect` = 上游原生，KidPal 侧不发」为假——实核 `protocol.cc:68-72` `SendWakeWordDetected` 即发 `listen detect`，调用点 `application.cc:1217`（`CONFIG_SEND_WAKE_WORD_DATA=y`，`sdkconfig:733`，本板活路径）与 `:1500`（`CONFIG_USE_AFE_WAKE_WORD=y`，`sdkconfig:731`），已改写为「本板确发」并补三值钉进契约的理由（`detect` 不参与会话边界语义）；§2 实证留痕协议侧 bullet 同步补 `listen` 帧族三值原语逐条现核。**R1-F2**（牵连面账实不符）= `docs/architecture.md` 对退役机制「会话收尾常驻重建」共 **4 处**引用，v1.0 只覆盖 `:371`（§6.4）与 `:460`（§8.1），漏 `:138`（§3.3 假设清单）与 `:529`（§10 决策 29）——已补 T3 改法 5（§3.3 行加沿革注记，假设本体不变且被强化）与改法 6（§10 决策 29 加「⚠️ 2026-11-16 取代注记（部分）」，**正文一字不改**，形态逐字仿决策 21/25 先例，不破 §10 历史档冻结纪律），T3 标题/问题/证据/根因随之扩为四处对账，T7 的 §12 改动面列补两节 + 新增牵连面完整性段（附普查命令），§3 sweep 架构行与透镜义务段补 (乙) 退役机制文档引用点普查，§5 新增 V17/V18/V19（含 V19 守恒断言：四处命中数 post 仍为 4，证明「历史不删只标取代」）。**R1-F3**（数目偏差）= §2 实证留痕「`protocol_->CloseAudioChannel()` 全仓 10 命中」实为 **9**（原把 `:976` 录音丢弃面重复计入「另有」子句，而它本属「会话收尾 4」之一）——已改 9 并显式写出「会话收尾 4 + 真拆通道 5 = 9」的分界与其正负锚含义；4+5 两侧成员名单未变，故 T2 改法 1「五个真拆通道点零改动」与 `package-split.md` 的 SCR-A3 断言无需同步改。**R1 advisory**（非阻断，已顺手落）= `protocol.cc:129-136` 与 `application.h:126-130` 两处注释随本批改法漂移，登记 §6 留根 8：前者未在 manifest（只改注释、逻辑零改动）交 P1 planner 经扩单通道回评，后者已在 P1 manifest 随批刷新。来源 = human 2026-11-15 原话「开始处理这个debt，我倾向于治本，但需要你架构师讨论清楚方案，确定好方案拆包不要拆的太碎，拆好好后 你就headless 启动dev loop 开始开发」+ 同日 AskUserQuestion 三答（范围 = 全家桶 / 记忆口径 = 共享短上下文 / 落地边界 = 允许 agent 部署 ECS front 重启 + human 持板真机轮，**未选「允许改引擎补丁」**）。
+> **状态：FROZEN v1.2 · 2026-11-16**（FROZEN 凭据 = 原 v1.1 凭据继续有效 + 门 1（拆包冻结门）BLOCK(F-01) 回修 → R3 增量复核（F-01 CLOSED / BLOCK(F-04)）→ v1.2 补正 → R4 一句话闭合 **GREEN（F-04 闭合）** + 主线程重冻。v1.2 只改 T2 改法 2（按 `acc.routing` 分层表）、ctx 边沿分态、package-split 同步与 canonical delta 处方；**契约面零改动、ADR-019 裁定零改动**。作者≠判官：R1–R4 独立审链承载；§7 判官区 append-only。**（原 v1.1 FROZEN 凭据留痕不删：human 2026-11-16 立项 ack + OQ1/OQ2/OQ3 三条裁 (a) + R1 四查 BLOCK(F1,F2,F3) → v1.1 修毕 → R2 靶向复核 GREEN + 主线程标冻。判档 = 主路径 Track B；契约四分类 = 主 `ACCOMPANIES_SPEC_CHANGE` + 次 `SPEC_CONTRACT_DRIFT`（authoritative 枚举 = `.claude/rules/contracts.md`）；Track A = 否。作者≠判官由 R1/R2 独立审链承载，契约无人签门、合并过机械凭据闸。human 裁断三条：OQ1 = (a) front 周期下行 `kidpal_keepalive` 心跳帧；OQ2 = (a) 三通道同落点、保持 OQ3=c 回答页驻留、契约 §1.4 表行措辞对账；OQ3 = (a) 接受引擎 24h 兜底断连为唯一剩余重建窗口。）**v1.1 修订摘要（R1 否回应改，逐 finding 对应；三项均由 architect 独立复核后采纳，复核命令与输出 verbatim 见文末「起草期实跑记录 ⑥」）**：**R1-F1**（契约 SSOT 事实错）= T4 改法 1 的 `state` 闭集条原拟注「`detect` = 上游原生，KidPal 侧不发」为假——实核 `protocol.cc:68-72` `SendWakeWordDetected` 即发 `listen detect`，调用点 `application.cc:1217`（`CONFIG_SEND_WAKE_WORD_DATA=y`，`sdkconfig:733`，本板活路径）与 `:1500`（`CONFIG_USE_AFE_WAKE_WORD=y`，`sdkconfig:731`），已改写为「本板确发」并补三值钉进契约的理由（`detect` 不参与会话边界语义）；§2 实证留痕协议侧 bullet 同步补 `listen` 帧族三值原语逐条现核。**R1-F2**（牵连面账实不符）= `docs/architecture.md` 对退役机制「会话收尾常驻重建」共 **4 处**引用，v1.0 只覆盖 `:371`（§6.4）与 `:460`（§8.1），漏 `:138`（§3.3 假设清单）与 `:529`（§10 决策 29）——已补 T3 改法 5（§3.3 行加沿革注记，假设本体不变且被强化）与改法 6（§10 决策 29 加「⚠️ 2026-11-16 取代注记（部分）」，**正文一字不改**，形态逐字仿决策 21/25 先例，不破 §10 历史档冻结纪律），T3 标题/问题/证据/根因随之扩为四处对账，T7 的 §12 改动面列补两节 + 新增牵连面完整性段（附普查命令），§3 sweep 架构行与透镜义务段补 (乙) 退役机制文档引用点普查，§5 新增 V17/V18/V19（含 V19 守恒断言：四处命中数 post 仍为 4，证明「历史不删只标取代」）。**R1-F3**（数目偏差）= §2 实证留痕「`protocol_->CloseAudioChannel()` 全仓 10 命中」实为 **9**（原把 `:976` 录音丢弃面重复计入「另有」子句，而它本属「会话收尾 4」之一）——已改 9 并显式写出「会话收尾 4 + 真拆通道 5 = 9」的分界与其正负锚含义；4+5 两侧成员名单未变，故 T2 改法 1「五个真拆通道点零改动」与 `package-split.md` 的 SCR-A3 断言无需同步改。**R1 advisory**（非阻断，已顺手落）= `protocol.cc:129-136` 与 `application.h:126-130` 两处注释随本批改法漂移，登记 §6 留根 8：前者未在 manifest（只改注释、逻辑零改动）交 P1 planner 经扩单通道回评，后者已在 P1 manifest 随批刷新。**v1.2 修订摘要（门 1 F-01 · 设计级缺陷回修；architect 独立复核后采纳，复核命令与引据见 T2 改法 2「F-01 修订依据」段与文末「起草期实跑记录 ⑦」）**：v1.1 的 T2 改法 2「会话收尾三件之②：残余累积态取消（routing 仍为 `accumulate`/`pending_stop` 且本帧未被既有归档路径消费时 `acc.cancel`）」与三条 must-stay-green 冻结 oracle **断言级矛盾**——`pending_stop`（录音态 KEY 收尾、accum 空、manual 形态转写约 1.7s 后到）与「引导态无内容」在 listen-stop 那一刻**可观状态完全相同**，该守卫无法区分；当刻 cancel = `story.py:886-894` `_sessions.pop` → 在途转写不可恢复 → 三式收尾之一的归档丢失，违反 S-F2.2 AC4 v1.65。冲突齿 = SAO-A2（`test_m4k1_story_cloud_link.acceptance.py:1891`）+ M4K1-A2（同文件 `:849-882`，`len(files)==1`）+ SAO-A3（重复 stop 不双归档）。**修订五条**：① T2 改法 2 重写为**按 `acc.routing` 分层的五行处置表**，`pending_stop` 列为 protected state（禁止当刻 cancel、禁止当刻释放），撤销原「②残余累积取消」动作，收尾三件重述为「分层释放 / 不当刻取消 / 审计一行」；② 识别并补上 F-01 的**承重缺口**——`_story_timeout_sweep_body:1255-1257` 的 pending 分支今天只 `release_pending` + 日志、**不调 `_release_record_context`**（旧模型靠随后断连兜底，常驻后兜底消失 → 引擎永久抑制 → 哑火），本批在该分支新增释放调用（腿集沿 `_story_auto_finish:1353` 的 `_session_legs(sid) or list(_alert_legs)` 形态），这是 front 侧唯一新增释放点；③ ctx 边沿兜底改为**分态处置**（`pending_stop` 不动作、`accumulate` cancel+释放、`chat` 但标记真只释放），并显式申报 **≤10s 引擎抑制窗为 accepted residual**（不得用提前释放消除——那正是 261022 修掉的孤儿幻听缺陷，`_issue_finish_downlink:1661-1665` 实录），登记 §6 留根 9 + §8.1 新增风险行 ④ + 真机 A5 实测；④ **契约面确认零改动**（§2A 新增专条给三条依据：释放时点属行为策略归 arch §5.1.2/§5.2、discard 顺序约束走独立路径不受影响、10s 挂起窗契约从未钉过；核对基准 = **已落地的**契约现文，`grep -c 'pending_stop|记录语境释放|残余累积' docs/contracts/interface-contract.md` → 0）→ `proposedContractDiff` 四处一字未改、`landing-manifest` 与 V4/V5/V9–V12 全不受影响，`docs/contracts/**` 与 `docs/decisions/ADR.md` **零 delta**；**但 `docs/architecture.md` 需 canonical delta**——v1.1 的落地文本（commit `87dbf775`）§5.1.2 front 行仍逐字载有 F-01 缺陷句「② 残余累积态取消…routing 仍为 `accumulate`/`pending_stop`…」、§5.2 场景② 亦载「记录语境释放 + 残余累积取消」，故本 v1.2 附**五条 delta 处方**（§2 文末「v1.2 canonical delta 处方」：delta-1 §5.1.2 收尾三件改分层 / delta-2 ctx 边沿分态 / delta-3 §5.2 括注 / delta-4 §8.1 风险行 ④ / delta-5 §12 行内追加不新增行），交主线程 packet-bound 落地，architect 不写 canonical；⑤ 牵连面同步：§2A impact 冻结齿段补三条 must-stay-green + 两条「断言保绿但 docstring 前提改变」的显式处置（F-03 要求，含 `story.py` 两纯逻辑缝签名零改动声明）、§2A validationPlan 层 2 改写、§3 sweep 新增 `test_m4k1_story_cloud_link` / `test_m4k3_record_session_live` / `story.py` 三行并改写 `front_app.py` 为五缝、T3 改法 2 风险行 3→4、T7 改动面与 §3 架构行的「§8.1 行数」同步 3→4。**未改**：改法集方向（三层解耦 / `listen stop` 复用 / 心跳保活 / 长重试 / 六触发源统一收口）、T1/T4/T5/T6/T7 主体、§4 三条 OQ（human 已裁 (a)）、V1–V19 全部预期值（本轮不触 canonical token 计数）。`package-split.md` 同步改 §2.3 front 要点 2/3、§2.4 SCRF-B2/B4（含新增 B2b/B4b）、§4.3 真机 A5 判据时点精确化。来源 = human 2026-11-15 原话「开始处理这个debt，我倾向于治本，但需要你架构师讨论清楚方案，确定好方案拆包不要拆的太碎，拆好好后 你就headless 启动dev loop 开始开发」+ 同日 AskUserQuestion 三答（范围 = 全家桶 / 记忆口径 = 共享短上下文 / 落地边界 = 允许 agent 部署 ECS front 重启 + human 持板真机轮，**未选「允许改引擎补丁」**）。
 > **承载 debt**：`docs/debt/tech/TECH-261114-overlay-close-channel-rebuild-churn.md`（主条目，候选 A 治本）+ `docs/debt/tech/TECH-261014-autoconnect-gives-up-silently.md` + `docs/debt/tech/TECH-261014-session-end-channels-unwired.md`（含 2026-10-19 范围收窄注记：120s 录音态阈值已随 ADR-013 作废，只剩单阈值 60s）+ `docs/debt/tech/TECH-261012-first-keypress-no-listening.md`（根因链被本批消解，见 T2 改法末段）。四条 consumed-by 本 changeId，结项归主线程记账。
 > **review 轨**：Track B（默认路由；SSOT = `.claude/references/arch-change.md`）。**判档建议 = 主路径**（轻路径判据 ①③④ 三否：有语义变化、触 `docs/contracts/**`、触 architecture.md §2.3 端云职责划分与 §6.x 横切机制——arch-change.md :25）；正式判档归 architect-reviewer，只升不降。
 > **packet-binding（FROZEN 生效）**：packet-id = 本 PROPOSAL §2 改法集（T1–T7）+ §5 验证集。packet = FROZEN PROPOSAL + landing-manifest + architect-landing-summary。
@@ -115,9 +115,22 @@ docs/decisions/ADR.md
 1. **§5.1.1 新增一行「语音会话生命周期收口」**，钉死：会话边界权威 = 设备状态机（Connecting/Listening/Speaking = 在会话，Idle = 不在会话）；**六个触发源统一收口到单一处理器**（`HandleEndVoiceSessionEvent`）——四个本地关收尾点（录音丢弃面 / KEY 单击结束 / 覆盖层关层 / 编程唤起）+ 云端 `end_session`（`mcp_server` control case 0）+ 60s 无语音超时（主循环 tick producer）。处理器动作序 = ①（仅 Speaking）`ResetDecoder` 即时静音 + `AbortSpeaking`（261024 既有两步零改动）② **`SendStopListening()` 取代 `CloseAudioChannel()`**（L2 结束的带内信号）③ `SetDeviceState(Idle)`（Idle 分支既有清位链**全保留**，见下「不变量」）④ 省电剖面**维持 PERFORMANCE**（不再降 `LOW_POWER`——通道仍在世，降档会把 WS 收发拖进省电窗口；决策 29「永不休眠」与 RC-B6 观测项照旧）⑤ **不再 `ScheduleResidentRebuild()`**（无常关即无需重建；该 helper 与 `kResidentRebuildDelayS` 常量随四个调用点一并退役）。同时钉死「会话开始」侧零改动：`kidpal_session_ctx` 仍在 Listening 分支首帧音频前发（契约 §四「wss 常驻连接复用时同样发送，重复发送安全」今天就是为常驻写的，本批第一次真正兑现它），`listen start` 仍在 `if (!IsAudioProcessorRunning())` 门内发。
    - **录音丢弃面的时序保证（承重）**：`kidpal_story_discard` 与 `listen stop` 在**同一条 TCP 流上有序**，discard 先出。front 侧 `acc.cancel()` 实证会 `self._sessions.pop(session_id)`（`story.py:886-894`）→ 随后到达的 `listen stop` 经 `_story_stop_on_listen_stop` 查 `acc.routing(session_id)` 得 `"chat"`（`story.py:654-656`：会话态已 pop 即返 `"chat"`）→ **不进归档分支**。「丢弃即丢弃、不被 listen stop 复活成归档」由这条有序性承载，必须作为冻结验收断言 + 真机验证项双钉。
    - **不变量（Idle 分支既有清位链逐条保绿）**：`EnableVoiceProcessing(false)`（麦克风口径不变——AFE gating 由设备态驱动、与 WS 无关，这正是候选 A「麦克风口径不变」的机制依据）/ `EnableWakeWordDetection(true)` / [R2] `kidpal_story_session_end` 页态复位 + 录音演出定时器停 / `KidpalStorySessionEndSync` 镜像同步（次序承重：在 [R2] 之后、keybar 复位与 voice_end 之前）/ keybar 场景复位（REMINDER 在顶时豁免）/ `kidpal_render_node_voice_end`（OQ3=c 回答页驻留）/ `kidpal_story_session_ctx_set(0)`（261028 记录语境清位）/ `RaiseReminderQueue()`（S-F1.4 录音态提醒排队延后、会话收尾立刻弹）。
-2. **§5.1.2 front 行改写生命周期锚**：连接期一次性六件（story_list restore 推 / points_home 推 / alert 腿登记 / 会话腿登记 / schedule 摘要注入 / schedule 推）**保持绑连接**——它们是恢复性 bootstrap，每连接一次正是本批要的收益（bootstrap burst 从「每次会话结束再建时付」降为「每连接一次」）；teardown 三件（腿双摘除 + `acc.cancel(reason="ws_disconnect")`）**降为兜底**。新增「每语音会话收尾」职责，触发源 = 旁路消费的 `listen stop`（既有缝，`pump_client_to_upstream` 内、转发不变），动作三件：① 记录语境释放（`kidpal_record_context active=false` 注入引擎腿——**本批最重的单点**，见下）② 残余累积态取消（`acc.cancel(reason="session_end")`，仅在 routing 仍为 `accumulate`/`pending_stop` 且本帧未被既有归档路径消费时）③ 审计一行。`kidpal_session_ctx` 幂等边界补强 = **边沿完整化**：ctx(story) 进语境（既有）、**ctx(非 story) 且记录语境仍活 → 释放**（新增兜底，覆盖 `listen stop` 丢失/乱序）。
-   - **为什么释放记录语境是最重单点**：引擎侧 `_kidpal_record_context` 为真时 `chat()` 在 depth==0 第三守卫直接 return（`connection.py:1580-1583`），**零 LLM 零 TTS**。今天这个标志由「连接断开」兜底清除（连接死了标志随之消失）；L1 常驻后兜底消失，front 漏发 `active=false` = 引擎对该连接**永久抑制** = 设备哑火、孩子说什么都没反应，且症状与 261028 那批「记录会话镜像失同步卡死」同族。∴ 双层防线（`listen stop` 主 + ctx 边沿兜底）是设计要求而非优化，两层都要有独立验收断言。
-3. **§5.2 场景②补「会话结束」一段**：三通道（60s 超时 / 云端 `end_session` / 再按 KEY）→ 统一处理器 → `listen stop` → front 每会话收尾 → 设备 Idle 回原页（OQ3=c）→ **通道保持常驻**。场景④取消链句改写：`kidpal_story_discard` 的发送时机从「设备关闭音频通道（断连）之前」改为「设备发出会话结束信号（`listen stop`）之前」（契约同步改，T4）；断连隐式取消（cancel-on-disconnect）维持为兜底通道（human 2026-10-21 裁维持不变）。场景①补一句：WS 建连恢复推送的触发频率从「每次会话收尾重建」降为「每连接一次」。
+2. **§5.1.2 front 行改写生命周期锚**：连接期一次性六件（story_list restore 推 / points_home 推 / alert 腿登记 / 会话腿登记 / schedule 摘要注入 / schedule 推）**保持绑连接**——它们是恢复性 bootstrap，每连接一次正是本批要的收益（bootstrap burst 从「每次会话结束再建时付」降为「每连接一次」）；teardown 三件（腿双摘除 + `acc.cancel(reason="ws_disconnect")`）**降为最外层兜底**（引擎 24h 日切 / 网络断 / front 重启三形态仍走它，逐字保留）。新增「每语音会话收尾」职责，触发源 = 旁路消费的 `listen stop`（既有缝，`pump_client_to_upstream` 内、转发不变），但**动作按累积器路由态分层，不在 stop 当刻无条件取消**（v1.2 修订，门 1 F-01；分层理由见下「F-01 修订依据」）：
+
+   | `listen stop` 当刻的 `acc.routing(sid)` | 会话收尾动作 | 记录语境释放时点 |
+   |---|---|---|
+   | `chat`（问答会话，从未进记录语境） | 无动作（既有归档/取消路径都不命中） | 不适用（本连接记录语境标记为假 → **不注入任何帧**，避免每轮问答都往引擎腿打一帧无用信号） |
+   | `accumulate` 且 accum 非空 | `_story_stop_on_listen_stop` 返 True → 既有三式收尾单源 `_story_finish_session`（归档）接管，**收尾三件不得再动该会话** | 整理回合**完成后**，由 `_story_finish_session` 既有三个 `_release_record_context` 调用点覆盖（:1716/:1727/:1747；261022 真机轮修订语义零改动——提前释放会让收尾后迟到的幻听 STT 被当普通对话派发，KPLOG006 缺陷本体） |
+   | `accumulate` 且 accum **空** → 经 `mark_pending` 落 `pending_stop` | **禁止 cancel、禁止释放**（protected state）；交既有 10s 巡检 | **≤10s**（`PENDING_STOP_SECONDS`，`story.py:75`）——`_story_timeout_sweep_body:1255-1257` 的 pending 分支**必须补 `_release_record_context(sid, _session_legs(sid) or list(_alert_legs))`**（今天只 `release_pending` + 日志、**不释放引擎抑制**，旧模型靠随后的断连兜底，常驻后兜底消失 → 这是本批 front 侧唯一新增的释放点，也是 F-01 修订的承重半）；若转写在 10s 内到达 → `_story_feed_from_stt:562-564` 接通恢复归档 → 走上一行的既有释放点，**不经 sweep** |
+   | `pending_stop`（重复 stop，SAO-A3 形态） | 同上，`mark_pending` 幂等不重置挂起时刻 | 同上（≤10s sweep） |
+   | `accumulate` 且本帧未被归档路径消费（**结构上不可达**——`_story_stop_on_listen_stop` 的分支已穷尽：非空→True、空→mark_pending） | 防御性处置 = **不 cancel**，留既有卡壳引导 / 自动收尾 sweep（2 轮引导无回应 → **归档、不丢弃**，S-F2.2 AC5） | 由该 sweep 的 `_story_auto_finish` → `_story_finish_session` 既有释放点覆盖 |
+
+   收尾三件随之重述为：**① 分层释放**（按上表，问答会话 no-op、归档路径复用既有释放点、`pending_stop` 交 10s sweep 且该 sweep 补释放调用）**② 不在 stop 当刻取消任何累积态**（原「残余累积态取消」动作**撤销**）**③ 审计一行**（含冻结 token，如 `session_end_boundary`，记 routing 分支与是否触发释放）。
+   - **F-01 修订依据（为什么必须撤销「stop 当刻 cancel」）**：`pending_stop` 与「引导态无内容」在 listen-stop 那一刻的**可观状态完全相同**（accum 空 + 已/即将 pending），任何「本帧未被归档路径消费」式守卫都无法区分二者；而 manual 形态 ASR 由 `listen stop` 触发、转写约 **1.7s** 后才到（`front_app.py:577` docstring 实录），当刻 cancel = `story.py:886-894` 的 `_sessions.pop` → routing 回 `chat` → **在途转写不可恢复**、录音态 KEY 收尾（三式收尾之一）的归档丢失，直接违反 `docs/requirements.md` S-F2.2 AC4 v1.65「显式收尾 → 一次性忠实整理成篇 → 归档 → 盖章」。断言级冲突三条（起草期逐条实读复核）：`test_m4k1_story_cloud_link.acceptance.py:1891` `test_sao_a2_empty_stop_holds_pending_not_bail_to_chat`（`assertNotEqual(acc.routing(sid), "chat")`）、同文件 `:849-882` `test_a2_session_ctx_intercepted_not_forwarded`（M4K1-A2，真机序 ctx(story)→stop→stt 断言 `len(files) == 1`「恰一篇归档」）、`test_sao_a3_repeated_stop_no_double_archive`（stop→stop→stt 恰一篇）。三条全是 must-stay-green 冻结 oracle，不可反转。
+   - **为什么释放记录语境仍是最重单点**：引擎侧 `_kidpal_record_context` 为真时 `chat()` 在 depth==0 第三守卫直接 return（`connection.py:1580-1583`），**零 LLM 零 TTS**。今天这个标志由「连接断开」兜底清除（连接死了标志随之消失）；L1 常驻后兜底消失，front 漏发 `active=false` = 引擎对该连接**永久抑制** = 设备哑火、孩子说什么都没反应，症状与 261028「记录会话镜像失同步卡死」同族。∴ 释放点必须**穷尽枚举**且各有独立验收断言：归档路径三个既有调用点 + **sweep pending 分支新增一处** + ctx 边沿兜底（下条）+ 连接级 teardown（外层）。
+   - **`kidpal_session_ctx` 边沿完整化（兜底层，v1.2 修订为分态处置）**：ctx(story) 进语境（既有）；**ctx(非 story) 且本连接记录语境标记为真**时按 routing 分态——`pending_stop` → **不释放、不取消**（保护在途转写，交 10s sweep；只记一条 INFO 说明延迟释放与窗口上界），`accumulate` → `acc.cancel(reason="session_end_stale")` + 释放（这是「上一会话未发 `listen stop` 就消失」的串味兜底，语义 = 常驻时代的 cancel-on-disconnect 同族，沿 human 2026-10-21「cancel-on-disconnect 维持为兜底」裁定口径，**不发明「弃录自动归档」这类新需求语义**），`chat` 但标记仍为真 → 只释放（防御性：说明 routing 已被 sweep/finish 清而释放漏了）。**该兜底只在设备未发 `listen stop`（崩溃/异常）时可达**——所有正常结束路径都发 stop。
+   - **v1.2 显式申报的残余（accepted residual，非缺陷）**：记录会话以「accum 空」形态结束后 ≤10s 内，引擎侧记录语境抑制仍在世；若孩子在这 ≤10s 内立刻从非 story 页发起新问答会话并马上开口，该次话语可能被抑制（`listen start` 只清 `_kidpal_listen_closed`、不清 `_kidpal_record_context`）。**不得用「提前释放」消除它**——提前释放正是 261022 修掉的孤儿幻听缺陷（`_issue_finish_downlink:1661-1665` docstring 实录 KPLOG006 23:59:30「Thank you」被当普通对话派发并播报「我没听清/再说一遍」）。窗口上界 = 既有冻结常量 `PENDING_STOP_SECONDS = 10.0`，触发需三件同时成立（空 accum 结束 + 10s 内换会话 + 立刻开口），后果 = 一次话语被抑制、再按 KEY 即恢复。登记 §6 留根 + §8.1 新增风险行，真机轮 A 的 A5 实测窗口。
+3. **§5.2 场景②补「会话结束」一段**：三通道（60s 超时 / 云端 `end_session` / 再按 KEY）→ 统一处理器 → `listen stop` → front 每会话收尾（**按累积器路由态分层，`pending_stop` 交 10s 巡检**）→ 设备 Idle 回原页（OQ3=c）→ **通道保持常驻**。场景④取消链句改写：`kidpal_story_discard` 的发送时机从「设备关闭音频通道（断连）之前」改为「设备发出会话结束信号（`listen stop`）之前」（契约同步改，T4）；断连隐式取消（cancel-on-disconnect）维持为最外层兜底通道（human 2026-10-21 裁维持不变），并补一句其常驻时代的同族兜底 = ctx 边沿对残余 `accumulate` 的 `session_end_stale` 取消。场景①补一句：WS 建连恢复推送的触发频率从「每次会话收尾重建」降为「每连接一次」。
 4. **§5.2 场景② / §5.1.2 补云端结束意图链**（三段补链的架构表述）：模型告别回合产 `control/end_session` 薄意图（prompt 静态纪律，§5.5.5 承载不变）→ front 从引擎 display 流**截获**（与 `add_points`/`redeem_points` 同型，不透传）→ front 以机械自推单源恰一帧下发设备（与 `start_organizing` 同型豁免）→ 设备 `mcp_server` control case 0 调 `EndVoiceSession()` 收口到统一处理器。relay 直转路径**恒拒**（防伪造/注入，`test_points_e2e_spike` 与 `test_record_dialogue_guide` 的 relay 侧断言天然保绿）。
 5. **`TECH-261012` 首按键失同步在本批消解，不另立包**：其根因链三段——① 闲置 ~781s/137s 后 `IsTimeout()` 判死（T1 改法 2 心跳根治）② 重建后 front 把新连接当全新会话、推恢复包、无进行中会话语境（T2 改法 2 把每会话态从连接解耦，恢复包只在真建连时推）③ 音频通道打开后同毫秒被关 / 通道根本未开（261014 批已修的 UI 面 + 本批 L2 收口）。∴ 该条目按 consumed-by 本 changeId 结项；其「修法方向 B/C」（按键等待重建完成后自动接续）由 T1 改法 3 的自愈巡检 + 改法 4 的人工意向位以更强形态承载（不是「按键等重建」，而是「让孩子撞不上重建」+「撞上了也不丢那一次按键」）。
 
@@ -134,7 +147,7 @@ docs/decisions/ADR.md
 **改法**：
 
 1. **§8.1 风险 3 行改写**：保留「已闭账」结论与 human 2026-10-10 触点①裁定原文，把缓解句从「服务端/网络侧断自动重连 + 会话收尾常驻重建随 261010 包根治」改为「服务端/网络侧断自动重连（261010 包）+ **会话收尾不再拆通道、常驻由 front 心跳与设备自愈巡检承载**（本批，ADR-019）」，并追加一句沿革注记说明 261010 的「常驻重建」补丁随本批退役（历史不删、只标取代）。
-2. **§8.1 新增三行风险**（编号沿表内现有习惯追加）：① **离线期长重试功耗**——每 60s 一次 TLS 握手尝试，真机量一轮离线 30 分钟电量差回填；缓解 = 封顶 60s 稳态 + 后台 task 不阻塞主循环 + 守卫三条件保证只在真离线时活跃；owner = dev-loop 运维面（观察项）。② **心跳流量与日志噪声**——约 115 KB/日下行 + 设备侧必须显式 no-op 消费分支（否则每 30s 一条 `Unknown message type` WARN 冲 SD 日志 16MB 轮转预算）；缓解 = 间隔可部署面 env 调 + 设备侧分支为验收断言；owner = dev-loop。③ **引擎 24h 兜底成为唯一重建窗口**——设备 Idle 期不上行音频 → 引擎 `last_activity_time` 不刷新 → `_check_timeout` 到点关连接，形态 = 每日一次服务端侧断 + 一次 bootstrap burst + 一次 `mem_local_short.save_memory` flush；裁为**接受**（副作用是良性的：它同时是引擎 RAM `Dialogue` 与本地记忆总结的天然日切点），缓解 = 设备 A 路径自动重连已覆盖；owner = 运维面（观察项）。
+2. **§8.1 新增四行风险**（编号沿表内现有习惯追加；第 ④ 行为 v1.2 门 1 F-01 修订新增）：① **离线期长重试功耗**——每 60s 一次 TLS 握手尝试，真机量一轮离线 30 分钟电量差回填；缓解 = 封顶 60s 稳态 + 后台 task 不阻塞主循环 + 守卫三条件保证只在真离线时活跃；owner = dev-loop 运维面（观察项）。② **心跳流量与日志噪声**——约 115 KB/日下行 + 设备侧必须显式 no-op 消费分支（否则每 30s 一条 `Unknown message type` WARN 冲 SD 日志 16MB 轮转预算）；缓解 = 间隔可部署面 env 调 + 设备侧分支为验收断言；owner = dev-loop。③ **引擎 24h 兜底成为唯一重建窗口**——设备 Idle 期不上行音频 → 引擎 `last_activity_time` 不刷新 → `_check_timeout` 到点关连接，形态 = 每日一次服务端侧断 + 一次 bootstrap burst + 一次 `mem_local_short.save_memory` flush；裁为**接受**（副作用是良性的：它同时是引擎 RAM `Dialogue` 与本地记忆总结的天然日切点），缓解 = 设备 A 路径自动重连已覆盖；owner = 运维面（观察项）。④ **记录会话空累积结束后 ≤10s 的引擎抑制窗（v1.2 新增，门 1 F-01 修订的显式残余）**——`pending_stop` 是受保护态（提前释放会复发 261022 的孤儿幻听缺陷），故释放时点上界 = 既有冻结常量 `PENDING_STOP_SECONDS = 10.0`；触发需三件同时成立（空 accum 结束 + 10s 内从非 story 页换会话 + 立刻开口），后果 = 一次话语被抑制、再按 KEY 即恢复，无数据损坏；裁为**接受**（用一次可恢复的抑制换「录音态 KEY 收尾归档不丢」，后者是 S-F2.2 AC4 v1.65 的硬语义），缓解 = ctx 边沿兜底覆盖非 pending 形态 + 真机轮 A 的 A5 实测窗口长度；owner = dev-loop（观察项，若真机实测窗口频繁命中再回 `/arch-change` 评估缩短 `PENDING_STOP_SECONDS`——那是既有冻结常量，改值须回 planner 重冻结）。
 3. **§8.1 风险 14 行补注记**：明确「共享短上下文的增长控制权威 = OpenClaw `session.maintenance`（live 已 enforce，参数见 `server/deploy/261114-openclaw-session-maintenance/`）+ 自动 compaction」，并钉一句**本批实证结论**：引擎 RAM `Dialogue` 在长连接下无裁剪（`dialogue.py` 全文零窗口逻辑），但它**不进 LLM 请求**（`_kidpal_turn_messages` 只发会话级前缀 + 本回合尾部），∴ 增长面是每连接数十 KB 的 RAM 与日切时的一次 `save_memory`，不是 token 成本；token 成本的增长面在 OpenClaw 持久会话，归本行既有承载。
 4. **§5.1.1 会话状态机行 ⚠️【修复项】改写**：从「`ses_machine_dispatch` 生产代码零调用——真机 60 秒自动关闭从未发生，Phase 1 接 timer 生产者」改为「60 秒超时 producer **已接线**（本批，ADR-019）：落点 = `application.cc` 主循环 1s tick + 既有 `clock_ticks_`（状态迁移归零）+ VAD 说话沿重置，判据 `Listening && clock_ticks_ >= 60 && !记录语境` → 统一会话结束处理器；**纯模型维持验收 oracle 身份、仍不接生产**（`ses_machine_dispatch` 生产调用点 0，本批复核为真）——活的会话状态权威是 `device_state_machine.cc`」。设备状态机行同步补一句「会话边界权威承载」。
 5. **§3.3 假设清单「设备常驻在线」行加沿革注记（R1-F2）**：`:138` 的缓解/现状列原文「引擎侧两道超时已修正为 24h 兜底（决策 21）；已裁：永不休眠（决策 29）；重连 + 常驻重建已落（261010 包）」改为「引擎侧两道超时已修正为 24h 兜底（决策 21）；已裁：永不休眠（决策 29）；重连已落（261010 包）；**常驻由 front 周期心跳 + 设备自愈巡检承载，会话收尾不再拆通道亦不再重建**（本批，ADR-019——261010 的「会话收尾常驻重建」机制随本批退役，历史不删、只标取代）」。假设本体（「设备常驻在线 → 提醒推送可达」）与其成立性**不变且被强化**：本批把「常驻」从「断了再建的名义常驻」推进为「不拆的真常驻」，假设被打破的概率下降。
@@ -204,7 +217,7 @@ docs/decisions/ADR.md
 - **决策**（六条）：① WS 通道的终止源是闭集三条（服务端/网络侧断、引擎 24h 兜底、重启/OTA/AEC 切换/`ResetProtocol`），**语音会话结束不在其中**；会话收尾不再拆通道，261010 的「T=5s 常驻重建」机制退役。② 语音会话边界的权威 = 设备状态机，wire 表达 = 既有帧对（开始 `kidpal_session_ctx` + `listen start`，结束 `listen stop`），**不新增上行帧**；六个触发源统一收口到单一处理器。③ 通道保活 = front 周期下行 `kidpal_keepalive`（30s）+ 设备侧 120s 无下行判据的**语义升级**（阈值与逻辑零改动）+ 主循环 1s tick 自愈巡检。④ 自动重连改封顶递增长跑（`{5,10,20,40,60}` 后恒 60s），并配套人工意向位——离线期人工入口不再静默 no-op，改为置意向、截短退避、连上后补投事件。⑤ front 的每会话态（记录语境抑制标志、累积器、会话语境）改由带内信号驱动收尾，连接级 teardown 降为兜底；`kidpal_session_ctx` 边沿完整化作为第二层防线。⑥ 云端结束意图通道 = 模型产薄意图 → front 截获 → 机械自推单源下发 → 设备收口统一处理器；relay 直转恒拒。
 - **理由**：断了再建是纯绕路——常驻通道本就是设计目标态（提醒推送、故事预取都跑在它上面），拆它只为了表达「会话结束」这个语义，而该语义完全可以用已经在 wire 上跑着、且引擎已经消费的 `listen stop` 表达。真机代价可量（温 0.82s vs 冷 1.57s + 约 15s burst，KPLOG029）；而收益不只是时延：`TECH-261012` 首按键失同步、`TECH-261014-session-end-channels-unwired` 的「一轮聊完设备常驻聆听直到 137s 通道超时」、以及提醒在重建窗内的可达性抖动，三者同源。会话边界改带内信号后，边界从「物理事件（断连）」变成「显式语义事件」，可观测、可验收、可幂等重试。
 - **备选与放弃原因**：① **维持现状 + 把 5s 重建缩到 1–2s**（`TECH-261114` 候选 B）——放弃：只缩竞态窗、不消除 burst 与冷启动税，且 5s→1s 会让「孩子在重建窗内按键」的概率反而更容易撞上 in-flight 守卫（人工入口 no-op）。② **决策 21 的方案二（网关设备腿常驻、引擎腿按会话起停）**——放弃：该备选已随 ADR-015 失效（连续性权威移到 OpenClaw 持久会话后，引擎腿起停不再承载任何会话语义），且它把「每会话」的边界搬进 front 内部，反而增加一条 front↔引擎连接生命周期要管。③ **设备周期 WS Ping 保活**——放弃：实证 `web_socket.cc` 的 Pong 分支空实现、`Ping()` 返回 void，不刷新活性时间戳也不可观测失败，要靠它必须改第三方 `managed_components/`（重下载即丢、非自有代码面）。④ **摘掉设备侧 120s 判据**——放弃：半开连接（家庭 NAT 静默过期）要等下一次发送失败才暴露，而 Listening 分支的 `SendStartListening` 不检查返回值，孩子会对着死通道讲完一整段。⑤ **新增 `kidpal_session_end` 上行帧**——放弃：见 §1「为什么复用 `listen stop`」四点（引擎不认新私有帧、front 会多一个与既有 `listen stop` 分支语义重叠的消费点、契约面净扩张而收益为零）。⑥ **会话边界注入引擎**——放弃：不动引擎代码约束下四个既有注入面逐一为语义污染（见本节末），且共享上下文已由 ADR-015 承载、与通道生命周期正交，注入无边际收益。
-- **关联**：requirements §2.1（结束三通道 + 60s 阈值）/ §2.2（四态演出）/ §2.3（录音态子态按键口径）/ S-F1.4（提醒必达与录音态排队例外）/ S-F2.2 AC4（丢弃与三式收尾）；arch §2.3 端云职责 / §5.1.1 / §5.1.2 / §5.2 场景①②④ / §6.4（整节重写）/ §6.5 幂等 / §8.1 风险 3·14 + 新增三行 / §10 决策 21（方案二失效注记保持）·决策 29（永不休眠，本批兑现）；契约 §1.4 / §1.5 / §1.6 / §四（`listen` 节 + `kidpal_keepalive` + `kidpal_story_discard` 时序 + `kidpal_session_ctx` 边沿）；ADR-003（`kidpal_speak` 借引擎音频链——**会话间隙提醒出音的承重依据**：`speak_txt` 不经 `chat()`，∴ 不受 `_kidpal_listen_closed` / `_kidpal_record_context` 抑制）/ ADR-013（记录语境抑制）/ ADR-015（持久会话 = 共享短上下文权威）；debt 四条（TECH-261114 / TECH-261014 ×2 / TECH-261012）consumed-by 本 changeId。
+- **关联**：requirements §2.1（结束三通道 + 60s 阈值）/ §2.2（四态演出）/ §2.3（录音态子态按键口径）/ S-F1.4（提醒必达与录音态排队例外）/ S-F2.2 AC4（丢弃与三式收尾）；arch §2.3 端云职责 / §5.1.1 / §5.1.2 / §5.2 场景①②④ / §6.4（整节重写）/ §6.5 幂等 / §8.1 风险 3·14 + 新增 15/16/17/18 四行 / §10 决策 21（方案二失效注记保持）·决策 29（永不休眠，本批兑现）；契约 §1.4 / §1.5 / §1.6 / §四（`listen` 节 + `kidpal_keepalive` + `kidpal_story_discard` 时序 + `kidpal_session_ctx` 边沿）；ADR-003（`kidpal_speak` 借引擎音频链——**会话间隙提醒出音的承重依据**：`speak_txt` 不经 `chat()`，∴ 不受 `_kidpal_listen_closed` / `_kidpal_record_context` 抑制）/ ADR-013（记录语境抑制）/ ADR-015（持久会话 = 共享短上下文权威）；debt 四条（TECH-261114 / TECH-261014 ×2 / TECH-261012）consumed-by 本 changeId。
 - **附：会话边界注入的四个既有面逐一评估（不动引擎代码约束下，本批显式不做，留重评触发）**：`kidpal_speak` = 出音指令，会真的播一句话给孩子（用户可见副作用，不可用作静默边界标记）；`kidpal_record_context` = 布尔抑制开关，形状不承载自由文本；`kidpal_schedule_summary` / `kidpal_points_context` = 各自绑定 system prompt 里一个具名占位（`{{schedule_summary}}` / `{{points_summary}}`）的填充器，借道 = 把「新会话开始了」写进课表或积分摘要，属明确的语义污染且会破坏 §1.5「零自研业务逻辑」的单源红线。**若真机观测出现跨会话语境串味**，可用面 = workspace `AGENTS.md` 静态纪律 + 动态 context 块既有的「本回合时间 / 日期」（模型可据时间跨度自行判「这是新的一段对话」），零引擎代码、零契约改动；重评触发 = 真机出现「孩子隔了很久再说话，小伴把上一段语境当成当前话题」的可复现实例。
 
 目标文件：`docs/decisions/ADR.md`（改，append-only 追加一条）
@@ -217,7 +230,7 @@ docs/decisions/ADR.md
 
 **根因**：不适用（制品义务）。
 
-**改法**：在表头分隔行之下、`261103-star-points-story-cover` 行之上插入一行（倒序纪律）：changeId = `261115-arch-review-session-channel-resident`，日期 = 落地当日，改动面 = 「§3.3（假设清单「设备常驻在线」行加沿革注记：常驻改由心跳 + 自愈巡检承载、261010 的会话收尾重建退役）/ §5.1.1（会话状态机行 ⚠️ 对账改写 + 新增语音会话生命周期收口行 + 设备状态机行补边界承载句）/ §5.1.2（front 行生命周期锚改写：连接期一次性六件保持绑连接、teardown 降兜底、新增每语音会话收尾职责）/ §5.2 场景①②④（建连推送频率 + 会话结束段 + 云端结束意图链 + 取消链时序措辞）/ §6.4 整节重写 / §8.1（风险 3 缓解句改写 + 风险 14 补注记 + 新增三行）/ §10 决策 29 取代注记（正文一字不改，形态仿决策 21/25 先例）/ §12 本行」，依据 = 「ADR-019；debt TECH-261114 / TECH-261014-autoconnect / TECH-261014-session-end / TECH-261012 四条 consumed-by；契约面同批原子落（§1.4 / §1.5 / §1.6 / §四）；human 2026-11-15 立项原话 + 三答（范围全家桶 / 共享短上下文 / 不改引擎补丁）」。
+**改法**：在表头分隔行之下、`261103-star-points-story-cover` 行之上插入一行（倒序纪律）：changeId = `261115-arch-review-session-channel-resident`，日期 = 落地当日，改动面 = 「§3.3（假设清单「设备常驻在线」行加沿革注记：常驻改由心跳 + 自愈巡检承载、261010 的会话收尾重建退役）/ §5.1.1（会话状态机行 ⚠️ 对账改写 + 新增语音会话生命周期收口行 + 设备状态机行补边界承载句）/ §5.1.2（front 行生命周期锚改写：连接期一次性六件保持绑连接、teardown 降兜底、新增每语音会话收尾职责）/ §5.2 场景①②④（建连推送频率 + 会话结束段 + 云端结束意图链 + 取消链时序措辞）/ §6.4 整节重写 / §8.1（风险 3 缓解句改写 + 风险 14 补注记 + 新增 15/16/17/18 四行）/ §10 决策 29 取代注记（正文一字不改，形态仿决策 21/25 先例）/ §12 本行」，依据 = 「ADR-019；debt TECH-261114 / TECH-261014-autoconnect / TECH-261014-session-end / TECH-261012 四条 consumed-by；契约面同批原子落（§1.4 / §1.5 / §1.6 / §四）；human 2026-11-15 立项原话 + 三答（范围全家桶 / 共享短上下文 / 不改引擎补丁）」。
 
 **牵连面完整性（R1-F2 修订）**：本行「改动面」列必须逐节枚举 §3.3 与 §10 决策 29 两处——arch-change.md 四查 ④「牵连面完整（反向锚牵连、联动文件）」要求退役机制的**全部**引用点入册。起草期普查命令与输出：`grep -n '常驻重建' docs/architecture.md` → 四命中 `:138`（§3.3）/ `:371`（§6.4）/ `:460`（§8.1）/ `:529`（§10 决策 29），四处分别在 T1（§6.4）、T3 改法 1（§8.1）、T3 改法 5（§3.3）、T3 改法 6（§10）承载，**零遗漏**。
 
@@ -284,14 +297,15 @@ docs/decisions/ADR.md
 - **引擎侧**：**零 diff**（`server/deploy/engine-patch/**` 与 ECS `core/**` 均不动，config 亦不动）。依据三条实证：`listen stop` 不关连接（`listenMessageHandler` stop 分支只置 `client_voice_stop` + 触发尾音 ASR，`close_after_chat` 只由 `no_voice_close_connect`/`max_out_size` 置位）；`listen start` 调 `reset_audio_states()`，同连接多轮 start/stop 是引擎既有支持形态；引擎侧「会话已结束」的闭锁已由 engine-patch 既有的 `_kidpal_listen_closed` 承载（stop 置位 / start 复位 / `chat()` depth==0 首守卫消费）。`kidpal_keepalive` 不达引擎（设备侧 no-op 消费、front 亦不转发上行心跳——它是纯下行帧）。
 - **OpenClaw 侧**：prompt 静态语义新增一条告别回合纪律（workspace `AGENTS.md`，§5.5.5 承载与三面相等不变式不变；`OPENCLAW_SYSTEM_PROMPT_CARRIER` 全量副本随批 append）。会话连续性（ADR-015 持久会话）**零影响**——本批不改 `user=<device_id>`、不改「只发本回合」。
 - **契约面净扩张**：一条下行私有帧（`kidpal_keepalive`，单键无载荷）+ 一节既有帧的语义钉行（`listen`，形状照实现原文钉、零新字段）+ 一处放行规则改写（`end_session` 自推豁免）+ 两处措辞对账（`kidpal_story_discard` 发送时机 / `kidpal_session_ctx` 会话开始边界）。**无新 view、无新上行帧、无字段变更、无形状 floor 变更。**
-- **冻结验收齿影响（显式申报，非静默改齿）**：反转 1 条（`test_record_dialogue_guide.acceptance.py:1267-1272` 的 `self_push=True` + `end_session` → `assertFalse` 改 `assertTrue`，断言消息随裁定改写）；天然保绿 2 条（同文件 relay 侧断言、`test_points_e2e_spike.acceptance.py:866-868` 缺省 `self_push=False`）；设备侧 `boot_auto_connect.acceptance.c` 的 K6-A2 tooth5（`kAutoConnectBackoffS` `[3]` 长度 + `{5,10,20}` 形态）与 RC-A3/RC-B2（`kResidentRebuildDelayS` / `ScheduleResidentRebuild` 四收尾点各恰 1）按新裁定重写，`voice_round_ui.acceptance.c` 的 `local_close_settle` 4 命中与 `CloseAudioChannel` 族按「会话收尾不再拆通道」重写——具体齿面清单与重写理由归实现包 plan.md（见 `package-split.md`），本面只钉「哪些既有冻结语义被有意取代」。
+- **v1.2 修订（门 1 F-01）的契约影响 = 零改动，依据三条**：① §四 `listen` 节钉的是「`listen stop` = 该语音会话的**结束信号**」这一 wire 语义，**没有**钉「网关必须在收到 stop 的当刻释放全部会话态」——释放时点与分态处置属**行为策略**，权威承载 = arch §5.1.2 front 职责行 / §5.2 场景②④（与 §1.5 第 6 条「推送触发时机属行为策略，权威承载 = arch §5.2，不进契约」同型处理，该先例逐字可引）。② §四 `kidpal_story_discard` 的顺序约束（discard 先于 stop）**不受影响**：discard 走 `acc.cancel(reason="discard")`，是设备显式丢弃手势的独立路径，与「会话收尾三件」不是同一条链；且 discard 到达后 routing 已回 `chat`，随后的 `listen stop` 命中分层表的 `chat` 行 = 无动作，`pending_stop` 保护态根本不会进入。③ `pending_stop` 的 10s 挂起窗是既有实现语义（`PENDING_STOP_SECONDS = 10.0`，`story.py:75`；SAO-A3② 冻结），契约从未钉过它、本批也不钉。∴ **§2A `proposedContractDiff` 四处（①–⑤）v1.2 一字未改**，`landing-manifest` 与 V4/V5/V9/V10/V11/V12 全部不受本轮修订影响；受影响的只有架构面叙述（T2 改法 2/3、T3 改法 2 ④）与实现包的验收断言方向。
+- **冻结验收齿影响（显式申报，非静默改齿）**：**反转 1 条**（`test_record_dialogue_guide.acceptance.py:1267-1272` 的 `self_push=True` + `end_session` → `assertFalse` 改 `assertTrue`，断言消息随裁定改写）；**天然保绿 2 条**（同文件 relay 侧断言、`test_points_e2e_spike.acceptance.py:866-868` 缺省 `self_push=False`）；**v1.2 修订后新增三条 must-stay-green（F-01 的断言面，一条都不许动）**：`test_m4k1_story_cloud_link.acceptance.py:1891` SAO-A2（空累积 listen-stop 后 `assertNotEqual(routing, "chat")`）、同文件 `:849-882` M4K1-A2（真机序 ctx→stop→stt 断言 `len(files) == 1` 恰一篇归档）、同文件 SAO-A3（重复 stop 不双归档）；**语义前提改变但断言保绿 2 条（处置显式记，F-03 要求）**：`test_m4k3_record_session_live.acceptance.py:508` `test_a7_ctx_non_story_pushes_zero_frames` 与 `test_m4k1_story_cloud_link.acceptance.py:884` `test_a2_source_page_values_and_backward_compat`——两者的**断言**在 v1.2 下仍全绿（前者用全新 sid、记录语境标记从未置位 → ctx 边沿兜底不触发 → 三断言〔不透传 / routing=="chat" / 零 story_list 帧〕逐条成立；后者同理），但前者的 **docstring 前提**「闭集预留取值现版本无行为，防实现过宽」不再精确（ctx 非 story 现在有一条**条件**行为 = 记录语境仍活时的分态兜底）→ 实现包须改写该 docstring 并**新增一条姊妹齿**覆盖释放边沿（= `package-split.md` 的 SCRF-B4/B4b），不得靠删弱既有齿过关。`story.py:886-894` `cancel()` 与 `:873-884` `release_pending()` 两个纯逻辑缝**签名与语义零改动**（本批只新增调用点，不改判据）。设备侧 `boot_auto_connect.acceptance.c` 的 K6-A2 tooth5（`kAutoConnectBackoffS` `[3]` 长度 + `{5,10,20}` 形态）与 RC-A3/RC-B2（`kResidentRebuildDelayS` / `ScheduleResidentRebuild` 四收尾点各恰 1）按新裁定重写，`voice_round_ui.acceptance.c` 的 `local_close_settle` 4 命中与 `CloseAudioChannel` 族按「会话收尾不再拆通道」重写——具体齿面清单与重写理由归实现包 plan.md（见 `package-split.md`），本面只钉「哪些既有冻结语义被有意取代」。
 
 ### validationPlan
 
 分三层，逐层可判：
 
 1. **契约面机械门**（落地前后各跑一次，预期见 §5）：`node .claude/scripts/contract-lint.mjs`（`ok:true`，warnings 不新增）；`node .claude/scripts/spec-anchor-check.mjs`（`ok:true`、`errors:[]`）；`node .claude/scripts/landing-fidelity-check.mjs --cite-check <本 PROPOSAL>`（②④ 承重原文块逐字对账通过）；`pre-merge-escalation-gate.mjs` 三件联立凭据（FROZEN PROPOSAL + PASS landing-verdict + manifest 覆盖 `docs/contracts/interface-contract.md`）。
-2. **实现面离线验收**（归实现包，方向见 `package-split.md`）：front 侧 python 离线验收新增 `test_session_channel_resident.acceptance.py`（心跳 task 恰一帧/周期 + env 闸**默认开**、`=0` 可关〔两态各一断言〕 + `listen stop` 会话收尾三件幂等 + ctx 边沿兜底 + `end_session` 截获-自推恰一帧 + relay 恒拒 + discard→stop 有序不归档）；设备侧 C host 验收新增 `session_channel_resident.acceptance.c`（统一处理器六触发源收口 + 四收尾点零 `CloseAudioChannel`/零 `ScheduleResidentRebuild` + `kidpal_keepalive` no-op 分支存在 + 60s tick 判据与记录语境豁免 + VAD 沿重置 + 长重试退避表形态 + 人工意向位）。
+2. **实现面离线验收**（归实现包，方向见 `package-split.md`；v1.2 按门 1 F-01 修订改写）：front 侧 python 离线验收新增 `test_session_channel_resident.acceptance.py`（心跳 task 恰一帧/周期 + env 闸**默认开**、`=0` 可关〔两态各一断言〕 + **`listen stop` 分层收尾**：问答会话 no-op 零注入 / 归档路径不重复动作 / **`pending_stop` 受保护——当刻零 cancel 零释放** + **10s sweep 的 pending 分支新增释放点**（注入 `now = pending_since + 10s` → `release_pending` 生效 + `active=false` 恰一帧注入 `_session_legs(sid)` 归属腿）+ ctx 边沿兜底分态（`accumulate` → cancel + 释放；`pending_stop` → 不动作）+ `end_session` 截获-自推恰一帧 + relay 恒拒 + discard→stop 有序不归档）；**must-stay-green 复跑面**（一条都不许红）= SAO-A1/A2/A3 + M4K1-A2 三齿 + M4K3-A7 四齿 + `_story_timeout_sweep` 既有 10s 语义齿（RDG-A6 家族）+ S-F1.4 提醒必达齿；设备侧 C host 验收新增 `session_channel_resident.acceptance.c`（统一处理器六触发源收口 + 四收尾点零 `CloseAudioChannel`/零 `ScheduleResidentRebuild` + `kidpal_keepalive` no-op 分支存在 + 60s tick 判据与记录语境豁免 + VAD 沿重置 + 长重试退避表形态 + 人工意向位）。
 3. **真机轮**（human 持板，两轮，agent 可部署 ECS + 重启 front）：**轮 A**（P1 落地后）= 温通道按键进聆听时延对照 KPLOG029 基线 0.82s、连续 5 次「结束→再说话」零冷通道零 burst（front 日志核 bootstrap 六件每连接恰一次）、闲置 > 5 分钟（跨越旧 120s/137s 判死点）后首按键仍走温通道、**会话间隙提醒必达且出音**（S-F1.4 + ADR-003 承重实证：`_kidpal_listen_closed` 为真时 `kidpal_speak` 仍出音）、记录会话全链回归（引导态 KEY 结束无归档 / 录音态 KEY 收尾归档 / 录音态 BOOT 丢弃不入册 / 三式收尾 `start_organizing`）、SD 日志无 `Unknown message type` 噪声；**轮 B**（P2 落地后）= 60s 无语音自动关闭真机首次发生（requirements §2.1 ⚠️ 对账项闭环）、孩子连续讲 > 60s 不被误收（VAD 沿重置）、说「拜拜」全链通（模型产薄意图 → front 截获 → 自推 → 设备结束会话且麦克风关）、拔网线/重启 front 两种离线形态下的长重试自愈与人工意向不丢、离线 30 分钟电量差、引擎 24h 日切形态（可用 `close_connection_no_voice_time` 临时调小在测试环境复现，不改生产值）。
 
 ---
@@ -302,7 +316,7 @@ docs/decisions/ADR.md
 
 | 面 | 文件 | 类别 | 说明（消费方写清） |
 |---|---|---|---|
-| 架构 | `docs/architecture.md` | 本批（T1/T2/T3/T7） | §3.3 假设清单「设备常驻在线」行加沿革注记 + §5.1.1 三行（会话状态机 ⚠️ 对账改写 / 新增语音会话生命周期收口行 / 设备状态机行补边界承载句）+ §5.1.2 front 行生命周期锚改写 + §5.2 场景①②④ + §6.4 整节重写 + §8.1 四行（风险 3 缓解句 / 风险 14 注记 / 新增三行）+ §10 决策 29 取代注记（正文一字不改）+ §12 一行。**「常驻重建」四处引用全数对账**（:138 / :371 / :460 / :529，普查命令见 T7 牵连面段）。消费方 = 下游 dev 包 launchPreconditions（「支撑语义已冻结」判据 = §12 changeId 行在场）、architect-reviewer 四查、未来所有读 §6.4 的批 |
+| 架构 | `docs/architecture.md` | 本批（T1/T2/T3/T7） | §3.3 假设清单「设备常驻在线」行加沿革注记 + §5.1.1 三行（会话状态机 ⚠️ 对账改写 / 新增语音会话生命周期收口行 / 设备状态机行补边界承载句）+ §5.1.2 front 行生命周期锚改写 + §5.2 场景①②④ + §6.4 整节重写 + §8.1 六行（风险 3 缓解句 / 风险 14 注记 / 新增 15/16/17/18 四行）+ §10 决策 29 取代注记（正文一字不改）+ §12 一行。**「常驻重建」四处引用全数对账**（:138 / :371 / :460 / :529，普查命令见 T7 牵连面段）。消费方 = 下游 dev 包 launchPreconditions（「支撑语义已冻结」判据 = §12 changeId 行在场）、architect-reviewer 四查、未来所有读 §6.4 的批 |
 | 契约 | `docs/contracts/interface-contract.md` | 本批（T4/T5） | §1.4 表行 + 表后段落、§1.5 第 3 条、§1.6 约束段、§四 两新节 + 两措辞改 + 两变更记录条。消费方 = `display_schema.py` 机械门、`mcp_server.cc` 控制路由、`protocol.cc` 发送原语、front `_consume_kidpal_control`、`pre-merge-escalation-gate.mjs` 三件联立凭据 |
 | 决策 | `docs/decisions/ADR.md` | 本批（T6，append-only 追加 ADR-019） | 消费方 = §6.4 机制本体的决策源、未来复议的入口 |
 | 固件 | `firmware/main/application.cc` / `application.h` | 实现包 P1+P2 | 四条收尾路径 + 统一处理器 + 心跳 no-op 分支 + tick 巡检 + 60s producer + 长重试 + 意向位 |
@@ -312,11 +326,14 @@ docs/decisions/ADR.md
 | 固件验收 | `firmware/main/test/voice_round_ui.acceptance.c` | 实现包 P1 | `local_close_settle` 4 命中（src token 族保留、`src=` 取值语义按「不拆通道」改写）+ `CloseAudioChannel` 19 命中 |
 | 固件验收 | `firmware/main/test/record_session_live.acceptance.c` | 实现包 P1 | `CloseAudioChannel` 22 命中（录音丢弃面改 discard→listen stop 有序） |
 | 固件验收 | `firmware/main/test/session_channel_resident.acceptance.c` | 实现包 P1（新增） | 六触发源收口 + 负锚（会话收尾区零 `CloseAudioChannel`/零 `ScheduleResidentRebuild`）+ 心跳 no-op 分支 + Idle 清位链逐条保绿 |
-| front | `server/gateway/front/front_app.py` | 实现包 P1（心跳 + 会话收尾）+ P2（end_session 截获自推） | 消费方 = 设备腿；`ws_gateway` / `pump_client_to_upstream` / `_consume_kidpal_control` / `_push_display_payload` 四缝 |
+| front | `server/gateway/front/front_app.py` | 实现包 P1（心跳 + 分层会话收尾 + sweep 释放点）+ P2（end_session 截获自推） | 消费方 = 设备腿；**五缝**：`ws_gateway`（心跳 task 生命周期）/ `pump_client_to_upstream`（`listen stop` 分层收尾）/ `_consume_kidpal_control`（ctx 边沿分态兜底）/ **`_story_timeout_sweep_body:1255-1257`（pending 分支补 `_release_record_context`——v1.2 门 1 F-01 的承重新增点）** / `_push_display_payload`（P2 自推） |
+| front | `server/gateway/story.py` | **未触（签名与判据零改动）** | `cancel()` :886-894 与 `release_pending()` :873-884 两个纯逻辑缝、`PENDING_STOP_SECONDS = 10.0` :75 全部逐字保留；本批只新增 front 侧调用点，不改纯决策面（v1.2 F-01 复核结论） |
 | front | `server/gateway/display_schema.py` | 实现包 P2 | self_push 豁免口 1 值 → 2 值；relay 恒拒不变 |
-| front 验收 | `server/acceptance/test_record_dialogue_guide.acceptance.py` | 实现包 P2 | **1 条断言反转**（:1267-1272 self_push + end_session）；同文件 relay 侧断言保绿 |
+| front 验收 | `server/acceptance/test_record_dialogue_guide.acceptance.py` | 实现包 P2 | **1 条断言反转**（:1267-1272 self_push + end_session）；同文件 relay 侧断言保绿；RDG-A6 sweep 家族（10s 语义）保绿 |
+| front 验收 | `server/acceptance/test_m4k1_story_cloud_link.acceptance.py` | **未触（must-stay-green，v1.2 新增登记）** | SAO-A1/A2/A3 + M4K1-A2 三齿（`:849-882` 恰一篇归档 / `:1891` 空累积 stop 不得回 chat / 重复 stop 不双归档）是 F-01 的断言面，**一条都不许动**；`test_a2_source_page_values_and_backward_compat`（:884）断言保绿、docstring 前提随 ctx 边沿兜底精确化 |
+| front 验收 | `server/acceptance/test_m4k3_record_session_live.acceptance.py` | 实现包 P1（仅 docstring + 新增姊妹齿） | `test_a7_ctx_non_story_pushes_zero_frames`（:508）三断言在 v1.2 下**仍全绿**（全新 sid → 记录语境标记未置位 → 边沿兜底不触发），但 docstring「非 story 取值零行为」前提不再精确 → 改写前提 + 新增覆盖释放边沿的姊妹齿（SCRF-B4/B4b）；**不得靠删弱既有齿过关**（F-03 处置） |
 | front 验收 | `server/acceptance/test_points_e2e_spike.acceptance.py` | 未触（天然保绿） | :866-868 用缺省 `self_push=False`，本批 relay 恒拒 → 该 must-stay-green 断言不受影响（起草期实读确认） |
-| front 验收 | `server/acceptance/test_session_channel_resident.acceptance.py` | 实现包 P1（新增） | 心跳恰一帧/周期 + env 闸**默认开**、`=0` 可关（两态各一断言）+ listen stop 三件幂等 + ctx 边沿兜底 + discard→stop 有序不归档 |
+| front 验收 | `server/acceptance/test_session_channel_resident.acceptance.py` | 实现包 P1（新增） | 心跳恰一帧/周期 + env 闸**默认开**、`=0` 可关（两态各一断言）+ listen stop **分层**收尾（问答 no-op / 归档路径不重复动作 / **pending_stop 当刻零 cancel 零释放**）+ **10s sweep pending 分支新增释放点**（注入 now → release_pending + `active=false` 恰一帧入归属腿）+ ctx 边沿分态兜底 + discard→stop 有序不归档 |
 | 部署制品 | `server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md` + `OPENCLAW_SYSTEM_PROMPT_CARRIER` | 实现包 P2 | 告别回合纪律（§5.5.5 静态单源 + 三面相等不变式，ADR-001） |
 | 部署制品 | `server/deploy/manifest.yaml` / `verify-deploy.sh` | 实现包 P2（条件） | 仅当 prompt 承载件 md5 核验需随改；本批不新增部署文件 |
 | 引擎 | `server/deploy/engine-patch/**` + ECS `core/**` | **未触（硬约束）** | human 2026-11-15 未授权改引擎补丁；§2 实证段三条依据证明零改动即成立 |
@@ -397,6 +414,7 @@ docs/decisions/ADR.md
 6. **`ses_machine_dispatch` 纯模型仍不入生产**——本批维持其「验收 oracle」身份（T3 改法 4）。这是一笔有意识的债：仓里存在一个与活侧状态机平行的会话纯模型，只被 archive 测试消费。是否退役或反向接线，属独立议题，不在本批范围。
 7. **debt 四条结项记账**——`TECH-261114-overlay-close-channel-rebuild-churn` / `TECH-261014-autoconnect-gives-up-silently` / `TECH-261014-session-end-channels-unwired` / `TECH-261012-first-keypress-no-listening` 的 `closed` / `closedBy` 字段填写与 `debt-render.mjs` 归位，归主线程在实现包全部落地 + 真机轮通过后执行（本批只声明 consumed-by 关系）。**注意**：`TECH-261014-session-end-channels-unwired` 的结项应以**真机轮 B 实测「60s 自动关闭首次发生 + 说拜拜全链通」**为凭，不以代码合入为凭（该条目 severity = MAJOR，且 requirements §2.1 的 ⚠️ 登记正是「真机从未发生」）。
 8. **`firmware/main/protocols/protocol.cc:129-136` 的 `SendKidpalStoryDiscard` 注释刷新（R1 advisory，交实现包扩单通道）**——该函数头注释现文含「发送时机 = mcp_server DISCARD_RECORD case 内 `CloseAudioChannel` 之前（同一 TCP 有序, 网关泵先消费 discard 再处理断连）」，随本批 T4 改法 3 的契约措辞改写，正确表述应为「…内发出会话结束信号（`listen stop`）之前（同一 TCP 有序, 网关泵先消费 discard 再消费 stop）」。**代码逻辑零改动**（该函数只拼串发送，与发送时机无关），改的只是注释，∴ 本批不把 `protocol.cc` 拉进 canonical 改动面；`protocol.cc` 在 §3 已标「未触（条件）」。处置 = **交 P1 planner**：P1 改 `mcp_server` 的 DISCARD_RECORD case 时一并刷新该注释，若因此需把 `protocol.cc` 纳入 P1 的 changeManifest，由 builder 经 planner 带根因回评、architect 按扩单通道评估后扩 manifest 并留痕（清单 append + 评估依据一句）——不得就地自扩。同族的注释漂移风险点另有一处，P1 planner 应一并核：`firmware/main/application.h:126-130` 的 `CloseAudioChannel()` 声明注释（现文「录音态丢弃（BOOT 任一手势）断连面——直接关音频通道即达 front ws_disconnect cancel 钩子（弹缓冲不落盘, **不发 listen stop**）」）与本批改法直接矛盾（改后正是「发 listen stop、不断连」），该文件已在 P1 manifest 内，随批刷新即可。
+9. **`pending_stop` 的 ≤10s 引擎抑制窗（v1.2 新增，门 1 F-01 修订的显式 accepted residual）**——记录会话以「accum 空」形态结束（引导态 KEY 结束、或录音态 KEY 收尾但转写尚在途）时，`pending_stop` 必须作为受保护态交给既有 10s 巡检释放，**不得提前释放**（提前释放 = 复发 261022 修掉的孤儿幻听缺陷，`_issue_finish_downlink:1661-1665` docstring 实录 KPLOG006 23:59:30「Thank you」被当普通对话派发并播报「我没听清/再说一遍」）。代价 = 该 ≤10s 窗内若孩子立刻从非 story 页发起新问答会话并马上开口，该次话语可能被引擎抑制（`listen start` 只清 `_kidpal_listen_closed`、不清 `_kidpal_record_context`）；后果可恢复（再按 KEY 即好）、无数据损坏。触发需三件同时成立，真机轮 A 的 A5 实测窗口长度与实际命中率。**重评触发** = 真机实测该窗频繁命中（例如孩子「结束录音→马上问问题」是高频形态）→ 回 `/arch-change` 评估缩短 `PENDING_STOP_SECONDS`（既有冻结常量，改值须回 planner 重冻结）或引入「新会话 `listen start` 时由 front 主动收敛在途 pending」的新机制（后者需重新评估孤儿幻听风险，不可轻动）。同族登记 = §8.1 新增风险行 ④。
 
 ---
 
@@ -571,6 +589,131 @@ $ sed -n '126,130p' firmware/main/application.h           → 「…直接关音
   交 P1 planner 扩单通道；application.h 已在 P1 manifest → 随批刷新
 ```
 
+**⑦ v1.2 修订轮复跑（2026-11-16，回应门 1 BLOCK(F-01)；F-01 由 architect 独立读码复核后采纳，非照单接受）**
+
+```
+# F-01 复核 1：三条冻结 oracle 的断言面（逐条 Read 原文，非转引 reviewer 结论）
+$ sed -n '1891,1900p' server/acceptance/test_m4k1_story_cloud_link.acceptance.py
+  def test_sao_a2_empty_stop_holds_pending_not_bail_to_chat(self):
+      """…listen/state=stop 先到且 accum 空时，会话**不得**立即被打回 chat…
+         须挂起 pending-stop 态，后续 stt 到达才归档。"""
+      _device_to_engine(front, sid, [self._STOP])
+      self.assertNotEqual(acc.routing(sid), "chat", "SAO-A2 RED: …")   ← 当刻 cancel 即红
+      …随后 stt 到达 → self.assertEqual(len(files), 1, …)
+$ sed -n '865,879p' server/acceptance/test_m4k1_story_cloud_link.acceptance.py
+  # M4K1-A2 真机序：ctx(story) → listen-stop（累积空 → 挂起 pending-stop）→ stt 到
+  self.assertEqual(len(files), 1, "M4K1-A2 RED: …未产出恰一篇归档…")   ← 当刻 cancel 即 0 篇
+→ v1.1 的「routing 仍为 accumulate/pending_stop 且本帧未被归档路径消费时 cancel」
+  对这两齿都是直接反例；守卫无法区分 pending_stop 与引导态（两者 accum 均空）
+
+# F-01 复核 2：pending 保护窗与 sweep 释放缺口
+$ grep -n 'PENDING_STOP_SECONDS' server/gateway/story.py                  → 75: PENDING_STOP_SECONDS = 10.0
+$ sed -n '873,884p' server/gateway/story.py   release_pending(): routing="chat"、清挂起态、不写空故事（不 pop 会话）
+$ sed -n '886,894p' server/gateway/story.py   cancel(): self._sessions.pop(session_id, None) → routing 回 "chat"，在途转写不可恢复
+$ sed -n '1254,1258p' server/gateway/front/front_app.py
+      for sid in acc.pending_timed_out_sessions(now_dt):
+          if acc.release_pending(sid):
+              log.info("story_pending_timeout corr_id=%s released=true", sid)
+  → **该分支无 _release_record_context 调用**（全文 `_release_record_context` 调用点仅 :1716/:1727/:1747，
+    三处全在 _story_finish_session 内）∴ 常驻后 pending 超时释放 routing 但引擎抑制仍在世 = 哑火；
+    这是 F-01 修订的承重新增点（v1.2 T2 改法 2 表格第 3/4 行）
+$ sed -n '562,564p' server/gateway/front/front_app.py  _story_feed_from_stt: routing=="pending_stop" → feed + return True（恢复归档）
+$ sed -n '1352,1353p' server/gateway/front/front_app.py  _story_auto_finish 腿集形态 = _session_legs(sid) or list(_alert_legs)（新增释放点沿用）
+
+# F-01 复核 3：「提前释放」为何不可用（261022 既有裁定）
+$ sed -n '1661,1665p' server/gateway/front/front_app.py
+  「2026-10-22 真机轮修订：kidpal_record_context active=false 出语境信号**不再在此处发**——
+    原形态在整理回合开始前就解除引擎抑制，收尾后迟到的幻听 STT（KPLOG006 23:59:30「Thank you」）
+    被引擎当普通对话派发 LLM 并播报「我没听清/再说一遍」，盖过整理演出。」
+→ ∴ ≤10s 抑制窗是「不毁稿 + 不复发孤儿幻听」两条硬约束夹出的必然残余，登记为 accepted residual
+
+# F-01 复核 4：ctx 边沿兜底是否破 M4K3-A7 / M4K1-A2 的非 story 零行为齿
+$ grep -n 'STORY_MARKER *=' server/acceptance/test_m4k3_record_session_live.acceptance.py → 194: STORY_MARKER = "kidpal_session_ctx"
+$ sed -n '508,527p' …  test_a7_ctx_non_story_pushes_zero_frames：三断言 = 不透传(仅查 STORY_MARKER)
+                       / routing=="chat" / 零 story_list 帧；用**全新 sid**（sess-a7-home|schedule|whatever）
+$ sed -n '884,900p' …  test_a2_source_page_values_and_backward_compat：同形，全新 sid
+→ 两齿的记录语境标记从未置位 → ctx 边沿兜底守卫（标记为真）不触发 → 三断言逐条仍成立、**断言保绿**；
+  但 :509 docstring「闭集预留取值现版本无行为…防实现过宽」前提不再精确 → 实现包改写 docstring
+  + 新增姊妹齿覆盖释放边沿（SCRF-B4/B4b），不得删弱既有齿（F-03 处置，已记 §2A impact 与 §3 sweep）
+→ 注入帧 type = kidpal_record_context ≠ STORY_MARKER，故「不透传」断言不受注入影响
+
+# 修订后复跑（结构门 + canonical 现态核对）
+$ node .claude/scripts/landing-fidelity-check.mjs --preflight <本 PROPOSAL>
+  → ok:true / section2BodyFound:true / anchorCount:3 / anchorUnion 三件不变 / findings:[] / advisories:[]
+
+# ⚠ 起草者自纠（诚实申报）：v1.2 修订发生在 **canonical 已落地之后**
+#   （commit 87dbf775 feat(arch) 落地 + 14075150 verdict PASS + 7e4c44d8 INDEX landed/mergedInMain=yes，
+#    §7「落地实跑记录」已在册）∴ §5 的 pre 列已是历史基线、不再是当前工作树值。现态实跑：
+$ grep -c 'kidpal_keepalive' docs/contracts/interface-contract.md      → 2   （V4 落地值）
+$ grep -c 'listen` 状态消息' docs/contracts/interface-contract.md       → 2   （V5 落地值）
+$ grep -c 'kidpal_keepalive' docs/architecture.md                       → 2   （V6 落地值）
+$ grep -c '结束会话，回首页常显' docs/contracts/interface-contract.md    → 0   （V9 负向已达成）
+$ grep -c 'WS 通道保持常驻' docs/contracts/interface-contract.md         → 2   （V9 正向已达成）
+$ grep -c 'end_session' docs/contracts/interface-contract.md            → 8   （V12 落地值）
+$ grep -c '重连 + 常驻重建已落（261010 包）' docs/architecture.md        → 0   （V17 负向已达成）
+$ grep -c '自愈巡检' docs/architecture.md                                → 4   （V17 正向已达成，≥2）
+$ grep -c '常驻重建' docs/architecture.md                                → 3   （V19：pre 4 → post 3）
+$ grep -c '取代注记' docs/architecture.md                                → 6   （V18 正向：pre 4 → post 6）
+→ **V19 与 §5 原预期不符，如实申报**：§5 V19 原写「post ≥ 4（守恒下界）」，落地实跑 = **3**。
+  原因 = 落地期 §6.4 整节重写把 :371 那处的「常驻重建」字样改写掉了（历史提及未逐字保留），
+  属落地措辞与 PROPOSAL 预期的字节差异。按 ARQ-261021「落地期实跑若与预期有字节差异，以落地
+  实跑为准覆写 §5 并在 §7 留痕」处置：**§5 V19 与 V18 的 post 预期已由主线程落地记录覆写为实跑值**
+  （V19 = `3`、V18 正向 `取代注记` = `6`，两行均已在册并注明缘由），本轮 v1.2 不重复改写、只在此
+  交叉确认；**不追改已落地的 canonical 文本**——:529 决策 29 正文一字未改（V18 机制句 post 仍 = `1`
+  已证）、取代注记在世（`2026-11-16 取代注记` post = `1`），历史可追溯性已由注记承载，:371 的字样
+  消失不构成账实矛盾。其余 V 项落地实跑全部达成（V4=2 / V5=2 / V6=2 / V7=1 / V8=3 / V9=0+正向2 /
+  V10=0+正向2 / V11=0+正向2 / V12=8 / V13=0 / V17=0+正向4），与 §7「落地实跑记录」逐字一致。
+
+# 契约面零改动主张的核对基准 = **已落地的**契约现文（非 pre 基线）
+$ grep -c 'pending_stop\|记录语境释放\|残余累积' docs/contracts/interface-contract.md → 0
+$ 读 §四 `listen` 节全文（落地文本）：只钉「会话边界语义 + 通道不因它关闭 + 两层含义分辨权在
+  网关（判据 = 累积器路由态 `accumulate` 才归档）+ discard→stop 顺序约束」四件，
+  **零字涉及「网关收到 stop 后何时释放会话态」**
+→ ∴ F-01 修订（释放时点分层 + pending_stop 保护）**契约面确实零改动**，主张成立且是对落地现文核的
+→ 但 `docs/architecture.md` **需要 canonical delta**：落地文本 §5.1.2 front 行仍逐字载有 F-01 的
+  缺陷句「② 残余累积态取消（`acc.cancel(reason="session_end")`，仅当 routing 仍为
+  `accumulate`/`pending_stop` 且本帧未被既有归档路径消费）」，§5.2 场景② 亦载「front 每语音会话
+  收尾（记录语境释放 + 残余累积取消）」——两处必须随 v1.2 改写，处方见下方「v1.2 canonical delta 处方」
+```
+
+**v1.2 canonical delta 处方（交主线程 packet-bound 落地；改 `docs/architecture.md` 五条 delta-1…5 + `docs/decisions/ADR.md` 一处计数同步 delta-6〔F-04 同族，v1.2 内补正轮新增〕；`docs/contracts/interface-contract.md` 零改动）**
+
+> 依据：arch-change.md「定稿载体」+ ARQ-261021「落地期实跑与预期有字节差异，以落地实跑为准覆写 §5 并留痕」。本 delta 是 F-01 的架构面表述修正，**不改任何已冻结的机制裁定**（三层解耦 / `listen stop` 复用 / 心跳 / 长重试 / 六触发源收口全部不动），只把「释放与取消的时点」写准。`docs/contracts/interface-contract.md` 与 `docs/decisions/ADR.md` **零改动**（依据见上方实跑：契约现文零涉释放时点；ADR-019 决策六条中无一条钉释放时点，第 ⑤ 条「front 的每会话态改由带内信号驱动收尾」在分层后仍逐字成立）。
+
+- **delta-1 · §5.1.2 front 网关行的「每语音会话收尾」句**：把 ①②③ 三件改写为**按 `acc.routing(sid)` 分层**——`chat` → 无动作（本连接记录语境标记为假时不注入任何帧）；`accumulate` 且 accum 非空 → 既有三式收尾单源 `_story_finish_session` 接管，收尾三件不得再动该会话（释放由整理回合完成后的既有三个 `_release_record_context` 调用点承载，261022 语义零改动）；**`pending_stop` → 受保护态，禁止当刻 cancel 与当刻释放，交既有 10s 巡检（`PENDING_STOP_SECONDS`）**，且该巡检的 pending 分支须补 `_release_record_context`（今天只 `release_pending` + 日志、不解除引擎抑制，旧模型靠随后断连兜底、常驻后兜底消失）；`accumulate` 且本帧未被归档路径消费（结构上不可达，防御性）→ 不 cancel，留既有卡壳引导/自动收尾 sweep（2 轮无回应 → 归档、不丢弃）。原「② 残余累积态取消」**撤销**。
+- **delta-2 · §5.1.2 同段的 ctx 边沿完整化句**：改为**分态处置**——离开 `story` 且本连接记录语境标记为真时，`pending_stop` 不动作（保护在途转写，交 10s 巡检）、`accumulate` 走 `cancel(reason="session_end_stale")` + 释放（= 常驻时代的 cancel-on-disconnect 同族兜底，沿 human 2026-10-21 裁定口径，不发明「弃录自动归档」新语义）、`chat` 但标记仍为真只释放（防御性）。
+- **delta-3 · §5.2 场景②「会话结束」段的括注**：「front 每语音会话收尾（记录语境释放 + 残余累积取消）」→「front 每语音会话收尾（**按累积器路由态分层释放**；`pending_stop` 受保护、交 10s 巡检释放，不在 stop 当刻取消——保录音态 KEY 收尾的归档不丢，S-F2.2 AC4 v1.65）」。
+- **delta-4 · §8.1 新增风险行 ④（= 表内编号 `18`，接 landed 的 15/16/17 之后）**：记录会话空累积结束后 ≤10s 的引擎抑制窗（accepted residual；触发需三件同时成立、后果可恢复无数据损坏；不得用提前释放消除——会复发 261022 孤儿幻听缺陷；重评触发 = 真机实测频繁命中 → 回 `/arch-change` 评估缩短 `PENDING_STOP_SECONDS`，改值须回 planner 重冻结）。若落地时 T3 改法 2 的 ④ 已随 v1.1 落地文本一并写入，则本条只需核对在世、不重复追加。
+- **delta-5 · §12 变更记录（两处，缺一不可——R3 F-04 补正）**：本 delta 随 v1.2 重冻落地时，在既有 `261115-arch-review-session-channel-resident` 行的「改动面」列做**两处**改动，不新增行、不改 changeId（同一批的落地修正，非新批）：
+  - **(a) 追加 F-01 回修子句**：「§5.1.2 / §5.2 场景② 的会话收尾分层表述修正（门 1 F-01 回修，v1.2）」。
+  - **(b) 同步 §8.1 计数子句（F-04 本体）**：该行原文（HEAD `7e4c44d8` 现文，逐字）为
+
+    ```
+    §8.1（风险 3 缓解句改写 + 风险 14 补注记 + 新增 15/16/17 三行）
+    ```
+
+    替换后完整句（逐字）：
+
+    ```
+    §8.1（风险 3 缓解句改写 + 风险 14 补注记 + 新增 15/16/17/18 四行）
+    ```
+
+    **理由**：delta-4 落地后 §8.1 实有 15/16/17/18 **四**行，若 §12 仍记「三行」即账实不符（与本批 T3「账实同步」主旨及 v1.1-F3 的计数纪律同族）。**(b) 与 delta-4 是同一笔账的两半，必须同批原子落**，只落 delta-4 不落 (b) = 制造新的账实漂移。
+  - **落地现态核对（起草者实跑，2026-11-16）**：主线程已在工作树落了本 delta 全部五条（`docs/architecture.md` 未提交态，`git diff --stat` = 4 insertions / 3 deletions），实测 `grep -cE '^\| 18 \|' docs/architecture.md` = **1**（delta-4 在世）、§8.1 行号集 = `13/14/15/16/17/18`、§12 该行的 §8.1 子句已从 HEAD 的「新增 15/16/17 三行」变为工作树的「新增 15/16/17/18 **四行**」（(b) 已在册）、F-01 回修子句在世（`grep -c '门 1 F-01 回修' docs/architecture.md` = 2：§8.1 行 18 与 §12 行各一）。∴ (a)(b) 对本轮而言是**核对项而非待落项**；本处方仍写全，使其可重放（重放/回滚后重落时不丢 (b)）。
+- **delta-6 · `docs/decisions/ADR.md` ADR-019「关联」件的同一计数表述（F-04 同族第二处；起草者本轮实跑新发现，reviewer 的 F-04 只点了 §12 一处）**：ADR-019 的「关联」件现文（`docs/decisions/ADR.md:167`，**已提交态、工作树干净**）逐字含
+
+    ```
+    §8.1 风险 3·14 + 新增 15/16/17 / §10 决策 21（方案二失效注记保持）
+    ```
+
+  替换后完整句（逐字）：
+
+    ```
+    §8.1 风险 3·14 + 新增 15/16/17/18 四行 / §10 决策 21（方案二失效注记保持）
+    ```
+
+  **理由**：delta-4 落地后 §8.1 实有 15/16/17/18 四行，ADR-019 关联件只列 `15/16/17` = 与 F-04 同一类的账实不符——**同一笔账现有三个落点**（§8.1 表本体 / §12 变更记录行 / ADR-019 关联件），三处必须同数，只修 §12 会留下 ADR 与 arch 两文件互相矛盾。**与 delta-4、delta-5(b) 同批原子落**。本 PROPOSAL 的 T6「关联」件已在本轮同步改为「新增 15/16/17/18 四行」，故 delta-6 落地后 PROPOSAL 与 canonical 字节一致。**ADR-019 其余四件（日期 / 决策六条 / 理由 / 备选与放弃原因）零改动**——其决策本体无一条钉释放时点或风险行数，F-01 与 F-04 均不触其裁定内容。据此更正 §2A 此前的笼统表述：「`docs/decisions/ADR.md` 零 delta」在 **F-01 面上成立**（决策本体不动），但在 **F-04 面上需 delta-6 这一处计数同步**——如实区分，不笼统声明 ADR 全件零改。
+
 ---
 
 ## 7. 评审记录
@@ -647,3 +790,77 @@ $ sed -n '126,130p' firmware/main/application.h           → 「…直接关音
 - **承重原文逐字对账（替代 cite-check 的 §2A 覆盖缺口）**：`git diff -U0 docs/contracts/interface-contract.md` 的删除行与 §2A 三处承重原文逐字一致（① §1.4 表行 `| \`end_session\` | 孩子说"拜拜/不用了" | 结束会话，回首页常显 |`；② 表后段 `两动作与 \`end_session\`/\`start_organizing\` 同属**网关决定类**……设备只消费执行后的权威积分视图。`；③ discard 句 `发送时机 = 设备关闭音频通道（断连）**之前**同连接先行发送（同一 TCP 有序，网关泵先消费 discard 再处理断连）`）；改后文本命中 V4–V13 正向断言。
 - **V 项落地实跑值**：V4=2 / V5=2 / V6=2 / V7=1（ADR-018 仍 1）/ V8=3（§12 行数 11）/ V9=0→2 / V10=0→2 / V11=0→2 / V12=8 / V13=0→3 / V17=0→4 / V18 mech=1、取代注记=6 / V19=3。**两处预期覆写**（以实跑为准，见 §5 V18/V19 行）：V18 正向配对 `取代注记` post = 6（原写 5，未计入 §12 行自述命中）；V19 `常驻重建` post = 3（原写 ≥4，§6.4 重写后不保留该措辞）。
 - **未落面（按 manifest 边界）**：`server/deploy/OPENCLAW_SYSTEM_PROMPT_CARRIER` 与 workspace `AGENTS.md` 的告别回合纪律属实现包 P2 部署面，不在本批 manifest 三件内；`docs/requirements.md:48` ⚠️ 对账注记按 §6 留根 1 由主线程另行路由。
+
+---
+
+### 门 1 回修记录（architect · 2026-11-16 · v1.1 → v1.2）
+
+> **性质声明**：本节是**作者的回修留痕**，不是判决——不含任何 verdict / GREEN / 通过语。F-01 是否闭合由 architect-reviewer 的**增量四查**裁定；v1.2 的 FROZEN 由主线程凭该裁定重冻（v1.1 的 FROZEN 效力已在 Status 行标为暂缓，凭据留痕未删）。
+
+- **触发**：门 1（拆包冻结门）打回 BLOCK，其中 **F-01 为设计级缺陷**，归 architect 修订；其余 findings 归主线程修拆包制品（taskpackage / roadmap / decision-coverage），本件未触碰。
+- **F-01 独立复核结论：成立，且比原判更严**。architect 未照单接受，逐条读码复核后确认冲突面是**三条**冻结 oracle 而非一条：`test_m4k1_story_cloud_link.acceptance.py:1891` SAO-A2（空累积 listen-stop 后 `assertNotEqual(routing,"chat")`）、同文件 `:849-882` M4K1-A2（真机序 ctx→stop→stt 断言 `len(files)==1`「恰一篇归档」）、SAO-A3（重复 stop 不双归档）。v1.1 的守卫「本帧未被既有归档路径消费时 cancel」对三者都是直接反例：`pending_stop`（录音态 KEY 收尾、accum 空、manual 形态转写约 1.7s 后到）与「引导态无内容」在 listen-stop 那一刻**可观状态完全相同**，任何 routing 级守卫都无法区分；当刻 `cancel` = `story.py:886-894` 的 `_sessions.pop` → 在途转写不可恢复 → 三式收尾之一的归档丢失，违反 S-F2.2 AC4 v1.65。复核命令与引据 verbatim 见「起草期实跑记录 ⑦」。
+- **修订中识别的承重缺口（原判未点出、本轮回修补上）**：`_story_timeout_sweep_body:1254-1257` 的 pending 超时分支今天只调 `release_pending` + 记日志，**不调 `_release_record_context`**（全文该函数调用点仅 `:1716/:1727/:1747`，三处全在 `_story_finish_session` 内）。旧模型下这不是缺陷——设备随后断连，引擎侧 `_kidpal_record_context` 随连接消失；**L1 常驻后兜底消失**，pending 超时只回 routing 不解除引擎抑制 = 该连接后续问答全部哑火。∴ 把释放挂到 10s 巡检**必须同时在该分支新增释放调用**（腿集沿 `_story_auto_finish:1353` 的 `_session_legs(sid) or list(_alert_legs)` 形态），这是 front 侧唯一新增释放点，也是本轮修订的承重半——只做「排除 pending_stop」而不补这一处，等于把哑火从 0s 推迟到 10s 后永久化。
+- **修订落点（六处，全在 PROPOSAL 与 package-split；canonical 不由 architect 写，其落地现态见下条与 delta-5 的「落地现态核对」）**：① T2 改法 2 重写为按 `acc.routing` 分层的五行处置表 + 撤销原「②残余累积取消」+ F-01 修订依据段 + 释放点穷尽枚举 + ctx 边沿分态 + accepted residual 申报；② T2 改法 3（§5.2 场景②④ 表述）同步；③ T3 改法 2 风险行 3→4（新增 ≤10s 抑制窗）；④ §2A impact 新增「v1.2 修订的契约影响 = 零改动」专条（三条依据）+ 冻结齿段补三条 must-stay-green 与两条「断言保绿但 docstring 前提改变」的显式处置（F-03）+ `story.py` 两纯逻辑缝零改动声明；⑤ §2A validationPlan 层 2 改写 + §3 sweep 新增三行（`test_m4k1_story_cloud_link` / `test_m4k3_record_session_live` / `story.py`）并把 `front_app.py` 改为五缝；⑥ §6 新增留根 9（≤10s 窗 + 重评触发）。T7 改动面与 §3 架构行的「§8.1 行数」同步 3→4。
+- **未改（明确声明，供增量四查收窄范围）**：改法集方向（三层解耦 / `listen stop` 复用而非新帧 / front 心跳保活 / 封顶长跑 + 人工意向位 / 六触发源统一收口）、T1、T4、T5、T6、§4 三条 OQ（human 已裁 (a)）、§2A `proposedContractDiff` 四处、`landing-manifest` 三件、V1–V19 全部命令与 pre 值。
+- **canonical delta 需求（交主线程，architect 不写 canonical）**：`docs/architecture.md` 需按 §2 文末「v1.2 canonical delta 处方」五条改写（delta-1 §5.1.2 收尾三件改分层 / delta-2 ctx 边沿分态 / delta-3 §5.2 场景② 括注 / delta-4 §8.1 风险行 ④〔= 表内编号 18〕/ delta-5 §12 行内追加 + §8.1 计数子句同步、不新增行不改 changeId）。`docs/contracts/interface-contract.md` **零 delta**——依据：已落地的契约 §四 `listen` 节只钉「会话边界语义 / 通道不因它关闭 / 两层含义分辨权在网关（判据 = 累积器路由态 `accumulate` 才归档）/ discard→stop 顺序」四件，`grep -c 'pending_stop|记录语境释放|残余累积'` → **0**，零字涉及释放时点。`docs/decisions/ADR.md`：**就 F-01 而言零 delta**（ADR-019 决策六条无一条钉释放时点，第 ⑤ 条「front 的每会话态改由带内信号驱动收尾」在分层后仍逐字成立）；**但就 F-04 而言需 delta-6 一处计数同步**（ADR-019「关联」件的 `§8.1 风险 3·14 + 新增 15/16/17` → `… + 新增 15/16/17/18 四行`，见 delta-6）——本句在 F-04 补正轮据此收窄，原笼统写「ADR 零 delta」不再成立。
+- **诚实申报（起草者自纠）**：v1.2 修订发生在 canonical **已落地之后**（commit `87dbf775` + verdict PASS `14075150` + INDEX `7e4c44d8`），故 §5 的 pre 列已是历史基线。本轮实跑核对了全部 V 项现态：除 V18 正向（`取代注记` 6，原预期 5）与 V19（`常驻重建` 3，原预期 ≥4）两处已由主线程落地记录按 ARQ-261021 覆写在册外，其余全部达成；本轮不重复改写 §5，只在「起草期实跑记录 ⑦」交叉确认。**v1.1 起草期未预见到「canonical 先落、设计缺陷后现」这一序，故 v1.1 的 §5 是按 pre→post 形态写的**——该形态在本序下依然可用（post 值即落地实跑值），无需重构。
+- **机械门（v1.2 修订后复跑）**：`landing-fidelity-check --preflight` = `ok:true` / `section2BodyFound:true` / `anchorCount:3` / `anchorUnion` 三件不变 / `findings:[]` / `advisories:[]`；`spec-anchor-check` = `ok:true` / `errors:[]`；`contract-lint` = `ok:true` / 唯一既有 warning 未新增。文件自检：U+FFFD 替换符 0、围栏行偶数配对、`### T` 锚 7、`目标文件` 锚行 7（不加粗、行首、注记内无路径 token）。
+- **同步制品**：`package-split.md` 已按本轮修订改 §2.3 front 要点 2/3、§2.4 SCRF-B2（含新增 B2b）/B4（含新增 B4b）/B6、§4.3 真机 A5 判据时点精确化；P1 的 changeManifest 未变（`front_app.py` 与新增 py 验收本就在内），但 P1 的 front 侧改动要点**净增一处**（sweep pending 分支补释放调用）——riskTier 维持 high 不变（该处属既有 high 判定中的「记录语境抑制链单点」，未引入新面）。
+
+---
+
+### R3 增量复核（architect-reviewer · 2026-11-16 · 仅核 F-01 闭合 + 修订新矛盾 + delta 处方；不重跑全量四查）
+
+**verdict: BLOCK(F-04)** —— F-01（设计级缺陷）**已闭合**：分层表 + sweep 释放点成立、ctx 边沿覆盖「另一扇门」、契约零改动成立、accepted residual 可取。唯一阻断 = **F-04**：v1.2 canonical delta 处方的 delta-5 未同步 §8.1 行数（一处一行的补正即可，非设计回炉）。
+
+**F-01 闭合判定：CLOSED**
+
+- v1.1 病根「listen stop 当刻 managed cancel（残余累积态取消）」确会 pop `pending_stop` 态、丢在途转写、使三条冻结 oracle 变红：`test_m4k1_story_cloud_link.acceptance.py:1891` SAO-A2（空累积 stop 后 `assertNotEqual(routing,"chat")`）、同文件 `:849-882` M4K1-A2（真机序 ctx→stop→stt 断言 `len(files)==1`「恰一篇归档」）、SAO-A3（重复 stop 不双归档）。v1.2 **撤销该动作**（:128），改五行分层表（:120-126）：`pending_stop` 受保护（禁止当刻 cancel / 释放），交 10s 巡检。
+- **承重缺口补齐（独立读码确认）**：`front_app.py:1254-1257` pending 超时分支只 `release_pending`（`story.py:874-884` 只把 routing 打回 chat），**不调 `_release_record_context`**；该函数全文三个调用点 `:1716/:1727/:1747` 全在 `_story_finish_session` 内。故 pending 超时路径 = 唯一绕过释放的收尾路径，v1.2 在该分支补 `_release_record_context(sid, _session_legs(sid) or list(_alert_legs))`（腿集沿 `_story_auto_finish:1353`；`_session_legs:2351` + `_alert_legs` 兜底）——必要（常驻后断连兜底消失、引擎 `_kidpal_record_context` 不随超时清除）且充分（覆盖该分支、幂等）。
+- **「另一扇门」覆盖**：① 异常无 stop（崩溃）→ ctx 边沿分态兜底（delta-2 / :131）；② discard 正常路径（`kidpal_story_discard`→`acc.cancel`（`story.py:886-894` pop）→routing=chat→listen stop）→ 五行表 Row 1「chat」当刻无动作（正确，会话已 cancel、无可归档），释放由**下一会话 `ctx(home)`（`application.cc:1345`，先于 `:1351` audio）**触发 ctx 边沿「chat 但标记真 → 只释放」即时完成（无 10s 窗）。∴ discard 不哑火。
+- **story.py 零改动成立**：修复只加 front_app.py 调用点，`cancel` / `release_pending` / `PENDING_STOP_SECONDS=10.0`（`story.py:75`）逐字不动，核。
+
+**accepted residual 意见：可接受（留根 9 + §8.1 风险行 ④）**
+
+- 窗口真实存在且机制我核过：`pending_stop` 期内 `acc.routing==pending_stop`，ctx 边沿分态对 pending_stop「不释放」（保护在途转写），故 ≤10s 内换会话 + 立刻开口的首句确会被引擎 `_kidpal_record_context` 抑制——与作者申报一致。
+- 可接受理由：窗口上界 = **冻结常量** `PENDING_STOP_SECONDS=10.0`；触发需三件同时成立（空 accum 结束 + 10s 内换会话 + 立刻开口）；后果 = 一次话语被抑制、再按 KEY 即恢复、**无数据损坏 / 无错归档**；且**不得用提前释放消除**（会复发 261022 孤儿幻听缺陷 `_issue_finish_downlink:1661-1665` KPLOG006 实录），属取小害的正当取舍。登记留根 9 + §8.1 风险行 + 真机 A5(a)/(b) 分判据齐备。**建议保留。**
+
+**delta 处方准确性：delta-1/2/3 恰覆盖缺陷句；F-04 在 delta-5**
+
+- F-01 缺陷在 landed canonical 两处：`§5.1.2 :198`（收尾三件 ①②③ + ctx 边沿句）与 `§5.2 :227`（场景② 括注）。delta-1（收尾三件分层）、delta-2（ctx 边沿分态）覆盖 `:198`，delta-3 覆盖 `:227`——恰、不多不少（`grep '残余累积|记录语境释放'` 命中仅 `:198/:227`，无遗漏点）。
+- **F-04**：delta-4 声明「§8.1 **新增风险行 ④**」（landed §8.1 现为 15/16/17 三行 → 落地后 15/16/17/**18** 四行；`grep -cE '^\| 1[5-9] \|'` = 3，无 18），但 delta-5（§12 行内追加）只追加「§5.1.2 / §5.2 场景② 的会话收尾分层表述修正」，**未把 §12 既有行的 `新增 15/16/17 三行` 改为 `四行`**（landed `§12 :565` 现文逐字 = `新增 15/16/17 三行`）。若按此处方落地 = §12 记「三行」而 §8.1 实有 15/16/17/18 四行 → **账实不符**（与本批 T3 主旨及 v1.1-F3 计数纪律同族）。
+  - **修法（一处一行）**：delta-5 追加一句，把 §12 该行 §8.1 子句 `新增 15/16/17 三行` → `新增 15/16/17/18 四行`（或等价「新增四行」），与 delta-4 一致。
+
+**修订新矛盾（除 F-04 外）：无。** 分层表与既有 `_story_timeout_sweep` 10s（`story.py:1255` `pending_timed_out_sessions` 默认 `PENDING_STOP_SECONDS`）、`_story_auto_finish`（2 轮无回应 → 归档不丢弃，Row 5 承载）、discard→stop 有序不归档（:116）、S-F1.4（提醒走 `kidpal_speak` 不过 `chat()`）、M4K3-A7（新 sid 标记假 → ctx 非 story 零帧，仍绿）均无冲突。
+
+**§7「门 1 回修记录」越界核**：非 verdict——`:770` 明示「不是判决——不含任何 verdict / GREEN / 通过语」，判决权归本四查，未越界。
+
+**判档 / 四分类 / Track A：不变。** 主路径（轻路径 ①③④ 三否）；`ACCOMPANIES_SPEC_CHANGE` 主 + `SPEC_CONTRACT_DRIFT` 次（F-01 为 front 实现侧收尾时点修正，契约零改动，不引入第三类）；Track A 否（无方向级分叉）。
+
+**GREEN 条件**：F-04 一处一行补正（delta-5 加「§8.1 四行」）落地即全数闭合——届时 F-01 + F-04 均 GREEN，凭本 R3 + 该补正重冻。**FROZEN 归 human / 主线程，本判官不代冻。**
+
+---
+
+### 门 1 F-04 回修记录（architect · 2026-11-16 · v1.2 内一处补正，不另起版本号）
+
+> **性质声明**：作者回修留痕，非判决；不含 verdict / GREEN / 通过语。F-04 是否闭合由 architect-reviewer 一句话确认。
+
+- **F-04 独立复核：成立**。实跑 `git show HEAD:docs/architecture.md` 与工作树对照——HEAD（`7e4c44d8`）的 §12 该行 §8.1 子句逐字为 `§8.1（风险 3 缓解句改写 + 风险 14 补注记 + 新增 15/16/17 三行）`，而 §8.1 表内行号集为 `13/14/15/16/17`（`grep -cE '^\| 18 \|'` = 0）。∴ 若按 v1.2 原 delta-5 处方落地（只追加 F-01 回修子句）而落 delta-4（新增行 18），§12 记「三行」而 §8.1 实有四行 = 账实不符，与本批 T3「账实同步」主旨及 v1.1-F3 的计数纪律同族。reviewer 判断正确。
+- **修法（按 finding 指定，一处为主 + 两处同族计数表述同步）**：
+  - **delta-5 处方正文**（承重件）：拆为 (a)(b) 两处，(b) = §8.1 计数子句 `新增 15/16/17 三行` → `新增 15/16/17/18 四行`，并按模板「承重 landing 指令必须原文引用钉死并给出替换后完整句」的义务，把**替换前 / 替换后两句逐字**用围栏块给出（不用「那句」「同上」类两读指称）；补一句「(b) 与 delta-4 是同一笔账的两半，必须同批原子落」，防只落一半制造新漂移。
+  - **delta-4 处方正文**：把「新增风险行 ④」显式钉为「= 表内编号 `18`，接 landed 的 15/16/17 之后」，使 delta-5(b) 的 `15/16/17/18` 有唯一来源、不靠读者推算。
+  - **T7 改法 + §3 sweep 架构行 + T6「关联」件**（同一计数表述，coordinator 授权同步）：T7 的 §12 行处方由「新增四行」精确为「新增 15/16/17/18 四行」（与 delta-5(b) 字节可对齐）；§3 架构行由「§8.1 五行（… / 新增四行）」改为「§8.1 六行（风险 3 缓解句 / 风险 14 注记 / 新增 15/16/17/18 四行）」——原「五行」是 v1.1 的 2+3 计数，v1.2 增一行后应为 2+4=6，属同族算术漂移，顺手校正；T6 的 ADR-019「关联」件处方由「新增三行」改为「新增 15/16/17/18 四行」（= delta-6 的 PROPOSAL 侧对应件）。
+  - **F-04 同族第二处（起草者本轮实跑新发现，超出 reviewer 所指范围，如实上报）**：`docs/decisions/ADR.md:167` ADR-019 的「关联」件**已提交态**现文含 `§8.1 风险 3·14 + 新增 15/16/17`，delta-4 落地后应为四行——与 §12 同类账实不符，且它是**第三个落点**（§8.1 表本体 / §12 行 / ADR 关联件），只修 §12 会留下 ADR 与 arch 互相矛盾。已新增 **delta-6** 处方（含替换前/后逐字围栏块）交主线程与 delta-4、delta-5(b) 同批原子落；同时收窄 §2A 与「门 1 回修记录」里「ADR 零 delta」的笼统表述为「就 F-01 零 delta、就 F-04 需 delta-6 一处计数同步」。
+- **落地现态（起草者实跑核对，诚实申报一处时序事实）**：本轮修订期间主线程**已在工作树落了 v1.2 canonical delta 全部五条**（`docs/architecture.md` 未提交态，`git diff --stat` = 4 insertions / 3 deletions）——实测 §8.1 行号集已为 `13/14/15/16/17/18`、§12 该行 §8.1 子句已由 HEAD 的「新增 15/16/17 三行」变为工作树的「新增 15/16/17/18 **四行**」、`grep -c '门 1 F-01 回修'` = 2（§8.1 行 18 与 §12 行各一）、F-01 缺陷句 `acc.cancel(reason="session_end")` 残留 = **0**。∴ **F-04 所指的账实不符在 canonical 现态已不存在**（主线程落地时已带上 (b)），本轮回修的实际作用面是**把 PROPOSAL 的处方文本补齐到与已落现态一致、且可重放**（回滚后重落不丢 (b)）。这一点如实记，不把它写成「architect 修好了 canonical」——canonical 全程由主线程写，architect 零写入（`git status` 可证：本件与 `package-split.md` 之外，architect 本轮无其它改动）。
+- **未改**：T1–T7 的机制裁定、§2A `proposedContractDiff` 四处、`landing-manifest` 三件、§4 三条 OQ、V1–V19、delta-1/2/3 处方正文、`package-split.md` 全文（F-04 不涉拆包面）。
+- **机械门（F-04 补正后复跑）**：`landing-fidelity-check --preflight` = `ok:true` / `anchorCount:3` / `anchorUnion` 三件不变 / `findings:[]` / `advisories:[]`；`spec-anchor-check` = `ok:true` / `errors:[]`；`contract-lint` = `ok:true` / 唯一既有 warning 未新增。文件自检：U+FFFD 0、围栏行偶数配对（新增 2 个围栏块承载 delta-5(b) 的替换前/后逐字句）、`### T` 锚 7、`目标文件` 锚行 7。
+
+---
+
+### R4 · F-04 闭合确认（architect-reviewer · 2026-11-16 · 一句话闭合 + §7 越界判定）
+
+**verdict: GREEN（F-04 闭合）** —— F-01 已闭合（R3），F-04 补正到位：delta-5(a)(b) 拆分 + 替换前/后逐字围栏 + delta-4 钉「= 表内编号 `18`」+ T7/§3/T6 三处计数同步。canonical 三落点同数：`docs/architecture.md:493` §8.1 行 18（风险 18）/ `:566` §12「§8.1（… + 新增 15/16/17/18 四行）」/ `docs/decisions/ADR.md:167`「§8.1 风险 3·14 + 新增 15/16/17/18」——`grep -rn '15/16/17' docs/` 仅此两文件命中、**无第四处**，三处均表「四行」。活处方无残留错误「三行/五行」：余者仅为原文引证 fence（:692）、阐释句（:701）、§5.1.1 无关项（:319 的「§5.1.1 三行」）、或「**五行处置表**」表名（T2 分层表恰 5 行，非 §8.1 计数）；§3 旧「§8.1 五行」算术漂移已校为「六行」（2+4，:319 实测）。
+
+**附带（非阻断，一处词差）**：delta-6 替换围栏句（:712）作「…`新增 15/16/17/18 四行`」，而 canonical `ADR.md:167` 落地作「…`新增 15/16/17/18`」（无「四行」——与 ADR 原「新增 15/16/17」range-only 风格一致）。二者语义同（均四行），唯「四行」一词有无之差。依 ARQ-261021「落地实跑为准」，建议把 delta-6 围栏句对齐为「…`18`」（或反向给 ADR 补「四行」），使 PROPOSAL 处方与 canonical 字节一致、可重放；三处「同数」已在语义上满足，故不阻断。
+
+**§7 越界判定（architect 触碰本判官 append-only 段）**：核——R3 段「GREEN 条件」整行现文（:840）与本判官原文**逐字一致**：`**GREEN 条件**：F-04 一处一行补正（delta-5 加「§8.1 四行」）落地即全数闭合——届时 F-01 + F-04 均 GREEN，凭本 R3 + 该补正重冻。**FROZEN 归 human / 主线程，本判官不代冻。**`，拼接复原无字节偏差（「归 hu」+「man」= human 无缝），**内容无需再改**。**但触碰本身越界**：§7 的 R1/R2/R3 是判官 append-only 区，architect / 主线程不得直接删改（作者≠审者、评审记录不改既有文字）；本次净变更为零、不追责，登记此判定——后续对本判官记录的任何修改须经判官本人，不直改。**FROZEN 归 human / 主线程，本判官不代冻。**
