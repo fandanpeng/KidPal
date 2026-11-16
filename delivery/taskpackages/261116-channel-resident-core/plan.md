@@ -55,15 +55,15 @@ mergeOrder: 77
 
 # demo 证据形态（与 roadmap 一致）
 
-- host runner + server pytest：SCR-A1–A7 与 SCRF-B1–B5 的 RED→GREEN 和变异证据；四个收尾点负锚 / 五个真拆通道正锚 / discard→stop 有序不归档为承重齿。
+- host runner + server pytest：SCR-A1–A7 与 SCRF-B1–B6（含 B2b/B4b）的 RED→GREEN 和变异证据；四个收尾点负锚 / 五个真拆通道正锚 / discard→stop 有序不归档为承重齿。
 - device build：本轮改动的编译面（`application.cc` / `application.h` / 验收件）通过；`protocol.cc` 若经扩通道纳入则一并构建。
 - 一轮真机轮 A（human 持板，front 由 agent 部署）：A1–A13 全绿（A8 录音态提醒排队例外与 A9 查字窗关闭路径为 package-split 明列回归项；A11–A13 为追加项），三源日志（设备 KPLOG / front systemd / 引擎 docker）互证；证据落本包 `current/`。
 # 验收方向（acceptance-author 细化，非冻结）
 
 > 本节是拆包期的**断言方向与承重判据**，不是冻结验收；`acceptance` / `acceptanceTestsFile` / `redBaselineResult` 在 taskpackage 中保持空骨架，由 Pod 内 acceptance-author 唯一产出并冻结。
 
-- SCR-A1: 六触发源收口——四个收尾点函数区（Application::CloseAudioChannel / HandleToggleChatEvent Listening 分支 / HandleEndVoiceSessionEvent / WakeWordInvoke Listening 分支）负锚 = 区内 `CloseAudioChannel(` 命中 0、`ScheduleResidentRebuild(` 命中 0、`SetPowerSaveLevel(PowerSaveLevel::LOW_POWER)` 命中 0；正锚 = 区内 `EndVoiceSession(` 或 `MAIN_EVENT_END_VOICE_SESSION` 命中 ≥ 1。回引 PROPOSAL T2 改法 1、ADR-019 ②。设计态红 = 四条收尾路径仍各自 CloseAudioChannel + LOW_POWER + ScheduleResidentRebuild。
-- SCR-A2: 统一处理器动作序——HandleEndVoiceSessionEvent 区内 `SendStopListening()` 恰 1、`ResetDecoder()` 恰 1 且在 Speaking 分支内；三态门（Connecting/Listening/Speaking）、`auto_connect_in_flight_` 守卫、`!protocol_` 早退三件逐字在世（261024 语义零偏移）。回引 PROPOSAL T2、261024 overlay_close 时序自证。
+- SCR-A1: 四收尾点收口（六触发源之四，余二 = SCR-A5 的 60s 与 P2 SEI-A1 的云端 end_session）——四个收尾点函数区（Application::CloseAudioChannel / HandleToggleChatEvent Listening 分支 / HandleEndVoiceSessionEvent / WakeWordInvoke Listening 分支）负锚 = 区内 `CloseAudioChannel(` 命中 0、`ScheduleResidentRebuild(` 命中 0、`SetPowerSaveLevel(PowerSaveLevel::LOW_POWER)` 命中 0；正锚 = 区内 `EndVoiceSession(` 或 `MAIN_EVENT_END_VOICE_SESSION` 命中 ≥ 1。回引 PROPOSAL T2 改法 1、ADR-019 ②。设计态红 = 四条收尾路径仍各自 CloseAudioChannel + LOW_POWER + ScheduleResidentRebuild。
+- SCR-A2: 统一处理器动作序——HandleEndVoiceSessionEvent 区内 `SendStopListening()` 恰 1、`ResetDecoder()` 恰 1 且在 Speaking 分支内；三态门（Connecting/Listening/Speaking）、`auto_connect_in_flight_` 守卫、`!protocol_` 早退三件逐字在世（261024 语义零偏移；其中 `auto_connect_in_flight_` 守卫一项由 P2 SEI-A4 重锚，见跨包事实节）。回引 PROPOSAL T2、261024 overlay_close 时序自证。
 - SCR-A3: 五个真拆通道点保绿（must-stay-green）——HandleNetworkDisconnectedEvent / Reboot / UpgradeFirmware / SetAecMode / ResetProtocol 五区各含 `CloseAudioChannel()` 恰 1。回引 PROPOSAL T2 正负锚分界。
 - SCR-A4: Idle 分支八件清位链全保留——HandleStateChangedEvent 的 kDeviceStateIdle case 内八个符号各命中 ≥ 1（EnableVoiceProcessing(false) / EnableWakeWordDetection(true) / kidpal_story_session_end / KidpalStorySessionEndSync / kidpal_keybar_scene_reset 或 front_is_reminder 豁免判据 / kidpal_render_node_voice_end / kidpal_story_session_ctx_set(0) / RaiseReminderQueue）。回引 PROPOSAL T2 不变量、OQ3=c、S-F1.4。
 - SCR-A5: 60s 超时 producer——CLOCK_TICK 消费区内命名常量（值 60）+ `kDeviceStateListening` 判据 + `kidpal_story_session_ctx_active()` 记录语境豁免判据 + EndVoiceSession 投递四件在世；VAD 说话沿重置在 MAIN_EVENT_VAD_CHANGE 区内。回引 requirements §2.1 ①、PROPOSAL T2/T3。设计态红 = 生产零 timer producer。

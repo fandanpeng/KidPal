@@ -52,7 +52,7 @@
     "KRC-E1: Pod 内冻结验收覆盖 SCR-A1–A7 与 SCRF-B1–B6 全部断言，红基线与变异证据齐全；四个收尾点负锚与五个真拆通道正锚为 must-stay-green 对照。",
     "KRC-E2: 既有冻结齿重写留痕——boot_auto_connect.acceptance.c 的 RC-B2 / RC-A3 整条退役、K6-A1/A3/A5 保绿；voice_round_ui.acceptance.c 的 local_close_settle src token 族保绿、同区三件套断言按 SCR-A1 负锚重写；record_session_live.acceptance.c 的录音丢弃面改为「discard 先、会话结束事件后」有序断言。每条列出「旧钉什么 → 新钉什么 → 为什么」，不得静默改齿。",
     "KRC-E3: 心跳部署极性按 PROPOSAL §2A 执行——代码默认开、`KIDPAL_CHANNEL_HEARTBEAT=0` 为回滚开关；验收覆盖「默认发」与「=0 不发」两态。",
-    "KRC-E4: 一轮真机轮 A（human 持板）全绿，编号沿 package-split §4.3 A1–A13：A1 温通道进聆听 ≤0.82s 对照 KPLOG029；A2 连续 5 次「结束→再说话」零冷通道零 burst（front bootstrap 六件每连接恰一次）；A3 闲置 >5 分钟首按键一次进聆听、SD 日志有心跳痕迹且零 Unknown message type；A4 会话间隙提醒必达且真出声（S-F1.4 + ADR-003 承重实证）；A5 记录会话全链四式（引导态 KEY 结束无归档；间隔 >10s 下一次问答必须正常应答、间隔 <10s 允许首次话语被抑制 = accepted residual 但再按一次即恢复且 ≤10s 释放已发生 / 录音态 KEY 收尾归档+start_organizing+story_text+盖章 / 录音态 BOOT 丢弃不入册 / 连续 2 轮引导无回应自动收尾）；A6 60s 静默自动关闭真机首次发生；A7 连续讲 >90s 不被误收；A8 录音态提醒排队例外（排队不弹 → 收尾回 Idle 立刻弹）；A9 查字窗关闭路径（播报完不回聆听、查字窗驻留到按键或 5 分钟）；A10 24h 日切（测试环境临时调小 close_connection_no_voice_time 复现，不改生产值）；A11 SD 日志无 Unknown message type 噪声；A12 RC-B6 省电档观测口径按 §6.4 重定；A13 front/固件回滚剧本可执行（两半一起回滚）。",
+    "KRC-E4: 一轮真机轮 A（human 持板）全绿，A1–A10 沿 package-split §4.3；A11–A13 为包内追加（SD 噪声 / RC-B6 / 回滚剧本）：A1 温通道进聆听 ≤0.82s 对照 KPLOG029；A2 连续 5 次「结束→再说话」零冷通道零 burst（front bootstrap 六件每连接恰一次）；A3 闲置 >5 分钟首按键一次进聆听、SD 日志有心跳痕迹且零 Unknown message type；A4 会话间隙提醒必达且真出声（S-F1.4 + ADR-003 承重实证）；A5 记录会话全链四式（引导态 KEY 结束无归档；间隔 >10s 下一次问答必须正常应答、间隔 <10s 允许首次话语被抑制 = accepted residual 但再按一次即恢复且 ≤10s 释放已发生 / 录音态 KEY 收尾归档+start_organizing+story_text+盖章 / 录音态 BOOT 丢弃不入册 / 连续 2 轮引导无回应自动收尾）；A6 60s 静默自动关闭真机首次发生；A7 连续讲 >90s 不被误收；A8 录音态提醒排队例外（排队不弹 → 收尾回 Idle 立刻弹）；A9 查字窗关闭路径（播报完不回聆听、查字窗驻留到按键或 5 分钟）；A10 24h 日切（测试环境临时调小 close_connection_no_voice_time 复现，不改生产值）；A11 SD 日志无 Unknown message type 噪声；A12 RC-B6 省电档观测口径按 §6.4 重定；A13 front/固件回滚剧本可执行（两半一起回滚）。",
     "KRC-E5: 真机与离线证据互证——设备 KPLOG、front systemd 日志、引擎 docker logs 三源对齐；证据落本包 current/。"
   ],
   "iterationBudget": 3,
@@ -104,7 +104,7 @@
       },
       {
         "path": "firmware/main/protocols/protocol.cc",
-        "symbol": "SendStopListening"
+        "symbol": "Protocol::SendStopListening"
       }
     ],
     "exempt": ""
@@ -246,12 +246,12 @@
     },
     {
       "decision": "C7 · 引擎 24h 兜底为唯一剩余重建窗口；引擎代码与 config 零改动",
-      "summary": "铁律：engine-patch/** 与 ECS core/** 零 diff；24h 日切形态观测由轮 B 承接（跨包转手）。",
+      "summary": "铁律：engine-patch/** 与 ECS core/** 零 diff；24h 日切形态观测 = 轮 A A10（测试环境临时调小 close_connection_no_voice_time，不改生产值）。",
       "sourceRefs": [
         "docs/architecture.md#§6.4",
         "docs/decisions/ADR.md#ADR-019"
       ],
-      "landsIn": "exitCriteria:KRC-E2"
+      "landsIn": "exitCriteria:KRC-E4"
     },
     {
       "decision": "C8 · 共享短上下文不变（ADR-015 持久会话）",

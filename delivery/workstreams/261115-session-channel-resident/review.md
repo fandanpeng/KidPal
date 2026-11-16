@@ -41,3 +41,22 @@
 2. F-02/F-03/F-04 与 F-05–F-08 在同一修正轮落盘（F-04 与 F-01 耦合，待 F-01 裁定后一次改完）。
 3. F-09 交 human 裁；F-10 顺手修。
 4. 修正后走聚焦复检（沿 261103 门 1 两轮先例）：逐项闭环 + `--check-launch` 的 `launchPreconditions` 非 null + 两包 `path-not-on-disk` warnings 归零。
+## 门 1 · 聚焦复检（2026-11-16，reviewer = architect，只读零写入，HEAD `03d14cb0`）
+
+**verdict：BLOCK(N-01)** —— 首轮十条 findings 实质全部闭环（F-01…F-08 CLOSED，F-09/F-10 各余一个子项），复检新跑出一条机器 fail-loud：P1 `crossEnd` 的对端符号 `SendStopListening` 解析失败（`protocol.cc:88` 是限定名 `Protocol::SendStopListening`，而解析式左邻排除 `:`），`brief-inputs.mjs` 不产 input-brief，P1 planner Step 7 会硬停。修法 = symbol 改限定名（一个 token，已实测修正候选可解析）。
+
+- **F-01 CLOSED**：v1.2 FROZEN（R3 F-01 CLOSED → R4 GREEN）+ canonical delta（arch §5.1.2/§5.2/§8.1 行 18/§12、ADR-019）+ 拆包侧三层防线（P1 `plan.md` 收尾分层 + SCRF-B2/B2b/B4/B4b/B6 + KRC-E4 A5(a)/(b)）一致、活制品零「当刻 cancel pending_stop」残留。
+- **F-02 CLOSED**：workstream `decision-coverage.json` 四条 LP；`--check-launch` 两包 `launchPreconditions` 非 null，P1 pending 只余「门 1 GREEN + human 过目」。
+- **F-03 CLOSED**：P1 补五份 server 冻结件 + 逐条处置。
+- **F-04 CLOSED**：两包 `acceptance`/`acceptanceTestsFile`/`redBaselineResult` 回空骨架，20 条方向移入 plan.md「验收方向（非冻结）」节，`path-not-on-disk` warnings 归零。
+- **F-05 CLOSED**：「同一批函数内改不相交行段」+ SCR-A2 重锚转手项两面登记。
+- **F-06 CLOSED**：P1 A1–A13 / P2 B1–B8 与 `package-split.md §4.3` 对齐，workstream §5 的 `B4+B5` debt 凭据锚恢复可用。
+- **F-07 CLOSED**：C7/C8 已入 P1 `decisionCoverage`。
+- **F-08 CLOSED（机械证明）**：owner/carriedBy 归正后，`brief-inputs --dry-run` 的 P2 ⑤ 跨包承接面 7 条含「end_session 必须收口到 P1 处理器」。
+- **F-09 余件**：workstream 投影件未再生（已随修正轮修：`planning-index.mjs` 后 INDEX 与 index.jsonl 均含本 workstream）。
+- **F-10 余件**：SCR-A1 标题未收窄（已随修正轮修）。
+- **N-01（BLOCKING）**：`261116/taskpackage.json` `crossEnd` 的 `SendStopListening` → `Protocol::SendStopListening`（已修，`brief-inputs --dry-run` 两包均产出）。
+- **N-02…N-06（MINOR/NIT）**：C5 summary 误粘、C7 landsIn 与 summary、`plan.md` 验收编号区间、KRC-E4 编号来源句、LP3 evidence 未含修正轮 commit、双括号句——均随修正轮修。
+- 机械面：两包 `--check-launch ok:true`、`taskpackage-required-check` Draft 态 missing 三件 + `warnings:[]` + `coverageErrors:[]`、`render-roadmap` 幂等、PROPOSAL pin 复算一致、`settings-lint` 0 RED。
+
+> **编号消歧注记**：本文件「门 1 F-01…F-10」是**拆包冻结门**的 findings 编号；`delivery/review/261115-arch-review-session-channel-resident/PROPOSAL.md §7` 的 R3/R4 用的是**评审 lane** 自己的 F 编号（其「F-04」= delta-5 的「§8.1 四行」补正）。两套编号不同源，阅读时按「门 1 F-xx」/「R3 F-xx」区分。
