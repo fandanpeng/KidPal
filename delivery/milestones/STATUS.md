@@ -6,8 +6,8 @@
 
 ## 完工比例
 
-- **已验收**：0%（0 / 7 里程碑 accepted 及以后）
-- **在途预计**：34.3%（按 state 阶段加权：planning 0 · in_delivery .4 · qa .7 · ready .9 · accepted 1）
+- **已验收**：0%（0 / 8 里程碑 accepted 及以后）
+- **在途预计**：30%（按 state 阶段加权：planning 0 · in_delivery .4 · qa .7 · ready .9 · accepted 1）
 
 ## 里程碑基线
 
@@ -52,4 +52,10 @@
 | 里程碑 | 状态 | 健康 | 下一步 | 验收依据 |
 |---|---|---|---|---|
 | 星星积分本 + 故事封皮导航（金币账本 + 四页循环，requirements §6 阶段五） | `in_delivery` | green | workstream 261103-star-points-story-cover 七包 launch 期（K0a 四页骨架 ∥ K0 e2e spike 并行在跑，mergeOrder 70/71，K0a 先合；之后 K1→K2→K3→K4→K5 WIP=1 串行）。K0a 实现+验收全绿（host 273/3 存量、final verify r4 全绿、变异 20 条敏感回填），integrator 收口期；K0 等本包 merged 后重取基线追加共享 CMakeLists 登记。剩：K0a merge → K1..K5 逐包 launch；K0A-E3 真机轮与 K0A-E4 V9 帧 design review 待真机/人工相位 | [ref](../docs/requirements.md) |
+
+### M8
+
+| 里程碑 | 状态 | 健康 | 下一步 | 验收依据 |
+|---|---|---|---|---|
+| 语音会话与 WS 通道生命周期解耦（通道常驻 + 会话带内边界 listen start/stop + front 心跳保活与设备自愈巡检 + 云端结束意图 + 断线封顶长跑） | `planning` | green | workstream 261115-session-channel-resident：架构+契约面 FROZEN PROPOSAL v1.2（R1 BLOCK→R2 GREEN→门 1 F-01 回修待 R3）packet-bound landed（reviewedCommit 87dbf775 / merged main 7e4c44d8）；实现面 2 包 serial WIP=1——P1 261116-channel-resident-core（high，mo77，通道常驻核心+60s 超时+心跳+自愈）→ 真机轮 A → P2 261117-session-end-intent-longretry（medium，mo78，云端结束意图+长重连）→ 真机轮 B；门 1 首轮 BLOCK(F-01..F-04) 修正中，human 过目后 launch。四条 debt（TECH-261114 / TECH-261012 / TECH-261014×2）以真机凭据结项。 | [ref](../docs/requirements.md) |
 

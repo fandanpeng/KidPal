@@ -24,7 +24,7 @@ mergeOrder: 78
 
 - 契约已随架构批 FROZEN 并 landed：`end_session` 属「截获转发类」（relay 恒拒、front self_push 恰一帧）；`§1.6` 已写入告别回合纪律；设备消费面只需把 `case 0` 从 `AbortSpeaking` 改为 `EndVoiceSession()`（P1 已建立统一处理器）。
 - front 已有 `_push_display_payload` 自推单源与 display 流截获先例（add_points / redeem_points 同型），`end_session` 复用同一缝即可，零新依赖。
-- 退避表与 task 循环是 P1 之后的独立函数区（`TryStartAutoConnect` task 体 + 四个人工入口守卫行），不与 P1 的收尾路径重叠；守卫三条件与「零第二条重连路径」在 P1 的常驻模型下语义成立。
+- 退避表与 task 循环是 P1 之后的改动面（`TryStartAutoConnect` task 体 + 四个人工入口守卫行）。**与 P1 的重叠点**：`HandleEndVoiceSessionEvent` 与 `HandleToggleChatEvent` 两个函数被两包分别改不同行段（P1 = 收尾动作序，P2 = in-flight 守卫行），不是「不相交函数区」；P1 冻结件 `session_channel_resident.acceptance.c` 的 SCR-A2「in-flight 守卫逐字在世」由本包 SEI-A4 重锚为「守卫在场 + 置意向位 + 审计行」（已登记 `impactedTestsSeed` 与跨包转手项）。守卫三条件与「零第二条重连路径」在 P1 的常驻模型下语义成立。
 
 # 跨包事实与共享冻结面约束（含跨切片边角）
 
@@ -47,4 +47,22 @@ mergeOrder: 78
 
 - host runner + server pytest：SEI-A1–A4 与 SEI-B1–B4 的 RED→GREEN 与变异证据；relay/self_push 分叉、回环防护、prompt 三面相等为承重断言。
 - device build：本轮改动编译面（`mcp_server.cc` / `application.cc` / 验收件）通过。
-- 一轮真机轮 B（human 持板）：说「拜拜」全链通、60s 自动关闭首次发生、长讲不被误收、拔网线/重启 front 自愈、离线期按键与唤醒补投不丢、离线 30 分钟电量差、引擎 24h 日切形态；三源日志互证，证据落本包 `current/`。
+- 一轮真机轮 B（human 持板）：B1–B8 全绿（说「拜拜」全链通 / 告别语不误伤 / 伪造防护 / 拔网线自愈 / 重启 front 自愈 / 离线期提醒不丢如实记录 / 离线 30 分钟电量差 / 长跑期人工入口不僵死）；60s 自动关闭在轮 A 已首次发生（A6），本轮只回证；三源日志互证，证据落本包 `current/`。
+# 验收方向（acceptance-author 细化，非冻结）
+
+> 本节是拆包期的**断言方向与承重判据**，不是冻结验收；`acceptance` / `acceptanceTestsFile` / `redBaselineResult` 在 taskpackage 中保持空骨架，由 Pod 内 acceptance-author 唯一产出并冻结。
+
+- SEI-A1: 设备 control end_session——mcp_server.cc control `case 0` 区内 `EndVoiceSession()` 恰 1、`AbortSpeaking(` 命中 0（负锚：防双重收尾）。回引契约 §1.4、PROPOSAL T5、ADR-019 ⑥。设计态红 = case 0 只 AbortSpeaking。
+- SEI-A2: 退避表形态——`kAutoConnectBackoffS` 首定义为 5 元素递增秒序列 `{5,10,20,40,60}` + `kAutoConnectSteadyRetryS` 命名常量值 60；重写 K6-A2 tooth5（旧齿钉 `[3]` 长度与 `{5,10,20}`）并显式申报。回引 PROPOSAL T1 改法 4。
+- SEI-A3: 长跑与退出——task 体内无 `attempt < 3` 字面；三个退出条件（成功 / bail / 网络断请求位）各在世；`auto_connect_in_flight_` 所有退出路径必清（K6 既有不变量保绿）。设计态红 = 3 次即 exit。
+- SEI-A4: 人工意向位——四个人工入口（HandleToggleChatEvent / HandleStartListeningEvent / HandleEndVoiceSessionEvent / HandleWakeWordDetectedEvent）区内 `pending_manual_intent_` 置位命中各 ≥ 1 且不再是裸 return；task 体内查意向位 + 截短退避 + 连上后 Schedule 补投三件在世。回引 PROPOSAL T1 改法 4 的承重配套。设计态红 = 长跑期人工入口永久 no-op。
+- SEI-B1: 门禁分叉——validate_display({view:control, data:{action:end_session}}, self_push=True)[0] 为 True（反转既有 RDG-A5 断言并显式申报）；validate_display(缺省 relay) 仍为 False（must-stay-green，与 test_points_e2e_spike 同判据）；add_points/redeem_points 在 self_push 下仍恒拒（正锚，防豁免口误扩）。回引契约 §1.4 / §1.5。
+- SEI-B2: 截获-自推——引擎 display 流投一块 control/end_session → relay 输出不含该块（不透传）+ 设备腿恰收一帧自推 control/end_session（_push_display_payload 单源、过 display_schema）。回引契约 §1.4 截获转发类。
+- SEI-B3: 回环防护——front 自推的那一帧不再被 relay 路径二次截获（假 socket 双跑一轮，帧数恒 1）。 回引契约 §1.4 截获转发类、PROPOSAL T5。
+- SEI-B4: prompt 承载三面相等——workspace-kidpal AGENTS.md 含告别回合纪律关键词（拜拜/不用了 → control/end_session）+ home 行语义已收窄；OPENCLAW_SYSTEM_PROMPT_CARRIER 声明面按 ADR-001 不变式同批对账（沿 test_261022_m5_k1 / test_261023 先例形态）。回引契约 §1.6、arch §5.5.5。
+
+**建议验收文件（acceptance-author 定名可调整）**：`firmware/main/test/session_end_intent_longretry.acceptance.c`、`server/acceptance/test_session_end_intent.acceptance.py`
+
+**红基线命令（沿用）**：`host: wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf（仓根起）；server: python -m pytest -q --import-mode=importlib -m "not live" server/acceptance（仓根起）`
+
+**红基线预期形态**：新验收件落地时设计态红（实现缺席）；不得以推算代替实跑，数值由 acceptance-author 冻结时回填。
