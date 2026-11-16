@@ -125,8 +125,8 @@
     {
       "text": "门 1（拆包冻结门）GREEN + human 过目切法",
       "scope": "workstream",
-      "status": "unverified",
-      "evidence": "2026-11-16 首轮 BLOCK(F-01..F-04)，修正后聚焦复检待跑"
+      "status": "verified",
+      "evidence": "门 1 聚焦复检 GREEN（architect，commit e18532ab，见 review.md）；human 2026-11-16 过目四件套并批准点火"
     },
     {
       "text": "拆包制品已 commit 到专用 base ref（commit-before-launch）",
