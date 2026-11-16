@@ -48,7 +48,7 @@ facePlan: |
   launch 硬前置：架构+契约面 anchors 未回填不得 launch 实现面包（change-intake.md §8）。
 anchors:
   req: "不适用（主线程初判需求面不动；若 architect 复核判定须对账则回填）"
-  arch: "architecture.md §12 changeId 行 `261115-arch-review-session-channel-resident`（2026-11-16 landed，reviewedCommit 87dbf775）——§6.4 整节重写（L1/L2/L3 三层解耦 + 心跳保活 + 自愈巡检 + 封顶长跑）/ §5.1.1 新增语音会话生命周期收口行 + 会话状态机 ⚠️ 对账 + 设备状态机边界句 / §5.1.2 front 生命周期锚 + 每会话收尾 / §5.2 场景①②④ / §8.1 风险 3 改写 + 风险 14 注记 + 新增 15/16/17 / §3.3 沿革注记 / §10 决策 29 取代注记；ADR-019 同批落（docs/decisions/ADR.md）；制品 = delivery/review/261115-arch-review-session-channel-resident/（FROZEN v1.1 + R1 BLOCK(F1,F2,F3) → R2 GREEN + landing-summary）"
+  arch: "architecture.md §12 changeId 行 `261115-arch-review-session-channel-resident`（2026-11-16 landed，reviewedCommit 87dbf775；门 1 F-01 回修后 **v1.2 增量落地 reviewedCommit fa51381e / merged main 50eb6b56**）——§6.4 整节重写（L1/L2/L3 三层解耦 + 心跳保活 + 自愈巡检 + 封顶长跑）/ §5.1.1 新增语音会话生命周期收口行 + 会话状态机 ⚠️ 对账 + 设备状态机边界句 / §5.1.2 front 生命周期锚 + 每会话收尾 / §5.2 场景①②④ / §8.1 风险 3 改写 + 风险 14 注记 + 新增 15/16/17 / §3.3 沿革注记 / §10 决策 29 取代注记；ADR-019 同批落（docs/decisions/ADR.md）；制品 = delivery/review/261115-arch-review-session-channel-resident/（FROZEN v1.1 + R1 BLOCK(F1,F2,F3) → R2 GREEN + landing-summary）"
   contract: "interface-contract.md §四新增 `listen` 帧节 + `kidpal_keepalive` 保活帧 + discard 时序改以 `listen stop` 为锚 + `kidpal_session_ctx` 边沿完整化；§1.4 `end_session` 截获-自推 + 表后段拆「截获执行类 / 截获转发类」；§1.5 第 3 条分流规则；§1.6 告别回合纪律；两条变更记录（2026-11-16）。四分类 = 主 ACCOMPANIES_SPEC_CHANGE + 次 SPEC_CONTRACT_DRIFT（architect-reviewer R1/R2 裁定）；同批原子落（reviewedCommit 87dbf775）"
 ---
 
