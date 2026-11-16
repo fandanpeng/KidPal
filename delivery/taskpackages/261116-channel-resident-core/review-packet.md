@@ -149,7 +149,7 @@
 - **原子可回滚**：全部实现/验收/簿记改动落在本地 feature 分支 `dev/pool-channel` 的单个收口 commit（31 文件 / +4300 −370；hash 见本包 git log）。回滚 = `git revert <该收口 commit>`（或合并前 `git reset --hard` 至父提交），一步回到 P1 前状态。
 - **两半一起回滚（承重）**：front 心跳默认开、设备侧升级为「120s 无心跳 = 死链」；只回滚单侧会让设备退化 churn 或空转。故代码回滚必须 front（`front_app.py`）与固件（`application.cc`/`application.h`）同批；紧急单侧回滚可用 `KIDPAL_CHANNEL_HEARTBEAT=0` 关 front 心跳（回滚开关），但同时须确保设备侧 heartbeat no-op 分支仍在（新固件收到 keepalive 仅一条 DEBUG 或无输出，无副作用）。
 - **merge packet**：本地合并 = planner 在 supervisor APPROVE + 前置升级闸（`pre-merge-escalation-gate.mjs`）放行后 `merge-driver --pod`，integrator 不 push、不 merge 主干。合并前排他：P2 从新 main 起分支、重取行号锚（见 `crossPackageHandoff`）。
-- **INDEX 投影**：本次 `closeout-check.mjs` 以只读跑（`indexProjection: skipped-read-only`）；dev `INDEX.md` 本包行未由本相位写入（`changes-index.mjs --upsert` 是 review-lane 专用、对 dev id 报命名错；`closeout-check --update-index` 本相位按派单禁跑）。**该行由 planner 在 supervisor 门前用 `node .claude/scripts/closeout-check.mjs --update-index`（或 `changes-index.mjs` 幂等全量重建）补写**。
+- **INDEX 投影**：integrator 相位以只读跑（`indexProjection: skipped-read-only`；`changes-index.mjs --upsert` 是 review-lane 专用、对 dev id 报命名错）；**planner 收尾相位已用 `node .claude/scripts/closeout-check.mjs --update-index` 补写本包行**（`delivery/taskpackages/INDEX.md:120`），并随 `cc6f6667` 提交。
 
 ## Residual Risk
 
@@ -167,4 +167,5 @@
 - **Human decision needed**：
   1. **真机轮 A（A1–A13，human 持板）**——本包唯一未闭合的出口；未发生前不得宣布 workstream 目的达成、不得结项两条 debt。
   2. 回滚剧本执行口径（A13，两半一起回滚）由 human 在真机轮确认可执行。
+  3. **G4 工具缺口（收尾相位实测）**：`supervisor-gate-check.mjs` 的 G4 要求 `.claude/verify-logs/*.log` 非空，但 `verify.mjs` 仅在 gate 失败时写日志（`verify.mjs:288-290` 在 `if (!ok)` 内）——本包 scoped r1 / final r2 全绿 → 零日志 → G4 结构性恒红，会话无法正常收尾。诊断与 patch 见 `gate-tooling-gap-g4.md`；待裁清单见 `pending-human-ruling.md`。`.claude/**` 对 agent 禁写（`scope-map.universal.bashDenyWrite`），planner 无权自修。
 - **跨面变更（spine 在册）**：本包收口后建议 status = `ready-to-merge`（待 supervisor 复核 + 前置升级闸放行 + merge-driver 本地合并），workstream `261115-session-channel-resident` P1 锚点更新归主线程（integrator 不直改 spine）。
