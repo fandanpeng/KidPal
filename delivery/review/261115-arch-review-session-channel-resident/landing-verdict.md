@@ -66,3 +66,74 @@ ALL_OK = True
 ## 独立结论
 
 reviewedCommit `87dbf775` / tree `5cf0b1fa` 的实际非证据 diff 恰为 manifest 三件（architecture/contract/ADR），T1–T7 按 FROZEN v1.1 改法集逐项兑现，四处退役机制引用全数对账、决策 29 正文逐字保留，§2A 三条承重原文与改后文本经程序化双向对账全绿，V4–V19 全部独立复跑吻合（含两处合规覆写），cite-check 缺口系工具 v1 覆盖面的真实边界且替代证据链等价成立。无夹带、无权限或保护面越界、无评审后实现尾改。本审独立放行结论：**PASS**，可交主线程跑 `pre-merge-escalation-gate.mjs` 机械凭据闸。
+---
+
+## v1.2 增量核验（2026-11-16）
+
+- 核验对象：仓库 `c:\AI\KidPal-pod-m2`，分支 `dev/pod-m2`；**reviewedCommit = `fa51381e76d665632d0a2d69bb95c5719f3f967a`**，**reviewedTree = `322267c15f0c34bfdf31041dbf7f8e11b022f437`**，父 = `7e4c44d8`。
+- 增量范围：只核 v1.2 delta（门 1 F-01 回修）是否忠实兑现 FROZEN PROPOSAL v1.2 的 canonical delta 处方（delta-1..6）与是否引入新偏差；v1.1 全量结论不重做（见上 v1.1 段既有结论）。
+- 性质：landing-verifier 独立第二核验，只读 canonical / 契约 / Git；唯一写入 = 本文件本段。
+
+### 钉点与工作树
+
+- `git rev-parse fa51381e^{tree}` = `322267c15f0c34bfdf31041dbf7f8e11b022f437`（与任务钉点逐字相符）；`git rev-parse fa51381e^` = `7e4c44d85b48536c9bc885e683523c9bec18a296`；HEAD = fa51381e；`git status --porcelain` 空（`.codebase-memory` 两件本轮无改动）⇒ 钉点成立、评审后零实现尾改。
+- 增量 diff（父..本提交）5 文件：`PROPOSAL.md` / `architect-landing-summary.md` / `package-split.md`（评审证据制品）+ `docs/architecture.md` / `docs/decisions/ADR.md`（canonical）。非证据 diff 恰 = {`docs/architecture.md`, `docs/decisions/ADR.md`} ⊆ 轻量 manifest（{architecture, contracts, ADR}）；contracts 本轮零触碰。
+
+### 契约零改动
+
+- `git show fa51381e --name-only -- docs/contracts/` = **空**。
+- `grep -c 'pending_stop\|记录语境释放\|残余累积' docs/contracts/interface-contract.md` = **0**。
+
+### delta 逐条对照（PROPOSAL v1.2 处方 ↔ 落地文本）
+
+| delta | 处方要点 | 落地（`docs/architecture.md` / `docs/decisions/ADR.md`） | 判定 |
+|---|---|---|---|
+| delta-1 · §5.1.2 收尾分层 | `chat` 无动作 / `accumulate` 非空归 `_story_finish_session` / `pending_stop` 受保护（禁当刻 cancel 与释放，交 10s 巡检且 pending 分支补 `_release_record_context`）/ 防御性不 cancel；原「残余累积取消」撤销 | §5.1.2 front 行（:198）四分支逐条齐备，「`pending_stop` → 受保护态，禁止当刻 cancel 与当刻释放，交既有 10 秒巡检（`PENDING_STOP_SECONDS`），且该巡检的 pending 分支须补 `_release_record_context`」，末尾「原「残余累积态取消」动作**撤销**」 | 忠实 |
+| delta-2 · ctx 边沿分态 | `pending_stop` 不动作 / `accumulate` `cancel(session_end_stale)`+释放 / `chat` 只释放 | §5.1.2（:198）「`kidpal_session_ctx` 边沿完整化改为**分态处置**…」三分支逐条齐备 | 忠实（另附 accepted residual 申报句，与 delta-4 一致，非偏差） |
+| delta-3 · §5.2 括注 | 「front 每语音会话收尾（按累积器路由态分层释放；`pending_stop` 受保护、交 10s 巡检释放，不在 stop 当刻取消——保录音态 KEY 收尾的归档不丢，S-F2.2 AC4 v1.65）」 | §5.2 场景②（:225）括注逐字 = 处方 | 忠实（逐字一致） |
+| delta-4 · §8.1 风险行 18 | 记录会话空累积结束后 ≤10s 引擎抑制窗 = accepted residual，不得提前释放，重评回 `/arch-change` | §8.1（:493）新增「\| 18 \| 记录会话空累积结束后 ≤10 秒的引擎抑制窗（本批，ADR-019，门 1 F-01 回修）…不得用提前释放消除…」 | 忠实 |
+| delta-5(a) · §12 追加 F-01 子句 | 「§5.1.2 / §5.2 场景② 的会话收尾分层表述修正（门 1 F-01 回修，v1.2）」 | §12 本批行（:566）含该子句逐字 | 忠实 |
+| delta-5(b) · §12 §8.1 计数 | 「新增 15/16/17 三行」→「新增 15/16/17/18 四行」 | §12 本批行 = 「§8.1（… 新增 15/16/17/18 四行）」 | 忠实 |
+| delta-6 · ADR-019 关联件计数 | 「新增 15/16/17」→「新增 15/16/17/18 四行」 | `ADR.md:167` = 「§8.1 风险 3·14 + 新增 15/16/17/18 四行 / §10 决策 21（方案二失效注记保持）」 | 忠实（与处方围栏逐字一致，R4 词差 advisory 已消解） |
+
+### F-01 缺陷句净除证明
+
+- 父 `7e4c44d8`：`git show 7e4c44d8:docs/architecture.md \| grep -c '残余累积态取消（\`acc.cancel(reason="session_end")\`'` = **1**（缺陷句在世）。
+- 本提交：`grep -c 'acc.cancel(reason="session_end")' docs/architecture.md` = **0**；`grep -rn 'reason="session_end"' docs/` = 空（旧错误 reason 全净除，ctx 边沿已改 `session_end_stale`）。
+- `grep -rn '残余累积' docs/` 仅 1 命中 = `docs/architecture.md:198` 的「原「残余累积态取消」动作**撤销**」——属「动作撤销」表述，符合允许面（非缺陷句复现）。
+
+### 三处计数同数证明
+
+- `grep -rn '15/16/17' docs/` 仅 2 命中：`docs/architecture.md:566`（§12 行，「新增 15/16/17/18 四行」）+ `docs/decisions/ADR.md:167`（ADR-019 关联件，「新增 15/16/17/18 四行」）；两处均「四行」，无第三处。
+- §8.1 表内 `grep -cE '^\| 18 \|' docs/architecture.md` = **1**；§8.1 风险行号集 `grep -nE '^\| 1[3-8] \|'` = `13/14/15/16/17/18`（:488–493），18 紧接 17 之后。
+- ∴ 三落点（§8.1 表本体 / §12 行 / ADR-019 关联件）同数四行。
+
+### 不变量未被 delta 破坏（delta hunk 仅落 :195 / :224 / :490 / :562 四处）
+
+- **261024 overlay_close 时序**：§5.1.1「语音会话生命周期收口」行（:178）「①（仅 Speaking）`ResetDecoder` 即时静音 + `AbortSpeaking`（261024 既有两步）→ ② `SendStopListening`」不在 delta hunk 内，逐字保留。
+- **OQ3=c**：§5.1.1 清位链 `kidpal_render_node_voice_end`（OQ3=c 回答页驻留）与 §5.2「前台按 OQ3=c 回落 → WS 通道保持常驻」在 delta-3 hunk 内逐字保留。
+- **S-F1.4 提醒**：ADR-019 关联件 S-F1.4 保留、§5.1.1 `RaiseReminderQueue()` 未触。
+- **discard→stop 有序不归档**：:178「`kidpal_story_discard` 先于 `listen stop`…front 先 cancel、随后见累积器路由态为 `chat`，不进归档」未被 delta 改写。
+- **决策 29 正文一字未改**：delta hunk 均不落 §10（:552 决策 29 不在 hunk 内）；§12 行「§10 决策 29 取代注记（正文一字不改，形态仿决策 21/25 先例）」原样。
+
+### 机械门复跑（独立亲跑，非采信自报）
+
+- `landing-fidelity-check --preflight`：`ok:true` / `section2BodyFound:true` / `anchorCount:3` / `anchorUnion` 三件 / `findings:[]` / `advisories:[]`。
+- `landing-fidelity-check --cite-check`：`ok:true` / `frozen:true` / `targetCount:3` / `checkedCount:0`（工具 v1 覆盖面缺口，同 v1.1 段，非判据失效）。
+- `spec-anchor-check`：`ok:true` / `errors:[]` / `archSectionCount:48` / `anchorLines:44`。
+- `contract-lint`：`ok:true` / `warnings` 1 条既有归档链接断裂（260923 包），未新增。
+- `pre-merge-escalation-gate.mjs 261115-arch-review-session-channel-resident --source-ref dev/pod-m2`：**PASS（exit 0，kind=gov，无例外命中）**。Track B 机锚独立复核 = PROPOSAL Status 行 `FROZEN v1.2` + §7 末判 `GREEN（F-04 闭合）`（`isGreenVerdict` 取末态）+ `landing-verdict.md` 在产。
+
+### 诚实申报（未核面 / 残余风险）
+
+1. **契约凭据三件联立本轮未触发（如实区分，非缺陷）**：git 事实 = `git merge-base main dev/pod-m2` = `7e4c44d8`，main 现即 `7e4c44d8`；v1.1 落地 commit `87dbf775`（含契约改动）**已在 main 内**（`git merge-base --is-ancestor 87dbf775 main` 为真）。∴ 待合并范围（dev/pod-m2 → main）只剩 delta 一个 commit；`git diff --name-only main..dev/pod-m2` 与 `dev/pod-m2..main` **均无 `docs/contracts/` 路径**，闸的契约证据判定因 `no-contract-diff` 放行——契约三件是在 v1.1 合并进 main 时已满足，非本轮重跑。任务书「应 PASS，契约凭据三件联立」描述的是历史 v1.1 合并，就本 delta 合并而言三件不适用；已独立核 main 确载 v1.1 契约内容（`git show main:docs/contracts/interface-contract.md \| grep -c kidpal_keepalive` = 2）以排除「反向短路吞掉契约」。
+2. **R4 非阻断「四行」词差建议已消解**：本提交 `ADR.md:167` 实为「…新增 15/16/17/18 四行 /…」，与 delta-6 处方围栏（PROPOSAL:712）逐字一致，R4 所记「canonical 无「四行」」的中间态差异在本提交已闭合。
+3. **`§6 留根` 交叉引用（非阻断）**：delta-2 落地尾句「见 §8.1 风险 18 与 §6 留根」中「§8.1 风险 18」成立（:493 行 18 在世）；「§6 留根」并非 §6（6.1–6.7 子节）内字面小节，但属**既有**文档惯例——`docs/architecture.md:233`（261019 批、非本批）已用「归 §6 留根」同形表述，本 delta 沿用惯例、非新引入的悬空引用。建议（不构成否回）后续由主线程统一「留根」登记落点。
+4. **未核面**：真机与实现面——本轮 delta 只触 docs；`package-split.md` 的 P1 实现处方（分层五支表 / `_story_timeout_sweep_body` pending 释放点 / SCRF-B2b·B4b·B6 / A5 双子场景）属下游 dev-loop 待落地，运行期行为无法在本轮核验。`.codebase-memory` 图索引本轮无涉（delta 零代码），未复核。
+5. **scope 出界**：无。canonical 非证据 diff 恰 {architecture.md, ADR.md} ⊆ manifest；package-split / PROPOSAL / summary 为评审证据制品；零 requirements / `.claude` / firmware / server / contracts 触碰。
+
+### 独立结论
+
+reviewedCommit `fa51381e` / tree `322267c1` 的 delta 忠实兑现 FROZEN PROPOSAL v1.2 的 delta-1..6 处方（delta-3、delta-6 逐字一致；delta-1/2/4/5 语义齐备），F-01 缺陷句 `acc.cancel(reason="session_end")` 净除归零、§8.1/§12/ADR 三落点计数同「四行」、261024 / OQ3=c / S-F1.4 / discard 顺序 / 决策 29 正文等不变量未被 delta 触碰，契约零改动，五道机械门复跑全绿（pre-merge 闸 PASS）。无夹带、无 scope 越界、无评审后实现尾改。
+
+verdict: PASS
