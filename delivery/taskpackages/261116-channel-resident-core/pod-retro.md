@@ -1,45 +1,47 @@
 # pod-retro · 261116-channel-resident-core
 
-> **第一人称热记忆**（planner 视角，收口相位写于 integrator closeout 之后、合并门前）。只记过程体感与判断，不载 tokens / gates / rounds / verdict / 测试数字——那些以机器件与 pod-events 为权威。
+> **第一人称热记忆**（planner 视角）。本包经历两段：P1 主实现收口 + **真机轮 A 修复轮**（2026-11-17 human「三个问题都修」）。本节按最后一轮重写，只记过程体感与判断；tokens / gates / rounds / verdict / 测试数字一律不载——那些以机器件、pod-events 与 verifier-evidence 为权威。
 
-## 一、这一包难在哪
+## 一、这一轮最费劲的事：推翻一个被写进任务的根因
 
-这不是一个「加功能」包，而是**把会话与通道这对揉在一起的概念掰开**。所以真正费力的不是写代码，而是**先说清楚「哪几处代表会话结束」**——四收尾点这个提法来自拆包期，落地时才发现它其实分成两类调用上下文（协议接收任务 vs 主循环），一旦混用就是跨任务竞态。architect 预评把这一刀提前挑明了（helper 走事件位、其余直调），这是本包最省命的一条建议；如果让它留给 builder 现场判断，很可能第一轮就对。
+human 交回的三条缺陷里，D1 的根因是被**当成事实**写进任务的：「front 未进入记录语境，引擎因此正常处理 ASR」。我照单全收去核证，结果拉引擎 docker 日志第一眼就相反——每个故事会话都打了「进入记录语境」，语境里的 ASR 也被逐条抑制。设备听到的 TTS 全部出现在**会话结束之后**，根因是另一条（D2）：stop 先被转发、语境后释放，尾音 ASR 抢在释放之后派发。
 
-第二个难点是**验收断言的"结构敏感"**：本仓的冻结验收大量按源文本区切与字面计数。它们很能抓回归，但也非常容易被注释字面喂饱。builder 主动把改动区注释里的判据字面删掉（并说明理由），这一步不是洁癖——我在复核 mutation 时看到，若不删，某些「变异」会因注释仍含字面而假绿。这条以后应该写进验收撰写习惯，而不是每包靠 builder 自觉。
+这件事的体感是：**如果我不去拉第三源，就会按一个错误根因写一整轮验收，最后「修好了」一个不存在的病**。以后凡任务里带根因线索，我应该先做一次三源交叉再决定要不要照办；照办的姿势也要改——把「要求成立」和「根因描述成立」分开对待：要求（每会话必须抑制）照做，根因描述用证据纠偏并回写。
 
-## 二、卡点与绕轮
+## 二、三个设计取舍，两个是「少做才对」
 
-没有进 verifier↔fixer 内循环，但我认为有一个**差点翻车的相位**：builder 首跑后剩一条红，根因不在实现，而在另一件既有冻结验收（`record_dialogue_guide` 的 KEY 路径幂等断言）的**粗粒度区切**把统一处理器整段算了进去。这条我预评时没扫到——1g 的影响面清单补了五件 must-stay-green，偏偏漏了这一件。builder 按边界纪律停手、只回报不擅自改验收件，这个姿势是对的；我按扩单通道把文件纳入 manifest、再派 acceptance-author 做最小收窄（区切终点前移 + REVISION LOG），断言语义零变化。**这条我记了 friction（scan-miss）**，因为它的形态会复发：凡是「用函数签名对切区」的既有断言，遇到新增同族函数就会假红，影响面扫描应该把"区切终点函数"也当作被改面。
+- **D2 不发 abort**：human 给了两个选项（设备 abort 先行 / front 注入 abort），architect 把轮 A 日志翻出来——那次 abort 已经收到了，TTS 照样出。再加上引擎侧四处「绝不置 client_abort」的冻结纪律（防波及 front 合法 speak 注入），abort 在这个位置是负资产。最后选的是「discard 分支内本连接引擎腿先发 active=false」，让引擎自己的截断链生效。这是本轮最舒服的一刀：**不动引擎、不加帧型、不违反纪律，效果还更硬**。human 说「择一并给依据」，我把依据写进了 plan 与 review-packet。
+- **D3 不用 echo 计数**：直觉上「有没有素材」就是看回显计数，但那个计数的唯一清零点只在 KEY 入口，触发词入口没有 reset。用它，就等于把「触发词入口的空素材会话」静默留成未修。改成 `!s_story_rec_entered`（VAD 起音沿）后两入口同覆盖、且不碰 P2 边界文件。这个坑很典型：**一个看起来最贴语义的信号，恰恰是最容易只修一半的信号**。
+- **D2 的迟到帧门没有做成「Idle 一律丢 TTS」**：那会顺手打死提醒语音。最后做成 front 侧、按「会话关闭门 + 自注 speak 令牌」收窄，弹窗半还结构性免疫。风险写清楚了，但它的复杂度也是本轮最重的一块——值不值，要等轮 B 的真机观感。
 
-另一处让我停顿的是心跳 task 的落位：它是无限任务，绝不能进 `FIRST_COMPLETED` 集合；否则连接收尾会被它永久拖住。architect 把 `finally` 首行 cancel、循环 sleep-first 都钉死了，我照此写进派单。事后看，这类「生命周期与已有并发结构相交」的知识只存在于读过现场的人脑子里，文档不会告诉你——architect 预评的价值主要就在这。
+## 三、被变异测试抓到的是「测试」而不是「实现」
 
-## 三、验收体感
+B10 里「空素材收尾不推 story_list」这条断言，最初只看外层设备腿；而 sweep 释放是投给会话归属腿的。一条本该转红的变异**活下来了**。这不是实现错，是**断言观测面选错**——补了一条会话腿断言后变异立刻转红。同一测试的 `start_organizing` 断言还有同类形状，本轮没扩改，已如实登记。体感：变异测试最大的价值不是证明实现对，而是**暴露我们以为在测、其实没测到的地方**。
 
-acceptance-author 这一轮交付很实：15 条断言逐条给了设计态红映射、mutation 建议、未覆盖面。让我别扭的只有一处——SCR-A4 的 `RaiseReminderQueue` needle 被既有注释遮蔽（单独改名不转红），它改用同区另一符号承载敏感证据并如实申报。这是**验收断言强度**的灰区：断言没撒谎，但它对某一个符号就是钝的。我选择记录成观察项、不返工，因为强制它变敏感会要求动一段本包约定不动的注释区（Idle 八件链）。这个取舍若是下一包遇到，值得先问一句「这条断言的敏感面是不是落在注释上」。
+## 四、又一枚同族陷阱，而且这次付了代价
 
-## 四、规则与钩子
+上一轮 pod-retro 我写过「mutation-check 要求完整 acceptance 字符串」。这一轮我程序化写新条目时，为省篇幅把 acceptance 字段截到几百字——于是机械闸匹配不上，一次已发布的轮次直接判红占序。**同一个坑，第二次踩，还占掉一个序数**。改进很具体：以后凡程序化写 mutationEvidence，先原样复制 taskpackage 的 acceptance 原文，再在跑 verify 之前手动跑一次 `mutation-check.mjs` 做预检。这类「簿记面把机械闸喂假」的错误，比实现 bug 更丢时间——因为它发生在你以为已经绿了的时候。
 
-- scope-map 的分工这次很顺：acceptance-author 想写 CMakeLists 会被拦，派单里就预指派了 builder；没有出现撞钩子再返工。
-- `mutation-check` 要求 mutationEvidence 里放**完整 acceptance 字符串**（不是短 id），我先按短 id 填了一遍才发现。这个口径在脚本文档里有注记但不显眼，值得下次起包时直接按完整字符串填。
-- `changes-index.mjs` 只服务 review lane，对 dev 包会报命名错；dev 面的 INDEX 写口是 `closeout-check --update-index`。integrator 按我派单没跑（我写了"不得传 --update-index"），结果 dev INDEX 缺行——这是**我的派单口径与 integrator.md 的硬要求冲突**。我在收尾相位补跑了写索引。下次派 integrator 时应该把「产出后跑 `closeout-check --update-index`」「planner 复核用只读」两件事分开写清，不要用一句"不得传"把 integrator 的义务也禁掉。
+## 五、流程与钩子
 
-## 五、人与人之间
+- acceptance-author 这次为了复现变异，在 `server/acceptance/` 下用了一次性下划线脚本做 runtime monkeypatch，跑完即删。它没有越权（写权在验收面），但它说明：**行为注入式变异**是现有工具面里更省事的做法，值得在下一个治理批里考虑成文（现在只能靠人自觉删干净）。
+- 派 integrator 时我把「产物后跑 closeout-check --update-index」与「planner 复核只读」分开写了，这一轮没再出现上一轮的索引缺行。
+- 上轮 1g 漏扫的区切盲区这一轮又出现一次（points 的既有区切断言），architect 预评补出。**「既有断言的区切终点函数被本包改到」这条检查，我自己还是没形成肌肉记忆**——两轮同一个形态，下次应把它做成派发前的清单句。
 
-human 只给了两条输入：跑哪一包、base ref 取哪。全程没有打断、没有中途改方向，这在本包这种"改会话语义"的包上很难得。唯一需要 human 接手的仍然是**真机轮 A**——本包的时延收口（温通道 ≤0.82s）、连续讲 >90s 不误收、心跳 30s 节奏与三方并发写同一 ws 的观感，离线怎么近似都替不掉持板目击。我在合并门前停在这里，不宣布效果达成、不结 debt，等轮 A 回来再补证据与结项。
+## 六、卡在哪里结束
 
-## 六、下次改进
+本包停在**合并门前**，两件未闭合且都不是 Pod 内能解决的：
 
-1. 1g 影响面扫描加一条硬检查：**既有断言的区切终点函数**若被本包改到，必须逐件核（本次 `record_dialogue_guide` 就是这么漏的）。
-2. 验收撰写约定补一句：断言的 needle 不得落在注释可满足的位置；撰写时先 grep 一遍实现文件里该字面是否已在注释中出现。
-3. 派 integrator 的派单把 `closeout-check --update-index` 写成 integrator 的必做项，planner 复核另行只读。
-4. 心跳这类"连接级无限任务"的落位，派单模板里应固化三件：不进 FIRST_COMPLETED、sleep-first、finally cancel+gather。
+1. **G4 工具缺口**：全绿 Pod 没有 verify-logs，监督闸结构性恒红。已带复现与 patch 交主线程；主线程修完后需要重跑一轮让日志自然产生。
+2. **真机轮 B**：这一轮修的是三条已确证的缺陷，**运行时行为离线证不了**（D3 的设备 producer 只有源锚，D2 的门只有假帧序）。轮 B 的清单与口径我已写进 review-packet（含把「立即应答」改成「≥10s 后」——那 ≤10s 是已冻结的 accepted residual，不改就会误判 FAIL）。
+
+轮 A 是诊断轮，不是通过轮；在轮 B 目击之前，我不会宣布这三条修好了。
 
 ## 七、escalation themes
 
-本包全程**没有 agent-escalation**（无 Red Flag 升级、无 human 裁决请求）。记入 pod-events 的两条 friction 均为 advisory 记账：
+本轮无 `agent-escalation`。pod-events 记账两条 friction：
 
-- `b3fb9aca`（**scan-miss**）：1g 影响面扫描漏 `record_dialogue_guide.acceptance.c` 的 RCL-F1 粗区切；处置 = 扩单最小重锚，未改断言语义。
-- `f157a5d6`（**over-scan**）：acceptance-author 清单外阅读 6 行（`story.py`、front 的 sweep/release/finish 区、三件既有冻结验收、CMakeLists、编译数据库）——均为冻结核验必需，advisory 记账。
+- `scan-miss`：1g 修复轮扫描漏 `test_points_e2e_spike.acceptance.py` 的既有区切锚（与上轮 `record_dialogue_guide` 同族）——architect 预评补出，已入 impactedTestsSeed。
+- `degraded`：程序化写 mutationEvidence 时截断 acceptance 字段 → 机械闸失配 → 一轮已发布事实占序；已修正并重跑。属上轮 pod-retro 已记陷阱的复发。
 
-human 侧的唯一未闭合项不是升级，而是**流程内出口**：真机轮 A 由 human 持板，归本包 exitCriteria；在它发生前我宁可按未完成处理。
+human 侧唯一未闭合项仍是流程内出口：G4 修复 + 真机轮 B 复测（human 持板）。

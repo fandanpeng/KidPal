@@ -3,7 +3,7 @@
   "riskTier": "high",
   "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
   "producedBy": "supervisor-verdict-gate.mjs",
-  "ts": "2026-11-16T15:57:01.866Z",
+  "ts": "2026-11-17T16:41:53.567Z",
   "changeId": "261116-channel-resident-core",
   "originType": "proposal",
   "adjudication": {
@@ -27,8 +27,8 @@
     },
     "advisories": [],
     "precedentHits": [],
-    "circuitBreakerCompletedRounds": 2,
-    "evidenceComplete": false
+    "circuitBreakerCompletedRounds": 5,
+    "evidenceComplete": true
   },
   "provenance": {
     "provenanceVersion": "2.0",
@@ -47,20 +47,22 @@
         "precedentHits": []
       },
       "evidenceCompleteness": {
-        "bearingFactRef": "delivery/taskpackages/261116-channel-resident-core/verifier-evidence/rounds/r2.json",
+        "bearingFactRef": "delivery/taskpackages/261116-channel-resident-core/verifier-evidence/rounds/r5.json",
         "bearingFactOk": true,
-        "completedRounds": 2,
+        "completedRounds": 5,
         "closeoutArtifactsChecked": [
           "delivery/taskpackages/261116-channel-resident-core/docs-delta.md",
           "delivery/taskpackages/261116-channel-resident-core/review-packet.md"
         ],
-        "verifyLogsPresent": false,
+        "verifyLogsPresent": true,
         "originType": "proposal"
       }
     },
-    "verifyLogRefs": [],
+    "verifyLogRefs": [
+      ".claude/verify-logs/1794933089883-mutation-check.log"
+    ],
     "verifierEvidenceRefs": [
-      "delivery/taskpackages/261116-channel-resident-core/verifier-evidence/rounds/r2.json"
+      "delivery/taskpackages/261116-channel-resident-core/verifier-evidence/rounds/r5.json"
     ],
     "closeoutArtifactsChecked": [
       "delivery/taskpackages/261116-channel-resident-core/docs-delta.md",

@@ -264,6 +264,17 @@
 - **merge packet**：本地合并 = planner 在 supervisor APPROVE + 前置升级闸（`pre-merge-escalation-gate.mjs`）放行后 `merge-driver --pod`，integrator 不 push、不 merge 主干。合并前排他：P2 从新 main 起分支、重取行号锚（见 `crossPackageHandoff`）。
 - **INDEX 投影**：integrator 相位以只读跑（`indexProjection: skipped-read-only`；`changes-index.mjs --upsert` 是 review-lane 专用、对 dev id 报命名错）；**planner 收尾相位已用 `node .claude/scripts/closeout-check.mjs --update-index` 补写本包行**（`delivery/taskpackages/INDEX.md:120`），并随 `cc6f6667` 提交。
 
+## 合并机械项（2026-11-18 收尾复跑 `pre-merge-escalation-gate` 新增）
+
+`node .claude/scripts/pre-merge-escalation-gate.mjs 261116-channel-resident-core --source-ref HEAD` BLOCK 四因：`device-round-evidence-missing`、`parallel-overlap-tier3`、`riskTier=high`、`supervisor verdict=ESCALATE`。
+
+其中 `parallel-overlap-tier3` 为本轮新发现：
+
+- **实撞 = `delivery/workstreams/INDEX.md`**（生成件，头注「勿手改」；渲染器 = `node .claude/scripts/planning-index.mjs`）。`git merge-tree` 的唯一冲突 hunk = 头部「最后更新 <date>」一行；我方 workstream 行与 `Active (6)→(7)` 已被 git 自动并。
+- **architect §10d ③ 消解评审**（dispatch `a7c1ad6c73ea2da9f`，advisory）：判 **②（无取舍/生成件）**，非 ③；建议根治 = `.gitattributes` 加 `delivery/workstreams/INDEX.md merge=union`（同批裁 `index.jsonl`），落地后闸自然 `union-safe`。诊断见 `gate-tooling-gap-overlap-index.md`。
+- **人批豁免不了本条**：`parallel-overlap-tier3` 不在闸的 `escalateExempt` 覆盖内；合并动作前必须先让冲突消失（union 条目 或 主线程 rebase/merge 消解 + 重跑 `planning-index.mjs` 使 main 成为祖先）。
+- 本项不构成独立停等理由（实质停等 = 轮 B 真机 + riskTier high ESCALATE + G4），但它是合并动作的前置机械项。
+
 ## Residual Risk
 
 - **Known limitation**：
