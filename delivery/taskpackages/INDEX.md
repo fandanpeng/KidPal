@@ -10,13 +10,13 @@
 
 | changeId | 日期 | origin.ref | 状态 | workstream |
 |---|---|---|---|---|
-| [261104-k0-points-e2e-spike](261104-k0-points-e2e-spike/) | 2026-11-04 | delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md | open | 261103-star-points-story-cover |
-| [261104-k0a-four-page-skeleton](261104-k0a-four-page-skeleton/) | 2026-11-04 | delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md | open | 261103-star-points-story-cover |
-| [261104-k1-points-ledger-core](261104-k1-points-ledger-core/) | 2026-11-04 | delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md | open | 261103-star-points-story-cover |
-| [261104-k2-points-device-ui](261104-k2-points-device-ui/) | 2026-11-04 | delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md | open | 261103-star-points-story-cover |
-| [261104-k3-qq-points-channel](261104-k3-qq-points-channel/) | 2026-11-04 | delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md | open | 261103-star-points-story-cover |
-| [261104-k4-reward-goal-config](261104-k4-reward-goal-config/) | 2026-11-04 | delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md | open | 261103-star-points-story-cover |
-| [261104-k5-story-cover-nav](261104-k5-story-cover-nav/) | 2026-11-04 | delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md | open | 261103-star-points-story-cover |
+| [261104-k0-points-e2e-spike](261104-k0-points-e2e-spike/) | 2026-11-04 | delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md | closed | 261103-star-points-story-cover |
+| [261104-k0a-four-page-skeleton](261104-k0a-four-page-skeleton/) | 2026-11-04 | delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md | closed | 261103-star-points-story-cover |
+| [261104-k1-points-ledger-core](261104-k1-points-ledger-core/) | 2026-11-04 | delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md | closed | 261103-star-points-story-cover |
+| [261104-k2-points-device-ui](261104-k2-points-device-ui/) | 2026-11-04 | delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md | closed | 261103-star-points-story-cover |
+| [261104-k3-qq-points-channel](261104-k3-qq-points-channel/) | 2026-11-04 | delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md | closed | 261103-star-points-story-cover |
+| [261104-k4-reward-goal-config](261104-k4-reward-goal-config/) | 2026-11-04 | delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md | closed | 261103-star-points-story-cover |
+| [261104-k5-story-cover-nav](261104-k5-story-cover-nav/) | 2026-11-04 | delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md | closed | 261103-star-points-story-cover |
 | [261031-openclaw-cron-trigger-gating](261031-openclaw-cron-trigger-gating/) | 2026-10-31 | human 2026-10-31 现场观察「每小时约 1M token 而设备未使用」→ 主线程 ECS 实测归因（两个 15m agentTurn cron 空转 20.75M/天）→ human 裁定「改成变更驱动，triage 执行」→ 于 /triage-change 触点① 裁定「② Lite，跳过 spike」 | closed | — |
 | [261028-m6-k1-font-assets-runtime-loading](261028-m6-k1-font-assets-runtime-loading/) | 2026-10-28 | delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md | closed | 261028-font-typography-scaleup |
 | [261028-m6-k2a-p1-home-16px](261028-m6-k2a-p1-home-16px/) | 2026-10-28 | delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md | closed | 261028-font-typography-scaleup |
@@ -117,9 +117,3 @@
 | [260829-smoke-e2e](260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
-| [261104-k0a-four-page-skeleton](261104-k0a-four-page-skeleton/) | 2026-11-04 | delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md | closed | 261103-star-points-story-cover |
-| [261104-k0-points-e2e-spike](261104-k0-points-e2e-spike/) | 2026-11-04 | delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md | closed | 261103-star-points-story-cover |
-| [261104-k2-points-device-ui](261104-k2-points-device-ui/) | 2026-11-04 | delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md | closed | 261103-star-points-story-cover |
-| [261104-k3-qq-points-channel](261104-k3-qq-points-channel/) | 2026-11-04 | delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md | closed | 261103-star-points-story-cover |
-| [261104-k4-reward-goal-config](261104-k4-reward-goal-config/) | 2026-11-04 | delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md | closed | 261103-star-points-story-cover |
-| [261104-k5-story-cover-nav](261104-k5-story-cover-nav/) | 2026-11-04 | delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md | closed | 261103-star-points-story-cover |
