@@ -45,3 +45,24 @@
 **阻塞 2（工具缺口，需主线程修）**：`supervisor-gate-check.mjs` 的 G4 要求 `.claude/verify-logs/*.log` 非空，但 `verify.mjs` 仅在 gate 失败时写日志（`verify.mjs:288-290` 在 `if (!ok)` 内）——本 Pod 两轮全绿 → 零日志 → G4 结构性恒红 → 会话无法正常收尾。诊断与 patch 见 `delivery/taskpackages/261116-channel-resident-core/gate-tooling-gap-g4.md`；待裁清单见同目录 `pending-human-ruling.md`。`.claude/**` 对 agent 禁写，planner 无法自修。
 
 **debt 处置**：`TECH-261114` / `TECH-261012` 维持 `deferred`（按 PROPOSAL「结项凭据必须是真机」），仅刷 trigger + 追加收口注记；轮 A 通过后由主线程结项。
+
+## 2026-11-17 → 11-18 · P1 真机轮 A 修复轮（planner 收尾）
+
+**轮 A 结论**：**FAILED 诊断轮**（human 持板 + P1 固件/front 部署）。三源取证落 `delivery/taskpackages/261116-channel-resident-core/device-round-a-evidence.md` + `device-evidence/round-a/`（KPLOG / front journal / 引擎 docker，三份 SHA-256）：
+- **D2（重）**：丢弃/会话关闭不掐断在途回合——stop 先转发、语境后释放，尾音 ASR 抢在释放后派发 LLM/TTS，设备 Idle 被拽回 Speaking。
+- **D3**：空素材记录会话静置不结束（front 引导链因空 accum skip、设备 60s producer 对记录语境硬豁免）。
+- **D1**：human 原推断「front 未进入记录语境」经三源核证**不成立**（每会话都进过、语境 ASR 被抑制）；真实缺陷 = ctx 注入依赖边缘 + front 侧无语境审计行。
+
+**修复轮（同包边界内，human 2026-11-17「三个问题都修」）**：
+- D1：ctx(story) 每会话**无条件幂等注入** + 审计 token `story_record_ctx_enter`（单 emit 点）；`control/start_recording` 消费沿返回语义 consumed。
+- D2：discard 分支内经泵内本连接引擎腿**先发 active=false**（帧序先于 listen stop），由引擎既有 `_kidpal_listen_closed` 先清后转硬截断；**不发 abort**（轮 A 实证 abort 无效 + 引擎冻结纪律禁置 client_abort）；另有 front 侧「会话关闭迟到帧门」+ 自注 speak 令牌（提醒弹窗半结构性免疫）。KEY 收尾归档路径零改动（对照齿保绿）。
+- D3：设备 CLOCK_TICK 区新增空素材 producer（`kStoryEmptySessionTimeoutS=60` + `!s_story_rec_entered` + `!s_vad_speaking` + 记录语境门）→ 统一收口处理器；front 既有 pending 10s 释放链零改动（释放、不归档、不推 story_list、不盖章）。
+- 验收：新增冻结 5 条（SCRF-B7/B8/B9、SCR-A8、SCRF-B10）+ RDG-A4 显式重锚；变异 19 组留痕（`mutation-evidence/round-a-fix.md`，含 4 条如实观察项）。
+- 离线实跑：host 307/3（3 = 上游存量）、server 486/0；final r5 十闸全绿；closeout-check exit 0。
+
+**仍未闭合（交 human / 主线程）**：
+1. **真机轮 B 复测**（B-D1/B-D2/B-D3 + A5/A6/A7 回归）——本包合并出口；`device-round-evidence.md` 未生成、不伪造 PASS。
+2. **合并门**：supervisor ESCALATE（riskTier high）+ `parallel-overlap-tier3`（生成件 `delivery/workstreams/INDEX.md` 日期行；architect 判 ②，建议 `.gitattributes merge=union`；**人批豁免不了**）。
+3. **G4 工具缺口**（`gate-tooling-gap-g4.md`）与本轮新发现（`gate-tooling-gap-overlap-index.md`）由主线程 `/gov-change` 修。
+4. **spec 漂移**：D3 收窄 requirements §2.1 记录会话 60s 豁免 → 主线程/需求面轻量注记；本 Pod 对 `docs/**` 零 diff。
+5. debt 两条维持 `deferred`（轮 B PASS 后结项）；spine/workstream 锚点更新归主线程。
