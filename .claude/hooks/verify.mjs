@@ -10,12 +10,17 @@ import {
   fsyncSync,
   linkSync,
   mkdirSync,
+  mkdtempSync,
   openSync,
   readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
   unlinkSync,
   writeFileSync,
 } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
@@ -307,6 +312,28 @@ function runGateChild() {
       console.log(JSON.stringify({ ok: false, results, error, phase }, null, 2));
       process.exit(1);
     }
+
+    // ── G4 产线修复（261117-gov-review-g4-verify-log-green-rounds，FROZEN v2 §3.1/§3.2）──
+    // 绿闸也落一份 gate log：G4 / G6 / evidenceComplete 要证的是「闸跑过」，不是「闸红过」。此前
+    // writeGateLog 的唯一调用点在上方 !ok 分支内，导致「从第一轮起全绿」的 Pod 目录从未创建 →
+    // supervisor-gate-check G4 恒红（:719）、supervisor-verdict-gate evidenceComplete 恒 false（:698）、
+    // G6 verifyLogRefs 空数组恒 block（:324 + validateRefArray 空数组判据）。
+    // 形状纪律（设计审 R2 §11.4 实现防呆）：另起独立块，**不用 `} else {`**——else 会改动上方 if (!ok)
+    // 的收尾行，直接触 FROZEN §5 B2 第 1 项（:288-309 除位置外无字符变化）。红路径不会落到本块：
+    // final 相位红闸在 !ok 内 continue、scoped 相位红闸在 !ok 内 process.exit(1)，故不存在重复写。
+    // best-effort：gate log 属非承重投影（承重件 = round fact，其 publishFact / validateFactObject 的
+    // fail-loud 路径零改），写失败不得把一轮绿改判为红——同本文件「Non-bearing projection/observability
+    // cannot change published 0/1」与 persistVerifyRuns 的 fail-open 惯例；但写失败必须在 stderr 点名，不静默。
+    if (ok) {
+      try {
+        writeGateLog(gate, out);
+      } catch (logError) {
+        process.stderr.write(
+          `[verify.mjs] gate log 写失败（非致命：本轮 ok 与 exit code 不变；G4/G6 证据缺口，收尾门可能红）：` +
+            `gate=${gate.id} phase=${phase} reason=${logError && logError.message ? logError.message : String(logError)}\n`,
+        );
+      }
+    }
   }
 
   if (failures.length > 0) {
@@ -453,6 +480,88 @@ function runBearing() {
 
 // ── self-check（260924-gov-review-gate-parse-teeth T2 新增；argv 触发型，mutation-check 结构注同款：
 // 分支先于 gate-child/legacy 派发，不真跑闸（valid 值覆盖由纯 case 承担，零 current/ 簿记副作用））──
+// ── G4 产线修复两案（261117-gov-review-g4-verify-log-green-rounds，FROZEN v2 §3.7）──
+// hermetic：tmpdir 沙箱自造最小 verify-gates.json（恒绿 / 恒红闸各一条）+ CLAUDE_PROJECT_DIR 指向沙箱、
+// 直跑 --gate-child（不经父进程）→ 零仓内副作用：不写 delivery/taskpackages/current/verdict.json、
+// 不 append verify-runs.jsonl、不产 round fact。
+// 闸命令用沙箱内落地的 .mjs 小脚本而非 `node -e "…"`：避开 Windows cmd.exe 引号脆性（FROZEN §3.7 实施风险提示）。
+// 案名逐条输出（PASS / FAIL 各一行）= 真空绿规约：无案名 = 未执行（FROZEN §5 A1 判据）。
+// 案 B 判别力范围（FROZEN §3.7 / 设计审 R1 F2）：只证「正常红轮 ErrorEnvelope 六字段形状回归」；
+// 红轮**写失败**语义零变化不由本案承载，由 §5 B2 的 diff 逐字节核读承载（R2 §11.3 明裁不补故障注入臂）。
+function runGateLogBattery(check) {
+  const cases = [];
+  const assert = (name, cond, detail = '') => cases.push({ name, ok: Boolean(cond), detail });
+  const root = mkdtempSync(join(tmpdir(), 'verify-g4log-'));
+  try {
+    const makeSandbox = (gateId, exitCode, marker) => {
+      const dir = join(root, gateId);
+      mkdirSync(join(dir, '.claude'), { recursive: true });
+      writeFileSync(join(dir, `${gateId}.mjs`), `console.log('${marker}');\nprocess.exit(${exitCode});\n`, 'utf8');
+      writeFileSync(
+        join(dir, '.claude', 'verify-gates.json'),
+        JSON.stringify({ gates: [{ id: gateId, kind: 'governance', cmd: `node ${gateId}.mjs`, timing: 'scoped' }] }, null, 2),
+        'utf8',
+      );
+      return dir;
+    };
+    const runGateChildIn = (dir) => spawnSync(process.execPath, [scriptPath, '--gate-child', '--phase=scoped'], {
+      cwd: dir, encoding: 'utf8', timeout: 60000, env: { ...process.env, CLAUDE_PROJECT_DIR: dir },
+    });
+    const payloadOf = (child) => { try { return JSON.parse(child.stdout || '{}'); } catch { return {}; } };
+    const logsOf = (dir) => {
+      const logsDir = join(dir, '.claude', 'verify-logs');
+      if (!existsSync(logsDir)) return [];
+      return readdirSync(logsDir)
+        .filter((f) => f.endsWith('.log'))
+        .map((f) => ({ name: f, size: statSync(join(logsDir, f)).size, text: readFileSync(join(logsDir, f), 'utf8') }));
+    };
+
+    // 案 A：全绿轮次也落 gate log（G4 / G6 证据产线本体）
+    {
+      const dir = makeSandbox('probe-green', 0, 'probe-green-marker');
+      const child = runGateChildIn(dir);
+      const payload = payloadOf(child);
+      const logs = logsOf(dir);
+      assert(
+        'green-round-writes-gate-log',
+        child.status === 0 && payload.ok === true && logs.length >= 1
+          && logs.some((l) => l.size > 0 && l.text.includes('gate=probe-green') && l.text.includes('probe-green-marker')),
+        `exit=${child.status} ok=${payload.ok} logs=${logs.length} stderr=${String(child.stderr || '').slice(0, 160)}`,
+      );
+    }
+
+    // 案 B：正常红轮 ErrorEnvelope 形状回归（logFile / logTail / fingerprint / failingStep / category / cmd）
+    {
+      const dir = makeSandbox('probe-red', 3, 'probe-red-failure-marker');
+      const child = runGateChildIn(dir);
+      const payload = payloadOf(child);
+      const envelope = payload.error || {};
+      const logs = logsOf(dir);
+      const refParts = typeof envelope.logFile === 'string' ? envelope.logFile.split('/') : [];
+      const refAbs = refParts.length > 0 ? join(dir, ...refParts) : null;
+      assert(
+        'red-round-envelope-unchanged',
+        child.status === 1 && payload.ok === false
+          && envelope.name === 'GateFailure' && envelope.failingStep === 'probe-red'
+          && envelope.category === 'guardrail' && envelope.cmd === 'node probe-red.mjs'
+          && typeof envelope.fingerprint === 'string' && /^[0-9a-f]{12}$/.test(envelope.fingerprint)
+          && String(envelope.message || '').includes('exit 3')
+          && refAbs !== null && String(envelope.logFile).startsWith('.claude/verify-logs/')
+          && existsSync(refAbs) && statSync(refAbs).size > 0
+          && String(envelope.logTail || '').includes('probe-red-failure-marker')
+          && logs.length === 1,
+        `exit=${child.status} envelope=${JSON.stringify(envelope).slice(0, 220)}`,
+      );
+    }
+  } finally {
+    try { rmSync(root, { recursive: true, force: true }); } catch { /* best-effort cleanup */ }
+  }
+  for (const c of cases) {
+    console.log(`  [${c.ok ? 'PASS' : 'FAIL'}] ${c.name}${c.ok ? '' : ` (${c.detail})`}`);
+    check(c.name, c.ok);
+  }
+}
+
 function selfCheck() {
   const pass = [];
   const fail = [];
@@ -491,6 +600,9 @@ function selfCheck() {
   const lifted = liftNotExecuted(seam.stdout || '');
   check('defer-seam-executor-skipped-lifted', seam.status === 0 && lifted.notExecuted === true
     && lifted.notExecutedReason.includes('rigor=lite'), `exit=${seam.status}`);
+  // G4 产线修复两案（261117-gov-review-g4-verify-log-green-rounds）：hermetic tmpdir 沙箱，
+  // 案名逐条输出（真空绿规约，FROZEN §5 A1）；计数仍并入下方同一 JSON 汇总行（汇总行字节不动）。
+  runGateLogBattery(check);
   console.log(JSON.stringify({ selfCheck: 'verify.mjs', pass: pass.length, fail: fail.length, total: pass.length + fail.length, ok: fail.length === 0, failures: fail.length ? fail : undefined }));
   process.exit(fail.length === 0 ? 0 : 1);
 }

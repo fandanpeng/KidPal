@@ -80,7 +80,7 @@ Claude Code 的**子 agent 不能再派生子 agent**。因此编排者必须是
 | `hooks/deny-main-push.mjs` | PreToolUse 钩子：禁止直接 `git push` 到 main/master；合并走可回滚路径。 |
 | `hooks/supervisor-gate-check.mjs` | Stop 钩子：integrator closeout 后主线程收尾前必须有 supervisor 裁断（post-cutoff 验 `mechanicalSupervisorGate` provenance + 从 immutable 输入第二方重算 riskTier）。 |
 | `hooks/supervisor-verdict-gate.mjs` | 机械 supervisor-verdict 闸（planner Bash invoke，非 Stop 钩子）：从 git diff 重派生 riskTier（dev-loop:235 投影）+ 消费 bearing facts（validateFactObject 单源 fail-loud）产 APPROVE/BLOCK/ESCALATE，脚本 fs-write write-once `supervisor-verdict.json`。 |
-| `hooks/verify.mjs` | 确定性验证执行器：按 verify-gates 跑闸门，产出与 K6 对齐的 ErrorEnvelope。 |
+| `hooks/verify.mjs` | 确定性验证执行器：按 verify-gates 跑闸门，产出与 K6 对齐的 ErrorEnvelope；**每闸每轮**落一份 gate log 到 `.claude/verify-logs/`（绿轮也落 = supervisor G4 / G6 `verifyLogRefs` / `evidenceComplete` 的证据产线，261117 批修复「仅红闸才落」的缺口）。 |
 | `agents/*.md` | 角色 agent 定义。`verifier` 无 .md 定义文件（2026-07-25 gov 批退役）：保留为 **stage 身份**，行为合同由 `verify.mjs` round 证据 + `verifier-evidence-check.mjs` + scope-map 条目机械承载（**不派 agent**，planner Bash 直跑 `verify.mjs`——gov-review-verifier-dispatch-residual）。`supervisor` 同退役且**不再是派发身份**：合并门裁决由 `hooks/supervisor-verdict-gate.mjs`（机械闸，产 verdict）+ `hooks/supervisor-gate-check.mjs`（Stop 门，验 provenance v2 → mechanicalSupervisorGate）机械承载（gov-review-verdict-bearing-dual，2026-07-30）。 |
 | `commands/build-feature.md` | `/build-feature <story>` 工作流，把上面这套串起来。 |
 | `references/*.md` | 共享工作流知识：任务 intake 与切片、验收证据、测试反模式、ErrorEnvelope、K6 可观测性、安全闸、Review Packet、ADR。 |
