@@ -5,3 +5,4 @@
 {"ts":"2026-11-17T15:05:00Z","event":"design-review-r1","actor":"architect-reviewer","agent":"architect-reviewer","note":"BLOCK(F1)：§3.3 log 头部 ok=/exit=/changeId= 与验收 B2「红分支逐字节不变」互斥（局部量须经调用参数下传→红分支调用站点必改）；F2（案 B 判别力声明过宽）/F3（§3.1 行锚）非阻断；判常规档、不启 landing-verifier；评审段落 PROPOSAL §9"}
 {"ts":"2026-11-17T15:25:00Z","event":"design-revised","actor":"architect","agent":"architect","note":"PROPOSAL v2（361 行）：F1 采推荐处置（删 §3.3 三行头部、归 §7.4 留根）；F2 采 ①+③（案 B 措辞收窄 + 写失败语义由 B2 逐字节承载、B3 改由 B2 承载）；F3 行锚修；B2 覆盖三处整段；dev-loop.md 标非必要"}
 {"ts":"2026-11-17T15:40:00Z","event":"design-frozen","actor":"main-thread","note":"R2 GREEN；主线程标 FROZEN v2（冻结意图/边界/关键方案/验收标准，不冻字节）"}
+{"ts":"2026-11-17T15:35:00Z","event":"implementation-reviewed","actor":"architect-reviewer","agent":"architect-reviewer","note":"实现审 GREEN：reviewedCommit 72998f8a / reviewedTree a116f254；scope ⊆ FROZEN manifest；B2 三处保护区 CRLF 归一等值、唯一删除行=import；绿分支另起 if(ok)；A1 18/18、A2 判别力实证、A4 10/10 独立复跑；主线程代落地属实、author≠judge 保持"}

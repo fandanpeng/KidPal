@@ -470,3 +470,72 @@ scope(architect): scripts/hooks 作者实现只允许当前 gov worktree，禁�
 | C1–C3 | `git diff --stat` | 仅 `.claude/hooks/verify.mjs` 与本批证据尾；`supervisor-gate-check.mjs` / `supervisor-verdict-gate.mjs` / `verify-gates.json` 零 diff |
 
 **诚实记账**：① 基线与逐字节核读使用**工作树副本**（CRLF），未用 `git show HEAD:`（LF，会假失败——交接件 §2 的坑）。② A3 等价跑在仓外沙箱，未在 gov 树跑（避免写 tracked 的 `delivery/taskpackages/current/verdict.json` 与 `verify-runs.jsonl` 出 scope）。③ 本记录不自签 verdict、不写钉点；钉点归 architect-reviewer 真实 diff 审。
+
+---
+
+## 14. architect-reviewer 真实 diff 审（2026-11-17）
+
+verdict: GREEN
+
+reviewedCommit: 72998f8a102aeeca3186f0a067ee9cc90f0e4e8b
+reviewedTree: a116f2541a93d38d7a243019c7f71efdddb212e6
+
+> 审对象 = `390a7297..72998f8a` 的真实实现 diff。所有 commit/tree/blob/SHA、逐个 hunk、逐字节比对、自测复跑均本会话亲核（不采信 §12/§13 与交接件的自述）。工作树 `C:/AI/KidPal-gov-g4` 分支 `gov/g4-verify-log-fix`。
+
+### 14.1 钉点与环境核
+
+- `git rev-parse HEAD` = `72998f8a102aeeca3186f0a067ee9cc90f0e4e8b`（= 声明 reviewedCommit）；`HEAD^{tree}` = `a116f2541a93d38d7a243019c7f71efdddb212e6`（= 声明 reviewedTree）；`HEAD^` = `390a7297d1d1…`（= 声明父）。
+- `.claude/hooks/verify.mjs` blob = `git rev-parse HEAD:.claude/hooks/verify.mjs` = `6efe0e759712b19fa96b08bb26eb5aa351a4e2d4`（与声明一致）；审前工作树 `git hash-object` 同值、`git status --porcelain` 空（干净）。
+- 三个 SHA 均 40 位小写 hex，与 Git 现推一致。
+
+### 14.2 scope 合规：PASS
+
+`git diff --name-status 390a7297..72998f8a`：
+```
+M  .claude/hooks/verify.mjs
+M  .claude/references/dev-loop.md
+A  delivery/review/261117-gov-review-g4-verify-log-green-rounds/PROPOSAL.md
+A  delivery/review/261117-gov-review-g4-verify-log-green-rounds/events.jsonl
+A  delivery/review/261117-gov-review-g4-verify-log-green-rounds/implementation-handoff.md
+```
+- `verify.mjs`（FROZEN manifest 第一行）+ `dev-loop.md`（manifest 第二行，可选）⊆ 预计 scope；三个 `delivery/review/<changeId>/**` 由 `isEvidenceTailPath`（`governance-gate-shared.mjs:121-126`）识别为证据尾、不入 scope 对账。
+- **未触** `supervisor-gate-check.mjs` / `supervisor-verdict-gate.mjs` / `verify-gates.json` / scope-map / settings / 指令根 / agent 定义 / 独立评审凭据——C1/C2/C3 的「不得入 diff」全部满足。实际非证据 diff ⊆ 预计 scope。
+
+### 14.3 B2 逐字节核读：PASS（三处保护区零字符变化）
+
+- `git diff -U0 390a7297..72998f8a -- .claude/hooks/verify.mjs` 共 **6 个 hunk**：import 块 ×3（`@@ -12,0` / `@@ -14,0` / `@@ -18 +22,2`）、绿分支插入 `@@ -309,0 +315,22`、battery `@@ -455,0 +483,82`、selfCheck 接线 `@@ -493,0 +603,3`。全 diff **唯一 `-` 行** = `import { dirname, resolve } from 'node:path';`（改为含 `join` 的版本 + 新增 `node:os` 的 `tmpdir`，均为自测所需），该行在 import 区（旧 :18），不属任何保护区。
+- 三处保护区逐字节对证（取 `git cat-file` 两 blob、CRLF→LF 归一同法处理，`diff` 无差异、`md5sum` 三对同值）：
+  - `writeGateLog` 旧 `:191-203` ≡ 新 `:196-208` → md5 `72c3745c66f64aee6c8df5547b043aa6`（两版同值），首尾行 `function writeGateLog(gate, output) {` / `}`。
+  - `if (!ok) {…}` 整段旧 `:288-309` ≡ 新 `:293-314` → md5 `e42c0d07a7bb793595ddfb6020b61f8b`（两版同值），首尾行 `if (!ok) {` / `}`。
+  - 循环后全红清单块旧 `:312-318` ≡ 新 `:339-345` → md5 `b9f7ac9611dabd622018ca30c17aad52`（两版同值），首尾行 `if (failures.length > 0) {` / `}`。
+- 结论：`writeGateLog` 函数体（签名 / 目录 / 文件名 / 头部四行 / 返回值）、`if (!ok)` 整段（含 error 构造、final 的 `failures.push(error); continue;`、scoped 的 `console.log` + `process.exit(1)`）、循环后全红清单块——三处均逐字节不变。R1 F1 的最强保证「红分支逐字不动 ⇒ 失败路径零变化」成立。B3（final「遇红不停」零改）由上述第 1、2 处覆盖。
+
+### 14.4 实现防呆：PASS（另起独立 `if (ok)`，未用 `} else {`）
+
+- 绿分支实际形状（hunk `@@ -309,0 +315,22` 插入内容）：在 `if (!ok) {…}` 收尾行之后另起独立 `if (ok) { try { writeGateLog(gate, out); } catch (logError) { process.stderr.write(...gate.id, phase, reason...) } }`，**非** `} else {`。
+- `:314`（旧 `:309`）经上方 `if(!ok)` 整段 md5 同值核已证零字符变化。绿色路径不落红块（final 红闸 `continue`、scoped 红闸 `process.exit(1)` 均在 `if(!ok)` 内），无重复写。stderr 点名含 `gate.id` + `phase` + `reason`，符合 FROZEN §3.2「不静默、不致命」。
+
+### 14.5 验收复跑（本会话独立执行，未引用 §12/§13 自述）
+
+| 项 | 我实跑 | 结果 |
+|---|---|---|
+| A1 | `node .claude/hooks/verify.mjs --self-check` | `{"pass":18,"fail":0,"total":18,"ok":true}`、exit 0；`[PASS] green-round-writes-gate-log` / `[PASS] red-round-envelope-unchanged` 逐条输出 |
+| A2 判别力 | 临时把绿分支 `if (ok) {` 改 `if (ok && false) {`（禁绿写）后重跑 | 案 A `[FAIL] green-round-writes-gate-log (exit=0 ok=true logs=0)`、案 B 仍 PASS、`17/18 ok:false failures=[green-round-writes-gate-log]`、exit 1；随后 `git checkout` 还原，blob 回 `6efe0e75…`、复跑回 `18/18 ok:true`；收尾 `git status` 干净 |
+| A4 | `node .claude/hooks/supervisor-gate-check.mjs --self-check` | `Battery: 10/10 pass`、`OK`、exit 0 |
+| A3 | 按 FROZEN §4.4/§13②不重跑（禁在 gov 树跑以免写 tracked 的 `current/verdict.json` / `verify-runs.jsonl`）；核 §13:468 记录形状（exit 0 / 单个非空 log / 头部四行 `gate=` `kind=` `cmd=` `phase=`）与 A1 案 A 同机制一致、可复现 | 记录取证，形状自洽 |
+
+案 A 判别力经我独立实证可去伪（禁绿写即 FAIL），非恒真；案 B（正常红轮六字段回归）与 A1/A4 全绿。
+
+### 14.6 dev-loop.md 一行：保留
+
+`dev-loop.md` file-map 第 `hooks/verify.mjs` 行由「…产出与 K6 对齐的 ErrorEnvelope。」扩为「…；**每闸每轮**落一份 gate log 到 `.claude/verify-logs/`（绿轮也落 = G4 / G6 `verifyLogRefs` / `evidenceComplete` 的证据产线，261117 批修复「仅红闸才落」的缺口）。」——准确描述新语义、引本批号，属 manifest 可选行、在 scope 内，认定**保留**（R1 N5「保留或未改皆合规」）。单行、无越界。
+
+### 14.7 主线程代落地与诚实记账：合规
+
+- **「写权不足」凭据属实**：`enforce-scope.mjs:301-304`（`agentKey==='architect'` 且写 `^\.claude\/(?:scripts|hooks)\//` → 调 `architectNonMainViolation`）+ `:168-173`（`samePath(home.treeRoot, target.treeRoot)` 不同即 block「只允许当前 gov worktree，禁止跨树」）。architect 会话树根在 pod worktree、目标在 gov 树 = 跨树 → fail-closed，作者确无法实施。依 `gov-change.md`「条件加强 · 主线程代落地：…写权不足…」由主线程落地，**不绕过、不改权限**。
+- **author ≠ judge 保持**：architect 起草、主线程代落地、本 reviewer 独立审真实 diff 并独立复跑验收（上方 A1/A2/A4 均为我亲跑，未采信自述）。判档仍常规档、不启 landing-verifier（改动为 ordinary 单文件、判定语义零改、无评审争议、无未覆盖真实语义风险）。
+- **诚实记账核实**：① 我独立采用「git blob + CRLF→LF 归一」而非 `git show` 直比（避开 CRLF 假失败坑），结果与作者「用工作树副本」口径一致；② A3 在仓外沙箱、未在 gov 树跑（避免 `current/verdict.json` / `verify-runs.jsonl` 出 scope），我未在 gov 树跑 A3，保持树洁净；③ 本记录由 reviewer 落，作者/主线程未自签 verdict、未写钉点。
+
+### 14.8 结论
+
+实现意图保真（绿轮落 log、红轮零变化）、scope 合规、B2 三处保护区逐字节不变、实现防呆到位、验收判别力经独立复跑证实、记账诚实、author≠judge 保持。**真实 diff 审 GREEN**，可进入机械前置升级闸与本地合并。本钉点（`reviewedCommit` / `reviewedTree`）为最终实现评审；此后任何实现变化均使本钉点失效、须重审；仅证据尾（本 PROPOSAL 及批记录）追加不失效。
