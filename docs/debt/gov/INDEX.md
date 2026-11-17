@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/gov/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 15（待拍板 0 / 待触发 15 / 已接受风险 0）；已结 126（归档索引见下）。
+**摘要**：未结 22（待拍板 0 / 待触发 22 / 已接受风险 0）；已结 126（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（15）
+## 待触发（22）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -32,6 +32,13 @@ _（无）_
 | [ARQ-281028-arq-entry-plain-language](ARQ-281028-arq-entry-plain-language.md) | SHOULD | ARQ 条目散文缺「问题白话段」——human 读条目懵、需主线程二次转译才能拍修法 | 下一个动 docs/templates/debt-item.template.md 或 gov-arq skill 写法义务的批；或下一次立项复证发现 human 对条目表述懵 |
 | [ARQ-281028-assembler-import-closure-and-root-param](ARQ-281028-assembler-import-closure-and-root-param.md) | COULD | 装配副本缺被改脚本的 import 闭包致自检跑不起来；判别脚本硬编码副本根需落地期 sed——落地期两处机械摩擦 | 下一个使用 assemble-edits 的治理批起草期或落地期 |
 | [ARQ-281028-mutation-fixture-consumer-layer](ARQ-281028-mutation-fixture-consumer-layer.md) | SHOULD | 反转变红判别夹具默认打在判据计算层，消费/拦截层零判别——闸自检电池全绿而闸层带洞 | 下一个带 mutation/反转判别的治理批或 dev-loop 验证集义务文面批 |
+| [ARQ-261117-acceptance-coverage-assertion-and-flag-gaps](ARQ-261117-acceptance-coverage-assertion-and-flag-gaps.md) | SHOULD | acceptance-coverage-check 的断言识别集不认 Unity（纯 Unity 验收件假红）+ 旗标面与 mutation-check 不一致（不认 --change-id） | 下一个动 `.claude/scripts/acceptance-coverage-check.mjs` 或机检旗标面的治理批 |
+| [ARQ-261117-change-manifest-cutoff-projection-bypass](ARQ-261117-change-manifest-cutoff-projection-bypass.md) | MAJOR | change-manifest 闸的 pre-cutoff 判定读 current/ 投影文件的首提日 → cutoff 之后的所有包被判 pre-cutoff 静默跳过，changeManifest 对账等于没跑 | 下一个动 `.claude/scripts/change-manifest-check.mjs` 或 cutoff 谓词的治理批；或再出现一次「manifest 缺项却 verify 全绿」 |
+| [ARQ-261117-dispatch-brief-operational-facts](ARQ-261117-dispatch-brief-operational-facts.md) | SHOULD | 派单 / 起包的操作性事实没有前置——目标文件死活、manifest 起草面、只读预评边界、写通道、设备编译通道、上一包状态事实源 | 下一个动 planner 派单模板 / brief-inputs / launch-card 文面的治理批 |
+| [ARQ-261117-frozen-acceptance-satisfiability-discipline](ARQ-261117-frozen-acceptance-satisfiability-discipline.md) | SHOULD | 冻结验收件带内部矛盾 / 不可满足断言进冻结——「跨用例一致性自检」已三次成文仍三次未执行，红基线只证红因不证绿路径可满足 | 下一个动 acceptance-author 派单模板 / 冻结纪律文面的治理批；或同型缺陷再出现一次 |
+| [ARQ-261117-mutation-lifecycle-ownership-and-commit-guard](ARQ-261117-mutation-lifecycle-ownership-and-commit-guard.md) | SHOULD | mutationEvidence 生命周期三缺口——perAcceptance 投影无 owner、主线程可在变异态下 commit、MASKED 条目不复测 | 下一个动 planner / builder 派单模板或 verify 前置检查的治理批 |
+| [ARQ-261117-new-gate-dry-run-rehearsal](ARQ-261117-new-gate-dry-run-rehearsal.md) | SHOULD | 新闸 / 闸链改动上线前没有全链 dry-run 演练——第一个端到端走通该路径的包当小白鼠，付出三轮真机 + 四轮闸拉锯 | 下一个新立闸 / 闸链改动（含 merge-driver、deviceOutcome 校验、pre-merge 闸）的治理批 |
+| [ARQ-261117-orphan-headless-writer-cleanup](ARQ-261117-orphan-headless-writer-cleanup.md) | SHOULD | headless planner 被停后进程未清场即重拉——存活旧进程与新会话的 acceptance-author 并发写同一冻结验收面 | 下一个动 launch-prep skill / planner 重拉流程的治理批；或再出现一次双写冻结面 |
 
 ## 已接受风险（0）
 
