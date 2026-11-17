@@ -32,7 +32,7 @@
     { "gate": "docs-sync", "kind": "governance", "ok": true, "ms": 107, "timing": "scoped", "note": "docsSyncRequired=false；D3 对 requirements §2.1 记录会话豁免的收窄已在校验包显式申报，交主线程按需求面注记处理（Pod 零改 spec）" },
     { "gate": "security", "kind": "security", "ok": true, "ms": 105, "timing": "scoped", "note": "securityReviewRequired=false" },
     { "gate": "unit", "kind": "functional", "ok": true, "ms": 37872, "timing": "full", "note": "247 passed, 3 deselected, 22 subtests（scope 内 14 py 文件；--phase=final --scope-file 求交真跑）" },
-    { "gate": "acceptance", "kind": "functional", "ok": true, "ms": 36434, "timing": "full", "note": "195 passed, 3 deselected, 3 subtests；serverAcceptanceFiles=11 / firmwareAcceptanceFiles=11（firmware on-target 需实机，闸只作结构/存在性核对）" }
+    { "gate": "acceptance", "kind": "functional", "ok": true, "ms": 36434, "timing": "full", "note": "195 passed, 3 deselected, 3 subtests；serverAcceptanceFiles=14 / firmwareAcceptanceFiles=11（firmware on-target 需实机，闸只作结构/存在性核对）" }
   ],
   "mechanicalCheck": {
     "tool": ".claude/scripts/verifier-evidence-check.mjs",
