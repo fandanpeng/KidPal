@@ -116,6 +116,17 @@ static const int kAutoConnectBackoffS[3] = { 5, 10, 20 };
 static const int kSessionIdleTimeoutS = 60;
 
 /* -------------------------------------------------------------------------- *
+ * 261116-channel-resident-core（真机轮 A 修复轮 D3）空素材会话空闲收尾阈值:
+ * 记录语境会话在聆听态**从未收到任何素材**（VAD 起音沿未置位素材信号）且静置
+ * 60 秒即自动结束会话——只释放、不归档（空素材会话没有引导链，静置不结束是轮 A
+ * 实测缺陷）。阈值与 requirements §2.1 的单一 60s 口径对齐，不引入第二个魔数；
+ * 值 60 冻结进验收件 session_channel_resident.acceptance.c 的 SCR-A8，改值须回
+ * planner 重冻结。注意注释刻意不复述既有无语音超时常量的符号字面（SCR-A5 的区切
+ * 以该字面首现为起点，注释写回会抢走首现点 -> 假红）。
+ * ------------------------------------------------------------------------ */
+static const int kStoryEmptySessionTimeoutS = 60;
+
+/* -------------------------------------------------------------------------- *
  * 261022-diag-log-content（板端诊断日志内容增强）SystemInfo 打印门控状态：
  * 上一次放行的单调毫秒（单写者 = main event loop，与 clock_ticks_ 同上下文）。降频
  * 决策本体归 diagnostics/log_semantics.c kidpal_log_sysinfo_due（间隔 = 头文件
@@ -490,6 +501,27 @@ void Application::Run() {
                 clock_ticks_ >= kSessionIdleTimeoutS &&
                 !kidpal_story_session_ctx_active()) {
                 ESP_LOGI(TAG, "session_idle_timeout corr_id=kdp-%u seconds=%d",
+                         static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu),
+                         clock_ticks_);
+                HandleEndVoiceSessionEvent();
+            }
+
+            /* 261116-channel-resident-core（真机轮 A 修复轮 D3）: 空素材记录会话空闲
+             * 收尾 producer。判据五件:
+             *   ① 设备态 == 聆听态
+             *   ② 记录语境会话（正向门——与上方既有 60s 无语音 producer 的豁免门互补，
+             *      两者恰好覆盖「非记录语境 / 空素材记录语境」两半）
+             *   ③ 本次会话从未收到素材（VAD 起音沿即置位素材信号，Idle 收尾阶段清位；
+             *      有素材的会话交引导/归档链收尾，不得被本 producer 误收）
+             *   ④ VAD 电平门（承重，与上方同款理由：无停顿长讲只有一个上升沿）
+             *   ⑤ 静置计时到空素材阈值
+             * 命中 -> 直调统一收口处理器（主循环上下文 = 直调形态，与上方同款）。
+             * 审计行 token 固定（见下方日志行；轮 B 三源对账的设备侧唯一可观测证据）。
+             * 注释刻意不写判据符号字面（验收件按源文本计数，会稀释断言区分力）。 */
+            if (GetDeviceState() == kDeviceStateListening &&
+                kidpal_story_session_ctx_active() && !s_story_rec_entered &&
+                !s_vad_speaking && clock_ticks_ >= kStoryEmptySessionTimeoutS) {
+                ESP_LOGI(TAG, "story_empty_session_timeout corr_id=kdp-%u seconds=%d",
                          static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu),
                          clock_ticks_);
                 HandleEndVoiceSessionEvent();

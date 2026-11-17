@@ -28,6 +28,64 @@ Scope of record（SCRF-B1..B6）:
           acc.cancel(reason="ws_disconnect")。
   SCRF-B6 既有冻结 oracle 保绿回归网（presence 守卫 + 全量 suite 绿留痕）。
 
+真机轮 A 修复轮追加（2026-11-17，human「三个问题都修」；planner/architect 修复轮
+技术方案 = plan.md「真机轮 A 修复轮（2026-11-17）技术方案」D1/D2/D3）:
+  SCRF-B7（D1）记录语境注入去边缘化：ctx(source_page=story) 每会话**无条件**注入
+          kidpal_record_context active=true——routing 已 accumulate（泄漏会话态 / 重复
+          ctx / 引擎腿重建）时仍恰一帧；control/start_recording 消费沿同口径
+          （_story_route_display_payload 返回语义 enter_edge -> consumed）。front 侧
+          审计 token story_record_ctx_enter 单一 emit 点（源文本恰 1 处）+ 真跑泵可
+          观测（src=ctx_story|start_recording / edge= / injected=）。story_list 仍守
+          ctx_push_edge（重复 ctx 零新增）。
+  SCRF-B8（D2）丢弃终止在途回合（**不发 abort**）：kidpal_story_discard 分支内、返回前
+          经泵内本连接引擎腿直发 active=false——同一协程同一 upstream 顺序 await ⇒
+          active=false 严格先于随后转发的 listen stop；恰一帧（重复 stop 零第二次注入）；
+          腿集不得回退 _alert_legs（源文本负锚）；全程零 abort 帧（锁死本轮决策）。
+          must-stay-green 对照：ctx+feed+stop（不发 discard）仍恰一篇归档且 active=false
+          出现在 stop **之后**（防修过头毁 KEY 尾音归档）。
+  SCRF-B9（D2 迟到帧）会话关闭门：_release_record_context 单点 arm；下一次 listen start /
+          ctx(story) disarm；门内丢弃引擎腿→设备腿的二进制音频帧与 type in
+          ("tts","llm") 文本帧，不拦 type=="mcp" 与 stt。front 自注 kidpal_speak 令牌
+          登记后有界放行整轮（含其 tts stop；先判令牌后清令牌——tts stop 帧本身放行，
+          stop 之后清位）；令牌登记点覆盖提醒 speech（_deliver_alert_now，reminders.py
+          引擎腿注入不经 _speak_to_legs）。
+  SCRF-B10（D3 front 半）空素材收尾=释放口径：空素材 stop（accum 空）→ pending_stop →
+          10s sweep 释放 + active=false 恰一帧；_story_finish_session 零调用、STORIES_DIR
+          零新增、零 start_organizing、零新增 story_list；尾音幻听（「嗯。」）走
+          _archive_material_reject_reason 拒绝路径同口径。**预期设计态绿**（must-stay-green
+          + 轮 B 离线代理，不造红）。
+
+修复轮强度申报（契约条目 -> 承载断言 -> 性质档；acceptance-evidence T2 纪律）:
+  契约 §四 kidpal_session_ctx「每会话进入记录语境」语义 -> B7 -> 行为级（真泵 + 真
+    StoryAccumulator + 假引擎腿收帧计数）+ 源锚代理（审计 token 单点计数，辅助信号）。
+  device-round-a-evidence §一（丢弃必须使引擎不再产出该回合 TTS）-> B8 -> 行为级（真泵
+    帧序 + 腿集归属实证：另一条全局提醒腿零帧）+ 源锚代理（discard 分支 _alert_legs 负锚）。
+  契约 §四 kidpal_story_discard + ADR-013 -> B8 对照齿 -> 行为级（真归档落盘）。
+  device-round-a-evidence §一（迟到 TTS 拽回 Speaking）-> B9 -> 行为级（真泵逐帧转发
+    判决：二进制 / tts / llm 丢弃，mcp / stt 放行；令牌放行整轮）。
+  S-F1.4 + ADR-003 -> B9 提醒 speech 令牌登记点 -> 行为级（真 _deliver_alert_now 两腿
+    投递 + 随后 tts 帧放行；提醒弹窗+提示音半直发设备腿 = 结构性免疫，本断言只证语音
+    令牌面不误丢）。
+  requirements §2.1 / §2.3（D3 设备半）+ S-F2.2-AC4 -> B10 -> 行为级（pending 释放 +
+    零归档/零推送/零演出；拒绝路径同口径）；设备侧空素材收尾 producer 本体 = firmware
+    件 SCR-A8（源锚代理），真机 60s 自动回列表 = 轮 B B-D3。
+  弱于契约处（显式缺口，不得当已兑现）:
+    GAP-B7-1 引擎侧「收到 active=true 后抑制 LLM」行为不在本侧断言（引擎代码零改动
+     铁律）——front 只证注入帧送达与帧数；引擎侧抑制 = engine-patch 既有冻结面 + 轮 B
+     三源对账（B-D1：问句零 TTS、设备不 idle->speaking）。
+    GAP-B9-1 kidpal_speak 令牌 **deadline 30s 到期**路径未离线断言（无冻结时钟注入缝；
+      令牌上限是安全网，主限界 = tts stop 清位，已断言）。到期行为归真机轮 B-D2。
+    GAP-B9-2 「令牌在场时 display 块仍可能闪屏」列 residual（B8 修好后该回合不应存在）。
+    GAP-B10-1 D3 设备侧 60s 自动收尾的运行时行为 = 真机轮 B-D3；本件只钉 front 释放
+      口径（离线 half）。
+  行为等价假设（显式；不写即默认不成立）:
+    EQ-B9-1 「同 device websocket 对象 ≙ 同连接」：会话关闭门 / 令牌按 device ws 对象
+      建键，离线用同一 _FakeDeviceSocket 跨多次 pump 承载（与 EQ-3 同款）。
+    EQ-B9-2 「二进制帧在 gate 内被丢弃 ≙ 设备不再播该段音频」：本件只证前件；后件归真机。
+  夹具自含性（显式声明）: B7–B10 只用 tempfile STORIES_DIR + 假双腿 + 假时钟注入
+    （sweep now）；无网络、无真实墙钟、无外部资产。唯一的模块级跨调用状态
+    （_RECORD_CTX_SEEN / 会话关闭门 / speak 令牌）按 device ws 对象建键，test 间零共享。
+
 ===========================================================================
 FROZEN OFFLINE CONTRACT（builder implements；fastapi 缺席本地 stub，261019/RCL 先例；
 story.py 三缝 release_pending / cancel / PENDING_STOP_SECONDS 零改动）：
@@ -85,6 +143,7 @@ import asyncio
 import contextlib
 import importlib.util
 import json
+import logging
 import os
 import sys
 import tempfile
@@ -437,6 +496,110 @@ def _keepalive_frames(sent_text):
 
 def _story_md_files(stories_dir):
     return list(Path(stories_dir).glob("*.md"))
+
+
+# --------------------------------------------------------------------------- #
+# 真机轮 A 修复轮（2026-11-17）断言 helpers（SCRF-B7..B10）                        #
+# --------------------------------------------------------------------------- #
+
+# 二进制音频帧替身（引擎下行 Opus 包形态不必真解码；本组只断言「是否转发」）。
+AUDIO_BYTES = b"\x00\x01\x02opus-audio-frame"
+
+
+def _frames_of_type(sent_text, *types):
+    """设备腿已转发文本帧中按 type 过滤（返回 dict 列表）。"""
+    wanted = set(types)
+    return [o for o in _forwarded_objects(sent_text) if o.get("type") in wanted]
+
+
+def _frame_indices(sent, predicate):
+    """腿序帧下标：sent 为上行/下行腿原始帧列表（str|bytes），返回满足谓词的下标。"""
+    out = []
+    for idx, item in enumerate(sent):
+        if isinstance(item, (bytes, bytearray)):
+            continue
+        try:
+            obj = json.loads(item)
+        except (TypeError, ValueError):
+            continue
+        if isinstance(obj, dict) and predicate(obj):
+            out.append(idx)
+    return out
+
+
+def _is_release_frame(obj):
+    return obj.get("type") == RECORD_CTX_TYPE and obj.get("active") is False
+
+
+def _is_listen_stop_frame(obj):
+    return obj.get("type") == "listen" and obj.get("state") == "stop"
+
+
+def _is_abort_frame(obj):
+    return obj.get("type") == "abort"
+
+
+def _tts_frame(state, text=None):
+    """引擎 tts 播报状态机帧（start / sentence_start（带同步文字）/ stop）。"""
+    frame = {"type": "tts", "state": state}
+    if text is not None:
+        frame["text"] = text
+    return frame
+
+
+def _llm_frame():
+    """引擎 llm 情绪帧（无 text 字段 -> 泵逐字转发路径）。"""
+    return {"type": "llm", "emotion": "happy"}
+
+
+def _mcp_probe_frame():
+    """设备只认 type=mcp 进 McpServer；B9 用它证明迟到帧门不拦 mcp。"""
+    return {"type": "mcp", "payload": {"jsonrpc": "2.0", "id": 1,
+                                       "result": {"ack": True}}}
+
+
+def _display_blocks_frame(block):
+    """引擎侧 side-channel：display 块以字符串数组下发（front 消费后 relay）。"""
+    return {"type": "kidpal_display_blocks",
+            "blocks": [json.dumps(block, ensure_ascii=False)]}
+
+
+def _start_recording_block():
+    return {"view": "control", "data": {"action": "start_recording"}}
+
+
+def _log_lines_with(logs, *needles):
+    """捕获行中同时含全部 needle 者（大小写不敏感——布尔字段真值形态 edge=true /
+    edge=True 皆认，防实现用 %s 打印 Python bool 造成假红）。"""
+    out = []
+    for line in logs:
+        low = line.lower()
+        if all(needle.lower() in low for needle in needles):
+            out.append(line)
+    return out
+
+
+@contextlib.contextmanager
+def _log_capture(name="kidpal-front"):
+    """采集 logger 的 INFO+ 消息（不要求「至少一条」—— 设计态红须落在断言本体，
+    不能靠 assertLogs 的零记录异常误报）。"""
+    records = []
+    logger = logging.getLogger(name)
+
+    class _Capture(logging.Handler):
+        def emit(self, record):  # noqa: D105
+            records.append(self.format(record))
+
+    handler = _Capture(level=logging.INFO)
+    old_level = logger.level
+    if logger.getEffectiveLevel() > logging.INFO:
+        logger.setLevel(logging.INFO)
+    logger.addHandler(handler)
+    try:
+        yield records
+    finally:
+        logger.removeHandler(handler)
+        logger.setLevel(old_level)
 
 
 # --------------------------------------------------------------------------- #
@@ -1207,6 +1370,566 @@ class ScrfOracleRegressionAcceptance(unittest.TestCase):
                 self.assertIn(needle, text,
                               f"SCRF-B6 RED: {label} 缺关键 frozen 锚 {needle!r} —— "
                               "既有 oracle 被改弱/删除（回归网破; 任一红不得进 integrator）。")
+
+
+# =========================================================================== #
+# SCRF-B7 — 记录语境注入去边缘化（D1）                                            #
+# =========================================================================== #
+
+
+class ScrfRecordCtxUnconditionalAcceptance(unittest.TestCase):
+    maxDiff = None
+
+    # coverage: SCRF-B7 -- ctx(story) 无条件注入 active=true：routing 已 accumulate
+    #            （重复 ctx）时仍恰一帧；story_list 仍守 ctx_push_edge（重复零新增）；
+    #            审计 token story_record_ctx_enter 可观测（edge=true / edge=false,
+    #            injected=true, src=ctx_story）
+    def test_scr_b7_repeat_ctx_story_injects_again_story_list_stays_edge_only(self):
+        with tempfile.TemporaryDirectory(prefix="scr_b7_ctx_") as tmp:
+            with _front_with_stories(tmp) as front:
+                sid = "sess-b7-ctx"
+                dev = _FakeDeviceSocket()
+                up = _FakeUpstream()
+                with _log_capture() as first_logs:
+                    dev.append_text(_ctx_msg("story"))
+                    asyncio.run(front.pump_client_to_upstream(dev, up, sid))
+                enters = [f for f in _record_ctx_frames(up.sent) if f.get("active") is True]
+                self.assertEqual(
+                    len(enters), 1,
+                    f"SCRF-B7 RED(前置): 首次 ctx(story) 注入 active=true 帧数 = "
+                    f"{len(enters)}（冻结恰 1）—— 进语境注入链回退。")
+                acc = front._get_story_acc()
+                self.assertEqual(acc.routing(sid), "accumulate",
+                                 "SCRF-B7 RED(前置): ctx(story) 后未进累积态。")
+                story_list_after_first = len(_story_list_frames(dev.sent_text))
+                self.assertGreaterEqual(
+                    story_list_after_first, 1,
+                    "SCRF-B7 RED(前置): 首帧 ctx 边缘未推 story_list（恢复推送缺失——"
+                    "本 case 的「重复零新增」前提失真）。")
+
+                # 重复 ctx(story)：routing 已 accumulate（无 push edge）。
+                with _log_capture() as second_logs:
+                    dev.append_text(_ctx_msg("story"))
+                    asyncio.run(front.pump_client_to_upstream(dev, up, sid))
+                enters_all = [f for f in _record_ctx_frames(up.sent)
+                              if f.get("active") is True]
+                self.assertEqual(
+                    len(enters_all), 2,
+                    f"SCRF-B7 RED: 已在累积态重复 ctx(story) 后 active=true 帧数 = "
+                    f"{len(enters_all)}（冻结 2 = 每会话每次 ctx 无条件恰一帧）—— "
+                    "注入仍依赖 ctx_push_edge：泄漏会话态 / 引擎腿重建时语境失同步"
+                    "（device-round-a-evidence §三 真实缺陷面）。")
+                self.assertEqual(
+                    len(_story_list_frames(dev.sent_text)), story_list_after_first,
+                    "SCRF-B7 RED: 重复 ctx(story) 多推了 story_list —— 边缘推送须仍守 "
+                    "ctx_push_edge（契约 §四「重复发送安全」破）。")
+                self.assertTrue(
+                    _log_lines_with(first_logs, "story_record_ctx_enter",
+                                    "src=ctx_story", "edge=true", "injected=true"),
+                    "SCRF-B7 RED: 首帧 ctx 注入无可判别审计行 —— 缺 story_record_ctx_enter"
+                    "（src=ctx_story / edge=true / injected=true）：三源对账只剩引擎日志，"
+                    "误判成本高（device-round-a-evidence §三.2）。")
+                self.assertTrue(
+                    _log_lines_with(second_logs, "story_record_ctx_enter",
+                                    "src=ctx_story", "edge=false", "injected=true"),
+                    "SCRF-B7 RED: 重复 ctx 注入的审计行未标 edge=false / injected=true"
+                    " —— 审计字段不能区分边缘与幂等重注入（同一 token 单点 emit）。")
+
+    # coverage: SCRF-B7 -- control/start_recording 消费沿同口径（返回语义
+    #            enter_edge -> consumed）：已 accumulate 时仍恰一帧 active=true +
+    #            src=start_recording 审计行
+    def test_scr_b7_start_recording_consumption_injects_when_accumulating(self):
+        with tempfile.TemporaryDirectory(prefix="scr_b7_rec_") as tmp:
+            with _front_with_stories(tmp) as front:
+                sid = "sess-b7-rec"
+                dev = _FakeDeviceSocket()
+                up = _FakeUpstream()
+                dev.append_text(_ctx_msg("story"))
+                asyncio.run(front.pump_client_to_upstream(dev, up, sid))
+                acc = front._get_story_acc()
+                self.assertEqual(acc.routing(sid), "accumulate",
+                                 "SCRF-B7 RED(前置): ctx(story) 后未进累积态。")
+                # 语义面：消费即 consumed（不再是「仅 enter_edge」）。
+                self.assertTrue(
+                    front._story_route_display_payload(sid, _start_recording_block()),
+                    "SCRF-B7 RED: _story_route_display_payload 在 routing 已 accumulate "
+                    "时仍返回 False —— 返回语义须由 enter_edge 改为 consumed（命中即 "
+                    "True；唯一消费者 = 泵内 mark/inject 两处）。")
+                with _log_capture() as logs:
+                    up2, _dev2 = _engine_to_device(
+                        front, sid, [_display_blocks_frame(_start_recording_block())])
+                enters = [f for f in _record_ctx_frames(up2.sent)
+                          if f.get("active") is True]
+                self.assertEqual(
+                    len(enters), 1,
+                    f"SCRF-B7 RED: 已累积态下 control/start_recording 注入 active=true "
+                    f"帧数 = {len(enters)}（冻结恰 1）—— 第二收敛入口仍按边缘注入"
+                    "（plan D1：两入口同口径去边缘化）。")
+                self.assertTrue(
+                    _log_lines_with(logs, "story_record_ctx_enter",
+                                    "src=start_recording", "injected=true"),
+                    "SCRF-B7 RED: start_recording 注入缺 story_record_ctx_enter 审计行"
+                    "（src=start_recording）—— 两收敛入口须共用单点 emit。")
+
+    # coverage: SCRF-B7 -- 审计 token story_record_ctx_enter 单一 emit 点（front_app.py
+    #            源文本恰 1 处；辅助信号，行为面由前两 case 承载）
+    def test_scr_b7_audit_token_single_emit_point(self):
+        src = FRONT_APP.read_text(encoding="utf-8")
+        n = src.count("story_record_ctx_enter")
+        self.assertEqual(
+            n, 1,
+            f"SCRF-B7 RED: front_app.py 内 story_record_ctx_enter 出现 {n} 次（冻结恰 1）"
+            " —— 多 emit 点会让三源对账字段漂移（单点 emit = 三处调用点共用）。")
+
+
+# =========================================================================== #
+# SCRF-B8 — 丢弃终止在途回合（D2；不发 abort）                                     #
+# =========================================================================== #
+
+
+class ScrfDiscardTerminatesRoundAcceptance(unittest.TestCase):
+    maxDiff = None
+
+    def _seed_recording(self, front, sid, dev, up):
+        """ctx(story) + stt feed：routing accumulate，累积非空。"""
+        dev.append_text(_ctx_msg("story"))
+        asyncio.run(front.pump_client_to_upstream(dev, up, sid))
+        _engine_to_device(front, sid, [_stt_frame("从前有一只小猫")])
+        acc = front._get_story_acc()
+        self.assertEqual(acc.routing(sid), "accumulate",
+                         "SCRF-B8 RED(前置): ctx(story)+stt 后未进累积态。")
+        self.assertTrue(acc.has_accum(sid),
+                        "SCRF-B8 RED(前置): 累积缓冲为空（stt 喂入链回退）。")
+        return acc
+
+    # coverage: SCRF-B8 -- discard 分支内、返回前经泵内本连接引擎腿直发 active=false：
+    #            恰一帧且严格先于随后转发的 listen stop；腿集 = (websocket, upstream)
+    #            不回退 _alert_legs；全程零 abort 帧
+    def test_scr_b8_discard_releases_context_before_forwarded_stop(self):
+        with tempfile.TemporaryDirectory(prefix="scr_b8_") as tmp:
+            with _front_with_stories(tmp) as front:
+                sid = "sess-b8"
+                dev = _FakeDeviceSocket()
+                up = _FakeUpstream()
+                self._seed_recording(front, sid, dev, up)
+                # 另一条全局提醒腿：discard 若误用 _alert_legs，active=false 会打到它。
+                other_dev, other_up = _FakeDeviceSocket(), _FakeUpstream()
+                front._register_alert_legs(other_dev, other_up)
+                try:
+                    dev.append_text(_discard_msg())
+                    dev.append_text(_listen_stop_msg())
+                    with _finish_spy(front) as fin:
+                        asyncio.run(front.pump_client_to_upstream(dev, up, sid))
+                finally:
+                    front._unregister_alert_legs(other_dev)
+
+                releases = _frame_indices(up.sent, _is_release_frame)
+                stops = _frame_indices(up.sent, _is_listen_stop_frame)
+                self.assertEqual(
+                    len(releases), 1,
+                    f"SCRF-B8 RED: discard 后本连接引擎腿 active=false 帧数 = "
+                    f"{len(releases)}（冻结恰 1）—— 丢弃不释放记录语境：引擎在 stop "
+                    "触发尾音 ASR 时仍闭锁撤销（device-round-a-evidence §一 22:46:50"
+                    "「嗯。」→ TTS 的本体）。")
+                self.assertEqual(
+                    len(stops), 1,
+                    f"SCRF-B8 RED: 经泵转发的 listen stop 帧数 = {len(stops)}（冻结恰 1）。")
+                self.assertLess(
+                    releases[-1], stops[-1],
+                    "SCRF-B8 RED: active=false 未严格先于转发的 listen stop —— 引擎收到 "
+                    "stop 时语境仍真（_kidpal_listen_closed 不置位、asr_audio 不截断）→ "
+                    "尾音 ASR 成立、在途回合不被终止。")
+                self.assertEqual(
+                    _frame_indices(other_up.sent, _is_release_frame), [],
+                    f"SCRF-B8 RED: active=false 打到了全局 _alert_legs 提醒腿（实记 "
+                    f"{other_up.sent!r}）—— discard 释放腿集须 = 泵内本连接 "
+                    "[(websocket, upstream)]，多连接时会误放别的引擎腿。")
+                abort_frames = [o for o in _forwarded_objects(up.sent) if _is_abort_frame(o)]
+                self.assertEqual(
+                    abort_frames, [],
+                    f"SCRF-B8 RED: 泵发出 abort 帧 {abort_frames!r} —— 本轮决策 = 不发 "
+                    "abort（轮 A 实证 abort 已收仍产 TTS；引擎冻结纪律四处禁置 "
+                    "client_abort，防波及 front 合法 speak 注入）。")
+                self.assertEqual(fin, [],
+                                 f"SCRF-B8 RED: discard→stop 触发了 _story_finish_session"
+                                 f"（实记 {fin}）—— 已丢弃素材被复活成归档。")
+                self.assertEqual(_story_md_files(tmp), [],
+                                 "SCRF-B8 RED: discard→stop 落盘了故事（0 篇为承重）。")
+
+    # coverage: SCRF-B8 -- 重复 stop 零第二次注入（清标记副作用承载幂等）；零 abort；
+    #            全链零归档
+    def test_scr_b8_repeated_stop_injects_no_second_release(self):
+        with tempfile.TemporaryDirectory(prefix="scr_b8_idem_") as tmp:
+            with _front_with_stories(tmp) as front:
+                sid = "sess-b8-idem"
+                dev = _FakeDeviceSocket()
+                up = _FakeUpstream()
+                self._seed_recording(front, sid, dev, up)
+                dev.append_text(_discard_msg())
+                dev.append_text(_listen_stop_msg())
+                asyncio.run(front.pump_client_to_upstream(dev, up, sid))
+                releases_after_first = len(_frame_indices(up.sent, _is_release_frame))
+                self.assertEqual(
+                    releases_after_first, 1,
+                    f"SCRF-B8 RED(前置): discard 后本连接引擎腿 active=false 帧数 = "
+                    f"{releases_after_first}（冻结恰 1）—— 首次释放缺失时「重复 stop 零"
+                    "第二次注入」不可判（幂等前提失真）。")
+                dev.append_text(_listen_stop_msg())   # 重复 stop
+                with _finish_spy(front) as fin:
+                    asyncio.run(front.pump_client_to_upstream(dev, up, sid))
+                self.assertEqual(
+                    len(_frame_indices(up.sent, _is_release_frame)), releases_after_first,
+                    "SCRF-B8 RED: 重复 listen stop 又注入了一次 active=false —— 幂等破"
+                    "（清标记单点 _release_record_context 未生效 / 另写了计数器）。")
+                self.assertEqual(fin, [],
+                                 f"SCRF-B8 RED: 重复 stop 触发了 _story_finish_session"
+                                 f"（实记 {fin}）。")
+                self.assertEqual(
+                    [o for o in _forwarded_objects(up.sent) if _is_abort_frame(o)], [],
+                    "SCRF-B8 RED: 重复 stop 路径发出 abort 帧。")
+
+    # coverage: SCRF-B8 -- discard 分支腿集不得回退 _alert_legs（源文本负锚；
+    #            行为面由 discard_releases_context_before_forwarded_stop 承载）
+    def test_scr_b8_discard_branch_has_no_global_alert_legs(self):
+        src = FRONT_APP.read_text(encoding="utf-8")
+        start = src.find('if mtype == "kidpal_story_discard":')
+        self.assertGreaterEqual(
+            start, 0,
+            "SCRF-B8 RED(infra): front_app.py 无 kidpal_story_discard 分支——消费面丢失。")
+        nxt = src.find("\n    if mtype == ", start + 1)
+        region = src[start:] if nxt == -1 else src[start:nxt]
+        self.assertNotIn(
+            "_alert_legs", region,
+            "SCRF-B8 RED: discard 分支出现 _alert_legs —— 释放腿集回退成全局提醒腿"
+            "（多连接时误放别的引擎腿；冻结形态 = 泵内本连接 [(websocket, upstream)]）。")
+
+    # coverage: SCRF-B8 对照齿（must-stay-green）-- ctx+feed+stop（不发 discard）→ 恰一篇
+    #            归档 + start_organizing 恰一帧，且 active=false 出现在 stop **之后**
+    #            （KEY 收尾「stop 时语境仍真」是 pending-stop 归档承重通道；防修过头）
+    def test_scr_b8_key_stop_still_archives_once_and_releases_after_stop(self):
+        with tempfile.TemporaryDirectory(prefix="scr_b8_key_") as tmp:
+            with _front_with_stories(tmp) as front:
+                sid = "sess-b8-key"
+                dev = _FakeDeviceSocket()
+                up = _FakeUpstream()
+                self._seed_recording(front, sid, dev, up)
+                dev.append_text(_listen_stop_msg())   # 不发 discard
+                with _llm_stub(front, _LLMStub("小猫\n从前有一只小猫。")):
+                    asyncio.run(front.pump_client_to_upstream(dev, up, sid))
+                files = _story_md_files(tmp)
+                self.assertEqual(
+                    len(files), 1,
+                    f"SCRF-B8 RED(对照齿): KEY 收尾（ctx+feed+stop）归档篇数 = "
+                    f"{len(files)}（must-stay-green 恰 1）—— D2 修过头毁掉了 KEY 尾音"
+                    "归档（S-F2.2-AC4 三式收尾承重通道）。")
+                org = _start_organizing_frames(dev.sent_text)
+                self.assertEqual(
+                    len(org), 1,
+                    f"SCRF-B8 RED(对照齿): start_organizing 帧数 = {len(org)}（must-stay-"
+                    "green 恰 1）。")
+                releases = _frame_indices(up.sent, _is_release_frame)
+                stops = _frame_indices(up.sent, _is_listen_stop_frame)
+                self.assertEqual(
+                    len(releases), 1,
+                    f"SCRF-B8 RED(对照齿): KEY 收尾 active=false 帧数 = {len(releases)}"
+                    "（must-stay-green 恰 1）。")
+                self.assertEqual(len(stops), 1,
+                                 f"SCRF-B8 RED(对照齿): listen stop 转发帧数 = {len(stops)}。")
+                self.assertGreater(
+                    releases[-1], stops[-1],
+                    "SCRF-B8 RED(对照齿): KEY 收尾的 active=false 早于 listen stop —— "
+                    "注入被提前到 stop 之前 = 引擎在尾音 ASR 阶段已解除闭锁，KEY 收尾"
+                    "归档路径被改坏（对照齿防「一律先释放」的过度修复）。")
+
+
+# =========================================================================== #
+# SCRF-B9 — 会话关闭门：迟到 tts/llm/音频丢弃（D2 迟到帧）                          #
+# =========================================================================== #
+
+
+class ScrfClosedSessionFrameGateAcceptance(unittest.TestCase):
+    maxDiff = None
+
+    def _arm_gate(self, front, sid, dev, up):
+        """经出语境单源 arm（生产路径 = discard / 收尾 / sweep 释放同一单点）。"""
+        asyncio.run(front._release_record_context(sid, [(dev, up)]))
+
+    def _pump_down(self, front, sid, dev, frames):
+        """引擎腿 → 设备腿跑一次泵；返回新转发文本帧与二进制帧（按基线切片）。"""
+        base_text, base_bytes = len(dev.sent_text), len(dev.sent_bytes)
+        up_e = _FakeUpstream(frames=frames)
+        asyncio.run(front.pump_upstream_to_client(up_e, dev, sid))
+        return dev.sent_text[base_text:], dev.sent_bytes[base_bytes:]
+
+    # coverage: SCRF-B9 -- 门内丢弃引擎腿→设备腿的二进制音频帧 + type in ("tts","llm")
+    #            文本帧；不拦 type=="mcp" 与 stt（arm 点 = discard 的真实生产路径）
+    def test_scr_b9_gate_drops_late_audio_tts_llm_keeps_mcp_and_stt(self):
+        with tempfile.TemporaryDirectory(prefix="scr_b9_drop_") as tmp:
+            with _front_with_stories(tmp) as front:
+                sid = "sess-b9-drop"
+                dev = _FakeDeviceSocket()
+                up = _FakeUpstream()
+                dev.append_text(_ctx_msg("story"))
+                asyncio.run(front.pump_client_to_upstream(dev, up, sid))
+                _engine_to_device(front, sid, [_stt_frame("从前有一只小猫")])
+                dev.append_text(_discard_msg())      # discard -> _release_record_context
+                asyncio.run(front.pump_client_to_upstream(dev, up, sid))
+
+                new_text, new_bytes = self._pump_down(front, sid, dev, [
+                    AUDIO_BYTES,
+                    json.dumps(_tts_frame("sentence_start", "嗯～"), ensure_ascii=False),
+                    json.dumps(_tts_frame("stop"), ensure_ascii=False),
+                    json.dumps(_llm_frame(), ensure_ascii=False),
+                    json.dumps(_stt_frame("嗯。"), ensure_ascii=False),
+                    json.dumps(_mcp_probe_frame(), ensure_ascii=False),
+                ])
+                self.assertEqual(
+                    new_bytes, [],
+                    "SCRF-B9 RED: 会话关闭门内仍转发了引擎腿二进制音频帧 —— 迟到回合"
+                    "的 TTS 音频把已回 Idle 的设备拽回 Speaking（device-round-a-evidence "
+                    "§一 22:46:53 `<< 嗯～` + idle->speaking 同族）。")
+                tts_fwd = _frames_of_type(new_text, "tts")
+                self.assertEqual(
+                    tts_fwd, [],
+                    f"SCRF-B9 RED: 门内转发了 tts 文本帧 {tts_fwd!r} —— start/"
+                    "sentence_start/stop 皆须丢弃（否则设备进 Speaking 态、页面被迟到"
+                    "回合顶掉）。")
+                self.assertEqual(
+                    _frames_of_type(new_text, "llm"), [],
+                    "SCRF-B9 RED: 门内转发了 llm 帧 —— 情绪/同步文字迟到达（同族漏网）。")
+                self.assertEqual(
+                    len(_frames_of_type(new_text, "stt")), 1,
+                    "SCRF-B9 RED: 门把 stt 也拦了 —— 转写须照常上屏/喂入（拒绝路径"
+                    "「嗯。」样本的可见性也靠它）。")
+                self.assertEqual(
+                    len(_frames_of_type(new_text, "mcp")), 1,
+                    "SCRF-B9 RED: 门把 type=mcp 也拦了 —— alert/story_text/story_list "
+                    "等机械下发不得被迟到帧门误伤（S-F1.4 必达面）。")
+
+    # coverage: SCRF-B9 -- 下一次 listen start / ctx(story) disarm（门只关本轮；
+    #            下一会话的 TTS 必须恢复转发）
+    def test_scr_b9_gate_disarms_on_next_listen_start_and_ctx_story(self):
+        # ① listen start 解除
+        with tempfile.TemporaryDirectory(prefix="scr_b9_disarm_l_") as tmp:
+            with _front_with_stories(tmp) as front:
+                sid = "sess-b9-disarm-listen"
+                dev, up = _FakeDeviceSocket(), _FakeUpstream()
+                self._arm_gate(front, sid, dev, up)
+                text0, _b0 = self._pump_down(front, sid, dev, [
+                    json.dumps(_tts_frame("sentence_start", "嗯。"), ensure_ascii=False)])
+                self.assertEqual(
+                    _frames_of_type(text0, "tts"), [],
+                    "SCRF-B9 RED(前置): 门未 arm —— 门内 tts 仍被转发"
+                    "（arm 点 = _release_record_context 单点）。")
+                dev.append_text(json.dumps({"type": "listen", "state": "start"},
+                                           ensure_ascii=False))
+                asyncio.run(front.pump_client_to_upstream(dev, up, sid))
+                text1, _b1 = self._pump_down(front, sid, dev, [
+                    json.dumps(_tts_frame("sentence_start", "第二句。"), ensure_ascii=False)])
+                self.assertEqual(
+                    len(_frames_of_type(text1, "tts")), 1,
+                    "SCRF-B9 RED: 下一次 listen start 未解除会话关闭门 —— 新会话的 TTS "
+                    "被永久丢弃（设备永久哑火，比迟到帧更重）。")
+        # ② ctx(story) 解除
+        with tempfile.TemporaryDirectory(prefix="scr_b9_disarm_ctx_") as tmp:
+            with _front_with_stories(tmp) as front:
+                sid = "sess-b9-disarm-ctx"
+                dev, up = _FakeDeviceSocket(), _FakeUpstream()
+                self._arm_gate(front, sid, dev, up)
+                dev.append_text(_ctx_msg("story"))
+                asyncio.run(front.pump_client_to_upstream(dev, up, sid))
+                text2, _b2 = self._pump_down(front, sid, dev, [
+                    json.dumps(_tts_frame("sentence_start", "引导句。"), ensure_ascii=False)])
+                self.assertEqual(
+                    len(_frames_of_type(text2, "tts")), 1,
+                    "SCRF-B9 RED: 下一次 ctx(story) 未解除会话关闭门 —— 新记录会话的"
+                    "引导播报被丢弃（引导链哑掉）。")
+
+    # coverage: SCRF-B9 -- front 自注 kidpal_speak 令牌：有界放行整轮（含二进制音频与
+    #            tts stop；先判令牌后清令牌——stop 帧本身放行，之后 tts 重新被丢弃）
+    def test_scr_b9_speak_token_allows_round_then_tts_stop_clears(self):
+        with tempfile.TemporaryDirectory(prefix="scr_b9_token_") as tmp:
+            with _front_with_stories(tmp) as front:
+                sid = "sess-b9-token"
+                dev, up = _FakeDeviceSocket(), _FakeUpstream()
+                self._arm_gate(front, sid, dev, up)
+                # front 自注 kidpal_speak（引导/安抚通道）-> 该连接登记「预期出音」令牌。
+                sent = asyncio.run(front._speak_to_legs("该讲故事啦。", [(dev, up)]))
+                self.assertEqual(
+                    sent, 1,
+                    f"SCRF-B9 RED(前置): kidpal_speak 注入帧数 = {sent}（冻结恰 1）"
+                    " —— 令牌登记点的前置注入链回退。")
+                text1, bytes1 = self._pump_down(front, sid, dev, [
+                    json.dumps(_tts_frame("sentence_start", "该讲故事啦。"),
+                               ensure_ascii=False),
+                    AUDIO_BYTES,
+                    json.dumps(_tts_frame("stop"), ensure_ascii=False),
+                ])
+                self.assertEqual(
+                    len(_frames_of_type(text1, "tts")), 2,
+                    f"SCRF-B9 RED: 令牌在场时本轮 tts 帧放行数 = "
+                    f"{len(_frames_of_type(text1, 'tts'))}（冻结 2 = sentence_start + "
+                    "stop）—— 令牌未登记或「先清后判」把 stop 帧吞掉（设备 Speaking "
+                    "悬挂）。")
+                self.assertEqual(
+                    len(bytes1), 1,
+                    f"SCRF-B9 RED: 令牌在场时本轮二进制音频帧放行数 = {len(bytes1)}"
+                    "（冻结 1）—— 整轮不放行 = 提醒/安抚语音听不见。")
+                # stop 已清令牌：随后的 tts 重新按关门丢弃。
+                text2, bytes2 = self._pump_down(front, sid, dev, [
+                    json.dumps(_tts_frame("sentence_start", "漏网句。"),
+                               ensure_ascii=False),
+                    AUDIO_BYTES,
+                ])
+                self.assertEqual(
+                    _frames_of_type(text2, "tts"), [],
+                    "SCRF-B9 RED: tts stop 后令牌未清 —— 迟到回合的后续 tts 继续放行"
+                    "（「有界」破）。")
+                self.assertEqual(
+                    bytes2, [],
+                    "SCRF-B9 RED: tts stop 后令牌未清 —— 后续二进制音频继续放行。")
+
+    # coverage: SCRF-B9 -- 令牌登记点覆盖提醒 speech（_deliver_alert_now；
+    #            reminders.py 引擎腿注入不经 _speak_to_legs）：提醒弹窗必达 + 语音帧
+    #            在门内不被误丢
+    def test_scr_b9_alert_speech_registers_expected_round_token(self):
+        with tempfile.TemporaryDirectory(prefix="scr_b9_alert_") as tmp:
+            with _front_with_stories(tmp) as front:
+                sid = "sess-b9-alert"
+                dev, up = _FakeDeviceSocket(), _FakeUpstream()
+                self._arm_gate(front, sid, dev, up)
+                front._register_alert_legs(dev, up)
+                try:
+                    entry = {"id": "biz-b9", "fire_at": "2026-11-17T08:00:00+00:00",
+                             "title": "到点提醒", "speech": "时间到了哦",
+                             "view": {"view": "text", "data": {"text": "到点提醒"}}}
+                    envelope = front.gw_reminders.build_alert_envelope(entry)
+
+                    async def _deliver():
+                        front._deliver_alert_now("biz-b9", envelope)
+                        pending = list(getattr(front, "_alert_delivery_tasks", ()))
+                        if pending:
+                            await asyncio.gather(*pending, return_exceptions=True)
+
+                    asyncio.run(_deliver())
+                finally:
+                    front._unregister_alert_legs(dev)
+                self.assertTrue(
+                    _frames_of_type(dev.sent_text, "mcp"),
+                    "SCRF-B9 RED(前置): 提醒 mcp 帧未达设备腿 —— 两腿投递链回退"
+                    "（S-F1.4 必达面本 case 的前提）。")
+                text, _b = self._pump_down(front, sid, dev, [
+                    json.dumps(_tts_frame("sentence_start", "时间到了哦"),
+                               ensure_ascii=False),
+                ])
+                self.assertEqual(
+                    len(_frames_of_type(text, "tts")), 1,
+                    "SCRF-B9 RED: 提醒 speech 登记点未覆盖（_deliver_alert_now）—— "
+                    "会话关闭门把提醒语音 TTS 当迟到回合丢弃（语音丢失）。reminders.py "
+                    "引擎腿注入不经 _speak_to_legs，须在 _deliver_alert_now 另行登记令牌。")
+
+
+# =========================================================================== #
+# SCRF-B10 — 空素材收尾=释放口径（D3 front 半；预期设计态绿 = must-stay-green）      #
+# =========================================================================== #
+
+
+class ScrfEmptyMaterialReleaseAcceptance(unittest.TestCase):
+    maxDiff = None
+
+    # coverage: SCRF-B10 -- 空素材 stop（accum 空）→ pending_stop → 10s sweep 释放 +
+    #            active=false 恰一帧；_story_finish_session 零调用、STORIES_DIR 零新增、
+    #            零 start_organizing、零新增 story_list
+    def test_scr_b10_empty_material_stop_releases_without_archive(self):
+        with tempfile.TemporaryDirectory(prefix="scr_b10_empty_") as tmp:
+            with _front_with_stories(tmp) as front:
+                sid = "sess-b10-empty"
+                dev = _FakeDeviceSocket()
+                up = _FakeUpstream()
+                dev.append_text(_ctx_msg("story"))
+                asyncio.run(front.pump_client_to_upstream(dev, up, sid))
+                story_list_after_ctx = len(_story_list_frames(dev.sent_text))
+                dev.append_text(_listen_stop_msg())   # accum 空 -> pending_stop
+                asyncio.run(front.pump_client_to_upstream(dev, up, sid))
+                acc = front._get_story_acc()
+                self.assertEqual(acc.routing(sid), "pending_stop",
+                                 "SCRF-B10 RED(前置): 空素材 stop 后未落 pending_stop。")
+                dev_leg, up_leg = _FakeDeviceSocket(), _FakeUpstream()
+                story_list_after_ctx_leg = len(_story_list_frames(dev_leg.sent_text))
+                t0 = datetime.now(dt_timezone.utc)
+                with _guide_legs(front, sid, dev_leg, up_leg):
+                    with _finish_spy(front) as fin:
+                        asyncio.run(front._story_timeout_sweep(
+                            now=t0 + timedelta(seconds=10.5)))
+                self.assertEqual(
+                    fin, [],
+                    f"SCRF-B10 RED: 空素材 pending 超时走了 _story_finish_session"
+                    f"（实记 {fin}）—— 空素材收尾 = 释放、不归档、不演出、不盖章"
+                    "（device-round-a-evidence §二 判据）。")
+                releases = _release_frames(up_leg.sent)
+                self.assertEqual(
+                    len(releases), 1,
+                    f"SCRF-B10 RED: 空素材 sweep 释放 active=false 帧数 = {len(releases)}"
+                    "（冻结恰 1）—— 释放缺失 = 引擎对该连接永久抑制（后续问答哑火）。")
+                self.assertEqual(
+                    _story_md_files(tmp), [],
+                    "SCRF-B10 RED: 空素材收尾落盘了故事 —— 空素材零归档破。")
+                self.assertEqual(
+                    _start_organizing_frames(dev.sent_text), [],
+                    "SCRF-B10 RED: 空素材收尾下发了 start_organizing —— 无内容不该演出"
+                    "（设备困在整合过渡页）。")
+                self.assertEqual(
+                    len(_story_list_frames(dev.sent_text)), story_list_after_ctx,
+                    "SCRF-B10 RED: 空素材收尾多推了 story_list —— 列表对账帧不该在"
+                    "「没有新篇」时出现。")
+                self.assertEqual(
+                    len(_story_list_frames(dev_leg.sent_text)),
+                    story_list_after_ctx_leg,
+                    "SCRF-B10 RED: 空素材收尾向已登记会话设备腿多推了 story_list —— "
+                    "列表对账帧不该在「没有新篇」时出现（sweep 释放按 "
+                    "_session_legs(sid) or _alert_legs 投递，帧落会话腿而非外层设备；"
+                    "仅观测外层会漏掉会话腿侧的新增）。")
+                self.assertEqual(acc.routing(sid), "chat",
+                                 "SCRF-B10 RED: sweep 释放后 routing 未回 chat。")
+
+    # coverage: SCRF-B10 -- 尾音幻听（「嗯。」）走 _archive_material_reject_reason 拒绝
+    #            路径同口径：finish 路径被消费但零归档 / 零演出 / 恰一帧 active=false
+    def test_scr_b10_tail_hallucination_rejected_same_release_contract(self):
+        with tempfile.TemporaryDirectory(prefix="scr_b10_halluc_") as tmp:
+            with _front_with_stories(tmp) as front:
+                sid = "sess-b10-halluc"
+                dev = _FakeDeviceSocket()
+                up = _FakeUpstream()
+                dev.append_text(_ctx_msg("story"))
+                asyncio.run(front.pump_client_to_upstream(dev, up, sid))
+                dev.append_text(_listen_stop_msg())   # accum 空 -> pending_stop
+                asyncio.run(front.pump_client_to_upstream(dev, up, sid))
+                acc = front._get_story_acc()
+                self.assertEqual(acc.routing(sid), "pending_stop",
+                                 "SCRF-B10 RED(前置): 未落 pending_stop。")
+                with _finish_spy(front) as fin:
+                    up_e, dev_e = _engine_to_device(front, sid, [_stt_frame("嗯。")])
+                self.assertEqual(
+                    len(fin), 1,
+                    f"SCRF-B10 RED: 尾音幻听未进入收尾单源（实记 {fin}）—— 拒绝路径"
+                    "须与空素材同口径（收尾链被消费 + 内容守卫拒绝）。")
+                releases = _release_frames(up_e.sent)
+                self.assertEqual(
+                    len(releases), 1,
+                    f"SCRF-B10 RED: 拒绝路径 active=false 帧数 = {len(releases)}（冻结"
+                    "恰 1）—— 会话已释放但引擎语境标志尚活（后续对话被抑制）。")
+                self.assertEqual(
+                    _story_md_files(tmp), [],
+                    "SCRF-B10 RED: 尾音幻听成篇 —— _archive_material_reject_reason"
+                    "（insignificant_material / pure_hallucination_material）破。")
+                self.assertEqual(
+                    _start_organizing_frames(dev_e.sent_text), [],
+                    "SCRF-B10 RED: 拒绝路径下发了 start_organizing —— 纯幻听不该演出。")
+                self.assertEqual(
+                    _story_list_frames(dev_e.sent_text), [],
+                    "SCRF-B10 RED: 拒绝路径推送了 story_list —— 无新篇时列表不应变。")
+                self.assertEqual(acc.routing(sid), "chat",
+                                 "SCRF-B10 RED: 拒绝路径后 routing 未回 chat。")
 
 
 if __name__ == "__main__":

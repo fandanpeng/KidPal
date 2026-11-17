@@ -104,8 +104,10 @@ front_app.py 面离线装载（fastapi 缺席本地 stub，M4K1/SC 先例），e
       信号 wire 字面（两侧同名冻结）: type == "kidpal_record_context"，布尔字段
       active（true=进入记录语境、false=退出）。经**引擎腿**下发（上行泵的 upstream
       参数 / sweep 的 _alert_legs 引擎腿），ADR-003 kidpal_speak 同型内部消息。
-      进语境 = session_ctx(story) 与 control/start_recording 两收敛入口（幂等——
-      已在记录语境重复触发不重复注入）；出语境 = 三式收尾（收尾词归档 / 自动收尾
+      进语境 = session_ctx(story) 与 control/start_recording 两收敛入口（261116-
+      channel-resident-core 真机轮 A 修复轮 D1 重锚：**每会话无条件**注入
+      active=true——重复触发亦发帧，幂等由引擎认领缝幂等置位承载；设备侧
+      story_list 推送仍守 ctx_push_edge）；出语境 = 三式收尾（收尾词归档 / 自动收尾
       start_organizing 下发同拍）/ 取消（cancel）/ 断连。
       引导回合注入不尾随 auto-listen（种子 1 host 半）：引导 kidpal_speak 注入
       **不清**记录语境标志、不触发任何聆听形态/会话路由变化（真机半 = 引导播完
@@ -255,6 +257,24 @@ REVISION LOG
              同款罐头忠实整理输出）；三条断言（归档恰一篇 + 出语境 active=false
              在世 + 注入不尾随）一字未动。授权同上（pod-events da35cae4 波及面
              裁定）——波及面内最小兼容修订。
+  2026-11-17 RDG-A4 重复 ctx(story) 断言显式重锚（frozen-rebaseline；261116-channel-
+             resident-core 真机轮 A 修复轮 D1，按该包 exitCriteria KRC-E2 口径留痕）。
+             旧钉：第二次 ctx(story)（routing 已 accumulate）**零** active=true 注入
+             （「进语境收敛入口幂等」= 不重复注入）。
+             新钉：第二次 ctx(story) 仍**恰一帧** active=true；story_list 仍零新增
+             （`_push_story_list` 继续守 ctx_push_edge，「重复发送安全」语义不变）。
+             为什么：human 2026-11-17「三个问题都修」+ device-round-a-evidence.md §三
+             ——轮 A 三源日志证明引擎侧每会话都进过记录语境、语境 ASR 被抑制，但 front
+             的进语境注入带 `ctx_push_edge` 条件：一旦累积态泄漏（上一会话残留 / 重复
+             ctx / 引擎腿重建后 routing 已 accumulate），front 不注入 → 引擎不抑制。
+             修复决策 = 每会话无条件幂等注入（幂等语义从「不重复发帧」改为「重复发帧
+             亦安全且必要」——引擎认领缝 active=true 幂等置位）。
+             授权：planner 修复轮技术方案（plan.md「真机轮 A 修复轮」D1 节）明列本件
+             RDG-A4（旧行 :935-939）「由绿转红 → 重锚为第二次仍恰一帧」；taskpackage
+             `impactedTestsSeed` 同条登记。断言语义方向 = 只改「预期帧数 0 -> 1」+
+             新增 story_list 零新增守卫，未放宽任何其余断言。
+  2026-11-17 同条引用的 `up2, _` 显式改名为 `up2, dev2`（新守卫取设备腿帧所需；
+             无独立语义变化，与上条同批落盘）。
 """
 
 from __future__ import annotations
@@ -932,11 +952,20 @@ class RdgRecordContextWiringAcceptance(unittest.TestCase):
                     "引擎侧抑制 LLM 无信号载体 = 抑制不发生）。")
                 self.assertNotIn("kidpal_session_ctx", _forwarded_frame_types(up.sent),
                                  "RDG-A4 RED: session_ctx 被透传（既有拦截语义回退）。")
-                # 幂等：重复触发不重复注入（进语境收敛入口幂等）。
-                up2, _ = _device_to_engine(front, sid, [_CTX])
+                # 每会话无条件注入（261116-channel-resident-core D1 真机轮 A 修复轮，
+                # human 2026-11-17「三个问题都修」）：重复 ctx(story) 仍恰一帧
+                # active=true——注入不再依赖 ctx_push_edge（泄漏累积态 / 引擎腿重建时
+                # 语境失同步即 D1 暴露面）；story_list 仍守边缘（重复 ctx 零新增）。
+                up2, dev2 = _device_to_engine(front, sid, [_CTX])
                 self.assertEqual(
-                    len([f for f in _record_ctx_frames(up2.sent) if f.get("active")]), 0,
-                    "RDG-A4 RED: 已在记录语境重复 ctx 重复注入 enter —— 收敛入口非幂等。")
+                    len([f for f in _record_ctx_frames(up2.sent) if f.get("active")]), 1,
+                    "RDG-A4 RED: 已在记录语境重复 ctx(story) 未再注入 active=true —— "
+                    "「每会话无条件注入」被回退成边缘注入（device-round-a-evidence §三："
+                    "累积态泄漏 / 引擎腿重建时语境失同步 = 抑制不发生）。")
+                self.assertEqual(
+                    _story_list_frames(dev2.sent_text), [],
+                    "RDG-A4 RED: 重复 ctx(story) 推了 story_list —— 边缘推送仍须守 "
+                    "ctx_push_edge（契约 §四「重复发送安全」破）。")
                 # control/start_recording 收敛入口（引擎侧）同样注入。
                 sid2 = "sess-rdg-a4b"
                 up3, _ = _engine_to_device(front, sid2, [{

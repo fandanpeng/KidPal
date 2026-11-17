@@ -13,6 +13,15 @@
  * 本文件是 P1 新增的 per-package 冻结验收（SCR-A1..A7 host 结构/行为半）。真机半
  * （轮 A A1–A13）归 human 持板证据，不做 host 伪造。
  *
+ * 真机轮 A 修复轮（2026-11-17，human「三个问题都修」）追加 SCR-A8（D3 空素材会话空闲
+ * 收尾 producer）。设备结果标记（前置升级闸触发输入，成对；路径须与 launch-card
+ * `deviceOutcome.hostUncompilablePaths` 申报一致）:
+ *   device-outcome: SCR-A8
+ *   host-uncompilable-path: firmware/main/application.cc
+ * 语义 = 用户可见结果（记录会话空素材静置 ~60s 自动回列表）落在 host 不可编面
+ * application.cc 的主循环运行时；本文件对 SCR-A8 只钉源锚代理（结构），运行时行为
+ * 归真机轮 B B-D3。
+ *
  * ===========================================================================
  * Frozen seam contract pinned by this file（builder implements；本文件只读扫真实工作树
  * firmware/main/application.cc —— 结构齿 = 源锚代理，逐 byte 行为归真机轮）:
@@ -81,12 +90,21 @@
  *   契约 §四 kidpal_keepalive -> SCR-A6 机制级（字面 + 偏移位次 = 防 SD 日志噪声冲轮转）。
  *   契约 §四 listen（自愈巡检侧）-> SCR-A7 机制级（判据 token + 守卫短路序 + 零第二条
  *     重连路径负锚）。
+ *   requirements §2.1「记录会话不适用 60s 超时」的收窄 / device-round-a-evidence §二
+ *     -> SCR-A8 **源锚代理**（常量 60 + 定义位次 + 五判据 token + 审计 token + 零第二条
+ *     重连路径 / 零 %10 负锚）; 行为本体（空素材记录会话静置 ~60s 自动回列表、零归档）
+ *     落在 host 不可编面 firmware/main/application.cc（头注 device-outcome 标记），
+ *     真机判据 = 轮 B B-D3。
  *   弱于契约处（显式缺口，不得当已兑现）:
  *     GAP-1 「四收尾点当刻不再拆通道 + 5s 不重建」的运行时观测 = 真机 KPLOG029 温通道
  *       进聆听 ≤0.82s（轮 A A1/A2）; host 仅钉源锚（结构）。
  *     GAP-2 「自愈巡检使 3 次退避变长跑（无上限）」形态 = P2 封顶长跑承接，本包只在
  *       crossPackageBehaviors 登记; 真机观测 = 轮 A A3/A12。
  *     GAP-3 IsTimeout ESP_LOGE 频率降级为事实降频（守卫短路）→ 未量测，真机轮带量测回报。
+ *     GAP-4 SCR-A8 只钉源锚（结构）；「空素材记录会话静置 ~60s 自动回列表 + 零
+ *       story_list / 零归档 + 随后普通问答恢复」运行时行为 = 轮 B B-D3（三源对账：
+ *       设备 KPLOG `story_empty_session_timeout` + front 无 story_list 推送 + 引擎语境
+ *       释放）。host 不可编面 = firmware/main/application.cc（头注 device-outcome）。
  *   行为等价假设（显式；不写即默认不成立）:
  *     EQ-1 「source-token 在世界 ≙ 行为兑现」：结构齿证明代码在场，真行为归轮 A。
  *     EQ-2 「区切 start needle 含自身 ≙ 负锚需收窄」：本文件所有以成员函数签名起切者，
@@ -636,6 +654,129 @@ TEST_CASE("会话通道常驻: 自愈巡检短路序 (SCR-A7)",
                "直连（第二条重连路径; 守卫与退避被旁路; plan T4 铁律）", n));
 
     free(region);
+}
+
+/* =========================================================================== *
+ * SCR-A8 — 空素材会话空闲收尾 producer（D3；CLOCK_TICK 区）。
+ * 设计态红: 记录语境会话说不出任何素材时零收尾 producer —— 设备常驻 Listening，
+ *          静置 2 分钟不结束（device-round-a-evidence §二 22:51:03→22:53:24）。
+ * 设备结果标记见本文件头注（device-outcome / host-uncompilable-path 成对）：本 case
+ * 只钉源锚代理，运行时行为归轮 B B-D3。
+ * =========================================================================== */
+/* coverage: SCR-A8 -- 空素材空闲收尾 producer（D3）：命名常量 kStoryEmptySessionTimeoutS 首现片段含 60 + 定义位次在 kSessionIdleTimeoutS 之后 + CLOCK_TICK 区 kidpal_story_session_ctx_active() >=2（恰一处非否定 = 新 producer 正向记录语境门）+ !s_story_rec_entered >=1（有素材不命中）+ !s_vad_speaking >=2 + HandleEndVoiceSessionEvent() >=2 + 审计 token story_empty_session_timeout + 区内 OpenAudioChannel( = 0 + 区内无 clock_ticks_ % 10；交叉负锚 = kSessionIdleTimeoutS 首现仍在原定义行（新常量注释不得写回该字面，否则 SCR-A5 假红） */
+TEST_CASE("会话通道常驻: 空素材空闲收尾producer (SCR-A8)",
+          "[session_channel_resident][SCR-A8][structural]")
+{
+    char *clock_region;
+    char *def_region;
+    char *full;
+    const char *p_idle_def, *p_empty_def, *line_start, *line_end;
+    int n;
+
+    SCR_REQUIRE_ROOT();
+
+    clock_region = scr_region_between(SCR_APP_CC, "if (bits & MAIN_EVENT_CLOCK_TICK)",
+                                      "void Application::HandleNetworkConnectedEvent()");
+    TEST_ASSERT_NOT_NULL_MESSAGE(clock_region,
+        "SCR-A8 RED(infra): CLOCK_TICK 消费区切取失败——锚漂移须复核");
+
+    /* 命名常量 kStoryEmptySessionTimeoutS：首现到下一分号片段含 60（SCR-A5 同形态）。 */
+    def_region = scr_region_between(SCR_APP_CC, "kStoryEmptySessionTimeoutS", ";");
+    TEST_ASSERT_NOT_NULL_MESSAGE(def_region,
+        "SCR-A8 RED: application.cc 无 kStoryEmptySessionTimeoutS —— 空素材空闲收尾"
+        "常量未落（记录语境空素材会话零收尾 producer = 静置不结束的根因现状; "
+        "device-round-a-evidence §二; plan D3）");
+    TEST_ASSERT_TRUE_MESSAGE(scr_contains(def_region, "60"),
+        "SCR-A8 RED: kStoryEmptySessionTimeoutS 首现片段不含 60——阈值偏离 "
+        "requirements §2.1 单一 60s 口径（plan D3 阈值决策 = 60，不引入第二魔数）");
+    free(def_region);
+
+    /* 常量定义位次 + 交叉负锚（新常量不得抢 SCR-A5 的 kSessionIdleTimeoutS 首现区）。 */
+    full = scr_read(SCR_APP_CC, NULL);
+    TEST_ASSERT_NOT_NULL_MESSAGE(full,
+        "SCR-A8 RED(infra): application.cc 读取失败——源锚代理无输入");
+    p_idle_def = strstr(full, "kSessionIdleTimeoutS");
+    p_empty_def = strstr(full, "kStoryEmptySessionTimeoutS");
+    TEST_ASSERT_TRUE_MESSAGE(p_idle_def != NULL && p_empty_def != NULL &&
+                                 p_empty_def > p_idle_def,
+        "SCR-A8 RED: kStoryEmptySessionTimeoutS 未定义在 kSessionIdleTimeoutS 之后"
+        "——常量区位次漂移（plan D3: 定义在既有 60s 常量之后；也防 SCR-A5 的"
+        "「kSessionIdleTimeoutS 首现到下一分号」区切被抢）");
+
+    if (p_idle_def != NULL) {
+        size_t line_len;
+        char *line;
+
+        line_start = p_idle_def;
+        while (line_start > full && line_start[-1] != '\n') {
+            line_start--;
+        }
+        line_end = p_idle_def;
+        while (*line_end != '\0' && *line_end != '\n') {
+            line_end++;
+        }
+        line_len = (size_t)(line_end - line_start);
+        line = (char *)malloc(line_len + 1);
+        TEST_ASSERT_NOT_NULL(line); /* logic guard: host OOM must fail loudly */
+        memcpy(line, line_start, line_len);
+        line[line_len] = '\0';
+        TEST_ASSERT_TRUE_MESSAGE(
+            scr_contains(line, "static const int kSessionIdleTimeoutS") &&
+                scr_contains(line, "60"),
+            scr_fm("SCR-A8 RED(交叉负锚): kSessionIdleTimeoutS 首现行 = [%s]（须为原"
+                   "定义行 static const int kSessionIdleTimeoutS = 60）——首现点漂到"
+                   "非定义行 = 新常量/注释写回了该字面（SCR-A5 的「首现到下一分号」"
+                   "区切被抢 → SCR-A5 阈值断言假红）", line));
+        free(line);
+    }
+    free(full);
+
+    /* 新 producer 判据（与既有 60s 无语音 producer 共存于同区）。 */
+    n = scr_count_in_slice(clock_region, "kidpal_story_session_ctx_active()");
+    TEST_ASSERT_TRUE_MESSAGE(n >= 2,
+        scr_fm("SCR-A8 RED: CLOCK_TICK 区 kidpal_story_session_ctx_active() = %d 处"
+               "（冻结 >=2）——空素材收尾缺「记录语境会话」正向门（既有 60s producer "
+               "一处 + 新 producer 一处; 非记录语境不得命中）", n));
+
+    n = scr_count_in_slice(clock_region, "!kidpal_story_session_ctx_active()");
+    TEST_ASSERT_TRUE_MESSAGE(n == 1,
+        scr_fm("SCR-A8 RED: CLOCK_TICK 区 !kidpal_story_session_ctx_active() = %d 处"
+               "（冻结恰 1）——既有 60s 无语音 producer 的记录语境豁免须唯一；新 "
+               "producer 用正向门，复制成否定门 = 空素材收尾永不命中", n));
+
+    n = scr_count_in_slice(clock_region, "!s_story_rec_entered");
+    TEST_ASSERT_TRUE_MESSAGE(n >= 1,
+        scr_fm("SCR-A8 RED: CLOCK_TICK 区 !s_story_rec_entered = %d 处（冻结 >=1）——"
+               "空素材收尾缺「有素材不命中」门（VAD 起音沿置位、Idle 清位的 file-static"
+               "素材信号; 无此门 = 连续讲 >90s 被误收，轮 A A7 同族翻车）", n));
+
+    n = scr_count_in_slice(clock_region, "!s_vad_speaking");
+    TEST_ASSERT_TRUE_MESSAGE(n >= 2,
+        scr_fm("SCR-A8 RED: CLOCK_TICK 区 !s_vad_speaking = %d 处（冻结 >=2）——新 "
+               "producer 缺 VAD 电平门（与 SCR-A5 同承重件：无停顿长讲只有一个上升沿，"
+               "仅靠沿重置会在阈值秒误收）", n));
+
+    n = scr_count_in_slice(clock_region, "HandleEndVoiceSessionEvent()");
+    TEST_ASSERT_TRUE_MESSAGE(n >= 2,
+        scr_fm("SCR-A8 RED: CLOCK_TICK 区 HandleEndVoiceSessionEvent() = %d 处（冻结 "
+               ">=2）——空素材收尾未接统一收口处理器（只打日志不收尾 = 设备仍 Listening）",
+               n));
+
+    TEST_ASSERT_TRUE_MESSAGE(scr_contains(clock_region, "story_empty_session_timeout"),
+        "SCR-A8 RED: CLOCK_TICK 区缺审计 token story_empty_session_timeout——空素材"
+        "收尾不可判别（轮 B B-D3 三源对账的设备侧唯一可观测证据）");
+
+    n = scr_count_in_slice(clock_region, "OpenAudioChannel(");
+    TEST_ASSERT_TRUE_MESSAGE(n == 0,
+        scr_fm("SCR-A8 RED: CLOCK_TICK 区出现 OpenAudioChannel( = %d 处——空素材收尾"
+               "不得直连建连（零第二条重连路径; SCR-A7 同族铁律）", n));
+
+    n = scr_count_in_slice(clock_region, "clock_ticks_ % 10");
+    TEST_ASSERT_TRUE_MESSAGE(n == 0,
+        scr_fm("SCR-A8 RED: CLOCK_TICK 区出现 clock_ticks_ %% 10 = %d 处——diag_log "
+               "DLG-A4⑤ 负锚被破（分频不得复用 clock_ticks_，与 60s 判据互相干扰）", n));
+
+    free(clock_region);
 }
 
 /* ===========================================================================

@@ -391,7 +391,11 @@ async def _speak_to_legs(text: str, legs) -> int:
     """kidpal_speak 注入到指定腿集（_speak_to_engine_legs / 收尾安抚句共用单源）。
 
     引导回合走 _alert_legs（全局登记腿）；收尾安抚句走调用方腿快照（泵路径 = 本连接
-    双腿、sweep 路径 = _alert_legs），两条通道同型、不产生提醒帧。空文本零注入。"""
+    双腿、sweep 路径 = _alert_legs），两条通道同型、不产生提醒帧。空文本零注入。
+
+    D2/B9（261116 真机轮 A 修复轮）：本缝是 front 自注出音的令牌登记点之一（另一处 =
+    `_deliver_alert_now` 的提醒 speech）——登记「本连接预期出一轮音」，会话关闭门内整轮
+    放行（否则引导/安抚语音被当迟到回合丢弃）。"""
     if not isinstance(text, str) or not text.strip():
         return 0
     injection = gw_reminders.build_speech_injection({"speech": text.strip()})
@@ -399,6 +403,7 @@ async def _speak_to_legs(text: str, legs) -> int:
         return 0
     sent = 0
     for _device_ws, engine_ws in list(legs):
+        _speech_token_register(_device_ws)
         sent += await _send_engine_leg_frames(engine_ws, [injection])
     return sent
 
@@ -493,18 +498,18 @@ def _story_route_display_payload(session_id, payload) -> bool:
     停录 -> 整段归档由上层（停录事件 / 真 ASR 上行殿后 9b）驱动
     _get_story_acc().stop(session_id, ...) -> archive_story 落盘 stories/<id>.md。
 
-    返回 True = 本次消费是「进入记录语境」沿（routing 此前非 accumulate——收敛入口
-    首次触发；261019-p3-record-dialogue-guide：调用方沿此注入 kidpal_record_context
-    active=true 等价信号，重复触发幂等不重复注入）。"""
+    返回 True = 本次命中 control/start_recording 消费（consumed；261116 真机轮 A 修复轮
+    D1：返回语义由「进语境边缘」改为「已消费」——两收敛入口同口径**无条件**注入
+    kidpal_record_context active=true，幂等由引擎认领缝承载；调用方若需区分边缘与重复，
+    在消费前自查 routing（_relay_display_blocks_to_device 的 edge_probe 即此用途）。"""
     if not session_id or not isinstance(payload, dict):
         return False
     data = payload.get("data")
     if (payload.get("view") == "control" and isinstance(data, dict)
             and data.get("action") == "start_recording"):
         acc = _get_story_acc()
-        enter_edge = acc.routing(session_id) != "accumulate"
         acc.start(session_id)
-        return enter_edge
+        return True
     return False
 
 
@@ -1000,6 +1005,105 @@ def _record_ctx_clear(session_id, legs=()) -> None:
             sids.discard(session_id)
 
 
+# --------------------------------------------------------------------------- #
+# 261116-channel-resident-core 真机轮 A 修复轮（D2/B9）: 会话关闭迟到帧门 +        #
+# front 自注出音的有界令牌                                                        #
+# --------------------------------------------------------------------------- #
+# 门语义 = 「会话已关闭（出语境单源 `_release_record_context` 执行过）后，引擎腿迟到的
+# 音频 / 播报帧不得再进设备腿」——轮 A 实证：丢弃后尾音 ASR 回合的 TTS 把已回 Idle 的
+# 设备拽回 Speaking（device-round-a-evidence §一）。arm 单点 = `_release_record_context`
+# （覆盖 discard / 空素材 / 归档拒绝 / 整理完成 / pending sweep / ctx 边沿）；disarm =
+# 设备下一次上行 listen start 或 ctx(story)（新会话开始即恢复转发，门只关本轮）。
+# 令牌语义 = front 自己触发引擎出音（kidpal_speak：引导 / 整理安抚 / 提醒 speech）时
+# 登记「本连接预期出一轮音」——门内整轮放行（含其 tts stop；**先判令牌后清令牌**，
+# 否则设备 Speaking 悬挂），deadline 30s 兜底（重复登记取 max），tts stop 清位。
+# 状态容器形态沿 `_RECORD_CTX_SEEN` 先例（WeakKeyDictionary 按 device websocket 建 +
+# 属性面回退，连接对象被回收即自动摘除），不引入无界增长。
+_CLOSED_SESSION_GATE = weakref.WeakKeyDictionary()
+_EXPECTED_SPEECH = weakref.WeakKeyDictionary()
+_EXPECTED_SPEECH_DEADLINE_S = 30
+
+
+def _conn_state_get(table, fallback_attr, device_ws, default=None):
+    try:
+        return table.get(device_ws, default)
+    except TypeError:  # 不可弱引用对象 -> 属性面回退（_record_ctx_seen_sids 同款）
+        return getattr(device_ws, fallback_attr, default)
+
+
+def _conn_state_set(table, fallback_attr, device_ws, value) -> None:
+    try:
+        table[device_ws] = value
+        return
+    except TypeError:
+        pass
+    except Exception:  # noqa: BLE001 — 登记失败不阻断泵/投递
+        return
+    try:
+        setattr(device_ws, fallback_attr, value)
+    except Exception:  # noqa: BLE001 — 属性面登记失败同样不阻断
+        pass
+
+
+def _conn_state_pop(table, fallback_attr, device_ws) -> None:
+    try:
+        table.pop(device_ws, None)
+        return
+    except TypeError:
+        pass
+    except Exception:  # noqa: BLE001 — 摘除失败不阻断泵
+        return
+    try:
+        if getattr(device_ws, fallback_attr, None) is not None:
+            setattr(device_ws, fallback_attr, None)
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def _closed_gate_arm(device_ws) -> None:
+    if device_ws is not None:
+        _conn_state_set(_CLOSED_SESSION_GATE, "_kidpal_closed_session_gate",
+                        device_ws, True)
+
+
+def _closed_gate_disarm(device_ws) -> None:
+    if device_ws is not None:
+        _conn_state_pop(_CLOSED_SESSION_GATE, "_kidpal_closed_session_gate", device_ws)
+
+
+def _closed_gate_closed(device_ws) -> bool:
+    return bool(_conn_state_get(_CLOSED_SESSION_GATE, "_kidpal_closed_session_gate",
+                                device_ws, False))
+
+
+def _speech_token_register(device_ws) -> None:
+    """登记「本连接预期出一轮音」（重复登记取 max deadline，不缩短已有窗口）。"""
+    if device_ws is None:
+        return
+    deadline = time.monotonic() + _EXPECTED_SPEECH_DEADLINE_S
+    current = _conn_state_get(_EXPECTED_SPEECH, "_kidpal_expected_speech_deadline",
+                              device_ws)
+    if isinstance(current, (int, float)) and current > deadline:
+        deadline = current
+    _conn_state_set(_EXPECTED_SPEECH, "_kidpal_expected_speech_deadline",
+                    device_ws, deadline)
+
+
+def _speech_token_active(device_ws) -> bool:
+    deadline = _conn_state_get(_EXPECTED_SPEECH, "_kidpal_expected_speech_deadline",
+                               device_ws)
+    if not isinstance(deadline, (int, float)):
+        return False
+    if deadline <= time.monotonic():
+        _conn_state_pop(_EXPECTED_SPEECH, "_kidpal_expected_speech_deadline", device_ws)
+        return False
+    return True
+
+
+def _speech_token_clear(device_ws) -> None:
+    _conn_state_pop(_EXPECTED_SPEECH, "_kidpal_expected_speech_deadline", device_ws)
+
+
 async def _observe_points_revision(websocket) -> bool:
     """观察缝（GAP-1 producer 侧）：points.py 权威 revision 变化 -> 恰一帧 restore 推送。
 
@@ -1166,10 +1270,10 @@ async def _consume_kidpal_control(session_id, obj, websocket, upstream=None) -> 
       routing != "accumulate"，story.py 零改动）才推恰一帧 story_list；重复 ctx(story)
       （已 accumulate）零新增帧（契约 §四「重复发送安全」）；推送失败不阻断 ctx 消费
       （ctx 整条拦截语义优先, 推送为增强, K1 建连推送 try/except 同款先例）。
-      Package B 等价信号注入（261019-p3-record-dialogue-guide）：进入记录语境沿
-      （ctx_push_edge == True）同拍向**引擎腿**（additive 形参 upstream，缺省 None =
-      直调/离线装载零注入）注入 kidpal_record_context active=true——幂等（已
-      accumulate 的重复 ctx 不重复注入；注入失败不阻断拦截消费）。
+      Package B 等价信号注入（261019-p3-record-dialogue-guide；261116 真机轮 A 修复轮
+      D1 去边缘化）：**每会话进入记录语境即无条件注入** kidpal_record_context
+      active=true（幂等由引擎认领缝承载）——additive 形参 upstream，缺省 None =
+      直调/离线装载零注入；注入失败不阻断拦截消费。story_list 恢复推送仍守边缘。
     - kidpal_story_delete：整条消费；机械执行 delete_story（哨兵头校验 + MD 硬删 + 拒绝
       审计）→ 重推 story_list 对账（隐式 ack：不存在 id 亦重推、total 不变；合法删除
       total −1 可见）。畸形/非法 id 由 delete_story 内部拒绝、不崩、审计留痕。
@@ -1208,13 +1312,14 @@ async def _consume_kidpal_control(session_id, obj, websocket, upstream=None) -> 
             # ——listen stop 分层收尾与 ctx 边沿兜底分态的判据（置位点之一；
             # 另一处 = _inject_record_context_enter 调用点）。
             _record_ctx_mark(websocket, session_id)
-            if ctx_push_edge and upstream is not None:
-                # ADR-013 Package B：进语境等价信号注入引擎腿（幂等沿；失败不阻断拦截消费）。
-                try:
-                    await _send_engine_leg_frames(upstream, [
-                        {"type": RECORD_CTX_SIGNAL_TYPE, "active": True}])
-                except Exception as e:  # noqa: BLE001 — 注入失败不阻断 ctx 拦截语义
-                    log.warning("story_record_ctx_inject_err err=%s", type(e).__name__)
+            if upstream is not None:
+                # 261116 真机轮 A 修复轮 D1：进语境等价信号**无条件**注入了（幂等由
+                # 引擎认领缝承载）——不再依赖 ctx_push_edge：泄漏会话态 / 重复 ctx /
+                # 引擎腿重建（routing 已 accumulate）时若不注入，引擎不抑制 ASR 派发
+                # （device-round-a-evidence §三真实缺陷面）。story_list 仍守边缘（↓）。
+                await _inject_record_context_enter(
+                    upstream, session_id=session_id, src="ctx_story",
+                    edge=ctx_push_edge)
             if ctx_push_edge:
                 try:
                     await _push_story_list(websocket, restore=True)  # ①恢复 = 引导态会话建立同拍（K5: restore:true 只填缓存不导航）
@@ -1318,6 +1423,14 @@ async def _consume_kidpal_control(session_id, obj, websocket, upstream=None) -> 
         # 审计一行（冻结 token story_discard + 本连接 session_id；载荷键仅参照）。
         log.info("story_discard corr_id=%s consumed=true cancelled=%s payload_session_id=%s",
                  session_id, dropped, payload_sid)
+        # 261116 真机轮 A 修复轮 D2：丢弃 = 终止在途回合——返回前经**泵内本连接**引擎
+        # 腿直发记录语境出语境信号（同一协程同一 upstream 顺序 await ⇒ 严格先于随后
+        # 被转发的 listen stop；引擎收 stop 时语境已假 -> 尾音 ASR 不成回合，轮 A
+        # 22:46:50「嗯。」→ TTS 的本体被掐断）。腿集只用泵内本连接对，不取全局登记腿
+        # （多连接时会误打别的引擎腿）。本轮决策**不发 abort 帧**（轮 A 实证 abort 已
+        # 收仍产 TTS；引擎冻结纪律禁置 client_abort，防波及 front 合法 speak 注入）。
+        _discard_legs = [(websocket, upstream)] if upstream is not None else []
+        await _release_record_context(session_id, _discard_legs)
         return True
     if mtype == "kidpal_points_page":
         # 契约 §四 kidpal_points_page（2026-11-04 LANDED；K0PTS-A5 重钉 2026-11-05）：设备
@@ -1713,7 +1826,7 @@ def build_display_tool_calls(blocks: list) -> list:
 
 
 async def _relay_display_blocks_to_device(blocks: list, websocket, session_id=None,
-                                          upstream=None) -> bool:
+                                          upstream=None, edge_probe=None) -> bool:
     """Send each display relay envelope toward the device as its OWN
     {"type":"mcp","payload":<envelope>} frame (firmware application.cc:492 routes ONLY
     type=mcp into McpServer::ParseMessage; :532 drops every other type — the deprecated
@@ -1724,9 +1837,12 @@ async def _relay_display_blocks_to_device(blocks: list, websocket, session_id=No
     upstream (additive, F9 修复轮): 引擎腿（泵路径传入）——积分短窗去重命中的
     kidpal_speak 语音反馈经它注入（_consume_points_intent 的 upstream 形参透传）；
     缺省 None = 直调/旁路路径零注入（与达标回执 home 帧同一消费语义）。
-    返回 True = 本批块中有「进入记录语境」沿（control/start_recording 首次消费，
-    261019-p3-record-dialogue-guide：调用方沿此向引擎腿注入 active=true 等价信号）。"""
-    enter_edge = False
+    edge_probe (additive, 261116 真机轮 A 修复轮 D1): 可变列表出参——本批命中
+    control/start_recording 消费时把「消费前 routing 非 accumulate」的 bool 追加进去；
+    调用方（泵两处）据此给审计行标 edge；缺省 None = 不采集。
+    返回 True = 本批块中有 control/start_recording 被消费（**consumed** 语义——不再
+    区分是否边缘；261116 D1 两收敛入口同口径无条件注入 active=true）。"""
+    consumed = False
     for block in blocks:
         parsed = None
         if isinstance(block, str):
@@ -1741,14 +1857,20 @@ async def _relay_display_blocks_to_device(blocks: list, websocket, session_id=No
         # continue，控制帧绝不透传给设备；拒绝路径同样已消费（不落账、不推送、不透传）。
         if await _consume_points_intent(websocket, parsed, upstream=upstream):
             continue
-        if session_id is not None and _story_route_display_payload(session_id, parsed):
-            enter_edge = True
+        if session_id is not None:
+            # 边缘自查须在 _story_route_display_payload 的 acc.start 之前（消费即转
+            # accumulate，事后查不到原态）。
+            enter_edge = _get_story_acc().routing(session_id) != "accumulate"
+            if _story_route_display_payload(session_id, parsed):
+                consumed = True
+                if edge_probe is not None:
+                    edge_probe.append(enter_edge)
         envelope = build_display_tool_calls([block])[0]
         await websocket.send_text(
             json.dumps({"type": "mcp", "payload": envelope},
                        ensure_ascii=False, default=str)
         )
-    return enter_edge
+    return consumed
 
 
 async def pump_upstream_to_client(upstream, websocket, session_id=None) -> None:
@@ -1766,15 +1888,22 @@ async def pump_upstream_to_client(upstream, websocket, session_id=None) -> None:
     F6 弃用 websocket 对象地址（CPython id）复用），两条腿共享同一键以贯穿 start/feed/stop/cancel。
     默认 None = 无连接会话（旁路故事 feed/stop 接线不触发），保 g-relay-fix 冻结的 2-arg 调用契约不破。
 
-    Package B 等价信号注入（261019-p3-record-dialogue-guide，ADR-013）：
+    Package B 等价信号注入（261019-p3-record-dialogue-guide，ADR-013；261116 D1 去边缘化）：
       进语境 = control/start_recording 消费沿（side-channel / fence 两 relay 路径收敛）
-      同拍向**引擎腿**注入 kidpal_record_context active=true（幂等沿）；
+      同拍向**引擎腿**无条件注入 kidpal_record_context active=true（幂等由引擎认领缝承载）；
       出语境 = 三式收尾（收尾词归档 / pending 真机序归档同拍）向引擎腿注入 active=false
       + 设备腿统一下发 control/start_organizing 恰一帧（q2 = ⓒ；自推通路 self_push=True）。
+
+    D2/B9 会话关闭门（261116 真机轮 A 修复轮）：arm 单点 = _release_record_context；
+    门内丢弃引擎腿→设备腿的迟到二进制音频帧与 tts/llm 文本帧（stt 与 mcp 照常放行）；
+    disarm 在泵上行（listen start / ctx(story)）。
     """
     try:
         async for frame in upstream:
             if isinstance(frame, bytes):
+                # D2/B9 会话关闭门：门内迟到音频帧丢弃（除非 front 自注出音令牌在场）。
+                if _closed_gate_closed(websocket) and not _speech_token_active(websocket):
+                    continue
                 await websocket.send_bytes(frame)
                 continue
             try:
@@ -1785,6 +1914,14 @@ async def pump_upstream_to_client(upstream, websocket, session_id=None) -> None:
             if not isinstance(obj, dict):
                 await websocket.send_text(frame)  # non-object JSON: forward verbatim
                 continue
+            # D2/B9 会话关闭门：门内 tts / llm 文本帧丢弃；令牌在场 = front 自注出音，
+            # 整轮放行**含其 tts stop**——**先判令牌后清令牌**（stop 帧本身已放行，
+            # 清理只影响后续帧；反过来会把 stop 吞掉 -> 设备 Speaking 悬挂）。
+            if _closed_gate_closed(websocket) and obj.get("type") in ("tts", "llm"):
+                if not _speech_token_active(websocket):
+                    continue
+                if obj.get("type") == "tts" and obj.get("state") == "stop":
+                    _speech_token_clear(websocket)
             # 云侧累积接线 (包 9b HWV-A10 / 261001)：ASR 上行 stt 帧命中累积态则喂缓冲
             # （旁路消费，转发不变，决策23）；pending-stop 态（listen/state=stop 先到、转写后到
             # 的真机序 SAO-A1）的转写到达 = 收尾沿 -> 忠实整理收尾单源（S-F2.2-AC4 v1.65）。
@@ -1800,12 +1937,16 @@ async def pump_upstream_to_client(upstream, websocket, session_id=None) -> None:
                 # engine-internal display-blocks side channel: INTERCEPT (never forwarded
                 # verbatim — the device must not see the engine transport frame), drive the
                 # raw blocks through the same relay chain.
+                edge_probe: list = []
                 if await _relay_display_blocks_to_device(obj.get("blocks") or [], websocket,
-                                                         session_id, upstream):
+                                                         session_id, upstream,
+                                                         edge_probe=edge_probe):
                     # 261116-channel-resident-core P1（T6/T8）: 记录语境置位点之二
                     # （引擎侧 start_recording 注入沿）——本连接进入过记录语境。
                     _record_ctx_mark(websocket, session_id)
-                    await _inject_record_context_enter(upstream)
+                    await _inject_record_context_enter(
+                        upstream, session_id=session_id, src="start_recording",
+                        edge=bool(edge_probe and edge_probe[0]))
                 continue
             text_field = obj.get("text") if isinstance(obj, dict) else None
             if isinstance(text_field, str):
@@ -1818,24 +1959,37 @@ async def pump_upstream_to_client(upstream, websocket, session_id=None) -> None:
                 relay["text"] = speech
                 await websocket.send_text(json.dumps(relay, ensure_ascii=False))
                 # …and each display envelope to the device as its own mcp frame.
+                edge_probe = []
                 if await _relay_display_blocks_to_device(blocks, websocket, session_id,
-                                                         upstream):
+                                                         upstream, edge_probe=edge_probe):
                     # 记录语境置位点之二（fence 路径同族）。
                     _record_ctx_mark(websocket, session_id)
-                    await _inject_record_context_enter(upstream)
+                    await _inject_record_context_enter(
+                        upstream, session_id=session_id, src="start_recording",
+                        edge=bool(edge_probe and edge_probe[0]))
             else:
                 await websocket.send_text(frame)  # no text field (hello/state): verbatim
     except Exception:  # noqa: BLE001 — proxy teardown ends the pump gracefully.
         pass
 
 
-async def _inject_record_context_enter(upstream) -> None:
-    """进语境等价信号注入引擎腿（active=true；幂等沿由消费侧保证，注入失败降级留痕）。"""
+async def _inject_record_context_enter(upstream, *, session_id=None, src="",
+                                       edge=False) -> None:
+    """进语境等价信号注入引擎腿（active=true；失败降级留痕）。
+
+    本函数是审计行的**唯一** emit 点（三处调用点共用：ctx(story) 消费沿 / side-channel
+    relay 沿 / fence relay 沿），字段 corr_id=<sid> src=ctx_story|start_recording
+    edge=true|false injected=true|false。冻结验收按源文本计数该审计 token（front_app.py
+    内恰 1 处）——注释/文档不得复述该字面，否则区分力被稀释。"""
+    injected = False
     try:
-        await _send_engine_leg_frames(
-            upstream, [{"type": RECORD_CTX_SIGNAL_TYPE, "active": True}])
+        injected = bool(await _send_engine_leg_frames(
+            upstream, [{"type": RECORD_CTX_SIGNAL_TYPE, "active": True}]))
     except Exception as e:  # noqa: BLE001 — 注入失败不阻断泵转发
         log.warning("story_record_ctx_inject_err err=%s", type(e).__name__)
+    log.info("story_record_ctx_enter corr_id=%s src=%s edge=%s injected=%s",
+             session_id, src, "true" if edge else "false",
+             "true" if injected else "false")
 
 
 async def _issue_finish_downlink(session_id, upstream, websocket) -> None:
@@ -1875,6 +2029,11 @@ async def _release_record_context(session_id, legs) -> None:
     # 三个既有调用点（空素材 / 归档拒绝 / 整理完成）与新增的 sweep 释放、ctx 边沿释放
     # 自动一致（重复 ctx / 重复 listen stop 的幂等由此单源承载）。
     _record_ctx_clear(session_id, legs)
+    # 261116 真机轮 A 修复轮 D2/B9: 会话关闭迟到帧门的 **arm 单点**——本函数被
+    # discard / 空素材 / 归档拒绝 / 整理完成 / pending sweep / ctx 边沿六类出语境
+    # 触发共用，故门覆盖全部关闭路径；disarm 在设备下一次上行（listen start / ctx(story)）。
+    for device_ws, _engine_ws in list(legs):
+        _closed_gate_arm(device_ws)
 
 
 async def _story_finish_session(session_id, acc, legs) -> "dict | None":
@@ -2043,6 +2202,14 @@ async def pump_client_to_upstream(websocket, upstream, session_id=None) -> list:
                 # 契约 §四：KidPal 私有控制帧（kidpal_session_ctx / kidpal_story_delete）
                 # 由网关整条消费并拦截、不下透引擎（无论取值）；ctx 进入记录语境沿同拍
                 # 向引擎腿注入 Package B 等价信号（261019, upstream additive 形参）。
+                # 261116 D2/B9: 会话关闭门 disarm——新会话开始（listen start 或
+                # ctx(story)）即恢复引擎→设备转发（门只关上一轮迟到帧）。
+                if isinstance(up_obj, dict) and (
+                        (up_obj.get("type") == "listen"
+                         and up_obj.get("state") == "start")
+                        or (up_obj.get("type") == "kidpal_session_ctx"
+                            and up_obj.get("source_page") == "story")):
+                    _closed_gate_disarm(websocket)
                 if await _consume_kidpal_control(session_id, up_obj, websocket,
                                                  upstream=upstream):
                     continue
@@ -2503,14 +2670,21 @@ def _deliver_alert_now(business_id, envelope) -> None:
     """AlertDispatcher 的 sink：把一档提醒真投到当前在线的两腿（设备腿 mcp 帧 + 引擎腿注入）。
 
     无在线设备腿 = 本轮不投递（不在 front 里排队攒历史）：dispatcher 按 60s×3 重试窗口
-    继续尝试，窗口耗尽即静默作废（决策 24 断网无提醒；不追催）。"""
+    继续尝试，窗口耗尽即静默作废（决策 24 断网无提醒；不追催）。
+
+    D2/B9（261116 真机轮 A 修复轮）：speech 非空时给每腿登记「预期出一轮音」令牌——
+    reminders.py 的引擎腿注入不经 `_speak_to_legs`，故本缝是提醒语音的第二登记点
+    （否则会话关闭门会把提醒 TTS 当迟到回合丢弃；弹窗 mcp 帧不受门影响、必达语义不破）。"""
     legs = list(_alert_legs)
     if not legs:
         log.warning("alert_skip corr_id=%s reason=no_online_device pushed=false", business_id)
         return
     entry = _entry_from_envelope(envelope, business_id)
+    speech = entry.get("speech") if isinstance(entry, dict) else None
     for device_ws, engine_ws in legs:
         try:
+            if isinstance(speech, str) and speech.strip():
+                _speech_token_register(device_ws)
             task = asyncio.create_task(
                 gw_reminders.deliver_alert(entry, device_ws, engine_ws))
         except RuntimeError:  # 无运行中的事件循环（离线装载场合）—— 记账仍在，投递跳过

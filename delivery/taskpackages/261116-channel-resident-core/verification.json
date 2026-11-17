@@ -1,86 +1,101 @@
 {
-  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r2.json)",
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r5.json)",
   "changeId": "261116-channel-resident-core",
   "phase": "final",
-  "round": 2,
-  "invocationId": "e5cb4370-0470-4df6-a1ab-316ac66cb4aa",
+  "round": 5,
+  "invocationId": "832705da-ca3a-42a3-bdc3-c766fee33c6c",
   "outcome": "ok",
   "observedGateExit": 0,
   "gatesRun": 10,
   "gatesNotExecuted": [],
-  "roundNote": "rounds 承重序列 = r1（scoped，8/8 绿，invocationId 9674ee86-9327-427f-a9c5-6ae7fe8b8ee9）→ r2（final，10/10 绿，含 unit/acceptance 两个 full 相位按 test-scope 圈定真跑）。final 相位由 integrator 按 scope 圈定跑，缺 scope-file 则 fail-closed；本包 scope 落盘见 scopeFile。",
+  "roundNote": "承重序列 = r1（scoped 8/8 绿）→ r2（final 10/10 绿，P1 收口）→ r3（scoped，ok:false，mutation-check 红：planner 代落 mutationEvidence 时截断 acceptance 字段导致 mutation-check 失配，非实现缺陷；已修正，事实占序不抹）→ r4（scoped 8/8 绿，修复轮转绿）→ r5（final 10/10 绿，修复轮终审，含 unit/acceptance 两 full 相位按 test-scope 圈定真跑）。final 缺 scope-file 则 fail-closed；本包 scope 落盘见 scopeFile。",
   "scopeFile": "delivery/taskpackages/261116-channel-resident-core/test-scope-final.txt",
-  "scopeBasis": "detect_changes（project C-AI-KidPal-pod-channel，since=base/261115-session-channel-resident / merge_base 3b3832cb，direction=inbound，depth=2：23 changed files / 334 seed 符号 / 103 impacted 节点，其中 firmware/main 21、server/acceptance 73、server/gateway 5、server/tests 4）∪ acceptanceTestsFile（6）∪ impactedTestsSeed（16 条）∪ detect_changes 映射测试 ∪ 共享缝（front_app 收口/心跳/sweep/ctx 边沿、block_auto_connect 区切、voice_round_ui OCE-A1）∪ 安全余量；per-Pod 图索引可用，正常圈定（未降级）",
-  "scopeEntries": 25,
-  "scopeNote": "清单 = 本包冻结件（2 新件）∪ impactedTestsSeed（固件 9 + 服务端 7 = 16）∪ detect_changes 映射测试（memory_isolation / points_e2e_spike / story_fetch / story_cancel_lifecycle_units）∪ 服务端单元面（archive_guard / reminder 源读 front_app）∪ host 冒烟；排除项（story_units 装 story.py/display_schema.py 零改、engine_round_close_units 零触碰、schedule_grid_restore 构造上不触、p1_auxbar 上游存量）见清单尾注",
-  "evidenceRef": "delivery/taskpackages/261116-channel-resident-core/verifier-evidence/rounds/r2.json",
+  "scopeBasis": "detect_changes（project C-AI-KidPal-pod-channel，since merge_base 3b3832cb，direction=inbound，depth=2：47 changed files（含本包 delivery/docs 簿记件；实现/验收面 12 件）/ impacted_total 324 节点，其中 firmware/main 217、server/acceptance 86、server/gateway 13、server/tests 8）∪ acceptanceTestsFile（6）∪ impactedTestsSeed（17 去重）∪ detect_changes 映射测试 ∪ 共享缝（front_app ctx 注入 / discard 释放 / 迟到帧门、application.cc 空素材 producer）∪ 安全余量；per-Pod 图索引可用，正常圈定（未降级）",
+  "scopeEntries": 28,
+  "scopeNote": "清单 = 本包冻结件（2 新件）∪ impactedTestsSeed（固件 9 + 服务端 7）∪ detect_changes 映射测试（memory_isolation / points_e2e_spike / story_fetch / points_ledger_core / qq_points_channel / schedule_grid_restore / story_cancel_lifecycle_units）∪ 服务端单元面（archive_guard / reminder 源读 front_app）∪ host 冒烟（host_infra_smoke）。上轮按「构造上不触」排除的 points_ledger_core / qq_points_channel / schedule_grid_restore 本轮 detect_changes 实测落在 impact 集内，按影响面清单纳入（不缩水）。排除项（story_units 装 story.py/display_schema.py 零改、engine_round_close_units 零触碰、archive/test_schedule_reminder 属退役面、p1_auxbar 上游存量）见清单尾注。",
+  "evidenceRef": "delivery/taskpackages/261116-channel-resident-core/verifier-evidence/rounds/r5.json",
   "evidenceFact": {
     "artifactType": "verifier-round-fact",
     "authority": "bearing",
     "producedBy": "verify.mjs",
     "ok": true,
-    "startedAt": "2026-11-16T15:45:33.469Z",
-    "completedAt": "2026-11-16T15:46:41.654Z"
+    "startedAt": "2026-11-17T16:33:59.066Z",
+    "completedAt": "2026-11-17T16:35:23.778Z"
   },
   "gateSummary": [
-    { "gate": "taskpackage-required", "kind": "governance", "ok": true, "ms": 319, "timing": "scoped" },
-    { "gate": "change-manifest", "kind": "governance", "ok": true, "ms": 364, "timing": "scoped", "note": "pre-cutoff 存量放行声明（gitFirstCommitDate 早于 MANIFEST_CUTOFF）" },
-    { "gate": "firmware-build", "kind": "structural", "ok": true, "ms": 11438, "timing": "scoped", "note": "VERIFY_FW_BUILD_REQUIRED=1 真编译 build-pass（xiaozhi.bin 生成）" },
-    { "gate": "contract-lint", "kind": "structural", "ok": true, "ms": 99, "timing": "scoped" },
-    { "gate": "acceptance-coverage", "kind": "functional", "ok": true, "ms": 125, "timing": "scoped", "note": "15 acceptance id 全覆盖（SCR-A1..A7 + SCRF-B1..B6 含 B2b/B4b）" },
-    { "gate": "mutation-check", "kind": "functional", "ok": true, "ms": 117, "timing": "scoped", "note": "15 条 per-acceptance 变异 evidence 齐；另申报 1 条不敏感项（SCR-A4 RaiseReminderQueue needle 被注释遮蔽）" },
-    { "gate": "docs-sync", "kind": "governance", "ok": true, "ms": 102, "timing": "scoped", "note": "docsSyncRequired=false，人工复核见 docs-delta.md" },
-    { "gate": "security", "kind": "security", "ok": true, "ms": 100, "timing": "scoped", "note": "securityReviewRequired=false" },
-    { "gate": "unit", "kind": "functional", "ok": true, "ms": 28156, "timing": "full", "note": "187 passed, 3 deselected, 22 subtests（scope 内 14 py 文件；--phase=final --scope-file 求交真跑）" },
-    { "gate": "acceptance", "kind": "functional", "ok": true, "ms": 27277, "timing": "full", "note": "135 passed, 3 deselected, 3 subtests；serverAcceptanceFiles=11 / firmwareAcceptanceFiles=11（firmware on-target 需实机，闸只作结构/存在性核对）" }
+    { "gate": "taskpackage-required", "kind": "governance", "ok": true, "ms": 282, "timing": "scoped" },
+    { "gate": "change-manifest", "kind": "governance", "ok": true, "ms": 369, "timing": "scoped", "note": "pre-cutoff 存量放行声明（gitFirstCommitDate 早于 MANIFEST_CUTOFF）" },
+    { "gate": "firmware-build", "kind": "structural", "ok": true, "ms": 9100, "timing": "scoped", "note": "VERIFY_FW_BUILD_REQUIRED=1 真编译 build-pass（xiaozhi.bin 生成，0x329080 bytes）" },
+    { "gate": "contract-lint", "kind": "structural", "ok": true, "ms": 101, "timing": "scoped", "note": "存量 warning 一条（契约内相对链接目标缺件，非本轮引入）" },
+    { "gate": "acceptance-coverage", "kind": "functional", "ok": true, "ms": 127, "timing": "scoped", "note": "20 acceptance id 全覆盖（SCR-A1..A8 + SCRF-B1..B10 含 B2b/B4b）" },
+    { "gate": "mutation-check", "kind": "functional", "ok": true, "ms": 120, "timing": "scoped", "note": "20 条 per-acceptance 变异 evidence 齐；本轮修复轮新增 SCRF-B7/B8/B9、SCR-A8、SCRF-B10 五条，另如实申报变异 #3 超串改名不敏感、#15 注释无 ASCII ';' 不转红（观察项）" },
+    { "gate": "docs-sync", "kind": "governance", "ok": true, "ms": 107, "timing": "scoped", "note": "docsSyncRequired=false；D3 对 requirements §2.1 记录会话豁免的收窄已在校验包显式申报，交主线程按需求面注记处理（Pod 零改 spec）" },
+    { "gate": "security", "kind": "security", "ok": true, "ms": 105, "timing": "scoped", "note": "securityReviewRequired=false" },
+    { "gate": "unit", "kind": "functional", "ok": true, "ms": 37872, "timing": "full", "note": "247 passed, 3 deselected, 22 subtests（scope 内 14 py 文件；--phase=final --scope-file 求交真跑）" },
+    { "gate": "acceptance", "kind": "functional", "ok": true, "ms": 36434, "timing": "full", "note": "195 passed, 3 deselected, 3 subtests；serverAcceptanceFiles=11 / firmwareAcceptanceFiles=11（firmware on-target 需实机，闸只作结构/存在性核对）" }
   ],
   "mechanicalCheck": {
     "tool": ".claude/scripts/verifier-evidence-check.mjs",
-    "args": "--change-id 261116-channel-resident-core --phase final --round 2 --invocation-id e5cb4370-0470-4df6-a1ab-316ac66cb4aa",
+    "args": "--change-id 261116-channel-resident-core --phase final --round 5 --invocation-id 832705da-ca3a-42a3-bdc3-c766fee33c6c",
     "exit": 0,
     "output": {
       "ok": true,
       "gate": "verifier-evidence",
-      "evidenceRef": "delivery/taskpackages/261116-channel-resident-core/verifier-evidence/rounds/r2.json",
+      "evidenceRef": "delivery/taskpackages/261116-channel-resident-core/verifier-evidence/rounds/r5.json",
       "factOk": true,
       "observedGateExit": 0,
       "phase": "final",
-      "round": 2
+      "round": 5
     }
   },
   "hostRunner": {
     "command": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && (cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf)",
-    "runBy": "planner（integrator 采信；verify.mjs 的 acceptance 闸对固件面只作存在性核对）",
-    "result": "306 Tests 3 Failures 0 Ignored",
-    "acceptanceGreen": "SCR-A1..A7 与四件重锚件（boot_auto_connect / voice_round_ui / record_session_live / record_dialogue_guide）全绿",
+    "runBy": "builder（修复轮基线，integrator 采信；verify.mjs 的 unit/acceptance 闸对固件面只作结构/runner 存在性核对）",
+    "result": "307 Tests 3 Failures 0 Ignored",
+    "acceptanceGreen": "SCR-A1..A8 与五件重锚件全绿；修复轮新增 SCR-A8 / SCRF-B10 交叉变异全部转红后 sha256 还原",
     "threeFailures": [
       "p1_auxbar_style.acceptance.c AB-A1 ic_batt_15 消费点未接入",
       "p1_auxbar_style.acceptance.c AB-A2 ic_thermo_12 落位漂出授权域",
       "p1_auxbar_style.acceptance.c AB-A4 ic_wifi_14 消费点缺失"
     ],
-    "conclusion": "3 红全 p1_auxbar 上游存量族，与本包无调用关系；本包零新增红。"
+    "conclusion": "3 红全 p1_auxbar 上游存量族，与本包无调用关系；本包零新增红（r5 unit/acceptance 闸 scoped 求交真跑亦零新增红）。"
   },
   "serverSuite": {
     "command": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance",
-    "runBy": "planner（integrator 采信）",
-    "result": "473 passed, 0 failed, 9 deselected",
-    "conclusion": "launch 基线 457 passed → +16；SCRF-B1..B6 全绿，零新增失败。"
+    "runBy": "builder（修复轮基线，integrator 采信；integrator r5 以 scope 圈定真跑，见 gateSummary.unit/acceptance）",
+    "result": "486 passed, 0 failed, 9 deselected",
+    "conclusion": "修复轮零新增失败；r5 按 test-scope 圈定真跑 unit 247 / acceptance 195，全绿。"
   },
   "deviceRound": {
     "declared": false,
-    "status": "pending",
-    "note": "TaskPackage 无 deviceOutcome 机检标志；真机轮 A（A1–A13，human 持板）是本包 exitCriteria.KRC-E4 的出口，尚未发生。device-round-evidence.md 无 human 目击不得生成（本包未生成）。"
+    "status": "PENDING (round B)",
+    "roundA": {
+      "status": "FAILED (diagnostic round)",
+      "defects": ["D1 记录语境注入边缘 + front 审计缺口", "D2 丢弃/会话关闭不掐断在途回合", "D3 空素材会话静置不结束"],
+      "evidenceRef": "delivery/taskpackages/261116-channel-resident-core/device-round-a-evidence.md",
+      "excerpts": [
+        { "source": "device KPLOG", "path": "device-evidence/round-a/kplog-excerpt.txt", "sha256": "32e034e2c27e7b90bcce780cbcde4b25ccb3598c30d9d6dcea06128885b08151" },
+        { "source": "front systemd journal", "path": "device-evidence/round-a/front-journal-excerpt.txt", "sha256": "4fd8acd182e4b90efc417e70269df04d536ab3d76b69627c7c7fc9fdd4ecce45" },
+        { "source": "engine docker logs", "path": "device-evidence/round-a/engine-docker-excerpt.txt", "sha256": "1465aef458c258b0311360dfe6561d4c0fb82157b7464a8d2fe42645fe7c2649" }
+      ]
+    },
+    "roundB": {
+      "status": "not-run",
+      "checklist": "B-D1 / B-D2 / B-D3 + A5/A6/A7 回归（device-round-a-evidence.md §五 种子；口径修正见 review-packet 设备轮证据节：B-D3 = ≥10s 后普通问答可应答，或 10s 内首次话语允许被抑制、再按一次即恢复）",
+      "note": "device-round-evidence.md 须 human 持板目击逐 acceptanceRef PASS + 目击固件 sourceCommit/binarySha256 方可生成；未 PASS 前不得合并。本包未生成、未伪造。"
+    }
   },
   "docsSync": {
     "required": false,
     "deltaRef": "delivery/taskpackages/261116-channel-resident-core/docs-delta.md",
-    "conclusion": "requirements / architecture / contracts / ADR 四类零 diff；docs/debt/tech 两条目待真机凭据结项（status 维持 deferred，追加收口注记）"
+    "conclusion": "docs/requirements.md / docs/architecture.md / docs/contracts/** / docs/decisions/** 本轮零 diff；D3 对 requirements §2.1「记录会话不适用 60s 会话超时」的收窄性影响已申报，docsSyncRequired=false 与实际影响不一致，交主线程按需求面轻量注记处理（Pod 零改 spec）；docs/debt/tech 两条目维持 deferred（结项凭据 = 轮 B 真机）"
   },
   "adr": { "required": false, "produced": [] },
   "crossPackageHandoff": [
     "261117-session-end-intent-longretry：云端 end_session 三段补链 + 自动重连封顶长跑 + 人工意向位（P1 零触碰 mcp_server.cc / display_schema.py）",
     "261117-session-end-intent-longretry：SCR-A2 in-flight 守卫重锚（SEI-A4，须把 session_channel_resident.acceptance.c 列入其 impactedTestsSeed）",
     "261117-session-end-intent-longretry：自愈巡检使 3 次退避变事实长跑（≈35s 一轮无上限），按 P1 合并后 main 重取行号锚与形态基线",
-    "261117-session-end-intent-longretry：mcp_server.cc:1011-1024 注释双源（discard 路径现会发 listen stop），P2 改 control case 0 时同批改写注释"
+    "261117-session-end-intent-longretry：mcp_server.cc:1011-1024 注释双源（discard 路径现会发 listen stop），P2 改 control case 0 时同批改写注释",
+    "需求面轻量注记（主线程）：requirements §2.1 记录会话 60s 豁免段按 D3 空素材收尾补对账句（本 Pod 零改 spec；docsSyncRequired=false 与此影响不一致已申报）"
   ]
 }

@@ -150,6 +150,42 @@ mergeOrder: 77
 4. **迟到下行帧**：通道常驻后，`listen stop` 之后引擎尾音 ASR 仍可能下发 stt / sentence_start / tts，`OnIncomingJson` 的 stt 分支（:845-877）会写 chat message、`sentence_start`（:811-843）可能把设备从 Idle 推回 Speaking。manual-stop 问答路径本就如此（`HandleStopListeningEvent` 早已发 stop 不关通道），但四条收尾路径首次获得该行为 → 写进轮 A 观测项（「结束后 1–2s 内屏幕是否被迟到帧拽回思考/播报」），不是 P1 要修的缺陷。
 5. **心跳三方并发写同一 device websocket**（上泵、sweep 里的 `_story_finish_session`、心跳 task）；front 现无 asyncio 发送锁。P1 不新建锁（超范围），如实记为 residual——心跳帧极小、单次 await，实际风险低。
 
+### 真机轮 A 修复轮（2026-11-17）技术方案（planner+architect 预评）
+
+> **留痕**：2026-11-17，planner Step 1g 前置技术预评档（architect 只读 advisory，dispatch `a3d0206ffd866ca3a`，见 pod-events `dispatch-completed`）。效力声明：**不豁免任何门、不改验收与 TaskPackage 事实、不构成通过判据**。输入 = `device-round-a-evidence.md`（三源真机证据）+ human 2026-11-17「三个问题都修」（pod-events `human-decision`）。本子节为 planner 只读消费 plan.md 规则的例外写入点（`task-intake-and-slicing.md` 例外条款）。
+
+**D1 · 记录语境注入去边缘化（front）**
+
+- `_consume_kidpal_control` ctx(story) 分支：注入条件 `ctx_push_edge and upstream is not None` → `upstream is not None`（`front_app.py:1211`）；`_push_story_list` 仍守 `ctx_push_edge`。`_record_ctx_mark` 已无条件、零改。
+- `control/start_recording` 消费沿：`_story_route_display_payload` 返回语义 `enter_edge` → `consumed`（命中即 True；`_relay_display_blocks_to_device` 同步改语义 + docstring；唯一消费者 = pump 两处 mark/inject）。
+- 可观测性：新增审计 token **`story_record_ctx_enter`**，单一 emit 点放 `_inject_record_context_enter`（additive kwargs `session_id/src/edge`），字段 `corr_id=<sid> src=ctx_story|start_recording edge=true|false injected=true|false`。三处调用点共用单点 → 源文本计数断言稳定。
+- 正向收益：引擎腿重建（front 重启 / 24h 日切）后无条件注入可补真新腿的语境标志。
+- 已知副作用（申报）：每会话 1 + 引导轮数（≤2）帧 active=true（tts stop 出口回 Listening 会重发 ctx），≤3 帧/会话、约 50B/帧；引擎每帧一条 INFO。
+- **冻结件重锚（显式，非静默改齿）**：`test_record_dialogue_guide.acceptance.py` RDG-A4（`:935-939`）「重复 ctx(story) 零注入」由绿转红 → 重锚为「第二次仍恰一帧 active=true；story_list 零新增」。按 KRC-E2 口径列「旧钉 → 新钉 → 为什么（human 2026-11-17 指示 + evidence §三）」。
+
+**D2 · 丢弃/会话关闭终止在途回合（front；**不引入 abort 帧**）**
+
+- **决策：不发 abort**。依据（a）轮 A 实证 abort 无效：引擎 22:46:50 有 `Abort message received` / `-end`，仍产 TTS「嗯～」（22:46:53）；（b）引擎侧冻结纪律四处明写「绝不置 `client_abort`（防波及 stop 后 front 注入的合法 speak/story 下发）」（`engine-patch/connection.py:266-267 / 733-735 / 1559 / 1578`），front 主动发 abort = 违反该纪律，风险面正是 S-F1.4 会话间隙提醒出音与整理失败安抚句；（c）human 的「择一」目标是「终止在途回合」，下述机制更硬且零新语义。
+- **机制**：`kidpal_story_discard` 分支内、返回前 `await _release_record_context(session_id, [(websocket, upstream)])`——**泵内本连接引擎腿直发**（不用 `_session_legs(sid) or _alert_legs`：多连接时会误打别的腿）。同一协程、同一 upstream、顺序 await ⇒ `active=false` **严格先于**随后被转发的 `listen stop`。引擎收 stop 时语境已假 → `_kidpal_on_listen_message` 置 `_kidpal_listen_closed` + `asr_audio.clear()` + 排空队列（先清后转）→ 尾音 ASR 不成立；万一在途，`chat()` depth==0 首守卫丢弃。`client_listen_mode` 实证 `auto`，条件成立。
+- 清标记副作用 = `_story_listen_stop_boundary` 因 `_record_ctx_seen` 已清早退 → 重复 stop 零第二次 `active=false`（幂等由单点承载，不另写计数）。
+- **边界**：只落 discard 分支；`_story_stop_on_listen_stop` / `_story_listen_stop_boundary` / KEY 尾音归档路径一字不动（KEY 收尾「stop 时语境仍真」是 pending-stop 归档承重通道，截断即毁稿）。
+- **迟到帧丢弃门（B9，front 侧）**：front 在 `_release_record_context` 单点 arm「会话关闭门」，下一次设备上行 `listen start` / ctx(story) disarm。门内丢弃引擎腿→设备腿的**二进制音频帧** + `type in ("tts","llm")` 文本帧（含 text 同步帧）；**不拦** `type=="mcp"`（alert/story_text/story_list）与 `stt`。front 自注 `kidpal_speak` 登记有界「预期出音」令牌（deadline 30s，重复取 max；`tts stop` 清除，且**先判令牌后清令牌** → 令牌在场放行整轮含其 tts stop，防 Speaking 悬挂）。令牌登记点两处：`_speak_to_legs`（引导/安抚）与 `_deliver_alert_now`（提醒 speech；`reminders.py` 引擎腿注入不经 `_speak_to_legs`）。风险量化：提醒「弹窗+提示音」半直发设备腿、不经泵 ⇒ 结构性免疫；最坏 = 提醒语音丢失、必达判据不破（ADR-003 V20 不对称口径）。残余（申报）：迟到回合的 display 块仍可能闪屏 → B8 修好后该回合不应存在，列 residual。
+
+**D3 · 空素材会话自动收尾（设备 producer + front 既有释放链）**
+
+- `application.cc` CLOCK_TICK 区（60s producer 之后、巡检之前）新增 producer：`Listening && kidpal_story_session_ctx_active() && !s_story_rec_entered && !s_vad_speaking && clock_ticks_ >= kStoryEmptySessionTimeoutS` → 新审计 token `story_empty_session_timeout` + `HandleEndVoiceSessionEvent()`。
+- **素材信号决策 = `!s_story_rec_entered`（不用 `kidpal_story_echo_count()`）**：echo 计数的唯一 `reset` 在 `mcp_server.cc:861`（KEY 入口），`control/start_recording` 入口（`:1731-1751`）无 reset → 上一会话计数残留、触发词入口静默不修；补 reset 须碰 `mcp_server.cc`（P2 边界、manifest 外）。`s_story_rec_entered` 是 application.cc file-static，VAD 起音沿置位、Idle 分支清位，两入口同覆盖、零跨包依赖。
+- **阈值决策 = 60**（`static const int kStoryEmptySessionTimeoutS = 60;`，定义在常量区 `kSessionIdleTimeoutS` 之后）：与 requirements §2.1 单一 60s 口径对齐、不引入第二魔数；空素材会话无引导播报，不存在需保护的「AI 引导中」窗口。A7（连续讲 >90s 不误收）由 `!s_story_rec_entered` + `!s_vad_speaking` 两门承载，与阈值取值无关。
+- **源文本区切硬约束**：新常量注释块**不得出现 `kSessionIdleTimeoutS` 字面**、不得定义在其前——SCR-A5 取该字面首现到下一分号，注释写回会让区不含 `60` 而假红。新 producer 不得写 `clock_ticks_ % 10`（DLG-A4⑤ 负锚）。
+- front 侧零改动即衔接：`listen stop`（accum 空）→ `mark_pending` → 边界函数 pending protected → 10s sweep `release_pending` + `_release_record_context` → `active=false` 恰一帧；零归档 / 零 story_list / 零 start_organizing / 零盖章。`_story_guide_round` 入口守卫**不动**（[SC-B] 冻结面）；`skipped=no_session` INFO 保留到轮 B 通过（轮 B 三源对账的 front 侧唯一可观测证据）。
+- 明确的错误替代（否掉）：只让 front 计轮触发 AC5 自动收尾 → front 释放语境但设备仍 Listening 开麦（front 无下行能让设备结束会话，`end_session` 三段补链归 P2），环境音直进 LLM，比现状更糟。
+
+**边界与治理（本轮）**
+
+- manifest **零扩**：实现落点 `front_app.py` + `application.cc`（已在册）；断言落两个在册验收件。`mcp_server.cc` / `display_schema.py` / `story.py` / `protocol.*` / `story_page.c` / `docs/contracts/**` / 引擎代码维持零 diff。
+- **spec 漂移（出 Pod 后由主线程路由，本 Pod 不改 spec）**：requirements §2.1 逐字冻结「记录会话不适用 60s 会话超时」、AC5 只覆盖「有素材 + 2 轮引导无回应」；D3 对空素材记录会话新增设备侧超时 = 对该豁免的**收窄**，spec 本身有洞。`docsSyncRequired=false` 的现值与 D3 实际影响不一致 → review-packet 显式申报，主线程按需求面轻量注记处理（§2.1 记录会话段加对账句或 §7 开放问题 7 追加），不必重开 `/requirement-change` 全档。
+- 轮 B 清单口径修正：`device-round-a-evidence.md` B-D3 的「随后普通问答**立即**可应答」与已冻结 accepted residual（pending ≤10s 抑制窗）冲突 → 改为「≥10s 后普通问答可应答；或 10s 内首次话语允许被抑制、再按一次即恢复」。
+
 # demo 证据形态（与 roadmap 一致）
 
 - host runner + server pytest：SCR-A1–A7 与 SCRF-B1–B6（含 B2b/B4b）的 RED→GREEN 和变异证据；四个收尾点负锚 / 五个真拆通道正锚 / discard→stop 有序不归档为承重齿。

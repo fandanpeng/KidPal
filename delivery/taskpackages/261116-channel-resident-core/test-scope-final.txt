@@ -1,20 +1,24 @@
-# test-scope 圈定清单 · 261116-channel-resident-core · final（integrator Step 4 范围圈定，2026-11-16）
-# 合成来源 = taskpackage.acceptanceTestsFile ∪ impactedTestsSeed（16 条）∪ detect_changes
-#   （project C-AI-KidPal-pod-channel，since=base/261115-session-channel-resident / merge_base 3b3832cb，
-#   direction=inbound，depth=2：23 changed files / 334 seed 符号 / 103 impacted 节点，其中 firmware/main 21、
-#   server/acceptance 73、server/gateway 5、server/tests 4）∪ 共享 seam 相关测试 ∪ 安全余量。
+# test-scope 圈定清单 · 261116-channel-resident-core · final（integrator Step 4 范围圈定，真机轮 A 修复轮，2026-11-18 覆盖写）
+# 合成来源 = taskpackage.acceptanceTestsFile（6）∪ impactedTestsSeed[]（17 去重）∪ detect_changes
+#   （project C-AI-KidPal-pod-channel，since merge_base 3b3832cb，direction=inbound，depth=2：
+#   47 changed files（含本包 delivery/docs 簿记件；实现/验收面 12 件）/ impacted_total 324 节点，
+#   其中 firmware/main 217、server/acceptance 86、server/gateway 13、server/tests 8）
+#   映射测试 ∪ 共享 seam 相关测试 ∪ 安全余量。
 # 圈定路径：per-Pod 专属图索引可用（C-AI-KidPal-pod-channel）→ 正常圈定，未降级。
 # 格式 = 仓根相对测试文件路径一行一件（# 注释）；执行面 = server 面 pytest 按文件圈定真跑（acceptance 闸跑
 #   acceptance/*、unit 闸跑 tests/* 与 acceptance/*），firmware 面 = host runner 全量单 ELF（host_infra_test.elf）
 #   一次覆盖下列全部 .c（acceptance 闸对 firmware 只作结构/runner 存在性核对）。
+# 本轮（修复轮）实现落点 = firmware/main/application.cc（D3 producer）、server/gateway/front/front_app.py
+#   （D1 去边缘化 + 审计行、D2 discard 释放语境 + B9 迟到帧门）；断言落 session_channel_resident 两件新验收面
+#   + test_record_dialogue_guide.acceptance.py（RDG-A4 显式重锚）。
 # 范围性质 = 影响面圈定清单（不是全量回归替代物，也不缩到只剩本包档）；floor 含本包冻结件 + 对端共享冻结面。
 
 # ── 本包冻结验收件（acceptanceTestsFile，新件）──
 firmware/main/test/session_channel_resident.acceptance.c
 server/acceptance/test_session_channel_resident.acceptance.py
 
-# ── impactedTestsSeed · 冻结件重锚 / must-stay-green（固件 9 + 服务端 7）──
-# 固件：四收尾点收口、统一处理器、60s producer、自愈巡检、Idle 八件清位链、VAD 切区、keybar/提醒、日志分频负锚。
+# ── impactedTestsSeed · 冻结件重锚 / must-stay-green（固件 10 + 服务端 7）──
+# 固件：四收尾点收口、统一处理器、60s/空素材 producer、自愈巡检、Idle 八件清位链、VAD 切区、keybar/提醒、日志分频负锚。
 firmware/main/test/boot_auto_connect.acceptance.c
 firmware/main/test/voice_round_ui.acceptance.c
 firmware/main/test/record_session_live.acceptance.c
@@ -34,16 +38,22 @@ server/acceptance/test_points_device_ui.acceptance.py
 server/acceptance/test_story_cover_nav.acceptance.py
 
 # ── detect_changes 映射测试（impact 图直接到达的测试节点，且不在 seed）──
-# front_app.py 改动（T5 心跳 / T6 分层收尾 / T7 sweep 补释放 / T8 ctx 分态）经 _device_to_engine/_engine_to_device
-# 装载链波及；memory_isolation 经 oneshot payload 路径、points_e2e_spike 经 ctx 注入、story_fetch 经泵真跑。
+# front_app.py 改动（D1 ctx 注入 / D2 discard 释放 / B9 丢弃门）经 _device_to_engine/_engine_to_device 装载链波及：
+# memory_isolation 经 oneshot payload 路径、points_e2e_spike 经 ctx 注入、story_fetch 经泵真跑；
+# 本轮修复轮新增命中：points_ledger_core / qq_points_channel（_consume_points_intent 与 display 块链）、
+# schedule_grid_restore（腿登记 / ctx 与 listen stop 泵路径）——上轮圈定按「构造上不触」排除，本轮 detect_changes
+# 实测落在 impact 集内，按影响面清单纳入（防漏检，不缩水）。
 server/acceptance/test_261022_memory_isolation.acceptance.py
 server/acceptance/test_points_e2e_spike.acceptance.py
 server/acceptance/test_story_fetch.py
+server/acceptance/test_points_ledger_core.acceptance.py
+server/acceptance/test_qq_points_channel.acceptance.py
+server/acceptance/test_schedule_grid_restore.acceptance.py
 server/tests/test_story_cancel_lifecycle_units.py
 
 # ── 服务端单元面 · front_app 源读/装载（安全余量）──
-# test_archive_guard_units.py / test_reminder_units.py 源读或装载 front_app.py（_story_* 收口面），
-# 本包改动落在同一模块，纳入以抓住 sweep/收口侧读数漂移。
+# test_archive_guard_units.py / test_reminder_units.py 源读或装载 front_app.py（_story_* 收口面 / _deliver_alert_now
+# 令牌点），本轮 D2 与 B9 改动落在同一模块，纳入以抓住 sweep/收口/提醒腿读数漂移。
 server/tests/test_archive_guard_units.py
 server/tests/test_reminder_units.py
 
@@ -52,16 +62,18 @@ firmware/main/test/host_infra_smoke.acceptance.c
 
 # ── 非测试件登记（不入 scope 过滤，仅作圈定依据留痕）──
 # 结构性触发 = firmware/main/test/host_app/main/CMakeLists.txt 变动（session_channel_resident 登记序）→ 跑 host runner 全量。
-# 实现面 = firmware/main/application.cc、application.h（T1–T4）、server/gateway/front/front_app.py（T5–T9）。
-# 冻结验收重锚件 = boot_auto_connect / voice_round_ui / record_session_live / record_dialogue_guide（固件）、
-#   test_m4k3_record_session_live（服务端，planner 扩单入 manifest）。
-# 设备轮未跑 = KRC-E4 真机轮 A（A1–A13，human 持板）；证据由后续相位落 device-round-evidence.md，本包不伪造。
+# 实现面 = firmware/main/application.cc（D3）+ server/gateway/front/front_app.py（D1/D2/B9）。
+# 冻结验收重锚件 = test_record_dialogue_guide.acceptance.py（RDG-A4 旧钉→新钉，KRC-E2 留痕）；另两件验收面为
+#   session_channel_resident 两新件的追加（SCRF-B7/B8/B9、SCR-A8、SCRF-B10）。
+# 负锚复核（本轮实测零 diff）= firmware/main/mcp_server.cc / server/gateway/story.py / display_schema.py /
+#   protocol.cc / protocol.h / story_page.c / docs/contracts/** / server/deploy/** / docs/**。
+# 设备轮 = KRC-E4 真机轮 A 已发生并 FAILED（D1/D2/D3，见 device-round-a-evidence.md）；轮 B 复测为出口，
+#   证据由 human 持板后落 device-round-evidence.md，本包不伪造。
 #
 # 排除项（如实留痕）：
-#   - server/tests/test_story_units.py：装载 story.py / display_schema.py，二者本包零改动（铁律：story.py 三缝零改、
-#     engine 与 config 零 diff），不入 scope。
-#   - server/tests/test_engine_round_close_units.py：装载 engine-patch/connection.py，本包零触碰，图内亦未命中，不入 scope。
-#   - server/acceptance/test_schedule_grid_restore.acceptance.py：钉腿登记/课表推送首现位次（K7-A4），本包心跳 task
-#     刻意落在 _push_schedule_connect 之后，属「构造上不触」；未纳入圈定，由 scoped 相位（r1，全量 server）已覆盖为证据。
+#   - server/tests/test_story_units.py：装载 story.py / display_schema.py，二者本轮零改动（story.py 三缝零改），不入 scope。
+#   - server/tests/test_engine_round_close_units.py：装载 engine-patch/connection.py，本轮零触碰，图内亦未命中，不入 scope。
+#   - server/acceptance/archive/test_schedule_reminder.acceptance.py：detect_changes 命中，但位于 archive/ 退役面
+#     （两闸 SKIP_DIRS 明列，移位即退役口径），枚举与执行均不收集，不入 scope。
 #   - firmware/main/test/p1_auxbar_style.acceptance.c：3 红为上游存量（AB-A1/A2/A4），与本包无调用关系，不入 scope。
 # server 面 live 用例按既有 `-m "not live"` 口径 deselected，不在此处放宽。

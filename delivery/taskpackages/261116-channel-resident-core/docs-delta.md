@@ -1,6 +1,6 @@
 # docs-delta · 261116-channel-resident-core
 
-- **docsSyncRequired**：`false`（TaskPackage 声明；`docs-sync` 闸在 final r2 复跑 PASS）
+- **docsSyncRequired**：`false`（TaskPackage 声明；`docs-sync` 闸在 final r2 复跑 PASS、修复轮 final r5 复跑 PASS）
 - **docsSyncReason**（逐字）：会话/通道解耦与保活机制已由 architecture §6.4 + ADR-019 + 契约 §四冻结；本包只兑现实现，不改 spec 语义。requirements:48 ⚠️ 对账注记按 workstream 留根 1 由主线程路由。
 - **docsOwner**：integrator
 - **ADR**：`adrRequired=false`，本包未产出新 ADR；`docs/decisions/ADR.md` 零变更（引用既有 ADR-019 / ADR-015，不改文本）。
@@ -36,3 +36,14 @@
 - 本次 docs-sync 判定与 `docs-sync` 治理闸 PASS 一致（闸读 `docsSyncRequired=false`，本文件给人工复核理由）。
 - 本包对 `docs/` 的实际改动仅 `docs/debt/tech/**` 三件（两条目 + 其生成 INDEX），属账本记录面、非 spec/契约/架构/需求语义变更。
 - 无 UIUX 工作面（`uiux` 未触发），无设计稿同步需求。
+
+## 修复轮增记（真机轮 A 修复轮，2026-11-17/18）
+
+- **canonical docs 本轮零改动**：`git diff --stat HEAD -- docs/ docs/contracts/` 为空（spec 两件、契约面、ADR 面、debt 账本面均零 diff）。修复轮（D1/D2/D3）全部落在实现与验收面：`server/gateway/front/front_app.py`、`firmware/main/application.cc`、`server/acceptance/test_session_channel_resident.acceptance.py`、`firmware/main/test/session_channel_resident.acceptance.c`、`server/acceptance/test_record_dialogue_guide.acceptance.py`（RDG-A4 显式重锚）。
+- **新增包内证据件**（非 canonical docs、不触发 docs-sync）：
+  - `device-round-a-evidence.md`（真机轮 A 三源证据与 D1/D2/D3 诊断；轮 B 复测清单种子）
+  - `device-evidence/round-a/kplog-excerpt.txt` / `front-journal-excerpt.txt` / `engine-docker-excerpt.txt`（最小脱敏摘录 + SHA-256，见 review-packet 设备轮证据节）
+  - `mutation-evidence/round-a-fix.md`（19 条变异表 + 4 条如实观察项）
+  - `verifier-evidence/rounds/r3.json` / `r4.json` / `r5.json`（承重轮 fact；r3 = ok:false 事实占序）
+- **两条 debt 维持 deferred**：`TECH-261114-overlay-close-channel-rebuild-churn`、`TECH-261012-first-keypress-no-listening` 本轮零改账本文件；结项凭据仍是真机轮 B 目击（轮 A 为诊断轮且 FAILED，不构成结项凭据）。
+- **spec 漂移申报（不由本 Pod 改 spec）**：D3 对 requirements §2.1「记录会话不适用 60s 会话超时」的逐字冻结构成**收窄**——新增语义 = 空素材记录会话由设备侧 60s 收尾（释放、不归档、不推 story_list、不盖章），而 AC5 只覆盖「有素材 + 2 轮引导无回应」。`docsSyncRequired=false` 的现值与该实际影响不一致；本包对 `docs/requirements.md` 保持零 diff，**交主线程按需求面轻量注记处理**（§2.1 记录会话段补对账句，或 §7 开放问题追加），不写成「已同步」。
