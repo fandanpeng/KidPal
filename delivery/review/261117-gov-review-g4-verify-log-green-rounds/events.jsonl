@@ -1,0 +1,7 @@
+{"ts":"2026-11-17T00:00:00Z","event":"intake","actor":"main-thread","note":"human 2026-11-17 裁：现在修 G4（选 A）。来源 = 261116-channel-resident-core 收尾阻塞；诊断件 gate-tooling-gap-g4.md（全绿 Pod G4 结构性恒红：verify.mjs writeGateLog 仅在 !ok 分支写）。"}
+{"ts":"2026-11-17T14:40:00Z","event":"design-dispatched","actor":"main-thread","agent":"architect","note":"轻设计派发；输入 = gate-tooling-gap-g4.md + 代码锚"}
+{"ts":"2026-11-17T14:52:00Z","event":"design-drafted","actor":"architect","agent":"architect","note":"PROPOSAL DRAFT 235 行；新发现：缺口打穿三处（G4 / evidenceComplete / G6），全绿 Pod 结构性拿不到 auto-merge；manifest 两行（verify.mjs 主改 + dev-loop.md 自愿同步）；verify.mjs 判 ordinary（scope-map architect.allow 含 .claude/hooks/**）"}
+{"ts":"2026-11-17T14:52:30Z","event":"note","actor":"main-thread","note":"批制品跨 worktree 收敛：events 从 pod-m2 移至 gov-g4（实施与合并同分支）"}
+{"ts":"2026-11-17T15:05:00Z","event":"design-review-r1","actor":"architect-reviewer","agent":"architect-reviewer","note":"BLOCK(F1)：§3.3 log 头部 ok=/exit=/changeId= 与验收 B2「红分支逐字节不变」互斥（局部量须经调用参数下传→红分支调用站点必改）；F2（案 B 判别力声明过宽）/F3（§3.1 行锚）非阻断；判常规档、不启 landing-verifier；评审段落 PROPOSAL §9"}
+{"ts":"2026-11-17T15:25:00Z","event":"design-revised","actor":"architect","agent":"architect","note":"PROPOSAL v2（361 行）：F1 采推荐处置（删 §3.3 三行头部、归 §7.4 留根）；F2 采 ①+③（案 B 措辞收窄 + 写失败语义由 B2 逐字节承载、B3 改由 B2 承载）；F3 行锚修；B2 覆盖三处整段；dev-loop.md 标非必要"}
+{"ts":"2026-11-17T15:40:00Z","event":"design-frozen","actor":"main-thread","note":"R2 GREEN；主线程标 FROZEN v2（冻结意图/边界/关键方案/验收标准，不冻字节）"}
