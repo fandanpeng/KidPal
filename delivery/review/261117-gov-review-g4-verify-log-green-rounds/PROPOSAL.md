@@ -1,6 +1,6 @@
 # 轻量设计 PROPOSAL · 261117-gov-review-g4-verify-log-green-rounds
 
-> **状态：FROZEN v2 · 2026-11-17**（FROZEN 凭据 = human 2026-11-17 立项裁「现在修 G4（选项 A）」+ 设计审 R1 BLOCK(F1) → v2 回修 → R2 GREEN（F1 CLOSED / F2、F3 接受 / 不要故障注入臂 / 常规档、不启 landing-verifier）；主线程标冻，冻结意图、边界、关键方案与验收标准，不冻字节；作者≠判官由 R1/R2 独立审链承载。）
+> **状态：FROZEN v2.0 · 2026-11-17**（FROZEN 凭据 = human 2026-11-17 立项裁「现在修 G4（选项 A）」+ 设计审 R1 BLOCK(F1) → v2.0 回修 → R2 GREEN（F1 CLOSED / F2、F3 接受 / 不要故障注入臂 / 常规档、不启 landing-verifier）；主线程标冻，冻结意图、边界、关键方案与验收标准，不冻字节；作者≠判官由 R1/R2 独立审链承载。）
 > **gov-flow**: direct-implementation
 > **治理面：G3 强制执行层（`.claude/hooks/**`）；本批记录属 G4 证据面。**
 > **一句话范围：只把 gate log 的产出从「仅红闸」改为「每闸每轮」，不改任何闸的判定逻辑、不改 gate 集合、不改 supervisor 门语义。**
