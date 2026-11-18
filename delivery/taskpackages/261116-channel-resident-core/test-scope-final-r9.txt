@@ -1,0 +1,89 @@
+# test-scope 圈定清单 · 261116-channel-resident-core · final（integrator Step 4 范围圈定，真机轮 C 修复轮 r9，2026-11-18 新落文件；r7 清单 test-scope-final.txt 保留为历史）
+# 合成来源 = taskpackage.acceptanceTestsFile（6）∪ impactedTestsSeed[]（25 去重）∪ detect_changes
+#   （project C-AI-KidPal-pod-channel，since base/261115-session-channel-resident / merge_base 3b3832cb，
+#   direction=inbound，depth=2：89 changed files（含本包 delivery/docs 簿记件；实现/验收面 16 件）/
+#   seed 490 符号 / impacted_total 138 节点，其中 server/acceptance 78、server/gateway 21、
+#   server/tests 16、firmware/main 23）映射测试 ∪ 共享 seam 相关测试 ∪ 安全余量。
+#   本轮增量复核（since HEAD，覆盖未提交工作树）：18 changed files / seed 46 / impacted_total 51，
+#   与包级结果指向同一 server 测试面（firmware 面本轮零 diff）。
+# 圈定路径：per-Pod 专属图索引可用（C-AI-KidPal-pod-channel，full）→ 正常圈定，未降级
+#   （detect_changes 与 trace_path 均可用，无需三分法降级路径）。
+# 格式 = 仓根相对测试文件路径一行一件（# 注释）；执行面 = server 面 pytest 按文件圈定真跑
+#   （acceptance 闸跑 acceptance/*、unit 闸跑 tests/*），firmware 面 = host runner 全量单 ELF
+#   （host_infra_test.elf）一次覆盖下列全部 .c（acceptance 闸对 firmware 只作结构/runner 存在性核对）。
+# 本轮（真机轮 C 修复轮）实现落点 = server/gateway/front/front_app.py（段级静音幻觉过滤 +
+#   整理产物占位守卫 R1–R4 + reason 分档静默释放/丢稿安抚）+ server/tests/test_archive_guard_units.py
+#   （纯 additive：新 AST 抽取器 + 新 TestCase）；断言落 test_session_channel_resident.acceptance.py
+#   （SCRF-C1..C4）。firmware/**、story.py、引擎件、docs/** 本轮零 diff；固件面测试入清单纯作
+#   must-stay-green 回归网（与 r7 同口径，圈定面只增不减）。
+# 范围性质 = 影响面圈定清单（不是全量回归替代物，也不缩到只剩本包档）；floor 含本包冻结件 + 对端共享冻结面。
+
+# ── 本包冻结验收件（acceptanceTestsFile，本包承载件）──
+firmware/main/test/session_channel_resident.acceptance.c
+server/acceptance/test_session_channel_resident.acceptance.py
+
+# ── 轮 B 修复轮新缝的 builder 单元测试（host runner 真跑；本轮固件零 diff，保绿）──
+firmware/main/test/session_voice_watch.test.c
+
+# ── impactedTestsSeed · 冻结件重锚 / must-stay-green（固件 11 + 服务端 8）──
+firmware/main/test/boot_auto_connect.acceptance.c
+firmware/main/test/voice_round_ui.acceptance.c
+firmware/main/test/record_session_live.acceptance.c
+firmware/main/test/record_dialogue_guide.acceptance.c
+firmware/main/test/record_session_lifecycle.acceptance.c
+firmware/main/test/record_session_repair.acceptance.c
+firmware/main/test/chrome_ghost.acceptance.c
+firmware/main/test/reminder_overlay_unify.acceptance.c
+firmware/main/test/diag_log.acceptance.c
+firmware/main/test/font_assets_runtime.acceptance.c
+firmware/main/test/host_infra_smoke.acceptance.c
+server/acceptance/test_record_cancel_lifecycle.acceptance.py
+server/acceptance/test_m4k1_story_cloud_link.acceptance.py
+server/acceptance/test_m4k3_record_session_live.acceptance.py
+server/acceptance/test_record_dialogue_guide.acceptance.py
+server/acceptance/test_record_front_polish.acceptance.py
+server/acceptance/test_points_device_ui.acceptance.py
+server/acceptance/test_story_cover_nav.acceptance.py
+
+# ── detect_changes 映射测试（impact 图直接到达的测试节点，且不在 seed）──
+# front_app.py（本轮改动面）经 _device_to_engine/_engine_to_device 装载链与 _organize_and_archive /
+# _story_feed_from_stt / _story_finish_session 调用面波及：memory_isolation 经 oneshot payload、
+# points_e2e_spike 经 ctx 注入、story_fetch 经泵真跑；points_ledger_core / qq_points_channel
+# （_consume_points_intent 与 display 块链）、schedule_grid_restore（腿登记 / ctx 与 listen stop 泵路径）
+# 为本包既有圈定项，按「圈定面只增不减」保留。
+server/acceptance/test_261022_memory_isolation.acceptance.py
+server/acceptance/test_points_e2e_spike.acceptance.py
+server/acceptance/test_story_fetch.py
+server/acceptance/test_points_ledger_core.acceptance.py
+server/acceptance/test_qq_points_channel.acceptance.py
+server/acceptance/test_schedule_grid_restore.acceptance.py
+server/tests/test_story_cancel_lifecycle_units.py
+
+# ── 服务端单元面 · front_app.py 源读/装载（本轮改动文件的正邻）──
+server/tests/test_archive_guard_units.py
+server/tests/test_reminder_units.py
+# 本轮新增项（architect 建议，impactedTestsSeed 已登记）：story.py 三缝（StoryAccumulator /
+# build_organizing_input / archive_story）本轮零 diff 的负锚——本轮占位守卫落在 front 的整理回合内、
+# 不进 story.py 装配层；跑绿即证「装配层不代行滤除」未被触碰。
+server/tests/test_story_units.py
+
+# ── 安全余量 · host runner 冒烟（CMakeLists 登记序守卫；本轮固件零 diff，保绿）──
+firmware/main/test/host_infra_smoke.acceptance.c
+
+# ── 非测试件登记（不入 scope 过滤，仅作圈定依据留痕）──
+# 实现面 = server/gateway/front/front_app.py（段级过滤 / 占位守卫 / reason 分档）。
+# 单测面 = server/tests/test_archive_guard_units.py（纯 additive：_load_output_guard 第二抽取器 +
+#   新 TestCase；既有 _load_guard wanted/ns 与四条判定 case 逐字不动）。
+# 冻结验收追加件 = server/acceptance/test_session_channel_resident.acceptance.py（+744 行，SCRF-C1..C4）。
+# 负锚复核（本轮实测零 diff）= server/gateway/story.py / server/gateway/display_schema.py /
+#   firmware/main/** / docs/contracts/** / docs/requirements.md / docs/architecture.md /
+#   server/deploy/** / engine-patch/**。
+# 设备轮 = 轮 A FAILED 诊断轮、轮 B 部分失败（D3/A6）、轮 C 在线取证（round-c 三源，非完整真机轮）；
+#   真机轮 C 待 human 持板复跑，evidence 由 human 交付后另落 device-round-evidence.md，本包不伪造 PASS。
+#
+# 排除项（如实留痕）：
+#   - server/acceptance/archive/test_schedule_reminder.acceptance.py：detect_changes 命中，但位于 archive/
+#     退役面（两闸 SKIP_DIRS 明列，移位即退役口径），枚举与执行均不收集，不入 scope。
+#   - firmware/main/test/p1_auxbar_style.acceptance.c：3 红为上游存量（AB-A1/A2/A4），与本包无调用关系，不入 scope。
+#   - server/tests/test_engine_round_close_units.py：装载 engine-patch/connection.py，本轮零触碰、图内未命中，不入 scope。
+# server 面 live 用例按既有 `-m "not live"` 口径 deselected，不在此处放宽。

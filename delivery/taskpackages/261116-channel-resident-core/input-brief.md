@@ -2,7 +2,8 @@
 
 > **非权威派生物**（脚本生成，Git-tracked）：本文件是**本次派发消费期的封闭输入清单快照**，不是事实源——契约 / spec / 代码各自仍是其自身 SSOT。改本文件无意义，改 refs 后重跑脚本。
 > **行号快照语义**：下文行号 = 生成时点解析结果，**非长期事实源**；消费时若 symbol 已移位，重跑 `brief-inputs.mjs` 取新行号，不得照旧行号通读整文件。
-> generated-at: 2026-11-18T00:26:47.485Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: acceptance-author + builder（单份共用）
+> generated-at: 2026-11-18T14:00:53.363Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: acceptance-author + builder（单份共用）
+> regenerated-because: architect 1g 回执与 planner 裁定落 plan.md；acceptance SCRF-C1..C4 按裁定细化（reason_sink / organize_placeholder / R1-R4 / 集合不变式）；manifest 改回既有 test_archive_guard_units.py（纯 additive）（覆盖上一份快照，旧 generated-at 见 git diff 上一版本）
 > 来源 TaskPackage: `delivery/taskpackages/261116-channel-resident-core/taskpackage.json` · subsystem: firmware 语音会话生命周期与通道保活（application.cc / protocols）+ front 心跳与每会话收尾（front_app.py） · rigor: full
 
 ## ① 契约 / spec 锚点节（定位到节，**不抽正文**——正文仍在 SSOT，读它）
@@ -37,6 +38,10 @@
 | `delivery/review/261115-arch-review-session-channel-resident/PROPOSAL.md` | `T4` | T4 · 契约 §四：新增 `listen` 帧节（会话边界带内信号）+ 新增下行 `kidpal_keepalive` 心跳帧 + `kidpal_story_discard` 发送时机措辞改 + 变更记录条 | 159 | ok |
 | `docs/debt/tech/TECH-261114-overlay-close-channel-rebuild-churn.md` | — | 无锚点（整文件） | — | bare |
 | `docs/debt/tech/TECH-261012-first-keypress-no-listening.md` | — | 无锚点（整文件） | — | bare |
+| `delivery/taskpackages/261116-channel-resident-core/device-evidence/round-c/device-round-c-online-evidence.md` | — | 无锚点（整文件） | — | bare |
+| `delivery/taskpackages/261116-channel-resident-core/device-evidence/round-c/ecs-front-journal-2120-2134.txt` | — | 无锚点（整文件） | — | bare |
+| `delivery/taskpackages/261116-channel-resident-core/device-evidence/round-c/engine-asr-2120-2123.txt` | — | 无锚点（整文件） | — | bare |
+| `delivery/taskpackages/261116-channel-resident-core/device-evidence/round-c/ecs-story-2026-11-18-s33477cee.md` | — | 无锚点（整文件） | — | bare |
 
 ## ①c · UI 设计 refs（uiux block 透传 · 页级 PNG = 布局坐标定位权威 · 本节主要消费方 = builder）
 
@@ -89,4 +94,8 @@
 - **warning · anchor-not-found** · ref=`docs/requirements.md#S-F2.2-AC4`：ref 的显式锚点未定位到标题节：docs/requirements.md#S-F2.2-AC4（起包期核对锚点或目标文档是否已变更）
 - **info · whole-document** · ref=`docs/debt/tech/TECH-261114-overlay-close-channel-rebuild-churn.md`：Markdown 整文件引用（不自动猜章节）：docs/debt/tech/TECH-261114-overlay-close-channel-rebuild-churn.md
 - **info · whole-document** · ref=`docs/debt/tech/TECH-261012-first-keypress-no-listening.md`：Markdown 整文件引用（不自动猜章节）：docs/debt/tech/TECH-261012-first-keypress-no-listening.md
+- **info · whole-document** · ref=`delivery/taskpackages/261116-channel-resident-core/device-evidence/round-c/device-round-c-online-evidence.md`：Markdown 整文件引用（不自动猜章节）：delivery/taskpackages/261116-channel-resident-core/device-evidence/round-c/device-round-c-online-evidence.md
+- **warning · bare-non-markdown** · ref=`delivery/taskpackages/261116-channel-resident-core/device-evidence/round-c/ecs-front-journal-2120-2134.txt`：ref 无锚点，清单退化为整文件引用：delivery/taskpackages/261116-channel-resident-core/device-evidence/round-c/ecs-front-journal-2120-2134.txt（非 Markdown 路径不适用文档豁免，起包期核对引用形态）
+- **warning · bare-non-markdown** · ref=`delivery/taskpackages/261116-channel-resident-core/device-evidence/round-c/engine-asr-2120-2123.txt`：ref 无锚点，清单退化为整文件引用：delivery/taskpackages/261116-channel-resident-core/device-evidence/round-c/engine-asr-2120-2123.txt（非 Markdown 路径不适用文档豁免，起包期核对引用形态）
+- **info · whole-document** · ref=`delivery/taskpackages/261116-channel-resident-core/device-evidence/round-c/ecs-story-2026-11-18-s33477cee.md`：Markdown 整文件引用（不自动猜章节）：delivery/taskpackages/261116-channel-resident-core/device-evidence/round-c/ecs-story-2026-11-18-s33477cee.md
 

@@ -59,3 +59,16 @@
   3. 故事会话起步噪声沿导致无端跳录音页（VAD 在无人说话时让出 speech 沿，把 `s_story_rec_entered` 置真）。本轮 D3 判据已换源到缝内 `asr_seen`，该沿只剩页面副作用；根治归 `AfeAudioProcessor` 卫生复位后续批。
   4. 设备构建 depfile 时序：新头文件首次引入不触发依赖它的验收 TU 重编（`session_voice_watch.h` 在验收件编红基线时尚不存在，depfile 从未登记它）。变异证据对头宏变异采用「先删 `.o` 强制重编」口径规避，属既有构建卫生问题，不在本包修。
   5. `change-manifest` 闸经 `current/` 指针解析时恒判 pre-cutoff（本包恒报 `skipped: pre-cutoff`），闸的清单对账实际未执行；planner 已按闸本应执行的规则手工对账（清单外 0 件），诊断见 `gate-tooling-gap-manifest-cutoff.md`，修复面在 `.claude/**`、归主线程。
+
+## 真机轮 C 修复轮增记（2026-11-18，final r9 收口）
+
+- **`docsSyncRequired=false` 与实测一致**：本轮 `docs/**` 零 diff——`git diff --numstat HEAD -- docs` 为空，`git status --porcelain -- docs` 为空（本轮改动仅 `server/gateway/front/front_app.py`、`server/acceptance/test_session_channel_resident.acceptance.py`、`server/tests/test_archive_guard_units.py` 三件实现/验收面文件）。
+- **逐条说明（四类 canonical 面均未改）**：
+  1. **契约面 `docs/contracts/**`**：零 diff。本轮不新增帧、不扩 display 白名单、不改契约载荷语义；段级过滤与占位守卫都是 front 对既有帧（上行 `stt`、下行 `listen` / `story_list`）的本地消费/下发决策，无 `CONTRACT_CHANGE_REQUIRED` / `SPEC_CONTRACT_DRIFT` 触发。
+  2. **需求面 `docs/requirements.md`**：零 diff。D3 口径（无有效素材自动收尾 = 释放、不归档、不推 story_list、不盖章）与 human 2026-11-17/18 两次指令一致；本轮修复是把该口径的**执行面**补齐（此前占位产物与静音幻觉可绕过它），不是语义变更。
+  3. **架构面 `docs/architecture.md`**：零 diff。占位守卫与段级过滤是 front 收尾链的实现细化，未改 §5.1.1 / §5.1.2 / §6.4 的冻结裁决。
+  4. **ADR 面**：`adrRequired=false`，本轮未产出新 ADR；`docs/decisions/ADR.md` 零变更（判据细化属既有 ADR-019 的实现层）。
+  5. **debt 账本面 `docs/debt/**`**：零 diff。`TECH-261114-overlay-close-channel-rebuild-churn` 与 `TECH-261012-first-keypress-no-listening` 维持 `deferred`，**结项凭据 = 真机轮 C 通过**（轮 B 只部分通过；轮 C 在线取证只锚定缺陷、不构成真机轮 PASS），故本轮不改 `status` / `closed` / `closedBy`。
+- **新增上游残余（建议主线程立项，本 Pod 不建文件）**：引擎静音 ASR 幻觉（`Okay.` / 「嗯。」族）为引擎 ASR provider 的上游问题；本轮只在 front 侧加防线，`engine-patch/**` 与 ECS 引擎件零 diff。已在 review-packet 第六节登记并建议主线程按 tech debt 处置。
+- **spec 漂移仍需主线程轻量注记（沿用 `pending-human-ruling.md` 待裁四，Pod 零写）**：① requirements §2.1「记录会话不适用 60s 会话超时」的收窄（空素材记录会话由设备侧 60s 收尾）；② architecture §5.1.1 需补「有效语音证据」定义（轮 B 修复轮引入的可信窗 + `asr_seen` 判据）；③ 本轮新增的占位守卫/段级过滤是否需要在架构面补一句「front 收尾链两道产物防线」的描述，由主线程在需求/架构面轻量注记时一并判断。**本 Pod 对两份 spec 文件保持零 diff，不写成「已同步」。**
+- **可测性/依赖卫生**：无新依赖、无跨层新调用、无循环依赖、无绕过契约的本地类型；新增判据均为 front 模块内纯函数 + 纯集合常量（host/server pytest 直调）。

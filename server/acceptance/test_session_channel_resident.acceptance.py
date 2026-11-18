@@ -135,6 +135,53 @@ story.py 三缝 release_pending / cancel / PENDING_STOP_SECONDS 零改动）：
   EQ-3 「同 device websocket 对象 ≙ 同连接」（_record_ctx_seen 按 device ws 建键）——
         离线真泵跨多次调用复用同一 _FakeDeviceSocket 承载。
 ===========================================================================
+
+轮 C 修复轮追加 REVISION LOG（2026-11-18；human「现在就修」+ 三源在线证据
+delivery/taskpackages/261116-channel-resident-core/device-evidence/round-c/；技术方案 =
+plan.md「真机轮 C 修复轮（2026-11-18）技术方案」节）：
+  本轮只 **additive** 追加两个 TestCase 类，既有 B1..B10 断言行零改动（含 SCRF-B10
+  case 2 的「嗯。」收尾沿消费）。新增 acceptance id = SCRF-C1..C4（TaskPackage 已落盘）：
+  SCRF-C1 段级静音 ASR 幻觉过滤 + pending_stop 不归档（端到端主防线）。
+  SCRF-C2 整理产物占位守卫（后防线，承重）：R1–R4 机械判据 + 页面退出帧 + reason 分档。
+  SCRF-C3 A5 正常路径回归（must-stay-green）：正常两行整理结果仍归档；丢稿类 reason
+          （llm_unavailable）仍安抚 + 页面退出帧。
+  SCRF-C4 素材侧过滤保守性 + 集合不变式 + 判定单源（判据判别力）。
+  真机缺陷面（round-c 证据）：① 静音 ASR 幻觉 `Okay.`（engine-asr 21:22:06）喂进
+  pending_stop 累积器 → 过素材守卫（compact=4）→ 整理 LLM 返回占位串「（没有可整理的
+  内容）」→ 被当正文归档成垃圾篇 2026-11-18-s33477cee（ecs-story-*.md 逐字为该串）。
+
+强度申报（契约 / story 条目 -> 承载断言 -> 性质档）:
+  S-F2.2-AC4（三式收尾：归档正文 == 整理输出、不写垃圾篇）-> C2 -> 行为级（真泵 +
+    真 StoryAccumulator + 真落盘/seq 账本零增 + 真下行帧序列）+ 源锚代理（R1–R4 直调
+    `_organize_and_archive` 的返回/日志；LLM 桩替身 = 外部不可控边界的替身，非被测面）。
+  S-F2.2-AC4 正常路径 -> C3 -> 行为级（真归档落盘 + 真 story_text/story_list 帧 + seq）。
+  requirements §2.1（记录会话收尾）-> C1 -> 行为级（真泵 + 注入时钟 sweep；零归档 /
+    零演出 / 恰一帧 active=false / routing 回 chat）。
+  human 2026-11-18「白名单/归一化要保守，不得误伤孩子真说的话」-> C4 -> 行为级（混排
+    真话入累积器、集合不变式遍历实际表、换表判定随动）。
+  弱于契约处（显式缺口，不得当已兑现）:
+    GAP-C1 引擎侧「收到 active=false 后不再产尾音 ASR」不在本侧断言（引擎零改动铁律）；
+      本件只证 front 侧段级过滤与释放链。真机轮 C 端到端归 human 持板复测。
+    GAP-C2 设备侧 ORGANIZING 过渡页真实退出（页面真的回到 P3 列表）归真机；离线只证
+      「页面退出帧恰一帧 + 列表内容零新增」（261021 R6 先例同一口径）。
+    GAP-C4 长尾占位（措辞无关以外的语义重叠检查）本轮不做（planner 裁定 7：误杀面
+      不可忽略），登记 follow-up 候选。
+  行为等价假设（显式；不写即默认不成立）:
+    EQ-C1 「离线 LLM 桩返回占位串 ≙ 真实整理 LLM 的占位回复」——桩替身只承载回复文本，
+      判据本体（R1–R4 归一化整串判定）在真实代码路径上执行。
+    EQ-C2 「真泵帧序 ≙ 设备侧可见序列」——离线只证 front 下发帧序与内容，设备渲染归真机。
+  口径偏差留痕（与 human「不推 story_list」原话）：C2 的整理回合已发生路径断言
+    「页面退出帧恰一帧且 total==0 / items==[] / restore 缺省或 false」——该帧是
+    ORGANIZING 非交互页的唯一机械退出载体（261021 真机 R6 困页实证，SAO-A1 同因重钉）；
+    「列表不虚增」由不归档保证（total 由 list_stories 现算）。会话从未进整理回合的
+    路径（C1）断言严格零 story_list。planner 裁定 5 已把该分法写入 review-packet。
+  新态 chrome 三件自查：本批 uiux block 不在场（input-brief ①c = none），无 UI 设计面。
+  device-outcome / host-uncompilable-path：不适用（C1..C4 实现落点全部 = server/
+    gateway/front/front_app.py，host 可跑；无固件落点）。
+  夹具自含性（显式声明）: 每组用独立 tempfile STORIES_DIR + 假双腿 + 注入时钟（sweep now）
+    + LLM 桩；无网络（C1 未打桩路径的 LLM 出口在连接拒绝级快失败）、无真实墙钟依赖、
+    无外部资产。唯一的模块级跨调用状态（_story_acc / 记录语境标记 / 会话关闭门）由
+    `_front_with_stories` 在用例内重置，test 间零共享。
 """
 
 from __future__ import annotations
@@ -145,6 +192,7 @@ import importlib.util
 import json
 import logging
 import os
+import re
 import sys
 import tempfile
 import types
@@ -1930,6 +1978,702 @@ class ScrfEmptyMaterialReleaseAcceptance(unittest.TestCase):
                     "SCRF-B10 RED: 拒绝路径推送了 story_list —— 无新篇时列表不应变。")
                 self.assertEqual(acc.routing(sid), "chat",
                                  "SCRF-B10 RED: 拒绝路径后 routing 未回 chat。")
+
+
+# --------------------------------------------------------------------------- #
+# 真机轮 C 修复轮（2026-11-18）追加 helpers（SCRF-C1..C4）                        #
+# --------------------------------------------------------------------------- #
+
+# 冻结 token（plan「真机轮 C 修复轮」三节 + TaskPackage SCRF-C1..C4）。
+SILENT_ASR_DROP_TOKEN = "silent_asr_hallucination"
+ORGANIZE_PLACEHOLDER_REASON = "organize_placeholder"
+
+_GUARD_STRIP_RE_TEST = re.compile(r"[^\w\s]")
+
+
+def _guard_compact(text):
+    """素材守卫同族归一化（去标点 -> 去空白 -> 小写）；集合不变式的度量面。
+
+    与 front `_archive_material_reject_reason` 的 compact 形态同构：段级集合若收进
+    compact 后 <2 字的元素（如「嗯。」->「嗯」），ingest 会把它吞掉，SCRF-B10 case 2
+    的「尾音幻听仍进收尾单源被素材守卫拒绝」随之翻红——故不变式必须按本度量钉。"""
+    spaced = _GUARD_STRIP_RE_TEST.sub("", text or "").strip().lower()
+    return re.sub(r"\s+", "", spaced)
+
+
+def _story_text_frames(sent_text):
+    return [p for p in _display_payloads(sent_text) if p.get("view") == "story_text"]
+
+
+def _kidpal_speak_frames(sent):
+    return [o for o in _forwarded_objects(sent) if o.get("type") == "kidpal_speak"]
+
+
+def _ledger_snapshot(stories_dir):
+    """<STORIES_DIR>/.seq.json 读回（缺失/坏 JSON -> {}，供「seq 不占号」断言）。"""
+    path = Path(stories_dir) / ".seq.json"
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except OSError:
+        return {}
+    try:
+        return json.loads(raw)
+    except (TypeError, ValueError):
+        return {}
+
+
+# =========================================================================== #
+# SCRF-C1 + SCRF-C4 — 段级静音 ASR 幻觉过滤（主防线）+ 判据判别力/集合不变式        #
+# =========================================================================== #
+
+
+class ScrfSilentAsrSegmentFilterAcceptance(unittest.TestCase):
+    maxDiff = None
+
+    # 命中族（整段归一化后与集合整串相等才 drop；绝不子串）。
+    HIT_SAMPLES = ("Okay.", "okay", "OKAY！", "ok", "Thank you.",
+                   "うん。", "そう。", "はい。", "いいえ。")
+    # 混排真话（孩子真会说的话）——必须照常入累积器。
+    KEEP_SAMPLES = ("嗯，然后我们去公园", "Okay，我知道了",
+                    "谢谢你，这个字怎么写", "让我们一起说thank you吧")
+
+    # coverage: SCRF-C1 -- 记录语境 ctx(story) -> listen stop（累积空 -> pending_stop，
+    #            分层保护零回退）-> 引擎静音幻觉 stt=Okay. 被段级过滤：_story_finish_session
+    #            零调用、累积器仍空、routing 仍 pending_stop；+10.5s 既有 sweep 释放
+    #            （active=false 恰一帧、零归档 / 零 start_organizing / 零 story_text /
+    #            story_list 零新增 / seq 不占号）；审计 dropped=silent_asr_hallucination
+    #            恰 1；stt 转发不受过滤影响（恰 1 帧——SCRF-B9 旁路消费语义延伸）
+    def test_scr_c1_pending_stop_silent_asr_dropped_then_sweep_releases(self):
+        with tempfile.TemporaryDirectory(prefix="scr_c1_") as tmp:
+            with _front_with_stories(tmp) as front:
+                sid = "sess-c1"
+                dev, up = _FakeDeviceSocket(), _FakeUpstream()
+                dev.append_text(_ctx_msg("story"))
+                asyncio.run(front.pump_client_to_upstream(dev, up, sid))
+                acc = front._get_story_acc()
+                self.assertEqual(acc.routing(sid), "accumulate",
+                                 "SCRF-C1 RED(前置): ctx(story) 后未进累积态 —— 本 case "
+                                 "的 pending_stop 起点不可达（夹具失真）。")
+                story_list_base = len(_story_list_frames(dev.sent_text))
+                t0 = datetime.now(dt_timezone.utc)
+                with _log_capture() as stop_logs:
+                    dev.append_text(_listen_stop_msg())   # 累积空 -> pending_stop
+                    asyncio.run(front.pump_client_to_upstream(dev, up, sid))
+                self.assertEqual(
+                    acc.routing(sid), "pending_stop",
+                    "SCRF-C1 RED(前置): 空累积 stop 后未落 pending_stop —— 分层保护"
+                    "（story_stop pending_stop / session_end_boundary protected）回退。")
+                self.assertTrue(
+                    _log_lines_with(stop_logs, "story_stop", "archived=false",
+                                    "reason=pending_stop"),
+                    "SCRF-C1 RED(前置): 缺 story_stop archived=false reason=pending_stop "
+                    "审计行 —— 真机轮 C 证据（21:22:05）的挂起留痕链断了。")
+                self.assertTrue(
+                    _log_lines_with(stop_logs, "session_end_boundary",
+                                    "routing=pending_stop", "action=protected"),
+                    "SCRF-C1 RED(前置): 缺 session_end_boundary routing=pending_stop "
+                    "action=protected 审计行 —— F-01 分层保护留痕链断了。")
+
+                # 引擎静音 ASR 幻觉到达（真机轮 C 21:22:06 逐字样本）。
+                with _log_capture() as stt_logs:
+                    with _finish_spy(front) as fin:
+                        up_e, dev_e = _engine_to_device(front, sid, [_stt_frame("Okay.")])
+                self.assertEqual(
+                    fin, [],
+                    f"SCRF-C1 RED: 静音幻觉 stt=Okay. 触发了 _story_finish_session"
+                    f"（实记 {fin}）—— 段级过滤缺席：幻觉喂进 pending_stop 累积器、过"
+                    "素材守卫（compact=4）、进整理回合成垃圾篇（round-c "
+                    "ecs-story-2026-11-18-s33477cee.md 逐字「（没有可整理的内容）」）。")
+                self.assertIsNone(
+                    acc.build_organizing_input(sid),
+                    "SCRF-C1 RED: 幻觉 stt 仍进了累积缓冲（build_organizing_input 非 "
+                    "None）—— 段级过滤须在 feed 之前，整段命中即 drop（绝不子串）。")
+                self.assertEqual(
+                    acc.routing(sid), "pending_stop",
+                    "SCRF-C1 RED: 幻觉 stt 后 routing 漂移（非 pending_stop）—— 被过滤"
+                    "不得改变挂起态（交既有 10s sweep 释放，防吞 1.7s 后才到的真转写）。")
+                self.assertEqual(
+                    len(_frames_of_type(dev_e.sent_text, "stt")), 1,
+                    "SCRF-C1 RED: stt 转发帧数 != 1 —— 段级过滤须只作用于旁路素材消费，"
+                    "不得挪到转发路径之前或 continue（SCRF-B9 语义延伸）。")
+                silent_lines = _log_lines_with(stt_logs, "story_feed_guard",
+                                               f"dropped={SILENT_ASR_DROP_TOKEN}")
+                self.assertEqual(
+                    len(silent_lines), 1,
+                    f"SCRF-C1 RED: 审计 story_feed_guard dropped="
+                    f"{SILENT_ASR_DROP_TOKEN} 行数 = {len(silent_lines)}（冻结恰 1）"
+                    f"—— 命中不可归因（实记 {stt_logs!r}）。")
+
+                # 既有 10s sweep 释放链（不新增即时释放路径）。
+                dev_leg, up_leg = _FakeDeviceSocket(), _FakeUpstream()
+                with _guide_legs(front, sid, dev_leg, up_leg):
+                    with _finish_spy(front) as fin2:
+                        asyncio.run(front._story_timeout_sweep(
+                            now=t0 + timedelta(seconds=10.5)))
+                self.assertEqual(
+                    fin2, [],
+                    f"SCRF-C1 RED: sweep 释放走了 _story_finish_session（实记 {fin2}）"
+                    "—— 空素材收尾 = 释放、不归档、不演出、不盖章。")
+                releases = _release_frames(up_leg.sent)
+                self.assertEqual(
+                    len(releases), 1,
+                    f"SCRF-C1 RED: sweep 释放 active=false 帧数 = {len(releases)}（冻结"
+                    "恰 1）—— 释放缺失 = 引擎对该连接永久抑制（后续问答哑火）。")
+                self.assertEqual(
+                    _story_md_files(tmp), [],
+                    "SCRF-C1 RED: 幻觉素材落盘成篇 —— STORIES_DIR 须零新增。")
+                self.assertEqual(
+                    _ledger_snapshot(tmp), {},
+                    "SCRF-C1 RED: 幻觉素材占了 seq 账本号 —— 零盖章（不归档则不分配"
+                    "流水号）被破。")
+                self.assertEqual(
+                    _start_organizing_frames(dev.sent_text), [],
+                    "SCRF-C1 RED: 过滤路径下发了 start_organizing —— 会话从未进整理"
+                    "回合，不该演出（设备困在整合过渡页）。")
+                self.assertEqual(
+                    len(_story_list_frames(dev.sent_text)), story_list_base,
+                    "SCRF-C1 RED: 过滤路径多推了 story_list —— 该路径精确兑现 human"
+                    "「不推 story_list」原话（列表total 由 list_stories 现算、零归档即"
+                    "零变化）。")
+                self.assertEqual(
+                    _story_list_frames(dev_leg.sent_text), [],
+                    "SCRF-C1 RED: sweep 释放向会话腿推了 story_list —— 释放不是数据"
+                    "更新，不该有列表帧。")
+                self.assertEqual(acc.routing(sid), "chat",
+                                 "SCRF-C1 RED: sweep 释放后 routing 未回 chat。")
+
+    # coverage: SCRF-C4 -- 命中族（段级 drop）与混排真话放行成对：Okay. / okay /
+    #            OKAY！ / ok / Thank you. / うん。 / そう。 / はい。 / いいえ。 整段
+    #            命中即 drop（不进累积器）；「嗯。」不命中（compact=1，留给素材守卫）；
+    #            混排真话四条全部入累积器；三段式（真话 -> Okay. -> 真话）恰含两句真话
+    def test_scr_c4_hit_family_dropped_and_mixed_speech_kept(self):
+        with tempfile.TemporaryDirectory(prefix="scr_c4_keep_") as tmp:
+            with _front_with_stories(tmp) as front:
+                acc = front._get_story_acc()
+                # ① 命中族：逐样本独立会话，routing 必须真在累积态（否则喂入链不达，
+                #    断言会空过 —— 先钉前置）。
+                with _log_capture() as hit_logs:
+                    for idx, sample in enumerate(self.HIT_SAMPLES):
+                        sid = f"sess-c4-hit-{idx}"
+                        acc.start(sid, now=_t0())
+                        self.assertEqual(acc.routing(sid), "accumulate",
+                                         f"SCRF-C4 RED(前置): 样本 {sample!r} 会话未进"
+                                         "累积态（喂入链不达 = 断言空过）。")
+                        front._story_feed_from_stt(sid, _stt_frame(sample), now=_t0())
+                        self.assertIsNone(
+                            acc.build_organizing_input(sid),
+                            f"SCRF-C4 RED: 静音幻觉样本 {sample!r} 未被段级过滤 —— "
+                            "整段归一化后与集合整串相等即须 drop（绝不子串）。")
+                hit_lines = _log_lines_with(hit_logs, "story_feed_guard",
+                                            f"dropped={SILENT_ASR_DROP_TOKEN}")
+                self.assertEqual(
+                    len(hit_lines), len(self.HIT_SAMPLES),
+                    f"SCRF-C4 RED: 命中族审计行数 = {len(hit_lines)}（冻结 "
+                    f"{len(self.HIT_SAMPLES)} = 每样本恰 1）—— 命中不可逐条归因。")
+
+                # ② 「嗯。」不命中：仍入累积器（SCRF-B10 case 2 保绿的机械依据）。
+                sid = "sess-c4-en"
+                acc.start(sid, now=_t0())
+                with _log_capture() as en_logs:
+                    ret = front._story_feed_from_stt(sid, _stt_frame("嗯。"), now=_t0())
+                self.assertFalse(ret,
+                                 "SCRF-C4 RED: 「嗯。」在累积态被当作收尾沿返回 True —— "
+                                 "该样本的拒绝归素材守卫（insignificant_material），归"
+                                 "段级过滤会毁 SCRF-B10 case 2。")
+                self.assertIn(
+                    "嗯。", acc.build_organizing_input(sid) or "",
+                    "SCRF-C4 RED: 「嗯。」被段级集合吞掉 —— compact=1 <2 的元素不得入"
+                    "段级集合（B10 case 2「尾音仍进收尾单源」的机械依据）。")
+                self.assertEqual(
+                    _log_lines_with(en_logs, "story_feed_guard",
+                                    f"dropped={SILENT_ASR_DROP_TOKEN}"), [],
+                    "SCRF-C4 RED: 「嗯。」命中了段级过滤 —— 见集合不变式"
+                    "（compact 后长度 >= 2）。")
+
+                # ③ 混排真话放行：四条全部入累积器（绝不子串）。
+                sid = "sess-c4-mixed"
+                acc.start(sid, now=_t0())
+                for sample in self.KEEP_SAMPLES:
+                    front._story_feed_from_stt(sid, _stt_frame(sample), now=_t0())
+                built = acc.build_organizing_input(sid) or ""
+                for sample in self.KEEP_SAMPLES:
+                    self.assertIn(
+                        sample, built,
+                        f"SCRF-C4 RED: 混排真话 {sample!r} 被段级过滤误杀 —— 过滤只在"
+                        "整段相等时 drop（human 2026-11-18：不得误伤孩子真说的话）。")
+
+                # ④ 三段式：真话 -> Okay. -> 真话；恰含两句真话、不含 Okay。
+                sid = "sess-c4-triple"
+                acc.start(sid, now=_t0())
+                front._story_feed_from_stt(sid, _stt_frame("今天我去公园了。"), now=_t0())
+                front._story_feed_from_stt(sid, _stt_frame("Okay."), now=_t0())
+                front._story_feed_from_stt(sid, _stt_frame("我们玩了滑梯。"), now=_t0())
+                built = acc.build_organizing_input(sid) or ""
+                self.assertIn("今天我去公园了。", built,
+                              "SCRF-C4 RED: 三段式第一句真话丢失。")
+                self.assertIn("我们玩了滑梯。", built,
+                              "SCRF-C4 RED: 三段式第三句真话丢失。")
+                self.assertNotIn(
+                    "Okay", built,
+                    "SCRF-C4 RED: 三段式中间段的静音幻觉「Okay.」进了整理输入 —— "
+                    "段级过滤须在 feed 之前逐段判定。")
+
+    # coverage: SCRF-C4 -- 集合不变式（_FRONT_SILENT_ASR_HALLUCINATIONS 在世、非空、
+    #            set/frozenset；每元素归一化去空白后 >= 2 且守卫 compact 后 >= 2）+
+    #            表内每个元素行为上确实被 drop + 判定单源（monkeypatch 模块常量后判定随动）
+    def test_scr_c4_segment_set_invariant_and_single_source(self):
+        with tempfile.TemporaryDirectory(prefix="scr_c4_set_") as tmp:
+            with _front_with_stories(tmp) as front:
+                table = getattr(front, "_FRONT_SILENT_ASR_HALLUCINATIONS", None)
+                self.assertIsNotNone(
+                    table,
+                    "SCRF-C4 RED: front_app 无模块级 _FRONT_SILENT_ASR_HALLUCINATIONS"
+                    " —— 段级静音幻觉集合未落（与 _FRONT_ARCHIVE_HALLUCINATIONS 独立"
+                    "成表，不得 union：union 会改变素材守卫单字语气词语义）。")
+                self.assertIsInstance(
+                    table, (set, frozenset),
+                    f"SCRF-C4 RED: 段级集合类型 = {type(table)!r}（冻结 set/frozenset）"
+                    " —— 列表/元组形态会让「判定单源换表」语义失真。")
+                self.assertTrue(table, "SCRF-C4 RED: 段级集合为空 —— 过滤面恒不命中。")
+                for element in table:
+                    self.assertIsInstance(
+                        element, str,
+                        f"SCRF-C4 RED: 段级集合元素非 str：{element!r}。")
+                    self.assertGreaterEqual(
+                        len(re.sub(r"\s+", "", element)), 2,
+                        f"SCRF-C4 RED: 段级集合元素 {element!r} 归一化去空白后长度 < 2"
+                        " —— 冻结不变式（集合 = 素材守卫 <2 覆盖不到的精确补集）。")
+                    self.assertGreaterEqual(
+                        len(_guard_compact(element)), 2,
+                        f"SCRF-C4 RED: 段级集合元素 {element!r} 守卫 compact 后长度 < 2"
+                        " —— 该类元素（如「嗯。」->「嗯」）会被 ingest 吞掉、使 SCRF-B10 "
+                        "case 2「尾音幻听仍进收尾单源被素材守卫拒绝」翻红。")
+
+                # 表内每个元素行为上确实被 drop（表与判定同源，防「表装饰、判定硬编码」）。
+                acc = front._get_story_acc()
+                for idx, element in enumerate(sorted(table)):
+                    sid = f"sess-c4-table-{idx}"
+                    acc.start(sid, now=_t0())
+                    self.assertEqual(acc.routing(sid), "accumulate",
+                                     f"SCRF-C4 RED(前置): 表元素 {element!r} 会话未进"
+                                     "累积态（断言会空过）。")
+                    front._story_feed_from_stt(sid, _stt_frame(element), now=_t0())
+                    self.assertIsNone(
+                        acc.build_organizing_input(sid),
+                        f"SCRF-C4 RED: 段级集合自报元素 {element!r} 未被判定命中 —— "
+                        "表与判定不是同源（或归一化口径不一致）。")
+
+                # 判定单源：临时换表后判定随动（防判定硬编码在函数体内）。
+                old_table = front._FRONT_SILENT_ASR_HALLUCINATIONS
+                try:
+                    front._FRONT_SILENT_ASR_HALLUCINATIONS = frozenset({"测试幻觉句"})
+                    sid_new = "sess-c4-swap-new"
+                    acc.start(sid_new, now=_t0())
+                    front._story_feed_from_stt(sid_new, _stt_frame("测试幻觉句"),
+                                               now=_t0())
+                    self.assertIsNone(
+                        acc.build_organizing_input(sid_new),
+                        "SCRF-C4 RED: monkeypatch 段级集合后新值未被判定 —— 判定没有读"
+                        "模块级常量（单源被破：临时换表必须随动）。")
+                    sid_old = "sess-c4-swap-old"
+                    acc.start(sid_old, now=_t0())
+                    front._story_feed_from_stt(sid_old, _stt_frame("Okay."), now=_t0())
+                    self.assertIn(
+                        "Okay.", acc.build_organizing_input(sid_old) or "",
+                        "SCRF-C4 RED: 换表后旧值仍被 drop —— 判定源里存在硬编码表"
+                        "（单源被破）。")
+                finally:
+                    front._FRONT_SILENT_ASR_HALLUCINATIONS = old_table
+
+    # coverage: SCRF-C4 -- pending_stop 下被过滤**不即时释放**（routing 仍 pending_stop、
+    #            零 active=false）——防吞 1.7s 后才到的真实转写；释放交既有 10s sweep
+    def test_scr_c4_pending_stop_filter_does_not_release_immediately(self):
+        with tempfile.TemporaryDirectory(prefix="scr_c4_pend_") as tmp:
+            with _front_with_stories(tmp) as front:
+                sid = "sess-c4-pend"
+                dev, up = _FakeDeviceSocket(), _FakeUpstream()
+                dev.append_text(_ctx_msg("story"))
+                asyncio.run(front.pump_client_to_upstream(dev, up, sid))
+                dev.append_text(_listen_stop_msg())   # 累积空 -> pending_stop
+                asyncio.run(front.pump_client_to_upstream(dev, up, sid))
+                acc = front._get_story_acc()
+                self.assertEqual(acc.routing(sid), "pending_stop",
+                                 "SCRF-C4 RED(前置): 未落 pending_stop。")
+                with _release_spy(front) as rel:
+                    up_e, _dev_e = _engine_to_device(front, sid, [_stt_frame("Okay.")])
+                self.assertEqual(
+                    rel, [],
+                    f"SCRF-C4 RED: 过滤命中触发了记录语境释放（实记 {rel}）—— 不得新增"
+                    "即时释放路径（会吞掉 1.7s 后才到的真实转写；交 10s sweep）。")
+                self.assertEqual(
+                    _release_frames(up_e.sent), [],
+                    "SCRF-C4 RED: 过滤命中向引擎腿注入了 active=false —— 同款即时释放"
+                    "破（pending 受保护）。")
+                self.assertEqual(acc.routing(sid), "pending_stop",
+                                 "SCRF-C4 RED: 过滤命中后挂起态漂移。")
+                self.assertIsNone(acc.build_organizing_input(sid),
+                                  "SCRF-C4 RED: 过滤命中仍喂进了累积器。")
+
+    # coverage: SCRF-C4 -- 收尾词面零影响：_story_finish_on_phrase(说完了) 仍 True
+    #            （段级过滤只作用于素材面，收尾词判定不经该缝）
+    def test_scr_c4_finish_phrase_surface_unaffected(self):
+        with tempfile.TemporaryDirectory(prefix="scr_c4_phrase_") as tmp:
+            with _front_with_stories(tmp) as front:
+                sid = "sess-c4-phrase"
+                acc = front._get_story_acc()
+                acc.start(sid, now=_t0())
+                self.assertEqual(acc.routing(sid), "accumulate",
+                                 "SCRF-C4 RED(前置): 未进累积态（收尾词判定仅累积态"
+                                 "消费）。")
+                self.assertTrue(
+                    front._story_finish_on_phrase(sid, _stt_frame("说完了")),
+                    "SCRF-C4 RED: 累积态「说完了」不再命中收尾沿 —— 段级过滤误伤了"
+                    "收尾词判定面（FP-A1 语义：只滤素材面）。")
+                self.assertFalse(
+                    front._story_finish_on_phrase(sid, _stt_frame("Okay.")),
+                    "SCRF-C4 RED: 普通句「Okay.」被收尾词判定命中 —— 判定面与非判定面"
+                    "混淆（过滤不得接到收尾沿）。")
+
+
+# =========================================================================== #
+# SCRF-C2 + SCRF-C3 — 整理产物占位守卫（后防线，承重）+ A5 正常路径回归             #
+# =========================================================================== #
+
+
+class ScrfOrganizePlaceholderGuardAcceptance(unittest.TestCase):
+    maxDiff = None
+
+    def _seed_material(self, front, sid, dev, up, text="好的。"):
+        """ctx(story) -> 真素材 feed（routing accumulate、累积非空）。"""
+        dev.append_text(_ctx_msg("story"))
+        asyncio.run(front.pump_client_to_upstream(dev, up, sid))
+        _engine_to_device(front, sid, [_stt_frame(text)])
+        acc = front._get_story_acc()
+        self.assertEqual(acc.routing(sid), "accumulate",
+                         "SCRF-C2/C3 RED(前置): ctx(story)+stt 后未进累积态。")
+        self.assertTrue(acc.has_accum(sid),
+                        "SCRF-C2/C3 RED(前置): 累积缓冲为空（素材喂入链回退）。")
+        return acc
+
+    def _organize_once(self, front, reply, raw="孩子讲了一段话。"):
+        """直调整理回合单源（LLM 桩注入回复）；返回 (record, 日志行)。"""
+        with _llm_stub(front, _LLMStub(reply)):
+            with _log_capture() as logs:
+                record = front._organize_and_archive(raw, corr_id="scrfc2")
+        return record, logs
+
+    # coverage: SCRF-C2 -- 整理产物占位守卫（端到端承重）：素材过段级过滤与素材守卫
+    #            （好的。 compact=2）-> listen stop 走收尾单源 -> 整理 LLM 返回占位
+    #            （没有可整理的内容）-> 零归档（MD / seq / story_text / story_saved_stamp）、
+    #            零安抚、start_organizing 恰 1（守卫不得前移到演出之前）、story_list
+    #            页面退出恰 1 且 total==0 / items==[] / restore 缺省或假、active=false
+    #            恰 1、routing 回 chat、审计 reason=organize_placeholder 恰 1 且与
+    #            organize_failed 分档
+    def test_scr_c2_organize_placeholder_guard_releases_with_page_exit(self):
+        with tempfile.TemporaryDirectory(prefix="scr_c2_") as tmp:
+            with _front_with_stories(tmp) as front:
+                sid = "sess-c2"
+                dev, up = _FakeDeviceSocket(), _FakeUpstream()
+                acc = self._seed_material(front, sid, dev, up)
+                self.assertIn(
+                    "好的。", acc.build_organizing_input(sid) or "",
+                    "SCRF-C2 RED(前置): 素材「好的。」未进累积器（compact=2 = 段级集合"
+                    "收不到、素材守卫 <2 也拦不住的精确样本）。")
+                story_list_base = len(_story_list_frames(dev.sent_text))
+                self.assertEqual(
+                    _start_organizing_frames(dev.sent_text), [],
+                    "SCRF-C2 RED(前置): 收尾前已有 start_organizing 帧（演出前提失真）。")
+
+                dev.append_text(_listen_stop_msg())   # 累积非空 -> 收尾单源
+                with _llm_stub(front, _LLMStub("（没有可整理的内容）")):
+                    with _log_capture() as finish_logs:
+                        with _finish_spy(front) as fin:
+                            asyncio.run(front.pump_client_to_upstream(dev, up, sid))
+
+                self.assertEqual(
+                    len(fin), 1,
+                    f"SCRF-C2 RED: 收尾单源调用次数 = {len(fin)}（冻结恰 1）—— 占位"
+                    "守卫的输入（整理 LLM 回复）只在回合后才存在；守卫前移避免演出"
+                    "已被否决（S-F2.2-AC4 演出须盖住延迟 + 261020 D4-1）。")
+                self.assertEqual(
+                    _story_md_files(tmp), [],
+                    "SCRF-C2 RED: 占位回复被当正文归档成篇 —— 垃圾篇（round-c "
+                    "2026-11-18-s33477cee「（没有可整理的内容）」）复现；守卫须在 "
+                    "archive_story 之前（先 _assign_seq 后写 MD = 删档也留 seq 缺口）。")
+                self.assertEqual(
+                    _ledger_snapshot(tmp), {},
+                    "SCRF-C2 RED: 占位路径占了 seq 账本号 —— 零盖章被破（账本 +1 只"
+                    "属真归档路径）。")
+                organizing = _start_organizing_frames(dev.sent_text)
+                self.assertEqual(
+                    len(organizing), 1,
+                    f"SCRF-C2 RED: start_organizing 帧数 = {len(organizing)}（冻结恰 1）"
+                    "—— 守卫不得前移到演出之前（演出先行是延迟遮挡与过渡态可见的"
+                    "承重面）。")
+                lists = _story_list_frames(dev.sent_text)
+                self.assertEqual(
+                    len(lists), story_list_base + 1,
+                    f"SCRF-C2 RED: story_list 帧数增量 = "
+                    f"{len(lists) - story_list_base}（冻结恰 1）—— ORGANIZING 非交互页"
+                    "的唯一机械退出载体（261021 真机 R6 困页实证 + SAO-A1 同因重钉）；"
+                    "该帧是「页面退出」不是「列表新增」。")
+                exit_data = lists[-1]["data"] or {}
+                self.assertEqual(
+                    exit_data.get("total"), 0,
+                    f"SCRF-C2 RED: 页面退出帧 total = {exit_data.get('total')!r}（冻结 "
+                    "0）—— 不归档则 total 现算不变（列表不虚增）。")
+                self.assertEqual(
+                    exit_data.get("items"), [],
+                    f"SCRF-C2 RED: 页面退出帧 items = {exit_data.get('items')!r}（冻结"
+                    " []）—— 不归档则不新增条目。")
+                self.assertFalse(
+                    exit_data.get("restore"),
+                    f"SCRF-C2 RED: 页面退出帧带 restore = "
+                    f"{exit_data.get('restore')!r} —— 离页导航帧例外须 restore=False"
+                    "（翻 true 设备只填缓存不接管前台 -> 困死复现）。")
+                self.assertEqual(
+                    _story_text_frames(dev.sent_text), [],
+                    "SCRF-C2 RED: 占位路径下发了 story_text —— 设备侧 story_saved_stamp "
+                    "盖章不得发生（静默释放，零盖章）。")
+                self.assertEqual(
+                    _kidpal_speak_frames(up.sent), [],
+                    "SCRF-C2 RED: 占位路径下发了 kidpal_speak 安抚 —— 模型明确声明无"
+                    "内容 = 静默释放类（与 R1-N4「纯幻听不安抚」同语义；丢稿类才安抚）。")
+                releases = _release_frames(up.sent)
+                self.assertEqual(
+                    len(releases), 1,
+                    f"SCRF-C2 RED: 占位路径 active=false 帧数 = {len(releases)}（冻结"
+                    "恰 1）—— 会话已释放而引擎语境标志尚活 = 后续对话永久抑制。")
+                self.assertEqual(acc.routing(sid), "chat",
+                                 "SCRF-C2 RED: 占位路径收尾后 routing 未回 chat。")
+                ph_lines = _log_lines_with(
+                    finish_logs, "story_finish", "archived=false",
+                    f"reason={ORGANIZE_PLACEHOLDER_REASON}")
+                self.assertEqual(
+                    len(ph_lines), 1,
+                    f"SCRF-C2 RED: story_finish archived=false "
+                    f"reason={ORGANIZE_PLACEHOLDER_REASON} 行数 = {len(ph_lines)}"
+                    f"（冻结恰 1）—— 与 organize_failed / empty_material 分档（复用"
+                    f"同 token 会让日志不可分；实记 {finish_logs!r}）。")
+                self.assertEqual(
+                    _log_lines_with(finish_logs, "reason=organize_failed"), [],
+                    "SCRF-C2 RED: 占位路径打成了 organize_failed —— 两条下行序列不同"
+                    "（丢稿类安抚 + 退出帧 vs 静默类只退出帧），reason 必须分档。")
+                self.assertTrue(
+                    _log_lines_with(finish_logs, "story_organize_round", "ok=false"),
+                    "SCRF-C2 RED: 缺 story_organize_round ok=false 行（body 截断留痕）"
+                    "—— 占位命中不可归因到整理回合。")
+
+    # coverage: SCRF-C2 -- 判据机械判别力（R1 空正文 / R2 去空白 <2 字 / R3 占位族整串 /
+    #            R4 括号族）各自拒；真实短故事两条放行（含 FP-A5 body compact=5 上界）、
+    #            引号族不被 R4 误伤；否决项负锚 title==body 照常归档（SAO 三桩保绿）
+    def test_scr_c2_output_guard_mechanical_discrimination(self):
+        rejects = (
+            ("。", "empty_body"),                          # R1
+            ("嗯", "insignificant_body"),                  # R2
+            ("没有可整理的内容", "placeholder_body"),        # R3
+            ("无内容", "placeholder_body"),                  # R3
+            ("Nothing to organize.", "placeholder_body"),   # R3
+            ("【无】", "placeholder_body"),                  # R4（方尖括号族）
+            ("(no content)", "placeholder_body"),           # R4（半角括号族）
+            ("（本轮素材不足）", "placeholder_body"),          # R4（全角括号族）
+        )
+        for reply, reason in rejects:
+            with self.subTest(reply=reply):
+                with tempfile.TemporaryDirectory(prefix="scr_c2_rej_") as tmp:
+                    with _front_with_stories(tmp) as front:
+                        record, logs = self._organize_once(front, reply)
+                        self.assertIsNone(
+                            record,
+                            f"SCRF-C2 RED: 整理回复 {reply!r} 未被守卫拒绝（record 非 "
+                            "None）—— R1–R4 机械判据须整串判定（措辞无关的结构判据 "
+                            "R4 是长尾主力）。")
+                        self.assertEqual(
+                            _story_md_files(tmp), [],
+                            f"SCRF-C2 RED: 整理回复 {reply!r} 落盘成篇 —— 零归档。")
+                        self.assertEqual(
+                            _ledger_snapshot(tmp), {},
+                            f"SCRF-C2 RED: 整理回复 {reply!r} 占了 seq 账本号 —— "
+                            "零盖章。")
+                        self.assertTrue(
+                            any(reason in line for line in logs),
+                            f"SCRF-C2 RED: 整理回复 {reply!r} 的拒绝原因未留痕"
+                            f"（期望细分类 {reason!r}；实记 {logs!r}）—— 判据分档"
+                            "（empty_body / insignificant_body / placeholder_body）"
+                            "须可归因。")
+
+        passes = (
+            ("冰淇淋\n想吃冰淇淋。", "冰淇淋", "想吃冰淇淋。"),
+            ("糖葫芦\n正文一句话。", "糖葫芦", "正文一句话。"),   # FP-A5 body compact=5
+        )
+        for reply, title, body in passes:
+            with self.subTest(reply=reply):
+                with tempfile.TemporaryDirectory(prefix="scr_c2_pass_") as tmp:
+                    with _front_with_stories(tmp) as front:
+                        record, _logs = self._organize_once(front, reply)
+                        self.assertIsNotNone(
+                            record,
+                            f"SCRF-C2 RED: 真实短故事 {reply!r} 被占位守卫误杀 —— "
+                            "过滤须整串判定（真实短故事是放行面的上界证据）。")
+                        self.assertEqual(len(_story_md_files(tmp)), 1,
+                                         f"SCRF-C2 RED: 放行样本 {reply!r} 未落盘恰 1 篇。")
+                        self.assertEqual(record.get("title"), title,
+                                         f"SCRF-C2 RED: 放行样本标题 = "
+                                         f"{record.get('title')!r}（期望 {title!r}）。")
+                        self.assertEqual(record.get("text"), body,
+                                         f"SCRF-C2 RED: 放行样本正文 = "
+                                         f"{record.get('text')!r}（期望 {body!r}）。")
+
+        # 引号族不被 R4 误伤（引用孩子原话是合法正文）。
+        with tempfile.TemporaryDirectory(prefix="scr_c2_quote_") as tmp:
+            with _front_with_stories(tmp) as front:
+                record, _logs = self._organize_once(front, "他说了「你好」")
+                self.assertIsNotNone(
+                    record,
+                    "SCRF-C2 RED: 引号族「他说了「你好」」被 R4 括号判据误伤 —— R4 "
+                    "明确排除引号族（\"\" '' 「」 『』 《》），防误伤引用原话。")
+                self.assertEqual(len(_story_md_files(tmp)), 1,
+                                 "SCRF-C2 RED: 引号族放行样本未落盘恰 1 篇。")
+
+        # 否决项负锚：title == body 必须照常归档（SAO 三条冻结桩保绿）。
+        with tempfile.TemporaryDirectory(prefix="scr_c2_titleeq_") as tmp:
+            with _front_with_stories(tmp) as front:
+                record, _logs = self._organize_once(front, "一段故事\n一段故事")
+                self.assertIsNotNone(
+                    record,
+                    "SCRF-C2 RED: title==body 被误判为占位 —— 否决「title == body -> "
+                    "判占位」规则（会一次红 SAO 三条冻结桩）。")
+                self.assertEqual(len(_story_md_files(tmp)), 1,
+                                 "SCRF-C2 RED: title==body 样本未落盘恰 1 篇。")
+
+    # coverage: SCRF-C3 -- A5 正常路径回归（must-stay-green）：真实素材 + 正常两行整理
+    #            输出 -> archived=true、MD 恰 1 篇且标题/正文 == 整理结果、story_text
+    #            恰 1、story_list 含新篇、seq 账本 +1、routing 回 chat、active=false 恰 1
+    def test_scr_c3_normal_archive_path_keeps_working(self):
+        with tempfile.TemporaryDirectory(prefix="scr_c3_ok_") as tmp:
+            with _front_with_stories(tmp) as front:
+                sid = "sess-c3-ok"
+                dev, up = _FakeDeviceSocket(), _FakeUpstream()
+                acc = self._seed_material(front, sid, dev, up, text="我想讲冰淇淋。")
+                story_list_base = len(_story_list_frames(dev.sent_text))
+                dev.append_text(_listen_stop_msg())
+                with _llm_stub(front, _LLMStub("冰淇淋\n想吃冰淇淋。")):
+                    with _log_capture() as logs:
+                        asyncio.run(front.pump_client_to_upstream(dev, up, sid))
+
+                files = _story_md_files(tmp)
+                self.assertEqual(
+                    len(files), 1,
+                    f"SCRF-C3 RED: 正常整理路径归档篇数 = {len(files)}（must-stay-green"
+                    " 恰 1）—— 轮 C 两层守卫吞没了正常素材。")
+                record = front.gw_story.read_story_file(str(files[0]))
+                self.assertIsNotNone(record, "SCRF-C3 RED: 归档文件读回失败。")
+                self.assertEqual(record.get("title"), "冰淇淋",
+                                 f"SCRF-C3 RED: 归档标题 = {record.get('title')!r}"
+                                 "（冻结 == 整理结果首行）。")
+                self.assertEqual(record.get("text"), "想吃冰淇淋。",
+                                 f"SCRF-C3 RED: 归档正文 = {record.get('text')!r}"
+                                 "（冻结 == 整理结果其余行）。")
+
+                texts = _story_text_frames(dev.sent_text)
+                self.assertEqual(
+                    len(texts), 1,
+                    f"SCRF-C3 RED: story_text 帧数 = {len(texts)}（冻结恰 1）—— "
+                    "设备侧盖章（story_saved_stamp）载体缺席。")
+                data = texts[0]["data"] or {}
+                self.assertEqual(data.get("id"), record.get("id"),
+                                 "SCRF-C3 RED: story_text id 与归档记录不一致。")
+                self.assertEqual(data.get("title"), "冰淇淋",
+                                 "SCRF-C3 RED: story_text 标题与整理结果不一致。")
+                self.assertEqual(data.get("text"), "想吃冰淇淋。",
+                                 "SCRF-C3 RED: story_text 正文与整理结果不一致。")
+                self.assertIsInstance(data.get("seq"), int,
+                                      "SCRF-C3 RED: story_text 缺整数 seq（盖章载体）。")
+
+                lists = _story_list_frames(dev.sent_text)
+                self.assertEqual(
+                    len(lists), story_list_base + 1,
+                    f"SCRF-C3 RED: story_list 帧数增量 = {len(lists) - story_list_base}"
+                    "（冻结恰 1 = 归档成功三时点②）。")
+                list_data = lists[-1]["data"] or {}
+                self.assertEqual(list_data.get("total"), 1,
+                                 f"SCRF-C3 RED: 归档后列表 total = "
+                                 f"{list_data.get('total')!r}（冻结 1）。")
+                self.assertIn(
+                    record.get("id"),
+                    [item.get("id") for item in list_data.get("items") or []],
+                    "SCRF-C3 RED: 归档后 story_list 未含新篇。")
+
+                ledger = _ledger_snapshot(tmp)
+                seq = data.get("seq")   # read_story_file 不带 seq；盖章载体 = story_text
+                self.assertEqual(
+                    (ledger.get("by_id") or {}).get(record.get("id")), seq,
+                    f"SCRF-C3 RED: seq 账本 by_id = "
+                    f"{(ledger.get('by_id') or {}).get(record.get('id'))!r} 与 story_text "
+                    f"seq = {seq!r} 不一致 —— 盖章形态与账本不是同源。")
+                self.assertEqual(seq, 1,
+                                 f"SCRF-C3 RED: 首篇 seq = {seq!r}"
+                                 "（冻结 1 = 账本从 1 起）。")
+                self.assertEqual(ledger.get("next_seq"), 2,
+                                 f"SCRF-C3 RED: 账本 next_seq = "
+                                 f"{ledger.get('next_seq')!r}（冻结 2 = seq 账本 +1）。")
+                self.assertEqual(
+                    len(_release_frames(up.sent)), 1,
+                    "SCRF-C3 RED: 正常归档路径 active=false 帧数 != 1（恰一帧）。")
+                self.assertEqual(acc.routing(sid), "chat",
+                                 "SCRF-C3 RED: 正常归档后 routing 未回 chat。")
+                self.assertEqual(
+                    len(_log_lines_with(logs, "story_finish", "archived=true")), 1,
+                    "SCRF-C3 RED: 缺 story_finish archived=true 审计行（恰 1）。")
+
+    # coverage: SCRF-C3 -- reason 分档未吞丢稿类：整理 LLM 返回空（llm_unavailable）仍走
+    #            安抚 + 页面退出帧（安抚经 kidpal_speak 恰 1、story_text 零、story_list
+    #            恰 1 且 total==0 / items==[]、零归档、routing 回 chat）
+    def test_scr_c3_llm_unavailable_still_soothes_and_exits(self):
+        with tempfile.TemporaryDirectory(prefix="scr_c3_llm_") as tmp:
+            with _front_with_stories(tmp) as front:
+                sid = "sess-c3-llm"
+                dev, up = _FakeDeviceSocket(), _FakeUpstream()
+                self._seed_material(front, sid, dev, up, text="我想讲冰淇淋。")
+                story_list_base = len(_story_list_frames(dev.sent_text))
+                dev.append_text(_listen_stop_msg())
+                with _llm_stub(front, _LLMStub("")):   # 空返回 = llm_unavailable
+                    with _log_capture() as logs:
+                        asyncio.run(front.pump_client_to_upstream(dev, up, sid))
+
+                self.assertEqual(
+                    _story_md_files(tmp), [],
+                    "SCRF-C3 RED: 丢稿类（llm_unavailable）落盘成篇 —— 当轮素材不归档"
+                    "（R1-N4）。")
+                self.assertEqual(
+                    _story_text_frames(dev.sent_text), [],
+                    "SCRF-C3 RED: 丢稿类下发了 story_text —— 无归档不得盖章。")
+                speak = _kidpal_speak_frames(up.sent)
+                self.assertEqual(
+                    len(speak), 1,
+                    f"SCRF-C3 RED: 丢稿类安抚 kidpal_speak 帧数 = {len(speak)}（冻结"
+                    "恰 1）—— reason 分档不得把 llm_unavailable 并入静默释放类"
+                    "（SAO-A1 四件保绿）。")
+                lists = _story_list_frames(dev.sent_text)
+                self.assertEqual(
+                    len(lists), story_list_base + 1,
+                    f"SCRF-C3 RED: 丢稿类 story_list 帧数增量 = "
+                    f"{len(lists) - story_list_base}（冻结恰 1 = 页面退出帧）。")
+                list_data = lists[-1]["data"] or {}
+                self.assertEqual(list_data.get("total"), 0,
+                                 "SCRF-C3 RED: 丢稿类退出帧 total != 0。")
+                self.assertEqual(list_data.get("items"), [],
+                                 "SCRF-C3 RED: 丢稿类退出帧 items != []。")
+                self.assertEqual(
+                    len(_release_frames(up.sent)), 1,
+                    "SCRF-C3 RED: 丢稿类 active=false 帧数 != 1。")
+                self.assertEqual(
+                    front._get_story_acc().routing(sid), "chat",
+                    "SCRF-C3 RED: 丢稿类收尾后 routing 未回 chat。")
+                self.assertTrue(
+                    any("llm_unavailable" in line for line in logs),
+                    f"SCRF-C3 RED: 丢稿类原因未留痕（期望 llm_unavailable；实记 "
+                    f"{logs!r}）—— reason 分档须可归因。")
 
 
 if __name__ == "__main__":

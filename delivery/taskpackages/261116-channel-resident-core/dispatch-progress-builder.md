@@ -1,143 +1,102 @@
-# dispatch-progress · builder · 261116-channel-resident-core（真机轮 B 修复轮）
+# dispatch-progress · builder · 261116-channel-resident-core（真机轮 C 修复轮）
 
-> 本文件 = 当前派发（真机轮 B 修复轮：纯逻辑缝 + application.cc 接线 + 变异证据）的
-> 自包含进度快照。覆盖写；不载 tokens / gates / rounds。权威判据归 verifier。
->
-> 2026-11-18 第二轮（planner 白盒复核收紧补丁）：会话内软复位 `reset_soft` + Listening
-> case 按迁移条件分派。本文档已并入该轮结果。
+> 本文件 = 当前派发（真机轮 C 修复轮：两层守卫，SCRF-C1..C4）的自包含进度快照。
+> 覆盖写；不载 tokens / gates / rounds / verdict。权威判据归 verifier。
 
 ## 本轮目标
 
-在包边界内实现真机轮 B 三处修复（`plan.md`「### 真机轮 B 修复轮（2026-11-18）技术方案」
-planner 裁定 6 = 承重修订）：判据本体迁入 host 可编纯逻辑缝 `session_voice_watch.{c,h}`、
-`application.cc` 只留接线、D3 素材门换源到缝内 `asr_seen`，让冻结验收 SCR-A5/A8/A9–A15
-转绿，既有回归网保绿。
+在 `server/gateway/front/front_app.py` 内实现两层守卫：① 素材侧段级静音 ASR 幻觉
+过滤（主防线）；② 整理产物占位守卫（后防线，承重），让已冻结 SCRF-C1..C4 转绿；
+并在 `server/tests/test_archive_guard_units.py` 纯 additive 扩测 + 8 条变异取证。
 
-## 已完成段落
+## 已完成段落（全部完成）
 
-### 1. 新缝 `firmware/main/session_voice_watch.{c,h}`（已落盘）
+### 1. 新常量与纯函数（front_app.py，紧贴既有归档守卫区）
 
-- 头文件：六个 `KIDPAL_VW_*` 宏（3/25/100/10/3/999）+ `KVW_ACT_NONE/IDLE_FIRE` +
-  两个 typedef（cfg 四字段 / watch 七字段，与冻结件镜像逐字同形）+ 六函数原型；
-  `extern "C"` 包裹、零 ESP-IDF / 零 FreeRTOS / 零 LVGL include（只 `<stddef.h>`）。
-- 实现：`tick()` 的 `sustained`（连续段落在 [sustain, vad_trust] 闭区间）与
-  `asr_fresh`（`asr_seen != 0 && asr_age_s < asr_fresh_s`，`asr_seen` 门承重）互补；
-  `quiet_s` 无证据才 +1；`suspect = level_run_s > vad_trust`（纯审计位）；返回
-  `quiet_s >= idle_timeout_s` 且到阈值后持续 FIRE（sticky）。`reset()` 七字段全零；
-  `note_asr()` 置 `asr_age_s = 0` 且 `asr_seen = 1`；`cfg_default()` 只填三阈值，
-  `idle_timeout_s` 保留调用方注入；`diag_due()` 决策表五支（非法 -1 / 回退 0 /
-  周期 1 / 跳变且过 min_gap 1 / 否则 0）。cfg 数值 ≤0 = 该路证据不采信（更早收尾）。
-- **第二轮新增 `kidpal_voice_watch_reset_soft()`**（additive，既有五函数语义零改）：
-  清 `quiet_s / level_run_s / asr_age_s / tick_s / diag_last_s / suspect` 六件，
-  **保留 `asr_seen`**；NULL -> no-op。头注写明存在理由（冻结件 `[S8]` 第六条与 EQ-4）：
-  引导播报 TTS 造成 `Listening -> Speaking -> Listening`，回到聆听若走全清 `reset()`，
-  本会话素材证据被清 0，D3 会把有素材的故事会话判成空素材、静置 60 秒不归档地释放。
-- 缝内零 `SES_EVT_SESSION_TIMEOUT_60S` 字面（VQ-E1 口径保持 2 文件）。
+- `_FRONT_SILENT_ASR_HALLUCINATIONS`：段级整串集合，元素为 `_guard_compact` 形态
+  （档 A 本仓真机 `okay`/`ok`；档 B 引擎同族多字条目；档 C 日语族，注释标注
+  「家族模式推断、非本仓实录」）。不收中文应答词与单字。
+- `_FRONT_ORGANIZE_PLACEHOLDERS`：整理产物占位整串集合（档 A 本轮实证 + 档 B
+  变体），compact 形态（`na` / `nocontent` / `nothingtoorganize`）。
+- `_ORGANIZE_BODY_MIN_CHARS = 2`、`_ORGANIZE_BRACKETED_MAX_CHARS = 16`、
+  `_ORGANIZE_SILENT_RELEASE_REASONS`（empty_body / insignificant_body /
+  placeholder_body）。
+- `_guard_compact` / `_is_silent_asr_hallucination` / `_organize_body_reject_reason`
+  （R1 空 / R4 括号剥壳 / R2 过短 / R3 占位表；引号族明确排除）。
+- `_archive_material_reject_reason` 与 `_FRONT_ARCHIVE_HALLUCINATIONS` 逐字未动。
 
-### 2. 两侧 CMakeLists 登记（已落盘）
+### 2. 素材侧段级过滤
 
-- `firmware/main/CMakeLists.txt`：`SOURCES` 末尾（`assets.cc` 前）additive 追加
-  `"session_voice_watch.c"` + 包注释；既有行零重排。
-- `firmware/main/test/host_app/main/CMakeLists.txt`：`HOST_ACCEPTANCE_SRCS` 在
-  `host_infra_smoke.acceptance.c` **之前**追加 `"../../../session_voice_watch.c"` 与
-  `"../../session_voice_watch.test.c"` + 包注释。
+`_story_feed_from_stt` 在引导播报窗判定之后、`now_dt` / `routing` 之前插入整串
+命中 drop（`return False` + `story_feed_guard dropped=silent_asr_hallucination`
+审计），stt 转发路径与 pending_stop 挂起态零改动。
 
-### 3. `application.cc` 接线（已落盘，`application.h` 零 diff）
+### 3. 整理产物守卫与 reason 通道
 
-1. include 区加 `#include "session_voice_watch.h"`；紧随其后落 seam 实例
-   `s_voice_watch` / `s_voice_watch_cfg` 与诊断跳变快照四个 file-static。
-2. `Initialize()` 内 `esp_timer_start_periodic` 之后：`kidpal_voice_watch_cfg_default`
-   + `idle_timeout_s = kSessionIdleTimeoutS`（单源注入点）。
-3. CLOCK_TICK 区、两 producer 之前：`kidpal_voice_watch_tick(&s_voice_watch,
-   s_vad_speaking ? 1 : 0, &s_voice_watch_cfg)` + 诊断行块（`kidpal_voice_watch_diag_due`
-   触发、周期 10s / 跳变受 3s 封顶、`ESP_LOGI` 全字段 `listening_diag` 行、emit 后写回
-   `diag_last_s`；非 Listening 态零输出）。
-4. A6 producer：判据改 `Listening && !kidpal_story_session_ctx_active() &&
-   vw_act == KVW_ACT_IDLE_FIRE`；删 `!s_vad_speaking` 与 `clock_ticks_ >=` 两分量；
-   审计行保留 `seconds=` 并追加 `quiet= asr= suspect= src=idle`。
-5. D3 producer：判据改 `Listening && kidpal_story_session_ctx_active() &&
-   !s_voice_watch.asr_seen && s_voice_watch.quiet_s >= kStoryEmptySessionTimeoutS`；
-   `kStoryEmptySessionTimeoutS = 60` 定义位次零动；`!s_story_rec_entered` 退出判据。
-6. stt 分支 `Schedule` lambda 首行：`kidpal_voice_watch_note_asr(&s_voice_watch)`。
-7. `HandleStateChangedEvent` 的 `case kDeviceStateListening:` **尾部**：按迁移条件分派
-   复位（第二轮收紧）——状态迁移监听器 `AddStateChangeListener` 内新增
-   `s_watch_prev_state = old_state;`（file-static `DeviceState`，初值
-   `kDeviceStateIdle`；写者 = 监听器，读者 = Listening case 尾部；与 `s_vad_speaking`
-   同级宽松度）；case 内：
-   `if (s_watch_prev_state == kDeviceStateSpeaking) reset_soft(&s_voice_watch);
-   else reset(&s_voice_watch);`。之后 `s_vad_speaking = false;` 与 `src=enter`
-   诊断行不变。落点选择理由：尾部不打断 RSL-A2 的「SendKidpalSessionCtx 先于
-   IsAudioProcessorRunning 门」时序。**比较刻意写在 Listening case 内、两条调用均带
-   实参字面 `(&s_voice_watch)`**（冻结件 EQ-4 / SCR-A15 形态要求；上移成监听器布尔会
-   让 SCR-A15 红，不绕）。
-- 零 diff 区确认：`MAIN_EVENT_VAD_CHANGE` 区、`case kDeviceStateIdle:` 区、
-  `application.h`、`mcp_server.cc` 未触碰。
+`_organize_and_archive(raw, corr_id=None, device_id=None, *, reason_sink=None)`；
+`_organize_and_archive_offloop` 透传。删多行分支的 `or reply.strip()`；单行未命中
+占位逐字保留 `title=cand[:12]`、`body=cand`；主体守卫在 `archive_story` 之前；
+每个 `return None` append reason（llm_unavailable / empty_reply / R1-R4 /
+archive_valueerror；空素材直调分支归 empty_body）。
 
-### 4. builder 单元测试 `firmware/main/test/session_voice_watch.test.c`（已落盘）
+### 4. 收尾分档处置
 
-七条用例补冻结断言未穷尽的防御面：NULL 入参（含 tick 零写字段、含 `reset_soft(NULL)`）、
-cfg ≤0 四路降级方向、`asr_age_s` 饱和 999 且非闩锁、`diag_due` 的 `now==last` /
-周期恰等 / min_gap 恰等 / 回退 / 非法配置、可信窗上下界闭区间两侧边界、`asr_seen`
-门的直接断言（第 1 tick 即红，比 SCR-A9 在第 85 tick 才红定位更快）、第二轮新增
-**TEST 7 `reset_soft` 六清一保 + NULL 防御 + 硬复位仍全清**（冻结件 SCR-A13 已钉行为，
-本条补 NULL 路径与逐字段定位粒度）。
+`_story_finish_session` 构造 `reason_sink` 并 keyword 透传；`record is None` 分两档：
+静默释放类（不安抚、逐腿 `_push_story_list` 页面退出帧、审计
+`reason=organize_placeholder body_reason=<细分>`）；丢稿类逐字保留安抚 + 退出帧 +
+`reason=organize_failed`（追加 body_reason）。三锚顺序与 `_issue_finish_downlink(session_id`
+字面未动，新分支不写 `reason=empty_material`。
 
-## 实跑结果（第二轮终态）
+### 5. 单元测（纯 additive）
 
-| 面 | 命令（仓根起） | 结果 |
+`_load_output_guard()` 第二 AST 抽取器 + `OrganizeOutputGuardUnits` 6 条：
+R1/R2/R3/R4 八样本逐条 reason、R4 双层与 16 字边界、真实短故事/引号族/title==body
+放行、段级命中与不命中、集合不变式（compact 形态且 >=2）、占位表 compact 且与
+段级表不重叠。既有 `_load_guard()` 与四条 case 逐字未动。
+
+## 实跑结果
+
+| 面 | 命令 | 结果 |
 |---|---|---|
-| host 全量 | `wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build` 后 `wsl -d Ubuntu-24.04 -- ./firmware/main/test/host_app/build/host_infra_test.elf` | 编译通过；**321 Tests / 3 Failures / 0 Ignored**；3 红全为上游存量 `p1_auxbar_style` AB-A1/A2/A4；SCR-A5/A8/A9/A10/A11/A12/A13/A14/A15 全 PASS；builder 七条全 PASS。**与派发书期望 320 的差 = 新增 1 条 builder 单测**（派发书允许）；去掉该条即 320/3 |
-| 设备编译 | `node .claude/scripts/firmware-build-check.mjs` | `ok: true` / `phase: build-pass`；`session_voice_watch.c.obj` + `application.cc.obj` 构建并链接，`xiaozhi.bin` 0x329580（app 分区 8% free） |
-| server 全量 | `python -m pytest -q --import-mode=importlib -m "not live" server/acceptance` | **486 passed / 0 failed / 9 deselected / 33 subtests passed**（server 零 diff） |
+| 目标件 | `python -m pytest -q --import-mode=importlib -m "not live" server/acceptance/test_session_channel_resident.acceptance.py server/tests/test_archive_guard_units.py` | **47 passed / 0 failed / 99 subtests passed** |
+| server 全量 | `python -m pytest -q --import-mode=importlib -m "not live" server/acceptance server/tests` | **799 passed / 0 failed / 9 deselected / 137 subtests passed** |
 
-## 变异证据（13 条全部实跑，新基线）
+## 变异证据（8/8 实跑，整文件字节写回 + sha256 比对）
 
-新基线 sha256（第二轮终态；13/13 `restore_sha256_ok = true`，终态重建后三件逐一吻合）：
+基线 sha256（front_app.py）：`ea09f0b505229ff8dc51a33597466dcf31fb0bdf1f5d41b73966910b43bd8bcc`
+（工作树 CRLF 字节口径）。8/8 `sha256_restored_matches = true`。
 
-| 文件 | 新基线 sha256 |
-|---|---|
-| firmware/main/session_voice_watch.c | 5ce7d18fec4d570682a99a93820b6ad25e3fd85773deb62afb12732fa7209ded |
-| firmware/main/session_voice_watch.h | 80a94f4b718589368f207b0dbc6a2bbd02fb70917340df12b71dea65d8f5d503 |
-| firmware/main/application.cc | 3800ab24eeb9c7163d2078dc513c189634f79e653fd9f0d16ec0f17911be13bf |
-
-逐条：精确变异 -> 重建（seam/header 面；header 变异先删 `session_voice_watch.c.o` +
-`session_channel_resident.acceptance.c.o` 强制重编）/ `application.cc` 源文本扫描直跑 ->
-`host_infra_test.elf` -> 整文件二进制写回 + sha256 比对。期望红全部命中：
-
-| # | 变异 | 转红（本包相关，含 co-red） |
+| # | 变异 | 转红（含 co-red） |
 |---|---|---|
-| 1 | tick 收尾比较 `>=` -> `>` | SCR-A9 + SCR-A10/A11（builder asr_seen 门、非正 cfg） |
-| 2 | sustained 删可信窗上界 | SCR-A10（kill-shot） |
-| 3 | sustain 下界 -> `>= 1` | SCR-A11 + builder 窗口边界 |
-| 4 | 头宏 SUSTAIN 3 -> 5（强制重编） | SCR-A11 + SCR-A13（cfg_default 同源 co-red） |
-| 5 | `sustained \|\| (0 && asr_fresh)` | SCR-A12 |
-| 6 | 头宏 VAD_TRUST 100 -> 30（强制重编） | SCR-A12 + SCR-A10/A13（co-red） |
-| 7 | 头宏 DIAG_MIN_GAP 3 -> 0（强制重编） | SCR-A14 + builder diag_due |
-| 8 | `reset()` 删 `asr_seen = 0` | SCR-A13 + SCR-A9/A11 + builder 四条 |
-| 9 | 删 stt 分支 `note_asr` | SCR-A15② |
-| 10 | A6 判据加回 `&& !s_vad_speaking` | SCR-A15④ + SCR-A5（双保险 co-red） |
-| 11 | 诊断触发改 `clock_ticks_ % 10` | SCR-A14 + SCR-A8 + DLG-A4 三处同红 |
-| **12** | **`reset_soft` 退化全清（`asr_seen` 也清 0）** | **SCR-A13 + builder TEST 7** |
-| **13** | **Listening case 退化无条件 `reset(&s_voice_watch)`（删条件分派）** | **SCR-A15③（`reset_soft` 与 `kDeviceStateSpeaking` 双缺）** |
-
-与上一轮（旧基线）对比无结果变化：#8 的 co-red 集合仍为 SCR-A13/A9/A11 + builder
-（本轮 builder 多一条 TEST 7 同红 = 预期同向）；#2/#6 的 co-red 形态（#2 只打 SCR-A10、
-#6 打 SCR-A12/A10/A13）与旧表一致。#12/#13 是新增覆盖，分别钉死「软复位退化」与
-「条件分派被删」两种回归。
+| 1 | 删 R4 括号判据块 | C2 mechanical（【无】/（本轮素材不足））+ 单测 R1-R4、R4 双层边界 |
+| 2 | MIN_CHARS 2 -> 0 | C2 mechanical（嗯）+ 单测 R2 |
+| 3 | 删段级过滤调用 | C1、C4 hit family、C4 pending、C4 set invariant |
+| 4 | 段级集合加入「嗯」 | **B10 case 2**、C4 hit family、C4 set invariant、单测命中/不变式 |
+| 5 | 静默分支加回安抚 | C2 端到端 |
+| 6 | 静默分支去掉页面退出帧 | C2 端到端 + C3 llm_unavailable |
+| 7 | reason=organize_placeholder -> empty_material | C2 端到端（审计分档断言） |
+| 8 | 单行前置 + 主体守卫一起移到 archive_story 之后 | C2 端到端 + C2 mechanical 八样本 |
 
 ## 偏差与如实申报
 
-1. host 用例数 321（派发书期望 320）：差 1 = 本轮新增 builder TEST 7（派发书允许补一条
-   `reset_soft` 单测）。冻结核对面 320 条全绿，仅上游 AB-A1/A2/A4 存量红。
-2. 变异驱动首版顺序写反（先重建后落变异），seam 行为断言一度全部漏红；已按
-   「先落变异 -> 重建 -> 实跑」重跑全部 seam/header 变异，上表为准。首版还因文本模式
-   读写把 `application.cc` 行尾从 CRLF 写成 LF；已按二进制写回，sha256 与基线逐字吻合。
-3. 头宏变异（#4/#6/#7）沿用强制重编绕开首引入 depfile 时序缺口；该缺口是既有构建
-   卫生问题，仍建议记 review-packet residual。本构建树上验收 TU 已能感知头文件变化
-   （本次改头触发了 `session_channel_resident.acceptance.c.o` 重编）。
-4. 真机端到端（引导播报后静置 60 秒不误释放、孩子已讲内容仍归档）仍归轮 B 重测；
-   host 只钉判据与接线形态（与冻结件 GAP-4 同族）。
+1. **R4 判序空间**：派发规格列举 R1→R2→R3→R4；实现为 R1→R4→R2→R3。原因 =
+   冻结验收 C2 对「【无】」期望 `placeholder_body`，而其 compact=1 会先命中 R2
+   `insignificant_body`；验收不可改，故让结构判据 R4 先于长度判据 R2（非括号单字
+   「嗯」仍走 R2）。判据集合与语义未变，仅重叠样本的分档优先级调整。
+2. **`_load_output_guard` wanted 增列 `_FRONT_GUARD_STRIP_RE`**：派发清单漏列，但
+   `_guard_compact` 函数体直接引用它，不抽取会 exec 期 NameError（假红）。
+3. **空素材直调分支 reason = `empty_body`**：派发 reason 枚举未单列该分支；收尾单源
+   已在调用前短路，故仅直调形态可达，归静默释放类。
+4. 工作树文件为 CRLF；变异脚本按字节读写并逐条比对，未用 `git checkout`。
+
+## 行为面观察（申报节）
+
+- 真机端到端未运行：GAP-C1（引擎收到 active=false 后不再产尾音 ASR）与 GAP-C2
+  （设备 ORGANIZING 页真实退出）仍归 human 持板复测；host 只证 front 下发帧序与
+  零归档/零 seq。
+- 段级过滤/产物守卫均落 front host 可跑路径，无固件落点；本批未产生新的 host 与
+  真机不等价接缝（EQ-C1/EQ-C2 已在冻结件申报）。
 
 ## 下一步
 
-- 无实现段遗留；回执汇总交 planner（含 13 条变异全文、偏差申报）。
+- 无实现段遗留；结构化回执交 planner（含 8 条变异全文、偏差申报、超读申报）。

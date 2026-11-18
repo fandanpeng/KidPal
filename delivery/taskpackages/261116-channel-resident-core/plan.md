@@ -260,6 +260,65 @@ builder 首版把 `kidpal_voice_watch_reset(&s_voice_watch)` **无条件**落在
 - 验收收紧（acceptance-author 补丁）：SCR-A13 追加「`reset_soft` 后 `asr_seen` 仍为 1、其余六件全 0；其后 `reset()` 仍七字段全清」；SCR-A15 追加 Listening 区三件（`reset_soft(&s_voice_watch)` ≥1、`reset(&s_voice_watch)` ≥1、`kDeviceStateSpeaking` ≥1）。红基线 320/5（仅 SCR-A13 / SCR-A15 两条设计态红）。
 - 教训（登记 pod-retro）：**「会话入口复位」这类卫生动作必须区分「新会话」与「会话内状态往返」**，否则会把有状态价值的会话级证据当成残留清掉；判据改造轮尤其要逐条追问「这个标志在什么时机被清、清了会不会丢素材」。
 
+### 真机轮 C 修复轮（2026-11-18）技术方案（planner+architect 预评）
+
+> **留痕**：2026-11-18，planner Step 1g 前置技术预评档。输入 = human 2026-11-18 指示「现在就修」（pod-events `human-correction` `c50b1954-181c-45fd-816a-74237b9fc6ae`）+ planner 亲拉的 ECS 三源在线证据（`device-evidence/round-c/`，采集命令与原始行见该目录 README）。效力声明同前：architect 意见为 advisory 输入，**不豁免任何门、不改验收与 TaskPackage 事实、不构成通过判据**。本子节为 planner 只读消费 plan.md 规则的例外写入点（`task-intake-and-slicing.md` 例外条款）。
+
+**一、轮 C 在线实测（planner 亲拉三源，非 human 转述）**
+
+| 时刻 (CST) | 源 | 事实 | 证据文件 |
+|---|---|---|---|
+| 21:20:41 | front journal | `story_record_ctx_enter src=ctx_story`——空素材记录会话开始 | `round-c/ecs-front-journal-2120-2134.txt` |
+| 21:22:05 | front journal | `story_stop archived=false reason=pending_stop` + `session_end_boundary routing=pending_stop action=protected`——空累积挂起（分层保护正确，**不动**） | 同上 |
+| 21:22:06 | 引擎 docker | `识别文本: Okay.` + `kidpal record-context: 抑制 LLM 派发（记录语境闭嘴回显）: Okay.`——静音 ASR 幻觉，经上行 stt 到达 front | `round-c/engine-asr-2120-2123.txt` |
+| 21:22:09 | front journal | `story_organize_round ok=true id=2026-11-18-s33477cee` → `story_finish archived=true`——幻觉喂进 pending_stop 累积器、过内容守卫、整理、归档 | 同上 |
+| 21:23:27–52 | front + 引擎 | 控制组（A5 正常路径）：真素材两句 + 收尾词「说完了。」+ 尾音幻觉「嗯。」→ `archived=true` 正常篇 | 两份 journal/asr |
+
+- 垃圾篇原文：`round-c/ecs-story-2026-11-18-s33477cee.md` 标题与正文逐字为「（没有可整理的内容）」；`kidpal-title` base64 解码同句；mtime 21:22。
+- **缺陷面归纳（两层，缺一不可）**：① **主缺口 = 整理后守卫缺席**——`_organize_and_archive` 仅判 `lines` 为空，整理 LLM 的占位/拒绝式回复是合法非空行，直接进 `archive_story`；② **次缺口 = 素材侧噪声放行**——`Okay.` 归一化后长度 4、不在 `_FRONT_ARCHIVE_HALLUCINATIONS`，`_archive_material_reject_reason` 放行。
+- **既有保护正确、不得回退**：pending_stop 分层保护（`action=protected`）、空累积挂起、尾音短幻觉拒绝（「嗯。」→ `insignificant_material` 已实证有效）。
+
+**二、本轮设计约束（planner 定，architect 给方案）**
+
+1. **整理后守卫必须机械可判**：判据 = 对整理 LLM 回复做确定性归一化后的**整串判定**（占位集合等价 / 去空白去标点后有效字符数阈值），不得依赖模型自由措辞的偶发运气；须给真实短故事反例证明不误伤。
+2. **释放路径口径**：出语境 `active=false` 恰一帧、零归档（STORIES_DIR 零新增 / seq 账本不增）、零 `story_text`（= 设备侧零 `story_saved_stamp`）、routing 回 chat、审计行 `story_finish archived=false reason=<占位拒绝 reason>`。
+3. **「不推 story_list」按语境分口径（需 architect 裁定并留痕）**：① 素材侧过滤命中 → 会话从未进整理回合 → **严格零帧**（复用 pending 10s sweep 释放，SCRF-B10 口径）；② 整理回合已发生（设备已收 `start_organizing`、处 ORGANIZING 过渡态）→ 占位命中时**必须有页面退出帧**否则设备困死整合页（261021 真机轮 R6 先例、既有 organize_failed 分支同因）——该帧属「页面退出」而非「列表新增」，须在验收断言「列表内容零新增 / 零 story_text」并显式登记与 human 原话的偏差及理由。
+4. **素材侧过滤必须保守**：整段归一化相等判定（**绝不子串**），混排真话（如「嗯，然后我们去公园」）照常入素材；`pending_stop` 下被过滤后**不新增即时释放路径**——让会话留在 pending 由既有 10s sweep 释放，避免吞掉 1.7s 后才到的真实转写（真机序延迟上界见 SAO-A2）。
+5. **零改动面**：`docs/contracts/**`、`engine-patch/**`、引擎容器部署件、`server/gateway/story.py` 三缝、`firmware/**`（本轮无需改）全部零 diff；manifest 外文件走 planner 扩单通道回评。
+6. **可测性**：新增判据本体是纯函数（host pytest 直调）；端到端断言走既有 `pump_client_to_upstream` / `pump_upstream_to_client` 缝 + `_LLMStub` 注入整理回复。
+7. **回归**：既有 27 条冻结验收零松动；`server/tests/test_archive_guard_units.py` 的 AST 抽取采用白名单 `wanted` 集合，新增纯函数/常量须同步入册（否则 exec 期 NameError = 假红）。
+
+**三、architect 预评回执（ARCH-ADVISORY 1g 档，2026-11-18，只读）**
+
+> dispatch 见 pod-events `dispatch-completed`（architect，轮 C pre-eval）。下为 planner 摘录；完整回执要点已逐条对本仓代码核过（HEAD `095122d2`）。
+
+1. **根因是两条独立缺口**：甲 = 素材侧 ingest 无防线（`_story_feed_from_stt` 只判 type/空文本，随后直接 feed，不判内容）；乙 = 产物侧整理输出零验收（`_organize_and_archive` 只判 `lines` 空，且 `body = ... or reply.strip()` 把单行占位句复活成正文）。两条必须分开修。
+2. **主修落点**：守卫放 `_organize_and_archive` 内、`archive_story` **之前**（三式收尾唯一归档收口；`archive_story` 先 `_assign_seq` 后写 MD，守卫放后即使删档也会永久留 seq 缺口）。**否决**「收 record 后二次判 `record["text"]`」（seq 已占号）与「下沉 `story.py`」（producer 单源 + 本轮只改 front）。
+3. **机械判据（R1–R4，全部整串层面、零子串）**：归一化复用 `_FRONT_GUARD_STRIP_RE` → `compact`；R1 `compact==""`（`empty_body`）；R2 `len(compact) < 2`（`insignificant_body`，与素材守卫同族）；R3 `compact ∈ _FRONT_ORGANIZE_PLACEHOLDERS`（`placeholder_body`）；**R4 = 原串整串被成对括号/方尖括号族包裹且剥壳后 ≤16 字 → `placeholder_body`（结构判据、措辞无关，长尾主力）**。R4 明确排除引号族（`""` `''` `「」` `『』` `《》`）防误伤引用原话。阈值硬上界证据 = FP-A5 冻结桩 `"糖葫芦\n正文一句话。"` 的 body compact = 5，故 `_ORGANIZE_BODY_MIN_CHARS` 取 2（与素材守卫同族）。
+4. **单行回复分流**：单行先过 R1–R4，未命中则逐字保留今日 rescue（`title=cand[:12]`、`body=cand`）；**删除 `or reply.strip()` 只影响单行分支**（多行时 `lines[1:]` 恒非空、rescue 从不触发），爆炸半径被精确限制。**否决**「`title == body` → 判占位」——会一次红 SAO 三条冻结桩（`"一段故事\n一段故事"` 等）。
+5. **reason 分档通道**：additive keyword-only 可变出参 `reason_sink`（先例 `edge_probe`），每个 `return None` 前 append reason。**否决** sentinel dict / tuple / 异常 / 模块级全局（会破 FP-A5 与 memory_isolation 的直调签名或引入竞态）。两档：`placeholder_body`/`insignificant_body`/`empty_body` → **静默释放类**（不安抚 + 页面退出帧）；`llm_unavailable`/`empty_reply`/`archive_valueerror` → **丢稿类**（安抚 + 退出帧 = 今日行为逐字不动；`empty_reply` 归丢稿类因空返回成因不可区分，R7 有超时截断实证）。
+6. **占位命中后的下行序列**：① `_release_record_context` 不动；② **不发**安抚句（模型明确声明无内容，与 R1-N4「纯幻听不安抚」同语义）；③ **必须发**逐设备腿 `_push_story_list(restore=False)`（ORGANIZING 非交互页唯一机械退出载体；261021 R6 实证 + SAO-A1 已于 261021 包按同一理由把「零帧」重钉为「恰一帧页面退出帧且 total==0」）；④ 不发 `story_text`；⑤ 审计 token **必须与 `organize_failed` 分档**（建议 `reason=organize_placeholder`），不按 human 原话字面复用 `empty_material`（两条下行序列不同、复用会让日志不可分，且与既有 AST 锚 `seg.index("reason=empty_material")` 形成取证陷阱）；⑥ `_organize_and_archive` 另留一行 `story_organize_round ok=false reason=%s body=%r`（body 截断 ≤32 字）。**「守卫前移避免进 ORGANIZING」被否决**：守卫输入只在 LLM 回合后才存在，演出按 S-F2.2-AC4 必须在回合前下发（261020 D4-1 移出事件循环的全部意义）；前移由问题 2 的 ingest 过滤承担。
+7. **素材侧过滤落点 = 段级（`_story_feed_from_stt`）**，排在引导播报窗判定之后（既有 FROZEN CONTRACT B 节语义第一优先）：整段归一化后与 `_FRONT_SILENT_ASR_HALLUCINATIONS` **整串相等**才 drop，返回 False，审计 `story_feed_guard dropped=silent_asr_hallucination text=%r`（复用同前缀、新取值；全仓无断言依赖该 token）。**新建独立集合、不与 `_FRONT_ARCHIVE_HALLUCINATIONS` 合并/union**（union 会迫使既有 AST 抽取器 `wanted` 改名；且把单字语气词并进去会让 `test_insignificant_material_rejected` 的「嗯」先命中幻听分支而红）。
+8. **段级集合不变式（必须写成冻结断言）**：集合每个元素归一化去空白后长度 **≥ 2**。依据：SCRF-B10 case 2 投 `"嗯。"` 并断言收尾沿被消费（`fin==1`）；若段级集合收 `嗯`，ingest 吞掉 → `fin==[]` → 冻结断言红。而 `嗯。` 今天就已被素材守卫 `<2` 正确拒绝（零归档零演出零安抚、且守卫在演出之前 = 零 LLM 回合），缺口只在 `compact ≥2` 的串（`Okay.`=4）。段级集合 = 素材守卫覆盖不到的精确补集。
+9. **集合分档**：档 A 本仓真机实证 `okay`/`ok`；档 B 引擎侧同族表已收（thank you 族 / 谢谢观看 / 请不吝点赞 / 嗯嗯 / 哦哦 / 呵呵 / 哈哈族 / 嘿嘿 / 嘻嘻）；档 C 日语静音族 `うん`/`そう`/`はい`/`いいえ`（human 点名 うん；证据强度 = 家族模式推断、非本仓实录，注释须诚实标注）；**明确排除**中文应答词 `好的`/`知道了`/`行吧`/`可以`/`对的`（孩子真会说的话，无本仓幻觉实证）——先靠审计 token 积累证据再扩表。
+10. **RDG-A3 边界**：冻结对象是 `StoryAccumulator.build_organizing_input`（装配层，story.py 零改）；本轮过滤在 front ingest 层，且该缝已有冻结先例（引导播报窗过滤 FP-A3）。不得把过滤挪到转发路径之前/不得 `continue`（SCRF-B9 断 stt 转发恰 1 帧）。
+11. **回归红线（逐条）**：SCRF-B10 case 2（`嗯。` 收尾沿被消费）= 唯一真实 RED 风险，由 §8 不变式护栏；SAO-A1（`record is None` 分支安抚 + 恰一帧 story_list `total==0`）= 第二 RED 风险，由 reason 分档护栏（**不得整支删安抚**）；SAO title==body 三桩 = 否决「title==body」规则；FP-A5 body compact=5 = 阈值上界；memory_isolation K3-E2④ 按位置传 corr_id = `reason_sink` 必须 keyword-only。`test_archive_guard_units.py` 的 `_load_guard().wanted`/`ns` 零改即可（本方案让 `_archive_material_reject_reason` 与 `_FRONT_ARCHIVE_HALLUCINATIONS` 逐字不动）；其结构锚 `seg.index("reason=empty_material")` < `_archive_material_reject_reason(material)` < `_issue_finish_downlink(session_id` 三锚顺序不变，但**不得改写 `_issue_finish_downlink(session_id` 的字面形态**。
+12. **manifest 建议**：`server/gateway/front/front_app.py`、`server/tests/test_archive_guard_units.py`（**纯 additive**：新增第二抽取器 `_load_output_guard` + 新 TestCase，既有 `_load_guard` 与四条 case 逐字不动）、`server/acceptance/test_session_channel_resident.acceptance.py`。明确 out-of-scope：prompt 制品（已尽力、模型不遵守，改它不解决机械可判性）、`story.py`、`engine-patch/**`、`firmware/**`、`docs/**`。
+13. **impactedTestsSeed 建议 8 件**：`test_archive_guard_units` / `test_story_units` / `test_session_channel_resident` / `test_m4k1_story_cloud_link` / `test_record_front_polish` / `test_record_dialogue_guide` / `test_record_cancel_lifecycle` / `test_261022_memory_isolation`。
+
+**四、planner 裁定**
+
+1. **采纳** 双缺口定性、主修落点（产物守卫在 `archive_story` 前）、R1–R4 机械判据（含 R4 括号形态与引号族排除）、单行分流、`reason_sink` keyword-only 通道、两档处置、下行序列六件、段级过滤落点与集合不变式、RDG-A3 边界论证、manifest/seed 建议。
+2. **采纳并明确** reason token = `organize_placeholder`（判据档随 reason 细分：`placeholder_body` / `insignificant_body` / `empty_body` 均为静默释放类；`story_finish` 审计行统一记 `reason=organize_placeholder` + `body_reason=<细分>`，避免与 `empty_material` 混同）。
+3. **采纳「不把段级集合与素材集合合并」**，并新增一条冻结断言承载集合不变式（见 SCRF-C4）。
+4. **采纳产物守卫单元测落既有 `test_archive_guard_units.py`（纯 additive）**，撤销先前「新建 `server/tests/test_organize_guard_units.py`」的 manifest/seed 预置（改为既有文件）。
+5. **与 human 原话「不推 story_list」的口径分法（planner 裁定，显式留痕）**：① 素材侧过滤命中 → 会话从未进整理回合 → **严格零 `start_organizing` / 零 `story_list`**（human 诉求在此路径字面成立）；② 整理回合已发生（设备在 ORGANIZING）→ 占位命中**必须**发 `restore=False` 页面退出帧，否则设备困死（261021 R6 实证；SAO-A1 已于 261021 包按同一理由重钉）。human 真正在意的「列表不虚增」由**不归档**保证（`total` 由 `list_stories` 现算，不归档则不变），不由不推帧保证。**该分法已写入 review-packet 与验收 C2/C1 的断言注释；human 如改判，改判代价 = 设备困死复现，planner 不建议。**
+6. **档 C 日语族入表 + 证据强度诚实标注**（human 点名 `うん.`）；中文应答词族不入表（先积累审计证据）。
+7. **不在本轮做**「忠实度重叠检查」长尾判据（误杀面不可忽略：纯拉丁素材 vs 中文 body 零重叠会成立）；登记为 follow-up 候选（真机轮 D 若见长尾占位漏网再启）。
+8. **验收 ID 沿用 SCRF-C1..C4**（已在 TaskPackage 落盘），内容按 architect 建议对齐：C1 = 段级过滤 + pending_stop + sweep 释放（原 B12 核心）；C2 = 产物占位守卫（原 B11 全组）；C3 = A5 正常路径回归；C4 = 过滤保守性与集合不变式。
+9. **【builder 实施后裁定 · R4 判序调整】** 实现把判序从 architect 枚举的 R1→R2→R3→R4 改为 **R1→R4→R2→R3**：冻结验收 C2 对 `【无】` 期望 `placeholder_body`，而其 compact=1 会先命中 R2 `insignificant_body`；验收不可改，故让结构判据 R4 先于长度判据 R2。两类 reason 同属静默释放档（下行序列与用户体验零差），判据集合与语义未变；非括号单字 `嗯` 仍走 R2。**planner 裁定 = 采纳**，已在代码 docstring 与 `mutation-evidence/round-c-fix.md` 观察项 2 留痕。
+10. **【builder 实施后确认】** `_load_output_guard` 的 wanted 增列 `_FRONT_GUARD_STRIP_RE`（`_guard_compact` 直接引用），既有 `_load_guard` 的 wanted/ns 零改；`not material` 直调分支 reason = `empty_body`（仅直调可达，归静默释放类）。两者均为实现细节、不动判据语义，planner 采纳。
+
 # demo 证据形态（与 roadmap 一致）
 
 - host runner + server pytest：SCR-A1–A7 与 SCRF-B1–B6（含 B2b/B4b）的 RED→GREEN 和变异证据；四个收尾点负锚 / 五个真拆通道正锚 / discard→stop 有序不归档为承重齿。

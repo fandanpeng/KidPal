@@ -173,6 +173,139 @@ def _archive_material_reject_reason(material: str) -> "str | None":
     if len(compact) < 2:
         return "insignificant_material"
     return None
+
+
+# 段级静音 ASR 幻觉集合（261116 真机轮 C 修复轮，SCRF-C1/C4）。与上方素材守卫表
+# **独立成表、不 union**：素材表收单字语气词（「嗯」「哈哈」等，归一化后 <2 由
+# insignificant_material 拒）；段级表按「归一化后 >= 2 字」不变式收（把单字并进来会
+# 让 ingest 先吞掉「嗯。」，SCRF-B10 case 2「尾音幻听仍进收尾单源」翻红）。判定 =
+# 整段归一化后**整串相等**（绝不子串；混排真话「嗯，然后我们去公园」照常入素材）。
+# 元素均为 `_guard_compact` 归一化后的形态（去标点 / 去空白 / 小写）——表与判定
+# 同源，临时换表判定随动（SCRF-C4 断言）。
+# 证据分档：
+#   档 A 本仓真机实证（round-c engine-asr 21:22:06 `Okay.`；同族短应答 `ok`）；
+#   档 B 引擎侧幻听表同族（_FRONT_ARCHIVE_HALLUCINATIONS 同名多字条目，TECH-261014
+#         真机逐字命中 + ECS 24h 日志证据）；
+#   档 C 日语静音族（human 点名 `うん.`；**家族模式推断、非本仓实录**）。
+# 明确不收：中文应答词「好的 / 知道了 / 行吧 / 可以 / 对的」（孩子真会说的话、无本仓
+# 幻觉实证——先靠审计 token 积累证据再扩表）；单字「嗯 / 哦 / 啊」（见集合不变式）。
+_FRONT_SILENT_ASR_HALLUCINATIONS = frozenset({
+    # 档 A（本仓真机实证）
+    "okay",
+    "ok",
+    # 档 B（compact 形态：去标点、去空白、小写）
+    "thankyou",
+    "thanksforwatching",
+    "thankyouforwatching",
+    "谢谢观看",
+    "请不吝点赞",
+    "嗯嗯",
+    "哦哦",
+    "呵呵",
+    "哈哈",
+    "哈哈哈",
+    "嘿嘿",
+    "嘻嘻",
+    # 档 C（家族模式推断、非本仓实录）
+    "うん",
+    "そう",
+    "はい",
+    "いいえ",
+})
+# 整理产物占位整串集合（SCRF-C2；R3）。整串相等、绝不子串；元素同样是
+# `_guard_compact` 形态（`n/a` -> "na"、`no content` -> "nocontent"、
+# `nothing to organize` -> "nothingtoorganize"）。只收整理 LLM 明确的「无内容」
+# 声明：真实短故事（FP-A5 body compact=5）与引号族引用原话不在表内。
+_FRONT_ORGANIZE_PLACEHOLDERS = frozenset({
+    # 档 A 本轮真机实证（round-c ecs-story-2026-11-18-s33477cee.md 逐字）
+    "没有可整理的内容",
+    "无可整理内容",
+    "没有可整理的正文",
+    # 档 B 同族占位（措辞变体）
+    "无内容",
+    "没有内容",
+    "内容为空",
+    "暂无内容",
+    "无有效内容",
+    "没有有效内容",
+    "none",
+    "na",
+    "empty",
+    "nocontent",
+    "nothingtoorganize",
+})
+# 整理产物正文最小有效字数（compact 后）与括号族占位判据的剥壳后上限（SCRF-C2）：
+# 阈值 2 与素材守卫同族（FP-A5 body compact=5 为上界证据）；16 字覆盖括号包裹的
+# 「无内容」类措辞，长于 16 字按真实正文放行（结构判据不做语义重叠检查，见 planner
+# 裁定 7 follow-up 候选）。
+_ORGANIZE_BODY_MIN_CHARS = 2
+_ORGANIZE_BRACKETED_MAX_CHARS = 16
+# 静默释放类 reason（SCRF-C2 收尾分档）：模型明确声明无内容 -> 不安抚、只发页面
+# 退出帧；其余 reason（llm_unavailable / empty_reply / archive_valueerror / 缺省）
+# = 丢稿类，逐字保留「安抚 + 退出帧」既有行为（R1-N4 / SAO-A1）。
+_ORGANIZE_SILENT_RELEASE_REASONS = frozenset({
+    "empty_body",
+    "insignificant_body",
+    "placeholder_body",
+})
+
+
+def _guard_compact(text: str) -> str:
+    """整理 / 段级守卫共用的归一化度量（去标点 -> strip -> 小写 -> 去空白）。
+
+    与 `_archive_material_reject_reason` 的 compact 形态同构，但**不复用**素材守卫
+    函数本体：既有判定核与 test_archive_guard_units 的 AST 抽取命名空间逐字不动
+    （SCRF-B10 / 归档守卫单元测零牵连）。"""
+    spaced = _FRONT_GUARD_STRIP_RE.sub("", text or "").strip().lower()
+    return re.sub(r"\s+", "", spaced)
+
+
+def _is_silent_asr_hallucination(text: str) -> bool:
+    """段级静音 ASR 幻觉判定（SCRF-C1/C4）：整段归一化后与集合整串相等。
+
+    空串 / 空白不命中（`_guard_compact("") == ""`，集合无空元素）。绝不子串：混排
+    真话（「嗯，然后我们去公园」「让我们一起说thank you吧」）照常入素材。"""
+    return _guard_compact(text) in _FRONT_SILENT_ASR_HALLUCINATIONS
+
+
+def _organize_body_reject_reason(body: str) -> "str | None":
+    """整理产物正文机械拒绝判据（SCRF-C2 承重；整串判定、零子串）。
+
+    判序：R1 归一化空 -> empty_body；R4 整串成对括号 / 方尖括号族包裹（至多剥 2
+    层）且剥壳后 compact 非空、<= _ORGANIZE_BRACKETED_MAX_CHARS -> placeholder_body；
+    R2 compact < _ORGANIZE_BODY_MIN_CHARS -> insignificant_body；R3 compact 整串命中
+    占位集合 -> placeholder_body。否则 None（放行归档）。
+
+    R4 先于 R2 的语义：括号壳内的短内容（如「【无】」剥壳后 compact=1）是**结构
+    占位**而非无意义残句，归 placeholder_body 更准确（冻结验收 SCRF-C2 按此断言）；
+    非括号包裹的单字残句（「嗯」）仍走 R2 insignificant_body。R4 明确排除引号族
+    "" '' 「」 『』 《》（引用孩子原话是合法正文，收进来会误伤）。"""
+    compact = _guard_compact(body)
+    if not compact:
+        return "empty_body"
+    # R4：整串括号族剥壳（至多 2 层；引号族不在表内）。
+    stripped = (body or "").strip()
+    candidate = stripped
+    for _ in range(2):
+        for opener, closer in (("（", "）"), ("(", ")"), ("【", "】"), ("[", "]"),
+                               ("〔", "〕"), ("{", "}"), ("｛", "｝")):
+            if (len(candidate) >= 2 and candidate.startswith(opener)
+                    and candidate.endswith(closer)):
+                candidate = candidate[1:-1].strip()
+                break
+        else:
+            break
+    if candidate != stripped:
+        inner = _guard_compact(candidate)
+        if 0 < len(inner) <= _ORGANIZE_BRACKETED_MAX_CHARS:
+            return "placeholder_body"
+    if len(compact) < _ORGANIZE_BODY_MIN_CHARS:
+        return "insignificant_body"
+    if compact in _FRONT_ORGANIZE_PLACEHOLDERS:
+        return "placeholder_body"
+    return None
+
+
 # 两枚 front 侧版本化 prompt 制品（home = server/gateway/front/prompts/，目录名冻结；
 # 不走 OpenClaw 主 agent 共享 system prompt——request 级 system 消息承载，种子 7）。
 PROMPTS_DIR = Path(__file__).resolve().parent / "prompts"
@@ -408,7 +541,8 @@ async def _speak_to_legs(text: str, legs) -> int:
     return sent
 
 
-def _organize_and_archive(raw, corr_id=None, device_id=None) -> "dict | None":
+def _organize_and_archive(raw, corr_id=None, device_id=None, *,
+                          reason_sink=None) -> "dict | None":
     """忠实整理回合 + 归档单源（三式收尾共用；S-F2.2-AC4 v1.65 / R1-N4）。
 
     孩子原话素材 -> 去掉**尾随**收尾词（story.py 既有 strip_trailing_finish_words，
@@ -427,9 +561,16 @@ def _organize_and_archive(raw, corr_id=None, device_id=None) -> "dict | None":
 
     任一失败（空素材 / LLM 不可达或空返回 / 空正文）返回 None = **当轮素材不归档**
     （R1-N4；调用方补固定安抚句），不退回原始转写、不写空故事。
+    `reason_sink`（261116 轮 C；keyword-only 可变出参，先例 edge_probe）：每个
+    `return None` 前 append 拒绝原因，供收尾单源按「静默释放类 / 丢稿类」分档处置
+    —— 不用 sentinel dict / 异常 / 模块全局，避免破既有直调签名（memory_isolation
+    K3-E2④ 按位置传 corr_id）或引入跨线程竞态。
     `_openclaw_chat_once` 经模块全局查找调用（冻结桩 monkeypatch front._openclaw_chat_once）。"""
     material = gw_story.strip_trailing_finish_words(raw or "").strip()
     if not material:
+        # 收尾单源在调用前已短路空素材；本分支只护直调形态（归静默释放类）。
+        if reason_sink is not None:
+            reason_sink.append("empty_body")
         return None
     prompt = _load_prompt_artifact(_ORGANIZE_PROMPT_FILE)
     if not prompt.strip():
@@ -448,12 +589,42 @@ def _organize_and_archive(raw, corr_id=None, device_id=None) -> "dict | None":
     if not reply:
         log.info("story_organize_round corr_id=%s ok=false reason=llm_unavailable",
                  corr_id)
+        if reason_sink is not None:
+            reason_sink.append("llm_unavailable")
         return None
     lines = [ln for ln in reply.splitlines() if ln.strip()]
     if not lines:
+        if reason_sink is not None:
+            reason_sink.append("empty_reply")
         return None
-    title = lines[0].strip()[:12]
-    body = "\n".join(lines[1:]).strip() or reply.strip()
+    # 261116 轮 C（SCRF-C2）：单行 / 多行分流。多行 = 首行标题 + 其余行正文（删掉旧
+    # `or reply.strip()`——多行时 lines[1:] 恒非空，rescue 从不触发，爆炸半径为零）；
+    # 单行先过 R1–R4，未命中则逐字保留今日形状（title=cand[:12]、body=cand）。
+    # **否决**「title == body -> 判占位」：会一次红 SAO 三条冻结桩。
+    if len(lines) >= 2:
+        title = lines[0].strip()[:12]
+        body = "\n".join(lines[1:]).strip()
+    else:
+        cand = lines[0].strip()
+        reject = _organize_body_reject_reason(cand)
+        if reject:
+            log.info("story_organize_round corr_id=%s ok=false reason=%s body=%r",
+                     corr_id, reject, cand[:32])
+            if reason_sink is not None:
+                reason_sink.append(reject)
+            return None
+        title, body = cand[:12], cand
+    # 产物侧占位守卫（主缺口）：整理 LLM 的占位 / 拒绝式回复是合法非空行，旧形态
+    # 直接进 archive_story 成垃圾篇（round-c 2026-11-18-s33477cee）。守卫必须在
+    # archive_story **之前**——archive_story 先 _assign_seq 后写 MD，删档也会留
+    # seq 缺口（零盖章不变式）。
+    reject = _organize_body_reject_reason(body)
+    if reject:
+        log.info("story_organize_round corr_id=%s ok=false reason=%s body=%r",
+                 corr_id, reject, body[:32])
+        if reason_sink is not None:
+            reason_sink.append(reject)
+        return None
     if is_generic_story_title(title):
         # 缺陷⑤b 兜底（CONTRACT E 节）：整理 LLM 起的「万能名」不成题名（KPLOG005 实证
         # 「我的故事」，列表里零可识别性 = human 找不到刚录篇目）。交给 archive_story 的
@@ -466,12 +637,15 @@ def _organize_and_archive(raw, corr_id=None, device_id=None) -> "dict | None":
     try:
         record = gw_story.archive_story(STORIES_DIR, body, title=title)
     except ValueError:
+        if reason_sink is not None:
+            reason_sink.append("archive_valueerror")
         return None  # 空正文不归档（不写空故事）
     log.info("story_organize_round corr_id=%s ok=true id=%s", corr_id, record["id"])
     return record
 
 
-def _organize_and_archive_offloop(raw, corr_id=None, device_id=None) -> "dict | None":
+def _organize_and_archive_offloop(raw, corr_id=None, device_id=None, *,
+                                  reason_sink=None) -> "dict | None":
     """整理回合同步体的线程化执行壳（261020 D4-1）。
 
     病灶（真机 R3/R4 四轮收尾逐拍实证）：_openclaw_chat_once 是同步 urllib LLM 回合
@@ -482,7 +656,8 @@ def _organize_and_archive_offloop(raw, corr_id=None, device_id=None) -> "dict | 
     收尾沿下发即冲刷、循环在 LLM 回合期间保持响应。单飞锁还原 seq 账本「front
     单写者」串行语义（同步时代由事件循环天然承载）。"""
     with _ORGANIZE_ARCHIVE_LOCK:
-        return _organize_and_archive(raw, corr_id, device_id=device_id)
+        return _organize_and_archive(raw, corr_id, device_id=device_id,
+                                     reason_sink=reason_sink)
 
 
 def _get_story_acc():
@@ -561,6 +736,15 @@ def _story_feed_from_stt(session_id, obj, *, now=None) -> bool:
     acc = _get_story_acc()
     if _story_guide_window_active(acc, session_id, now):
         log.info("story_feed_guard corr_id=%s dropped=guide_broadcast_window", session_id)
+        return False
+    # 261116 真机轮 C 段级静音 ASR 幻觉过滤（SCRF-C1/C4；排在引导播报窗判定之后、
+    # routing 之前 = 既有 FROZEN CONTRACT B 节语义第一优先不动）。只作用于旁路素材
+    # 消费：stt 转发在下游 text_field 路径原样进行（不得挪到转发之前、不得 continue）。
+    # pending_stop 下被过滤**不即时释放**——保持挂起态交既有 10s sweep，防吞 1.7s
+    # 后才到的真实转写。
+    if _is_silent_asr_hallucination(text):
+        log.info("story_feed_guard corr_id=%s dropped=silent_asr_hallucination text=%r",
+                 session_id, text)
         return False
     now_dt = now if now is not None else datetime.now(timezone.utc)
     routing = acc.routing(session_id)
@@ -2050,10 +2234,12 @@ async def _story_finish_session(session_id, acc, legs) -> "dict | None":
          active=false（_issue_finish_downlink 同源）；
       ③ 忠实整理回合 + 归档（_organize_and_archive）；
       ④ 成功 -> story_text 正文 + story_list 三时点②（逐设备腿）；
-         失败 -> 当轮素材不归档 + 固定安抚句 ORGANIZING_FAIL_SOOTHING 经 kidpal_speak
-         下发（R1-N4；逐引擎腿，与引导回合同型通道、不产生提醒帧）+ **补 story_list
-         页面退出帧**（逐设备腿；设备已进 ORGANIZING 过渡态，无下行帧即困死整合页，
-         261021 真机轮 R6 修复——列表 total 不虚增，仅缺 story_text 正文帧）；
+         失败按 reason 分两档（261116 轮 C SCRF-C2）：静默释放类（模型声明无内容）
+         = 不安抚、只发 story_list 页面退出帧；丢稿类 = 当轮素材不归档 + 固定安抚句
+         ORGANIZING_FAIL_SOOTHING 经 kidpal_speak 下发（R1-N4；逐引擎腿，与引导回合
+         同型通道、不产生提醒帧）+ **补 story_list 页面退出帧**（逐设备腿；设备已进
+         ORGANIZING 过渡态，无下行帧即困死整合页，261021 真机轮 R6 修复——列表 total
+         不虚增，仅缺 story_text 正文帧）；
       空素材（只有收尾词/无累积）-> 不归档、不演出、不安抚（无可丢内容），仅释放。
 
     legs = [(device_ws, engine_ws)] 当前在线腿快照（泵路径 = 本连接双腿；sweep 路径 =
@@ -2091,15 +2277,27 @@ async def _story_finish_session(session_id, acc, legs) -> "dict | None":
     if not device_id:
         log.info("story_finish corr_id=%s oneshot_user=absent reason=device_id_missing",
                  session_id)
+    reason_sink = []
     record = await asyncio.to_thread(_organize_and_archive_offloop,
-                                     material, session_id, **organize_kwargs)
+                                     material, session_id,
+                                     reason_sink=reason_sink, **organize_kwargs)
     # 261022 真机轮修订：出语境移到整理回合**完成后**（原在 ② 演出先行时提前解除，
     # 整理期间迟到的幻听 STT 被引擎当普通对话派发 LLM 播报「我没听清」——KPLOG006
     # 23:59:30-36 实证）。整理期间孩子话语走闭嘴回显（会话已 cancel，不进素材）。
     await _release_record_context(session_id, legs)
     if record is None:
-        # R1-N4 丢稿口径：当轮素材不归档 + 固定安抚句（不发明新语义）。
-        await _speak_to_legs(ORGANIZING_FAIL_SOOTHING, legs)
+        # 261116 轮 C（SCRF-C2）：reason 分档处置。
+        #   静默释放类（empty_body / insignificant_body / placeholder_body）：模型明确
+        #   声明无内容 = 孩子本无稿，**不安抚**（与 R1-N4「纯幻听不安抚」同语义），只发
+        #   页面退出帧；审计 token = organize_placeholder + body_reason 细分（与
+        #   organize_failed / empty_material 分档，日志可归因）。
+        #   丢稿类（llm_unavailable / empty_reply / archive_valueerror / 缺省）：逐字
+        #   保留今日行为——固定安抚句 + 页面退出帧（R1-N4 / SAO-A1 四件保绿）。
+        body_reason = reason_sink[-1] if reason_sink else "unknown"
+        silent_release = body_reason in _ORGANIZE_SILENT_RELEASE_REASONS
+        if not silent_release:
+            # R1-N4 丢稿口径：当轮素材不归档 + 固定安抚句（不发明新语义）。
+            await _speak_to_legs(ORGANIZING_FAIL_SOOTHING, legs)
         # 261021 真机轮 R6 缺陷修复（KPLOG005 实证）：失败分支**必须补页面退出帧**——
         # 设备已在 ② 按 start_organizing 进 ORGANIZING 非交互过渡态（substate=6，
         # KEY/BOOT 全吞 = 261019 有意的过渡态）。成功路径靠 story_text + story_list
@@ -2108,7 +2306,8 @@ async def _story_finish_session(session_id, acc, legs) -> "dict | None":
         # 困死整合页、重启是唯一出口。补 story_list 推送 = 「收尾后回 P3 列表、当轮不
         # 归档」：列表里没有这篇 = 准确反映未归档（total 不虚增），与成功路径的唯一差别
         # 是没有 story_text 正文帧。复用既有 _push_story_list 通道与错误处理形态
-        # （单腿失败不连坐、不发明新帧）。
+        # （单腿失败不连坐、不发明新帧）。静默释放类同样需要该帧（页面退出不是列表
+        # 新增）——human「不推 story_list」的诉求由**不归档**兑现（total 现算不变）。
         pushed = 0
         for device_ws, _engine_ws in list(legs):
             try:
@@ -2117,8 +2316,14 @@ async def _story_finish_session(session_id, acc, legs) -> "dict | None":
             except Exception as e:  # noqa: BLE001 — 单腿失败不连坐其它腿
                 log.warning("story_finish_push_err corr_id=%s err=%s",
                             session_id, type(e).__name__)
+        if silent_release:
+            log.info("story_finish corr_id=%s archived=false reason=organize_placeholder "
+                     "body_reason=%s story_list_pushed=%d",
+                     session_id, body_reason, pushed)
+            return None
         log.info("story_finish corr_id=%s archived=false reason=organize_failed "
-                 "story_list_pushed=%d", session_id, pushed)
+                 "body_reason=%s story_list_pushed=%d",
+                 session_id, body_reason, pushed)
         return None
     for device_ws, _engine_ws in list(legs):
         try:

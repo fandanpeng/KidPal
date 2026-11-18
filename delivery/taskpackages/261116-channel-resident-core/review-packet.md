@@ -473,3 +473,168 @@ SCR-A8 头注的 `device-outcome: SCR-A8` + `host-uncompilable-path: firmware/ma
 - `decisionCoverage` 残差：本包 8 条全部 `landsIn = exitCriteria:KRC-E1/E3/E4/E6/E8`，**无 `landsIn: dropped` + `reason` 以 `risk-accepted` 开头的条目**，故无 human 已接受的 risk-accepted dropped 项。
 - 回滚：本轮改动全在固件侧（front / 引擎零 diff），回滚 = revert 本轮收口 commit；两半一起回滚的旧口径对 D2/B9 仍适用（那两个修复在轮 A 修复轮 commit 内）。
 - **跨面变更（spine 在册）**：imp anchor 事实 = 离线面全绿（final r7 十闸）、真机轮 C 未跑、合并门仍被轮 C 与 G4 拦；建议 status = `ready-to-merge` **不成立**（应为 `in-progress`，待轮 C）；workstream `261115-session-channel-resident` P1 锚点与 status 回写归主线程（integrator 不直改 spine）。
+
+## 真机轮 C 修复轮（final r9，2026-11-18；本节为当前态，以上各节为历史轮次，保留不删）
+
+> **状态口径覆盖**：上一节是轮 B 修复轮（final r7、27 条验收、deviceOutcome = PENDING 轮 C）。轮 C 在线取证（2026-11-18 21:20–21:24 CST，planner 只读亲拉 ECS 三源）暴露两层新缺陷，human 当日指示「现在就修」（pod-events `human-correction` `c50b1954-181c-45fd-816a-74237b9fc6ae`）→ 本轮补素材侧过滤与产物侧占位守卫。离线面收口于 **final r9 十闸全绿**，验收累计 **31 条**（原 27 + SCRF-C1..C4）。**真机轮 C 完整复测仍未跑**：`device-round-evidence.md` 未生成、本轮不申报任何真机 PASS、本包不得合并。
+
+### 一、本轮 Change Size
+
+- **本轮 Files changed = 3 件**（`git diff --numstat HEAD -- firmware server docs`，相对上一收口 commit `095122d2`）：
+
+  | 文件 | 增/删 | 内容 |
+  |---|---|---|
+  | `server/gateway/front/front_app.py` | +219/−14 | 段级静音幻觉过滤（`_FRONT_SILENT_ASR_HALLUCINATIONS` 三段分档 + `_is_silent_asr_hallucination`，接入 `_story_feed_from_stt` 引导播报窗判定之后）+ 整理产物占位守卫（`_guard_compact` / `_organize_body_reject_reason` R1–R4 / `_FRONT_ORGANIZE_PLACEHOLDERS`，落在 `archive_story` 之前）+ `reason_sink` keyword-only 可变出参 + 收尾 reason 分档（静默释放类不安抚、丢稿类保留安抚） |
+  | `server/acceptance/test_session_channel_resident.acceptance.py` | +744/−0 | 新 helpers 四件（`_guard_compact` / `_story_text_frames` / `_kidpal_speak_frames` / `_ledger_snapshot`）+ 两组 TestCase：`ScrfSilentAsrSegmentFilterAcceptance`（C1 一例、C4 四例）、`ScrfOrganizePlaceholderGuardAcceptance`（C2 两例、C3 两例） |
+  | `server/tests/test_archive_guard_units.py` | +161/−0 | 纯 additive：第二 AST 抽取器 `_load_output_guard`（wanted 含 `_guard_compact` 引用的 `_FRONT_GUARD_STRIP_RE`）+ `OrganizeOutputGuardUnits` 六例；既有 `_load_guard` 的 wanted/ns 与四条判定 case 逐字不动 |
+
+  - **合计 +1124/−14**。
+- **acceptance 744 行归因**：helpers 与常量约 90 行；九条用例的端到端断言约 650 行——逐条含「STORIES_DIR 零新增 / seq 账本不增」「零 `story_text`」「`kidpal_speak` 安抚帧零或恰一」「`start_organizing` 恰 1」「页面退出帧 `story_list` 恰 1 且 `total==0`/`items==[]`」「审计 token 恰 1」「stt 转发帧数不变」等观测面。
+- **零 diff 面（实测）**：`firmware/**`、`server/gateway/story.py`、`server/gateway/display_schema.py`、`server/gateway/front/prompts/**`（prompt 制品）、`docs/**`、`docs/contracts/**`、`engine-patch/**`、`server/deploy/**` 全部零 diff。回滚 = revert 本轮单 commit；本轮无固件/引擎/契约面改动，回滚只涉 front 单侧。
+- **manifest 对账（本轮工作树口径，按闸本应执行的规则手工核）**：`git status --porcelain` 的实现面（`firmware/**` + `server/**`）文件 3 件，全部命中 `changeManifest[]`（现 16 件），**清单外 0 件**。闸本体因 `current/` 指针恒判 pre-cutoff 未真执行（见第十节缺口 3）。
+
+### 二、缺陷与修复（两层缺口，缺一不可）
+
+轮 C 在线三源（front journal / 引擎 docker / ECS STORIES_DIR 文件）给出的缺陷面：
+
+| 层 | 缺口 | 真机证据锚 |
+|---|---|---|
+| 素材侧（ingest 无防线） | `_story_feed_from_stt` 只判消息类型与空文本，不判内容：引擎静音 ASR 幻觉 `Okay.` 经上行 stt 喂进 pending_stop 累积器；`_archive_material_reject_reason` 归一化后 `okay` 不在幻听表、compact 长度 4 ≥ 2 → 放行进整理 | `device-evidence/round-c/engine-asr-2120-2123.txt:3-4`（21:22:06 `识别文本: Okay.` + 同刻记录语境抑制行）；`ecs-front-journal-2120-2134.txt:3-6`（21:22:05 pending_stop 保护 → 21:22:09 `story_organize_round ok=true` → `story_finish archived=true id=2026-11-18-s33477cee`） |
+| 产物侧（整理输出零验收） | `_organize_and_archive` 只判 `lines` 为空（且有 `body = lines[1:].strip() or reply.strip()` rescue）；整理 LLM 的占位/拒绝式回复「（没有可整理的内容）」是合法非空行 → 直接进 `archive_story` | `device-evidence/round-c/ecs-story-2026-11-18-s33477cee.md`（标题与正文逐字「（没有可整理的内容）」、mtime 21:22）；控制组 `ecs-story-2026-11-18-sbe0bff90.md`（同夜 A5 真素材正常归档） |
+
+修复三件（全部落 `front_app.py`）：
+
+1. **段级静音幻觉过滤（素材侧防线）**：`_story_feed_from_stt` 在引导播报窗判定之后、routing 判定之前插入「整段归一化后与 `_FRONT_SILENT_ASR_HALLUCINATIONS` **整串相等**才 drop」；不子串、不挪到转发路径之前、不 `continue`；`pending_stop` 下被过滤**不即时释放**，交既有 10s sweep（防吞 1.7s 后才到的真实转写）。审计行 `story_feed_guard dropped=silent_asr_hallucination`。
+2. **整理产物占位守卫（产物侧后防线）**：`_organize_body_reject_reason` 四档机械判据——R1 归一化空（`empty_body`）/ R4 整串成对括号或方尖括号族包裹且剥壳后 ≤16 字（`placeholder_body`，结构判据、措辞无关）/ R2 compact <2（`insignificant_body`）/ R3 compact 命中占位集合（`placeholder_body`）。守卫落在 `archive_story` **之前**（`archive_story` 先占 seq 后写 MD，删档会留 seq 缺口）；单行回复先过判据、多行走首行标题 + 其余行正文。
+3. **reason 分档处置（收尾下行）**：`reason_sink` keyword-only 出参让每个 `return None` 前登记原因；静默释放类（`empty_body` / `insignificant_body` / `placeholder_body`）= 不安抚、只发页面退出帧、审计 `reason=organize_placeholder` + `body_reason=` 细分；丢稿类（`llm_unavailable` / `empty_reply` / `archive_valueerror` / 缺省）= 逐字保留「安抚句 + 页面退出帧」既有行为。两类都**必须**发 `_push_story_list(restore=False)` 页面退出帧（ORGANIZING 过渡态唯一机械出口，261021 R6 先例）。
+
+### 三、Verification Evidence（本轮，承重）
+
+- **Final round fact（承重）**：`delivery/taskpackages/261116-channel-resident-core/verifier-evidence/rounds/r9.json`，`phase=final / round=9 / ok=true / observedGateExit=0 / invocationId 9cee1805-4f5b-4621-bf69-be61013cb78f`（2026-11-18T14:27:14Z–14:28:37Z），10 闸全跑。
+- **机械凭据闸**：`node .claude/scripts/verifier-evidence-check.mjs --change-id 261116-channel-resident-core --phase final --round 9 --invocation-id 9cee1805-4f5b-4621-bf69-be61013cb78f` → `exit 0 / factOk=true / phase=final / round=9`。
+- **r8 scoped（8 闸 ok）**：`verifier-evidence/rounds/r8.json`，`phase=scoped / round=8 / ok=true / observedGateExit=0 / invocationId ffeeab66-d5f9-4a44-849a-40ba9faaf93b`；`verifier-evidence-check --phase scoped --round 8 --invocation-id ffeeab66-…` exit 0。
+- **闸表（r9 final）**：`taskpackage-required` / `change-manifest`（pre-cutoff 存量放行，缺口 3）/ `contract-lint`（1 条既有相对链接 warning）/ `acceptance-coverage`（**31 acceptance id 全覆盖**）/ `mutation-check`（31 条 per-acceptance 变异 evidence 齐）/ `docs-sync` / `security` 七闸 pass；`firmware-build` `build-pass`（`xiaozhi.bin` 0x329580 bytes / app 分区 8% free；本轮固件零 diff，增量构建）；`unit`（full，scope 求交）**302 passed / 3 deselected / 102 subtests**（33.6s）；`acceptance`（full，scope 求交）**204 passed / 3 deselected / 13 subtests**（34.1s），surface = server 14 / firmware 12。
+- **Host runner（integrator 亲跑 @ working tree，执行目录 `firmware/main/test/host_app`，WSL Ubuntu-24.04）**：`321 Tests / 3 Failures / 0 Ignored`——3 红全为上游存量 `p1_auxbar_style.acceptance.c` AB-A1 / AB-A2 / AB-A4，与本包无调用关系；本轮固件零 diff，数字与轮 B 修复轮一致。
+- **server 全量（integrator 亲跑 @ 仓根，`python -m pytest -q --import-mode=importlib -m "not live" server/acceptance server/tests`）**：`799 passed / 0 failed / 9 deselected / 137 subtests`（78.4s）——零新增红。
+- **目标件（planner/builder 实测基线）**：`test_session_channel_resident.acceptance.py` + `test_archive_guard_units.py` = **47 passed / 0 failed / 99 subtests**。
+- **变异证据**：`mutation-evidence/round-c-fix.md`（8 条实跑：R4 删除 / `_ORGANIZE_BODY_MIN_CHARS 2→0` / 删段级过滤 / 段级集合加入 `嗯` / 静默释放加回安抚 / 删页面退出帧 / reason 改名 / 守卫移到 `archive_story` 之后）；8/8 `sha256` 还原一致。
+- **Scope 圈定（本轮 r9，范围圈定清单落盘路径一行）**：`delivery/taskpackages/261116-channel-resident-core/test-scope-final-r9.txt`（**31 条去重**，新落文件；r7 清单 `test-scope-final.txt` 保留为历史）。合成 = `acceptanceTestsFile`（6）∪ `impactedTestsSeed[]`（25 去重）∪ `detect_changes`（project `C-AI-KidPal-pod-channel`，since `base/261115-session-channel-resident` / merge_base `3b3832cb`，inbound depth 2：**89 changed files**（含本包簿记件；实现/验收面 16 件）/ **seed 490 符号** / **impacted_total 138** 节点，其中 server/acceptance 78、server/gateway 21、server/tests 16、firmware/main 23）映射测试 ∪ 共享缝相关测试 ∪ 安全余量。本轮增量复核（`since HEAD`，覆盖未提交工作树）= 18 changed files / seed 46 / impacted_total 51，与包级结果指向同一 server 测试面。per-Pod 专属图索引可用 → **正常圈定、未降级**（detect_changes 与 trace_path 均可用）；相对 r7 只增一项 `server/tests/test_story_units.py`（architect 建议、impactedTestsSeed 已登记），不缩到本包档、不默认全量。`server/acceptance/archive/test_schedule_reminder.acceptance.py` 属 archive 退役面（两闸 SKIP_DIRS），如实排除并留痕。
+
+### 四、Per-Acceptance 证据 · 轮 C 追加（4 条；全包累计 31 条）
+
+| Acceptance | 断言载体（测试） | 结果 | 变异判别力（引 `mutation-evidence/round-c-fix.md`） |
+|---|---|---|---|
+| SCRF-C1 段级过滤 + pending_stop 不归档（主防线，端到端） | `test_scr_c1_pending_stop_silent_asr_dropped_then_sweep_releases`（`test_session_channel_resident.acceptance.py:2046`）：ctx(story) → `listen stop` 累积空落 pending_stop（`action=protected`）→ 注入 `stt=Okay.` → `_story_finish_session` 零调用、累积器仍空、routing 仍 pending_stop；+10.5s 既有 sweep 释放：`active=false` 恰一帧、零 `start_organizing`、零 `story_text`、`story_list` 零新增、STORIES_DIR 零新增、seq 不占号、routing 回 chat；审计 `dropped=silent_asr_hallucination` 恰 1；stt 转发不受影响（恰 1 帧） | PASS | #3（删段级过滤调用）→ 本件红；#4（段级集合加入单字 `嗯`）→ SCRF-B10 case 2 与 C4 不变式红 |
+| SCRF-C2 整理产物占位守卫（后防线，承重） | `test_scr_c2_organize_placeholder_guard_releases_with_page_exit`（`:2372`）+ `test_scr_c2_output_guard_mechanical_discrimination`（`:2470`）：素材 `好的。` 过段级过滤与素材守卫 → 整理 stub 返回 `（没有可整理的内容）` → R4 命中 → 零归档（MD 零新增 / seq 不增 / 零 `story_saved_stamp`）、零 `story_text`、零 `kidpal_speak` 安抚、`start_organizing` 恰 1、`story_list` 页面退出恰 1 且 `total==0`/`items==[]`/`restore` 缺省或 false、`active=false` 恰 1、audit `reason=organize_placeholder` 恰 1；判别力八样本（R1/R2/R3/R4 各自拒 + 真实短故事与引号族放行） | PASS | #1（删 R4 块）/ #2（阈值 2→0）/ #5（加回安抚）/ #6（删页面退出帧）/ #7（reason 改名）/ #8（两处守卫同移到 `archive_story` 后）→ 按预期转红 |
+| SCRF-C3 A5 正常路径回归（must-stay-green） | `test_scr_c3_normal_archive_path_keeps_working`（`:2552`）+ `test_scr_c3_llm_unavailable_still_soothes_and_exits`（`:2632`）：真实素材 + 正常两行整理输出 → `archived=true`、恰新增 1 篇且标题/正文 == 整理结果、`story_text` 恰一帧、`story_list` 含新篇、seq +1、routing 回 chat；丢稿类（`llm_unavailable` / `empty_reply` / `archive_valueerror`）仍安抚 + 页面退出帧（SAO-A1 四件保绿） | PASS | #5 / #7 与已测 `llm_unavailable` 对照分支反证分档未吞丢稿类 |
+| SCRF-C4 过滤保守性与集合不变式（判据判别力） | `test_scr_c4_hit_family_dropped_and_mixed_speech_kept`（`:2149`）、`test_scr_c4_segment_set_invariant_and_single_source`（`:2224`）、`test_scr_c4_pending_stop_filter_does_not_release_immediately`（`:2290`）、`test_scr_c4_finish_phrase_surface_unaffected`（`:2319`）：命中族全 drop、`嗯。` 不命中（留给素材守卫）、混排真话四例照常入素材、三段式后整理输入恰含两句真话、集合不变式每元素 compact 长度 ≥2、判定单源可换表、pending_stop 下不即时释放、收尾词判定面零影响 | PASS | #3 / #4 → 命中族与不变式子测红；单测 `test_silent_asr_hit_family_and_misses` / `test_silent_set_invariant` / `test_placeholder_table_is_compact_and_disjoint` 同向 |
+
+> 产物守卫单元面另由 `server/tests/test_archive_guard_units.py::OrganizeOutputGuardUnits` 承重：`test_r1_r2_r3_r4_rejects_with_reason`、`test_r4_two_layer_shell_and_length_upper_bound`、`test_real_bodies_pass`（纯函数直调，不经泵）。
+
+### 五、下行序列与 human 原话「不推 story_list」的口径分法（显式留痕，planner 裁定）
+
+human 2026-11-18 原话「不推 story_list」（出自 D3 指令：「无有效素材时自动收尾走释放、不归档、不推 story_list、不盖章」，pod-events `human-decision` `6df808ac-…`）按语境分两条路径：
+
+1. **素材侧过滤路径（会话从未进整理回合）→ 严格零帧**：`Okay.` 类静音幻觉被段级过滤挡在累积器之外，routing 保持 `pending_stop`，由既有 10s sweep 释放（`active=false` 恰一帧），**零 `start_organizing` / 零 `story_list` / 零 `story_text`**——human 原话在此路径字面成立（SCRF-C1 断言承载）。
+2. **整理回合已发生后命中占位 → 必须发 `restore=False` 页面退出帧**：设备已收 `start_organizing`、处在 ORGANIZING 非交互过渡态（KEY/BOOT 全吞）；无下行帧即困死整合页（261021 真机轮 R6 实证）。该帧属「页面退出」而非「列表新增」——SCRF-C2 断言 `total==0` / `items==[]` / `story_text` 零帧。同一理由下 SAO-A1 已于 261021 包把「零帧」重钉为「恰一帧页面退出帧且 total==0」。
+
+**human 真正在意的「列表不虚增」由不归档保证**（`total` 由 `list_stories` 现算，不归档则不变），不由不推帧保证。**planner 裁定**：human 如改判为严格零帧，代价 = 设备困死整合页复现，planner 不建议。
+
+### 六、上游残余登记与 builder 观察项（只登记，不新建债务文件）
+
+1. **上游残余（不在本仓修）**：引擎静音 ASR 幻觉（`Okay.` / 「嗯。」族）为**引擎 ASR provider 的上游问题**，本轮只在 front 侧加防线、不改引擎代码（`engine-patch/**`、ECS `core/**` 零 diff）。**建议主线程登记 tech debt**（本 Pod 只写 review-packet 与 docs-delta，不新建 `docs/debt/**` 条目）。
+2. **builder 观察项（已由 planner 裁定采纳，留痕）**：
+   - R4 判序实现为 **R1→R4→R2→R3**（架构枚举为 R1→R2→R3→R4）：冻结验收 C2 对 `【无】`（compact=1）期望 `placeholder_body`，R2 会先命中 `insignificant_body`；验收不可改，故结构判据 R4 先于长度判据 R2。两类 reason 同属静默释放档，判据集合与语义未变（`mutation-evidence/round-c-fix.md` 观察项 2）。
+   - `_load_output_guard` 的 wanted 集合增列 `_FRONT_GUARD_STRIP_RE`：`_guard_compact` 直接引用该模块级正则，不抽取会在受限 exec 期 NameError（假红）；既有 `_load_guard` 的 wanted/ns 零改（观察项 3）。
+3. **变异观察项**：「#8 须同移两处守卫才转红」——单行分支的前置 `_organize_body_reject_reason` 是独立的第一道产物闸，只移主体守卫时八个单行样本被前置接住、0 红；两处同移后按预期转红。结论 = 「守卫在 `archive_story` 之前」的结构性质须两处同时变异才能钉住，已如实登记（观察项 1）。
+
+### 七、未覆盖面申报（覆盖断言覆盖轴的设计面差集）
+
+> 逐条列「本次无验收断言 / 未跑的设计性质 → 现状 → 去向」。**零缺口不成立，故不写 `none`。**
+
+| # | 设计性质（无断言/未跑） | 现状 | 去向 |
+|---|---|---|---|
+| GAP-C1 | **真机端到端：整理回合占位命中后设备退出 ORGANIZING 并回列表** | 未跑：离线只用 `_LLMStub` 注入占位回复 + 泵缝断言「页面退出帧下发」；设备侧「收到帧 → 退出过渡态 → 页面停留列表」无真机目击 | 真机轮 C 复测（第九节追加项）；证据落 `device-round-evidence.md`，未 PASS 不合并 |
+| GAP-C2 | **真机端到端：静音幻觉发生在 pending_stop 窗口时 front 过滤生效** | 未跑：本地以 `stt=Okay.` 注入模拟，front 日志行只在真机部署后可见；且需真实引擎 provider 产出幻觉 | 真机轮 C 复测（D3 窗采集 `story_feed_guard dropped=silent_asr_hallucination`） |
+| EQ-C1 | **host 与真机不等价接缝（本轮）**：本轮改动全在 server 面（front），host runner 不编译 front；离线证据由 server pytest 泵缝承担 | 已由冻结验收申报：SCRF-C1..C4 的断言载体全部在 `server/acceptance/test_session_channel_resident.acceptance.py`，设备侧行为只经 `_FakeDeviceSocket` / `_FakeUpstream` 代理 | 等价性由 server 泵缝 + 真机 front（ECS 部署）与设备 KPLOG 三源互证；不扩 host 面 |
+| EQ-C2 | **引擎产生面不可测**：静音 ASR 幻觉的产生发生在引擎 ASR provider（ECS 容器，本仓零改动、不可离线复现） | `device-evidence/round-c/engine-asr-2120-2123.txt` 证明缺陷**发生**，不证明修复后引擎输出；front 侧只能防「已上行的幻觉」 | 上游残余（第六节第 1 条）；若引擎侧可配静音门控，另立批评估 |
+| C-R4 | **R4 括号族长度上界（≤16 字）的漏网面**：长于 16 字的括号占位按真实正文放行；未做「忠实度重叠检查」 | 未做：planner 裁定本轮不做（纯拉丁素材 vs 中文 body 零重叠会误杀） | follow-up 候选：真机轮 D 若见长尾占位漏网再启 |
+| C-C | **档 C 日语静音族（うん/そう/はい/いいえ）证据强度** | 家族模式推断、非本仓实录（代码注释已诚实标注） | 真机若出现日语音幻觉误归档，按新证据扩表或收表 |
+| C-CH | **中文应答词（好的/知道了/行吧/可以/对的）不入表** | 有意排除（孩子真会说的话、无本仓幻觉实证） | 先靠审计 token 积累证据，再决定是否扩表 |
+| C-TTS | **TTS 引导播报被转写为 stt 的自回声**（轮 B 未覆盖面 B5 延续） | 本轮段级过滤只收静音幻觉族，收不住「TTS 回声被识别成真话」 | 真机轮 C 引导播报回归项观测；若复现另立批收窄素材门到非引导窗 |
+| C-PROMPT | **prompt 制品不改**：整理 LLM 仍可能返回其他措辞的占位 | 有意不做（模型不遵守措辞，改 prompt 不解决机械可判性） | 长尾由 R3/R4 与审计行 `body_reason=` 积累证据，后续按证据扩表 |
+
+### 八、Demo 对账行（workstream 包纪律）
+
+| 证据形态 | 实际结果 | 一致性结论 |
+|---|---|---|
+| host runner（设备 C 验收） | `321 Tests / 3 Failures / 0 Ignored`（3 红全为上游存量 `p1_auxbar_style` AB-A1/A2/A4）；本轮固件零 diff | 与「固件面静止、零新增红」一致；**本轮修复不在固件面，host 不能证明本轮效果** |
+| server pytest（front 验收） | final r9 scope 求交 `unit 302 passed` / `acceptance 204 passed`；server 全量 `799 passed / 0 failed` | 与「两层守卫离线成立、既有 27 条冻结验收零松动」一致 |
+| device build | `firmware-build` 闸 `build-pass`（`xiaozhi.bin` 0x329580 bytes，8% free） | 与「编译面全绿」一致 |
+| 离线代理（stt / LLM stub 注入） | 段级过滤与占位守卫均以泵缝 + stub 真跑（SCRF-C1..C4） | 与「判据机械可判」一致 |
+| **真机轮 C** | **未跑**（轮 A FAILED、轮 B 部分失败、轮 C 在线取证仅为缺陷锚定，不是完整真机轮）；`device-round-evidence.md` 未生成 | **真机未验、不得视为 PASS**；本包出口未闭合，不得合并 |
+
+### 九、真机轮 C 复测清单（human 持板；沿 `pending-human-ruling.md` 待裁一并追加本轮两项）
+
+1. **D3 空素材静置**：故事页 KEY 起会话、全程不说话，静置 60 秒 → 设备自动回列表；**不归档 / 列表不变（`total` 不增）/ 不盖章**；front 无 `story_text`；**若引擎吐 `Okay.` 类幻觉，front 日志应有 `story_feed_guard dropped=silent_asr_hallucination`**（本轮新增观察点，GAP-C2）。
+2. **A5 有素材归档正常**：讲完 → 整理 → 归档 → 盖章全链（`story_sd_write` → `story_saved_stamp` → `story_list_dispatch`）。
+3. **A6 普通会话静置 60 秒自动关麦**（审计 `session_idle_timeout`）。
+4. **A7 连续讲 >90 秒不误收**（关注 `asr=` 最大值与 `run=` 走势）。
+5. **引导播报回归**（轮 B 白盒补丁的真机承载）：记录会话触发一次卡壳引导播报（Listening→Speaking→Listening）后静置 60 秒 → 不得被判成空素材释放，已讲内容能归档。
+6. **【本轮追加】整理占位回归**：构造素材但让整理不可用/返回占位（如临时改 prompt 或断 LLM 后走占位路径）→ **不归档 + 设备能退出 ORGANIZING**（页面退出帧承载；GAP-C1）。
+7. **诊断采集项沿用**（轮 B 修复轮清单 C-1..C-6）：`listening_diag` 的 `suspect=` / `quiet=` / `asr=` / `run=` / `rec_ctx=` / `rec_mat=` / `ticks=`；D3 窗重点 `rec_ctx=1 && asr_seen=0 && quiet 到 60`。
+8. 轮 C 通过后由 human 交付 `sourceCommit` + `sha256(xiaozhi.bin)`，planner/integrator 才能生成 `device-round-evidence.md`（含 launch-card 两条 requirements 引用与 SCR-A8 的逐条 PASS 目击）。**未生成、未跑即不合并、不伪造 PASS。**
+
+### 十、已知工具缺口（沿上一轮，不新裁）
+
+1. **G4 `verify-logs` 结构性缺口**（`gate-tooling-gap-g4.md`）：全绿 Pod 零 verify-log → 监督闸恒红；本包因既有失败轮留有 log 暂未触发，**不代表已修**。修复面 `.claude/**`，归主线程。
+2. **`parallel-overlap-tier3` 对生成件误判**（`gate-tooling-gap-overlap-index.md`）：实撞 = `delivery/workstreams/INDEX.md` 头部「最后更新」日期行；architect 评审判 ②（生成件）、建议 `.gitattributes` 加 `merge=union`。不在 `escalateExempt` 内，人批豁免不了。
+3. **`change-manifest` 经 `current/` 指针恒判 pre-cutoff**（`gate-tooling-gap-manifest-cutoff.md`）：闸的清单对账结构性不执行；本轮按闸本应执行的规则手工对账（3 件实现面文件、清单外 0 件）。
+
+### 十一、Five-Axis Review（本轮，author 语义 review）
+
+**1. Correctness**
+- 段级过滤位置正确：排在引导播报窗判定之后、routing 之前（既有 FROZEN CONTRACT B 节语义第一优先不动）；只作用于旁路素材消费，stt 转发帧数不变（SCRF-C1 显式断言）。
+- 整串判定防误伤：混排真话（「嗯，然后我们去公园」「Okay，我知道了」）照常入素材；「嗯。」compact=1 不命中段级集合而由素材守卫 `<2` 拒绝——SCRF-B10 case 2 的「尾音幻觉仍进收尾单源」保绿的机械依据。
+- 产物守卫位置正确：在 `archive_story` 之前（seq 先占号，删档会留缺口）；R4 剥壳只认成对括号/方尖括号族、排除引号族，引用原话不被误伤。
+- reason 分档保守：静默释放类只收「模型明确声明无内容」三档；`empty_reply` 归丢稿类（空返回成因不可区分）；缺省 reason 兜底丢稿类。
+- `reason_sink` 为 keyword-only，位置参数序 `(raw, corr_id, device_id)` 逐字不变（memory_isolation K3-E2④ 保绿）。
+
+**2. Test quality**
+- 四条新验收各有独立载体，变异 8 条逐条转红（含 R4 删除、阈值改零、删过滤、集合污染、加回安抚、删退出帧、reason 改名、守卫移位）。
+- 集合不变式单独冻结断言（每元素 compact ≥2）+ 单测 `test_silent_set_invariant` / `test_placeholder_table_is_compact_and_disjoint` 双钉。
+- 观察项：「#8 须同移两处守卫才转红」如实登记；R4 长尾（>16 字括号占位）为 planner 裁定的 follow-up。
+
+**3. Contract / boundary safety**
+- `docs/contracts/**` 零 diff；本轮不新增帧、不扩 display 白名单、无 `SPEC_CONTRACT_DRIFT`。审计 token 复用既有前缀（`story_feed_guard` / `story_finish`）只加新取值，全仓无断言依赖旧 token 的闭集。
+- `server/gateway/story.py` 三缝零改（RDG-A3 边界：装配层不代行滤除）；`firmware/**`、`engine-patch/**`、ECS 部署件零 diff。
+
+**4. Operability / security**
+- 新增审计行：`story_feed_guard dropped=silent_asr_hallucination text=%r`（每次命中一行）、`story_organize_round ok=false reason=%s body=%r`（body 截断 32 字）、`story_finish archived=false reason=organize_placeholder body_reason=%s story_list_pushed=%d`——三处均可与该窗既有审计链对账，日志增量小（仅命中时）。
+- 静默释放类不发安抚：孩子侧唯一反馈是页面退出帧；由 human 原话口径裁定承接（第五节），属有意设计。
+- 无新 secret、无权限面变更、无新增外部输入解析扩展（只新增整串比对）。
+
+**5. Maintainability / simplicity**
+- 段级集合与素材守卫集合**独立成表、不 union**（union 会迫使既有 AST 抽取器 wanted 改名，且单字元素会让 ingest 吞掉「嗯。」）；两张表的形态与判定同源（`_guard_compact`）。
+- 判据与处置分离：`_organize_body_reject_reason` 纯函数（host 单测直调）、`reason_sink` 只作通道、`_story_finish_session` 只做分档下发。
+- 无过早抽象、无重复实现、无新依赖。`minimal:` 标记零新增（本包无新增标记）。
+
+### 十二、Findings（本轮追加）
+
+| Severity | Kind | Area | Finding | Basis | Required action |
+|---|---|---|---|---|---|
+| NIT | judgement-call | Test quality | 段级集合档 C（`うん` / `そう` / `はい` / `いいえ`）为家族模式推断、非本仓实录；档 B 中「谢谢观看 / 请不吝点赞」等为引擎侧同族表移植。两档证据强度已在代码注释标注，但验收只证「在表内即 drop」，不证这些词在本仓真会作为幻觉出现。 | changed-code hunk `front_app.py` `_FRONT_SILENT_ASR_HALLUCINATIONS` 档 A/B/C 注释；`device-evidence/round-c/engine-asr-2120-2123.txt`（仅 `Okay.` 有本仓实证） | 不阻塞：命中集合保守（整串相等），误伤面仅为孩子恰好只说出这两个词；真机按审计 token 积累证据后再扩/收表。 |
+| NIT | judgement-call | Correctness | R4 括号族剥壳长度上界 16 字：长于 16 字的括号占位（如长句「（本轮没有可整理的有效内容，请重新录制）」>16 字）会按真实正文放行归档；未做语义重叠检查。 | changed-code hunk `front_app.py` `_ORGANIZE_BRACKETED_MAX_CHARS = 16` 与 R4 分支；plan.md 裁定 7（不重叠检查为 follow-up） | 不阻塞：R3 整串集合覆盖已实证措辞；真机轮 D 见长尾漏网再启 follow-up。 |
+| NIT | judgement-call | Maintainability | `_story_finish_session` 用 `reason_sink[-1]` 取原因、空表兜底 `"unknown"`；当前每条 `return None` 路径恰一次 append，但未来若有人在一路径中途多次 append，取末项语义会漂移。 | changed-code hunk `front_app.py` `_story_finish_session` `body_reason = reason_sink[-1] if reason_sink else "unknown"` | 不阻塞：现有路径 1:1；若扩判据，建议改成显式 `(reason, detail)` 单值返回或断言 len==1。 |
+| NIT | judgement-call | Operability | 静默释放类不发安抚：整理回合占位命中时孩子侧只有页面退出、无语音反馈，可能被感知为「讲了却没反应」。 | changed-code hunk `front_app.py` `_story_finish_session` 静默释放分支；plan.md 裁定 2/5（与 R1-N4「纯幻听不安抚」同语义） | 不阻塞：与 human D3 口径（无有效素材 = 释放）一致；真机轮 C 观察孩子侧观感，若需提示另立批。 |
+
+> 本轮无 BLOCKING、无 SHOULD（hard-violation 零条）；四条均为 NIT 级 judgement-call，均有 changed-code hunk + heuristic / 实测依据，不伪造 rule citation。结构闸 PASS/FAIL 不在本节复述。
+
+### 十三、Residual Risk（本轮追加）
+
+- **不可合并声明（承重）**：`device-round-evidence.md` **未生成**、真机轮 C **未跑** → 本包出口未闭合，**不得合并**。轮 C 至少覆盖第九节 1–8 项。
+- 新增残余：上游引擎静音 ASR 幻觉（仅 front 侧防线）、R4 长度上界长尾、档 B/C 集合适配疑、`reason_sink[-1]` 取末项、静默释放无安抚（见 Findings / 未覆盖面）。
+- 两条 debt（`TECH-261114` / `TECH-261012`）维持 `deferred`，**结项凭据 = 真机轮 C 通过**，本轮不改账本。
+- `decisionCoverage` 残差：本包 8 条全部 `landsIn = exitCriteria:KRC-E1/E3/E4/E6/E8`，**无 `landsIn: dropped` + `reason` 以 `risk-accepted` 开头的条目**，故无 human 已接受的 risk-accepted dropped 项。
+- 回滚：本轮改动全在 server 面（front + 验收 + 单测），回滚 = revert 本轮收口 commit；固件/引擎/契约零 diff，不涉两半一起回滚口径。
+- **跨面变更（spine 在册）**：imp anchor 事实 = 离线面全绿（final r9 十闸）、真机轮 C 未跑（在线取证只锚定缺陷，不构成 PASS）、合并门仍被轮 C 与工具缺口拦；建议退出 status = `in-progress`（`ready-to-merge` **不成立**）；workstream `261115-session-channel-resident` P1 锚点与 status 回写归主线程（integrator 不直改 spine）。
