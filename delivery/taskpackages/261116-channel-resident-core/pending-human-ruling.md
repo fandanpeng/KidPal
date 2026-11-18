@@ -11,14 +11,15 @@
 - closeout：`docs-delta.md`、`review-packet.md`、`pod-retro.md` 齐；`closeout-check.mjs` exit 0；提交栈（本地 `dev/pool-channel`，**未 push、未 merge**）：`b7b2c423` → `363a80d3` → `36508e47`。
 - 机械 supervisor verdict = **ESCALATE**（declared riskTier high）；`supervisor-gate-check.mjs` exit 0（本轮因 r3 失败轮留有 verify-log，G4 未触发——**不代表 G4 已修**，见待裁三）。
 
-## 待裁一：真机轮 B 复测（本包出口，human 持板）
+## 待裁一：真机轮 B（2026-11-18 已跑，D3 与 A6 失败 → 进入 B 修复轮）
 
 - 轮 A = **FAILED 诊断轮**（三缺陷取证见 `device-round-a-evidence.md` + `device-evidence/round-a/*` + 三份 SHA-256）。
-- 轮 B 判据（review-packet「设备轮证据」节，含 B-D1/B-D2/B-D3 + A5/A6/A7 回归）：
-  - B-D1：故事页起会话每会话进抑制；普通问句只回显、零 TTS、设备不 `idle -> speaking`。
-  - B-D2：录音中 BOOT 丢弃（尾音在途）→ 设备回列表并停留 Idle；引擎无该回合 `大模型收到用户消息` / `发送第一段语音`；front 出现 abort-free 的 active=false 先于 listen stop 次序证据。
-  - B-D3：故事页起会话后完全不说话，60–70s 内设备**自行**回列表；front 无 story_list/story_text、STORIES_DIR 零新增；**≥10s 后**普通问答可应答（≤10s 首次话语允许被抑制、再按即恢复 = 已冻结 accepted residual）。
-- 轮 B 通过后由 human 交付 `sourceCommit` + `sha256(xiaozhi.bin)`，planner/integrator 才能生成 `device-round-evidence.md`（含逐 acceptanceRef PASS observation）。**当前未生成、不伪造 PASS**。
+- 轮 B = **部分通过 + 两项失败**（2026-11-18，human 持板；设备日志摘录与三源判定见 `device-evidence/round-b/kplog-excerpt.txt`）：
+  - D1 通过、D2 通过、A5 归档通过。
+  - **D3 失败**：故事页起会话、全程不说话，07:15:03 listen start → 07:17:43 手动丢弃（2m41s）未自动结束，设备日志无 `story_empty_session_timeout`。
+  - **A6 回归失败**：普通会话 07:18:23 → 07:21:36（3m13s）未自动关麦，无 `session_idle_timeout`；A6 producer 本轮代码一字未动。
+  - **planner 只读定位（新证据）**：D3 的根因不是电平门——每次故事会话起步 0.25–0.7 秒内必出一条 `story_vad_recording_enter`（VAD 在无人说话时让出一记 speech 沿），它把 D3 的「从未收到素材」判据 `s_story_rec_entered` 置真，使该会话对 D3 producer 永久不可达；同一沿还把页面无端跳到录音页。A6 窗内零状态迁移（计时未被状态迁移清零），但设备不打印 VAD 电平，M1（电平恒真）/ M2（起音沿周期性清零计时）无法在日志里区分——这正是 human 要求补低频 listening 诊断行的理由。
+- **human 2026-11-18 已裁「按 B 修」**（pod-events `human-correction` 事件）：判据改造 + D3 复用同一新判据 + 可观测性必办 + 新冻结断言与变异证据；契约面与引擎代码零改动。修复轮在本包边界内推进，离线转绿后需**轮 C 真机复测**（至少 A6 / A7 / D3 / A5 回归）才能闭合本包出口。
 
 ## 待裁二：合并门 ESCALATE + riskTier high
 

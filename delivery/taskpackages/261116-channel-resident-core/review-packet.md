@@ -297,3 +297,179 @@
   3. 回滚剧本执行口径（A13，两半一起回滚）由 human 在轮 B 确认可执行。
 - **decisionCoverage 残差**：本包 8 条 `decisionCoverage` 全部 `landsIn = exitCriteria:KRC-E1/E3/E4`，**无 `landsIn: dropped` + `reason` 以 `risk-accepted` 开头的条目**，故本表无 human 已接受的 risk-accepted dropped 项。
 - **跨面变更（spine 在册）**：本包实态 = 离线全绿（final r5 十闸）、合并门仍被轮 B 与 G4 拦；建议退出 status = `ready-to-merge` 仅在轮 B PASS + G4 落地后成立，workstream `261115-session-channel-resident` P1 锚点更新归主线程（integrator 不直改 spine）。
+
+## 真机轮 B 修复轮（final r7，2026-11-18；本节为当前态，历史轮次行保留不删）
+
+> 覆盖上文「2026-11-18 更新（修复轮）」的状态口径：那时是轮 A 修复轮收口（final r5、20 条验收、deviceOutcome = PENDING 轮 B）。轮 B 已发生并部分失败（D3 / A6），按 human 2026-11-18「按 B 修」进入本轮判据改造；本轮离线面收口于 **final r7 十闸全绿**，验收累计 **27 条**。**真机轮 C 尚未发生，本包不伪造任何真机 PASS**。
+
+### 本轮 Change Size
+
+- **本轮 Files changed = 7 件（4 修改 + 3 新增）**，全部在固件侧；`git diff --numstat HEAD -- firmware server`：`firmware/main/application.cc` +144/−25、`firmware/main/CMakeLists.txt` +7/−0、`firmware/main/test/host_app/main/CMakeLists.txt` +9/−0、`firmware/main/test/session_channel_resident.acceptance.c` +1019/−54；新增 `firmware/main/session_voice_watch.c`（155 行）、`.h`（132 行）、`firmware/main/test/session_voice_watch.test.c`（340 行）。合计 +1179/−79 与 627 行新件。
+- **零 diff 面（实测）**：`server/gateway/front/front_app.py`、`server/gateway/story.py`、`display_schema.py`、`firmware/main/mcp_server.cc`、`firmware/main/application.h`、`protocol.cc` / `protocol.h`、`story_page.c`、`server/deploy/**`、`engine-patch/**`、`docs/contracts/**`、`docs/requirements.md`、`docs/architecture.md`、`docs/**` 全部零 diff。front 与引擎零改动意味着**回滚 = 只 revert 固件侧**。
+- **manifest**：planner 扩单 3 件（`session_voice_watch.c` / `.h` / `firmware/main/CMakeLists.txt`）+ builder 单测 `session_voice_watch.test.c` 回填，`changeManifest[]` 现 15 件；对账面 7 件、清单外 0 件（planner 手工对账，见 §gate-tooling gaps 第 3 条）。
+
+### 一、真机轮 B 结果与轮 C 复测清单
+
+**轮 B 实测（2026-11-18，human 持板；证据 = `device-evidence/round-b/kplog-excerpt.txt`，源 `KPLOG000.TXT` 全量 1,713,125 字节 / sha256 `21599cbc296db16e3deeb61ebbfeaeec5d4fb1a6ee472392491a141ecb086188`）**：
+
+| 项 | 结果 | 事实 |
+|---|---|---|
+| D1 记录语境注入 + 审计行 | 通过 | front 每会话注入 + `story_record_ctx_enter` 审计在场 |
+| D2 丢弃掐断在途回合 | 通过 | 丢弃后设备回列表、无尾音 TTS 回放 |
+| A5 归档 | 通过 | 07:14:08 `stop_rec archive_pend=1` → `story_sd_write bytes=133` → `story_saved_stamp seq=32` → `story_list_dispatch items=16` |
+| **D3 空素材会话自动收尾** | **失败** | 07:15:03 `listen start` → 07:17:43 手动丢弃（**2m41s**），无 `story_empty_session_timeout` |
+| **A6 普通会话静置关麦** | **回归失败** | 07:18:23 `idle -> listening` → 07:21:36 手动 `overlay_close`（**3m13s**），无 `session_idle_timeout`；A6 producer 本轮一字未动 |
+
+**planner 只读定位（设备日志，新证据）**：D3 的根因不是电平门。每次**故事**会话进入聆听后 0.25–0.7 秒内必出一条 `MCP: story_vad_recording_enter consumed=1 page=2`（本窗口 07:14:30 / 07:15:04；全量 12 条均落在会话起步 1 秒内），唯一发射点 = `application.cc` 的 `KidpalStoryVadEnterRecording()`，前置条件含 `s_vad_speaking == 1`——即 **VAD 在无人说话时也让出一记 speech 沿**。该沿把 `s_story_rec_entered` 置真，而它正是 D3 producer 的「从未收到素材」判据，**置真后该会话对 D3 producer 永久不可达，与电平其后是否回落无关**；同一沿还让记录会话 0.7 秒内从列表页跳到 RECORDING 录音页。A6 窗内零状态迁移（计时未被状态迁移清零），但设备当时不打印 VAD 电平，M1（电平恒真）与 M2（起音沿周期性清零计时）在日志里同构——这正是 human 要求补低频 listening 诊断行的直接理由。
+
+**轮 C 复测清单（至少项）**：
+
+1. **A6**：普通会话静置 60s 自动关麦（实测窗内 `quiet=` 到 60 时设备是否 `listening -> idle`，无手动按键）。
+2. **A7**：连续讲 >90s 不误收（全程有转写；关注 `asr=` 最大值与 `run=` 走势）。
+3. **D3**：故事页起会话、全程不说话，静置 60s 自动释放回列表；**不归档、无 `story_list`、无 `story_text`**（STORIES_DIR 零新增）。
+4. **A5 回归**：有素材的记录会话归档链正常（`story_sd_write` → `story_saved_stamp` → `story_list_dispatch`）。
+5. **采集项**：
+   - **C-1** 两条 producer 审计行的 `suspect=` / `quiet=` 必采（判本轮是否命中真实失效模式 M1/M2/M3）。
+   - **C-2** A7 窗内 `asr=` 列最大值（标定 `KIDPAL_VW_ASR_FRESH_S=25` 是否合理）。
+   - **C-3** home（非记录语境）会话 `rec_ctx=` 恒 0（M4 记录语境镜像卡死排查）。
+   - **C-4** 静置窗 `run=` 是否反复归零（M2 起音沿风暴排查）。
+   - **C-5** 日志落盘增量与诊断行预算对账（单行约 190 字节、Listening 态最坏约 3.8 KB/分钟）。
+   - **C-6** D3 窗同时满足 `rec_ctx=1 && asr_seen=0 && quiet 到 60` —— 新素材信号 `asr_seen` 的真机承载。
+
+### 二、本轮改动面与判据
+
+**新缝 `session_voice_watch.{c,h}`（判据本体，host 可编）**：零芯片依赖纯逻辑 C 源（不 include `esp_*` / FreeRTOS / LVGL，不读真实时钟），设备树与 host 树编同一份 `.c`，行为断言在 host 上真跑。状态七字段（`quiet_s` / `level_run_s` / `asr_age_s` / `tick_s` / `diag_last_s` / `suspect` / `asr_seen`）由调用方持有，缝内零全局可变态。暴露 `cfg_default` / `reset` / `reset_soft` / `note_asr` / `tick` / `diag_due` 六个函数。
+
+**`application.cc` 七处接线**（源锚由 SCR-A15 逐条钉）：
+
+1. 状态迁移监听器写旧状态快照 `s_watch_prev_state`（`DeviceState` 标量，初值 `kDeviceStateIdle`）。
+2. `Initialize()` 里 `kidpal_voice_watch_cfg_default(...)` + `idle_timeout_s = kSessionIdleTimeoutS`——**唯一阈值注入点**（两侧各写一个 60 = 两个阈值各自漂移）。
+3. `CLOCK_TICK` 区 `kidpal_voice_watch_tick(...)` 每 tick 恰 1，并附低频 `listening_diag` 诊断行（周期 10s + 跳变，最小间隔 3s 封顶，模数走缝自持 `tick_s`，区内不出现 `clock_ticks_ % 10`）。
+4. A6 producer 判据换为 `Listening && !记录语境 && vw_act == KVW_ACT_IDLE_FIRE`，审计行追加 `quiet=` / `asr=` / `suspect=` / `src=idle`。
+5. D3 producer 素材门换为缝内 `asr_seen`，静置判据换为 `quiet_s >= kStoryEmptySessionTimeoutS`，审计行追加同四件 + `src=empty_story`。
+6. `stt` 分支 lambda 内 `kidpal_voice_watch_note_asr(...)` 恰 1（主循环上下文，与 tick / reset 同写者，零锁）。
+7. `HandleStateChangedEvent` 的 Listening case 尾部：按旧状态分派 `reset_soft`（旧状态 == `kDeviceStateSpeaking`）或 `reset`（新会话），并 `s_vad_speaking = false`（M3 卫生复位），附会话入口诊断行 `src=enter`。
+
+**两侧 CMakeLists 登记**：`firmware/main/CMakeLists.txt` additive 一行（设备树）；`host_app/main/CMakeLists.txt` 登记缝源与 builder 单测，**必须置于 host smoke 之前**（smoke 末位 = 最先执行，注册序守卫）。
+
+**判据与阈值（保守档）**：`KIDPAL_VW_VOICE_SUSTAIN_S=3`（短于 3 秒的连续段按瞬态噪声不采信 = M2 解药；真话语由 asr_fresh 兜住）、`KIDPAL_VW_ASR_FRESH_S=25`（引擎证据新鲜窗）、`KIDPAL_VW_VAD_TRUST_S=100`（**严格大于 A7 的 90 秒界**，留 10s 余量；连续电平超过它即视为卡死不再采信 = M1/M3 解药）、`DIAG_INTERVAL_S=10` / `DIAG_MIN_GAP_S=3` / `ASR_AGE_SAT=999`。逐场景结果：纯静默恰 60s 收尾；M1 电平卡死 `suspect=1`、最迟 100+60=160s 有界收尾；M2 起音沿风暴尖峰不采信、仍恰 60s；M3 闩锁由 Listening 入口复位掐掉、残余 ≤160s；A7 有 stt 时永不误收、零 stt 时 ≤90s 绝不收（160s 才收）。
+
+**设计取舍定理（本方案地基）**：只用「VAD 电平 + 时间」两个量，**不可能**同时满足 A7（连续电平 ≥90s 不收尾）与「电平卡死 ≤70s 收尾」——两种情形在信号层面逐 tick 同构。必须引入第三路证据（引擎 stt 到达时刻）并接受其缺失时的降级（可信窗内先采信、窗过期有界收尾）。
+
+### 三、D3 素材门换源
+
+旧判据 `!s_story_rec_entered` 已被轮 B 日志证明会被起步噪声沿提前置真 → 真机上结构性不可达。本轮素材门换为缝内 `asr_seen`（`kidpal_voice_watch_note_asr()` 置 1、`reset()` 清 0、`reset_soft()` 保留），语义 = 「本会话引擎真的转写出一句话」，与 front 累积器的素材来源**同源**（front 的 accum 也只吃 `stt` 文本）——设备与网关对「有没有素材」不再可能判断不一致，ASR 失败时两侧同时判无素材、同时释放不归档。`s_story_rec_entered` 保留原用途（录音页切换 + 幂等），**不进 producer 判据**；起步噪声沿导致的无端跳录音页登记为 residual（不阻塞，D3 收尾后回列表）。
+
+### 四、白盒复核补丁（planner 2026-11-18，builder 首版之后）
+
+builder 首版把 `kidpal_voice_watch_reset(...)` 无条件落在 Listening case 尾部（每次进聆听全清七字段）。planner 复核发现高风险回归：记录会话里**引导播报 TTS** 会让设备 `Listening -> Speaking -> Listening`，回到聆听时那次全清会把 `asr_seen`（D3 空素材 producer 的唯一素材门）清 0 → 一个**有素材**、孩子已讲过话的故事会话，在引导播报后静置 60 秒会被判成「空素材」并释放，**front 侧该 `listen stop` 不归档**（孩子已讲内容丢失）。
+
+修法（seam 与接线各一处，均 additive）：① 缝新增 `kidpal_voice_watch_reset_soft()`——清 `quiet_s / level_run_s / asr_age_s / tick_s / diag_last_s / suspect` 六件、**保留 `asr_seen`**；② 状态迁移监听器存旧状态，Listening 入口按迁移来源分派（旧状态 == `kDeviceStateSpeaking` 走软复位，否则全清）。验收收紧：SCR-A13 追加「`reset_soft` 后 `asr_seen` 仍为 1、其余六件全 0；其后 `reset()` 仍七字段全清」；SCR-A15 追加 Listening 区三件（`reset_soft(&s_voice_watch)` ≥1、`reset(&s_voice_watch)` ≥1、`kDeviceStateSpeaking` ≥1）。红基线 320/5（仅 SCR-A13 / SCR-A15 两条设计态红）。教训登记 pod-retro：「会话入口复位」必须区分「新会话」与「会话内状态往返」。
+
+### 五、Verification Evidence（本轮，承重）
+
+- **Final round fact（承重）**：`delivery/taskpackages/261116-channel-resident-core/verifier-evidence/rounds/r7.json`，`phase=final / round=7 / ok=true / observedGateExit=0 / invocationId c5add419-3690-4d81-bd17-b5e4e7d642dd`，10 闸全跑。
+- **机械凭据闸**：`node .claude/scripts/verifier-evidence-check.mjs --change-id 261116-channel-resident-core --phase final --round 7 --invocation-id c5add419-3690-4d81-bd17-b5e4e7d642dd` → `exit 0 / factOk=true / phase=final / round=7`。
+- **闸表**：`taskpackage-required` / `change-manifest`（pre-cutoff 存量放行，见 gate-tooling gaps 第 3 条）/ `contract-lint`（1 条既有相对链接 warning）/ `acceptance-coverage`（27 acceptance id 全覆盖）/ `mutation-check`（27 条 per-acceptance 变异 evidence 齐）/ `docs-sync` / `security` 七闸 pass；`firmware-build` `build-pass`（增量 5 步，源未变，`xiaozhi.bin` 0x329580 bytes / app 分区 8% free）；`unit`（full，scope 求交）**247 passed / 3 deselected / 22 subtests**；`acceptance`（full，scope 求交）**195 passed / 3 deselected / 3 subtests**，surface = server 14 / firmware 12。
+- **Host runner（integrator 亲跑 @ working tree，执行目录 `firmware/main/test/host_app`）**：`321 Tests / 3 Failures / 0 Ignored`——3 红全为上游存量 `p1_auxbar_style.acceptance.c` AB-A1 / AB-A2 / AB-A4（`ic_batt_15` / `ic_thermo_12` / `ic_wifi_14`），与本包无调用关系；本包 SCR-A1..A15 与 builder 单测全绿，零新增红。
+- **Scope 圈定（本轮 r7，范围圈定清单落盘路径一行）**：`delivery/taskpackages/261116-channel-resident-core/test-scope-final.txt`（**30 条**，覆盖写，相对 r5 只增不减）。合成 = `acceptanceTestsFile`（6）∪ `impactedTestsSeed[]`（19 去重）∪ `detect_changes`（project `C-AI-KidPal-pod-channel`，since main / merge_base `73f43637`，inbound depth 2：**68 changed files**（含本包 delivery/docs 簿记件；实现/验收面 14 件）/ **seed 445 符号** / **impacted_total 304**，其中 firmware/main 217、server/acceptance 73、server/gateway 10、server/tests 4）映射测试 ∪ 共享缝相关测试 ∪ 安全余量。新增项 = builder 单测 `session_voice_watch.test.c`（新文件）与 `font_assets_runtime.acceptance.c`（`firmware/main/CMakeLists.txt` 入改动面，其 FAS 块读该文件）。per-Pod 专属图索引可用 → **正常圈定、未降级**；不缩到本包档、不默认全量。
+- **变异证据**：本轮 13 条（`mutation-evidence/round-b-fix.md`），含 kill-shot #2（删可信窗上界 = 轮 B 缺陷形态，SCR-A10 转红）、A7 承重 #6（`VAD_TRUST_S` 100→30，SCR-A12 转红）、电平门回潮 #10（A6 判据加回 `&& !s_vad_speaking`，SCR-A15④ + SCR-A5 双红）、软复位退化 #12、条件分派删除 #13。
+
+### 六、未覆盖面申报（覆盖轴差集）
+
+> 逐条列「本次无验收断言 / 未跑的设计性质 → 现状 → 去向」，零缺口不成立，故不写 `none`。
+
+| # | 设计性质（无断言/未跑） | 现状 | 去向 |
+|---|---|---|---|
+| B1 | 真机端到端：A6 静置 60s 关麦、A7 连续讲 >90s 不误收、D3 空素材 60s 释放、A5 归档回归 | 未跑：轮 B 已 FAILED（D3/A6），本轮修复后需轮 C 复测；`device-round-evidence.md` 未生成 | 轮 C（human 持板）；证据落 `device-round-evidence.md`，未 PASS 前不得合并 |
+| B2 | `s_vad_speaking` 的真实电平分布与 `run=` 时序（M1 还是 M2 占主导） | 完全未观测：设备此前不打印 VAD 电平；本轮新增 `listening_diag` 才第一次可采 | 轮 C 采集项 C-1 / C-4；若 160s 有界收尾在真实 M1 下不可忍，另立快速后续批 |
+| B3 | M4 记录语境镜像卡死（`kidpal_story_session_ctx_active()` 残留 → A6 被硬豁免、D3 又不满足素材门） | 未修：置位单点在 `mcp_server.cc`（P2 边界、manifest 外）；本轮只由 `rec_ctx=` 字段使其可归因 | 轮 C 采集项 C-3 确认是否发生；修复归 P2 / 另立批 |
+| B4 | M3 根源：`AfeAudioProcessor::Stop()` 不复位 `is_speaking_` | 未修：判据对 M3 已鲁棒，并由 Listening 入口 `s_vad_speaking=false` + 缝复位兜住；根治要连带决定「是否补发一次 offset 回调」（影响 `voice_detected_` → LED） | 独立后续批（需自验的语义变更） |
+| B5 | TTS 回声被 ASR 转写成 stt 的自回声残差 | 未测：记录会话的引导播报若被设备自身麦克风拾取并被引擎转写为 stt，会把 `asr_seen` 置 1 → D3 对「孩子其实没说话」的会话判成有素材、静置不释放（记录语境下 A6 被硬豁免，无第二兜底） | accepted residual：真实回声抑制由 AFE/AEC 承担；轮 C 观察 D3 窗是否出现 `asr_seen=1` 而窗外无 `>>` 转写的组合；如复现，另立批把素材门收窄到非引导窗 |
+| B6 | 起步噪声沿导致的无端跳录音页（D3 判据已换源，页面副作用仍在） | 未修：`s_story_rec_entered` 保留原用途 | 轮 C 观察；根治归 `AfeAudioProcessor` 卫生复位后续批 |
+| B7 | 诊断行真实日志密度与轮转预算 | 未量测：单行约 190 字节、最坏约 3.8 KB/分钟为推算 | 轮 C 采集项 C-5 实测对账 |
+| B8 | 设备构建 depfile 时序（新头首次引入不触发验收 TU 重编） | 已知缺口：头宏变异须「先删 `.o` 强制重编」才有判别力 | 既有构建卫生问题，交主线程；本包变异证据已按强制重编口径执行并如实申报 |
+| B9 | `change-manifest` 闸对账未真正执行（恒判 pre-cutoff） | 已知缺口：planner 手工逐条对账，清单外 0 件 | `gate-tooling-gap-manifest-cutoff.md`，修复面 `.claude/**`、归主线程 |
+| B10 | 变异观察项：头宏强制重编口径、co-red 申报、builder 自身读写缺陷已修正 | 如实申报，不影响判别力总量 | 见 `mutation-evidence/round-b-fix.md` §三 |
+
+### 七、Per-Acceptance 证据 · 轮 B 修复轮追加（7 条；全包累计 27 条）
+
+| Acceptance | 断言载体（测试） | 结果 | 变异判别力 |
+|---|---|---|---|
+| SCR-A5（重锚）60s producer + 说话沿重置 | `session_channel_resident.acceptance.c` TEST_CASE「60s超时producer+说话沿重置 (SCR-A5)」：判据 token 换为缝 tick 返回值与 `src=idle` 审计字段，VAD 说话沿重置锚保留 | PASS | 变异 #10（A6 判据加回电平门）→ SCR-A5 与 SCR-A15④ 双红 |
+| SCR-A8（重锚）空素材空闲收尾 producer | 同件 TEST_CASE「空素材空闲收尾producer (SCR-A8)」：素材门读缝 `asr_seen`，区内 `!s_story_rec_entered` 恰 0 | PASS | 变异 #2（删可信窗上界）→ SCR-A10 红（kill-shot，等价轮 B 缺陷形态）；#10 同区 |
+| SCR-A9 静默 60 秒恰 tick 60 收尾 | 同件 TEST_CASE「静默60秒恰tick60收尾 (SCR-A9)」（真行为） | PASS | 变异 #1（收尾比较 `>=` → `>`）→ 转红 |
+| SCR-A10 电平卡死有界收尾（kill-shot） | 同件 TEST_CASE「电平卡死有界收尾 (SCR-A10)」：400 tick 恒电平零 stt → tick 1..159 零 fire、tick 160 恰 fire 且 `quiet_s=60 / level_run_s=160 / suspect=1` | PASS | 变异 #2（删可信窗上界）→ 转红；#6（`VAD_TRUST_S` 100→30）→ 同向 |
+| SCR-A11 起音沿风暴 vs 短暴发 | 同件 TEST_CASE「起音沿风暴vs短暴发 (SCR-A11)」：单秒尖峰 → 恰 60 收尾；4 秒连续段 → 200 tick 零 fire 且 `quiet_s <= 3` | PASS | 变异 #3（下界改 1）/ #4（`VOICE_SUSTAIN_S` 3→5）→ 转红 |
+| SCR-A12 A7 连续讲话零误收（承重） | 同件 TEST_CASE「A7连续讲话零误收 (SCR-A12)」：有 stt 200 tick 零 fire；零 stt 150 tick 零 fire | PASS | 变异 #5（去掉 asr_fresh 臂）/ #6（`VAD_TRUST_S` 100→30）→ 转红 |
+| SCR-A13 跨会话零残留 + 软复位六清一保 | 同件 TEST_CASE「reset清零与note_asr契约 (SCR-A13)」 | PASS | 变异 #8（删 `reset` 的 `asr_seen=0`）/ #12（`reset_soft` 退化成全清）→ 转红 |
+| SCR-A14 诊断限频决策表 + 结构半 | 同件 TEST_CASE「诊断限频决策表+结构 (SCR-A14)」：`diag_due` 四支 + `listening_diag` 六字段 + 区内 `clock_ticks_ % 10` 恰 0 | PASS | 变异 #7（`DIAG_MIN_GAP_S` 3→0）/ #11（诊断触发改 `clock_ticks_ % 10 == 0`，三处同红） |
+| SCR-A15 应用层接线六件（结构） | 同件 TEST_CASE「语音看门缝接线六件 (SCR-A15)」：①..⑥ + 附头宏六字面与 seam 源进设备构建 | PASS | 变异 #9（删 `note_asr`）/ #10 / #13（删条件分派）→ 转红 |
+
+> 说明：SCR-A9..A15 的 PASS 来自 host runner（integrator 亲跑 321/3/0）；`verify.mjs` 的 `acceptance` 闸对固件面只作结构与 runner 存在性核对，on-target 归轮 C。
+
+### 八、Demo 对账行
+
+| 证据形态 | 实际结果 | 一致性结论 |
+|---|---|---|
+| host runner（设备 C 验收，真行为 + 结构） | `321 Tests / 3 Failures / 0 Ignored`（3 红全为上游存量 `p1_auxbar_style` AB-A1/A2/A4）；SCR-A9..A14 以注入 tick 序列真跑判据本体，SCR-A15 钉接线 | 与「判据语义已离线可判、零新增红」一致；**不足以单独证明**用户可见效果 |
+| server pytest（front 验收） | r7 scope 求交 `unit 247 passed / acceptance 195 passed`，零失败 | 与「本轮 front 零 diff、既有冻结 oracle 全保绿」一致 |
+| device build | `firmware-build` 闸 `build-pass`（`xiaozhi.bin` 0x329580 bytes，增量 5 步、源未变） | 与「编译面全绿」一致 |
+| 真机（三源） | 轮 A = FAILED 诊断轮；轮 B = 部分通过（D1/D2/A5 过，D3/A6 失败）；**轮 C 待跑，未 PASS**；`device-round-evidence.md` 未生成 | **本包出口未闭合**：roadmap 目的 1/2/4/6 的效果段仍未取得 PASS 目击 |
+
+### 九、device-outcome 申报范围收窄
+
+SCR-A8 头注的 `device-outcome: SCR-A8` + `host-uncompilable-path: firmware/main/application.cc` 成对申报**保留**，但范围收窄为「producer 接线与主循环运行时」——判据本体已迁入 host 可编缝并由 SCR-A9..A14 以真行为断言承载。合并门 `pre-merge-escalation-gate` 仍要求 `device-round-evidence.md` 对 launch-card 申报的 requirements 引用与 SCR-A8 各有 PASS 目击。
+
+### 十、变异证据与 gate-tooling gaps
+
+- **变异证据指针**：`mutation-evidence/round-a-fix.md`（轮 A，19 条）、`mutation-evidence/round-b-fix.md`（轮 B，13 条：kill-shot #2、A7 承重 #6、电平门回潮 #10、软复位退化 #12、条件分派删除 #13；4 条如实观察项）。
+- **gate-tooling gaps**：① G4（`.claude/verify-logs` 结构性恒红，`gate-tooling-gap-g4.md`，既有）；② `change-manifest` 经 `current/` 指针恒判 pre-cutoff（`gate-tooling-gap-manifest-cutoff.md`，新，planner 已手工对账）；③ 构建 depfile 时序（新头首次引入不触发验收 TU 重编，record 于 `mutation-evidence/round-b-fix.md` §三.1，本 review-packet 未覆盖面 B8）。
+
+### 十一、Five-Axis Review（本轮，author 语义 review）
+
+**1. Correctness**
+- 判据方向正确：`quiet_s = 距上次有效语音证据的秒数`，电平只作连续段时长输入、不再作收尾必要条件；两条证据互补（可信窗内电平 / stt 新鲜且本会话确实收到过 stt），M1/M2/M3 三条失效路径都能走到收尾且都有界（≤160s）。
+- `asr_seen` 门不可省：`reset` 后 `asr_age_s` 归零，缺此门则前 25 秒恒 fresh，会把纯静默会话的 60s 收尾拖到 85s——builder 单测与 SCR-A13 都钉住该门。
+- 会话入口分派正确：`reset_soft` 六清一保（保 `asr_seen`）对应「Listening → Speaking → Listening」往返，`reset` 七字段全清对应新会话；两种复位语义不可互换，SCR-A13 与 SCR-A15 双向钉住。
+- `s_vad_speaking = false` 落在 Listening 入口 = M3 闩锁的卫生复位；写者仍在 VAD 回调任务，主循环读，32 位标量与既有同级宽松度一致（无新竞态面）。
+- 诊断行模数走缝自持 `tick_s`，`application.cc` 物理上不出现 `clock_ticks_ % 10`，与 DLG-A4⑤ 负锚双保险不冲突。
+
+**2. Test quality**
+- 判据本体以真行为断言承载：SCR-A9（静默恰 60）、A10（卡死有界 160 + `suspect=1`，kill-shot）、A11（风暴 vs 短暴发成对）、A12（A7 成对）、A13（复位契约）、A14（限频决策表）；结构断言只覆盖芯片面接线（SCR-A15）。
+- 变异 13 条逐条「精确改坏 → 重建 → 实跑 → 全文写回 + sha256 比对」，含轮 B 缺陷的唯一离线警报（#2）。头宏变异采用强制重编口径，已如实申报（见未覆盖面 B8）。
+- 观察项：co-red 分布（#4/#6 同打 SCR-A13 的 cfg_default 三阈值断言；#11 三处同红）属预期同向，不作独立判别力计。
+
+**3. Contract / boundary safety**
+- `docs/contracts/**` 零 diff；本包不新增帧、不扩 display 白名单、无 `SPEC_CONTRACT_DRIFT`。
+- `mcp_server.cc` / `application.h` / `story.py` / `display_schema.py` / `protocol.*` / `story_page.c` / `engine-patch/**` / `server/deploy/**` 零 diff（实测）。
+- 新缝是纯本地判据，不消费跨端协议、不读契约载荷。
+
+**4. Operability / security**
+- 低频 `listening_diag` 是 human 必办项：`ESP_LOGI`（DEBUG 默认不落盘，本轮不再吃这个亏），字段十件 `src/state/vad/run/quiet/asr/ticks/rec_ctx/rec_mat/suspect`，触发 = Listening 态每 10s + 跳变（最小间隔 3s 封顶），非 Listening 态零输出；不加运行期开关（诊断行的价值就在真机窗）。轮转预算单行约 190 字节、最坏约 3.8 KB/分钟（16MB 封顶约 70 小时 Listening），远低于被消掉的 `Unknown message type` WARN。
+- 两条 producer 审计行保留 `seconds=`（与轮 A 对账链不断）并追加 `quiet=` / `asr=` / `suspect=` / `src=`；`local_close_settle` 既有四 token 零改（OCE-A1 钉住）。
+- `securityReviewRequired=false`：无新 secret、无权限面变更、无新增外部输入解析（缝只吃整数 tick 与电平）。
+
+**5. Maintainability / simplicity**
+- 判据与接线分离（纯逻辑缝 + 应用层单点接线），host 与设备同源一份 C 源，消除「只有真机能判」的结构性可测性缺口。
+- 阈值单源：三个阈值住头宏、`idle_timeout_s` 由调用方注入既有 `kSessionIdleTimeoutS`，`cfg_default` 刻意不覆盖它。
+- 两条 `60`（`kSessionIdleTimeoutS` 与 `kStoryEmptySessionTimeoutS`）仍是两个独立常量（见 Findings N-R1），本包按既有命名常量口径保留。
+- 无过早抽象、无重复实现、无新依赖；`suspect` 只作审计位，不引入第二个定时器。
+
+### 十二、Findings（本轮追加）
+
+| Severity | Kind | Area | Finding | Basis | Required action |
+|---|---|---|---|---|---|
+| NIT | judgement-call | Maintainability | A6 与 D3 两条 producer 的 60 秒阈值来自两个独立命名常量（`kSessionIdleTimeoutS` 经 cfg 注入 vs 直接比较 `kStoryEmptySessionTimeoutS`）；改任一个而不改另一个会让两条收尾时点分叉。 | changed-code hunk `application.cc` CLOCK_TICK 区 A6 / D3 两条 producer 判据行；`session_voice_watch.h` `cfg_default` 注释明写「idle_timeout_s 由调用方注入」 | 不阻塞：两值当前同为 60 且各有审计行可区分；后续若调阈值，同批改两处或把 D3 也接入同一个 cfg 字段。 |
+| NIT | judgement-call | Test quality | 本轮头宏变异（#4/#6/#7）依赖人工「先删 `.o` 强制重编」才具判别力；自动化变异若按默认增量构建会假绿。 | `mutation-evidence/round-b-fix.md` §三.1 实测；`session_voice_watch.h` 在验收 TU depfile 中未登记 | 不阻塞：已如实申报；构建卫生问题交主线程（未覆盖面 B8）。 |
+
+> 本轮无 BLOCKING、无 SHOULD（hard-violation 零条）；两条均为 NIT 级 judgement-call，均有 changed-code hunk + 实测依据，不伪造 rule citation。
+
+### 十三、Residual Risk（本轮追加）
+
+- **不可合并声明（承重）**：`device-round-evidence.md` **未生成**、真机轮 C **未跑** → 本包出口未闭合，**不得合并**。轮 C 至少覆盖 A6 / A7 / D3 / A5 回归与 C-1..C-6 采集项；任一失败回到 planner。
+- 新增残余：M3 根源（`AfeAudioProcessor::Stop()` 不复位 `is_speaking_`）、M4 只诊断不修（`rec_ctx=` 归因，修复归 P2）、故事会话起步噪声沿的无端录音页跳转、TTS 回声被转写为 stt 使 D3 判成有素材（未覆盖面 B5）、构建 depfile 时序（B8）、`change-manifest` 闸恒判 pre-cutoff（B9）——详见 `docs-delta.md`「新增残余申报」与本节未覆盖面表。
+- 两条 debt（`TECH-261114` / `TECH-261012`）维持 `deferred`，**结项凭据 = 真机轮 C 通过**，本轮不改账本。
+- `decisionCoverage` 残差：本包 8 条全部 `landsIn = exitCriteria:KRC-E1/E3/E4/E6/E8`，**无 `landsIn: dropped` + `reason` 以 `risk-accepted` 开头的条目**，故无 human 已接受的 risk-accepted dropped 项。
+- 回滚：本轮改动全在固件侧（front / 引擎零 diff），回滚 = revert 本轮收口 commit；两半一起回滚的旧口径对 D2/B9 仍适用（那两个修复在轮 A 修复轮 commit 内）。
+- **跨面变更（spine 在册）**：imp anchor 事实 = 离线面全绿（final r7 十闸）、真机轮 C 未跑、合并门仍被轮 C 与 G4 拦；建议 status = `ready-to-merge` **不成立**（应为 `in-progress`，待轮 C）；workstream `261115-session-channel-resident` P1 锚点与 status 回写归主线程（integrator 不直改 spine）。

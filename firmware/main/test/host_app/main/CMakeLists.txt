@@ -402,6 +402,15 @@ set(HOST_ACCEPTANCE_SRCS
     # **必须置于 host smoke acceptance 之前**（smoke 末位 = 最先执行, 包 0 boundary 齿注册序守卫）。
     "../../session_channel_resident.acceptance.c"
 
+    # 包 261116-channel-resident-core 真机轮 B 修复轮（2026-11-18）：语音会话
+    # 「有效语音证据」看门缝 session_voice_watch.c = SCR-A9..A14 真行为断言的强符号源
+    # （纯逻辑：零芯片 / 零 ESP-IDF / 零 FreeRTOS / 零 LVGL -> 与设备树同源；设备侧
+    # 登记见 firmware/main/CMakeLists.txt）。builder 单元测试 session_voice_watch.test.c
+    # 补冻结断言未穷尽的防御面（NULL 入参 / cfg<=0 降级 / 年龄饱和 / diag_due 边界）。
+    # **必须置于 host smoke acceptance 之前**（smoke 末位 = 最先执行）。
+    "../../../session_voice_watch.c"
+    "../../session_voice_watch.test.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

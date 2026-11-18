@@ -1,0 +1,510 @@
+# 真机轮 B 设备日志摘录 · 2026-11-18
+
+> 取回方式：`python tools/diag/kidpal_logs.py --port COM5 --cmd cat --index 0 --timeout 300 --out <tmp>`（planner 亲跑，2026-11-18 08:02 本地时刻；只读命令、dtr/rts 拉低防复位伪影）。
+> 源文件 `KPLOG000.TXT` 完整拉取 **1,713,125 字节**（设备端 1,675,209 字节，串口帧封装略大），`sha256 = 21599cbc296db16e3deeb61ebbfeaeec5d4fb1a6ee472392491a141ecb086188`。完整文件**不随包提交**（超出日志摘录体量惯例，round-a 同为摘录），本节摘录 = 按时间窗过滤后的行，未改写任何字段。
+> 过滤规则：保留 07:14–07:22 与 07:45–07:49 两窗；剔除高频渲染行（`SystemInfo` / `rtc_reinject` / `chrome_mid_sync` / `chrome_front*` / `KEYBAR` / `STORY_RENDER` / `RECORDING render`）——被剔除的只是刷新噪声，判定相关行零删。
+
+## 一、结论先说（planner 只读判定，供 acceptance-author / builder 消费）
+
+1. **D3（故事页空素材会话不自动收尾）根因已定位，且与「电平门卡死」无关**：故事会话进入聆听后 **0.25–0.7 秒**内必出一条 `story_vad_recording_enter consumed=1`（本文件窗口内 07:14:30、07:15:04 两次；同一份日志另有 07:12:54、07:13:31 两次同形，`grep story_vad_recording_enter` 全量 12 条均落在故事会话起步后 1 秒内）。该行由 `application.cc:436` 的 `KidpalStoryVadEnterRecording()` 发出，触发条件 = `kidpal_story_recording_enter(...) == 1 && !s_story_rec_entered` 且 `s_vad_speaking == 1`——即 **VAD 在会话起步就让出一记 speech 沿**（此时无人说话，两次窗内首次 `>>` 转写分别在 07:14:38 / 无）。该沿把 `s_story_rec_entered` 置真，而它正是 D3 空素材 producer 的「从未收到素材」判据（`!s_story_rec_entered`）——**置真后该会话对 D3 producer 永久不可达，与 VAD 电平后续是否回落无关**。
+2. **同一沿还带出一个用户可见副作用**：记录会话在 0.7 秒内从列表页跳到 RECORDING 录音页（`PAGE_SWITCH ... sview=2`），孩子一句话没说。这与「空素材会话应静置在引导屏」的期望相反。
+3. **A6（普通会话静置不关麦）未能在日志里区分 M1/M2**：07:18:23 `idle -> listening` → 07:21:36 手动 `overlay_close`，中间 **零状态迁移**（故 `clock_ticks_` 未被 `HandleStateChangedEvent` 清零，计时本身是连续增长的）；07:46:04 → 07:49:25 的另一次复现（该次在设备于 07:44 前后重启之后，同固件）同样零迁移。设备侧当前不打印 VAD 电平，无法判定是「电平恒真」（M1）还是「起音沿周期性清零计时」（M2）——这正是 human 要求补低频 listening 诊断行的直接理由。
+4. 控制组：07:14:30–07:14:48 是**有素材**的真实记录会话（07:14:38 起出 `>>` 转写，07:14:08 前一次收尾走 `stop_rec archive_pend=1` → `story_sd_write` → `story_saved_stamp seq=32`）——证明记录语境链路与归档链正常，问题只在「空素材」这一支。
+
+## 二、摘录（时间窗过滤后原样）
+
+[2026-11-18 07:14:08] I (22948143) waveshare_rlcd_4_2: key_edge corr_id=kdp-6170927 key=0(key) edge=down hold_ms=0
+
+
+[2026-11-18 07:14:08] I (22948373) waveshare_rlcd_4_2: key_edge corr_id=kdp-6171157 key=0(key) edge=up hold_ms=230
+
+
+[2026-11-18 07:14:08] I (22948373) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-6171157 key=0(key) gesture=1(click)
+
+
+[2026-11-18 07:14:08] I (22948553) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-6171337 key=0(key) gesture=click hold_ms=410 overlay=0
+
+
+[2026-11-18 07:14:08] I (22948553) MCP: story_key stop_rec archive_pend=1
+
+
+[2026-11-18 07:14:08] I (22948773) StateMachine: State: listening -> idle
+
+
+[2026-11-18 07:14:10] I (22949493) Application: keybar_scene_reset corr_id=kdp-6172277 src=session_end
+
+
+[2026-11-18 07:14:10] I (22949503) MCP: control start_organizing story_consumed=1 page=6
+
+
+[2026-11-18 07:14:10] I (22949713) Application: >> 嗯
+
+
+[2026-11-18 07:14:10] I (22949763) LcdDisplay: voice_look scene=1 top=2
+
+
+[2026-11-18 07:14:13] I (22952783) StorySdIo: story_sd_write ok path=/sdcard/story/2026-11-18-sa2ed29be.txt bytes=133
+
+
+[2026-11-18 07:14:13] I (22952783) MCP: story_saved_stamp corr_id=kdp-6175537 id=2026-11-18-sa2ed29be seq=32
+
+
+[2026-11-18 07:14:13] I (22952783) MCP: story_list_dispatch corr_id=kdp-6175567 items=16 counter=21 degrade=false
+
+
+[2026-11-18 07:14:13] I (22952803) MCP: story_list_gate defer_front page=3 voice_front=0 restore=1
+
+
+[2026-11-18 07:14:16] I (22956423) MCP: story_stamp_hold_expire corr_id=kdp-6179207 page=list on_screen=1
+
+
+[2026-11-18 07:14:29] I (22969023) waveshare_rlcd_4_2: key_edge corr_id=kdp-6191807 key=0(key) edge=down hold_ms=0
+
+
+[2026-11-18 07:14:29] I (22969193) waveshare_rlcd_4_2: key_edge corr_id=kdp-6191977 key=0(key) edge=up hold_ms=170
+
+
+[2026-11-18 07:14:29] I (22969193) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-6191977 key=0(key) gesture=1(click)
+
+
+[2026-11-18 07:14:29] I (22969383) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-6192167 key=0(key) gesture=click hold_ms=360 overlay=0
+
+
+[2026-11-18 07:14:30] I (22970073) MCP: story_key rec_session_slot page=0
+
+
+[2026-11-18 07:14:30] I (22970103) kidpal_rn: show_chat: VOICE layer push (top=3)
+
+
+[2026-11-18 07:14:30] I (22970113) StateMachine: State: idle -> listening
+
+
+[2026-11-18 07:14:30] I (22970113) LcdDisplay: voice_look scene=0 top=3
+
+
+[2026-11-18 07:14:30] I (22970183) MCP: story_prefetch_armed screen=0 missing=4
+
+
+[2026-11-18 07:14:30] I (22970183) MCP: story_list_dispatch corr_id=kdp-6192967 items=16 counter=21 degrade=false
+
+
+[2026-11-18 07:14:30] I (22970183) MCP: story_list_gate defer_front page=0 voice_front=1 restore=1
+
+
+[2026-11-18 07:14:30] I (22970363) MCP: story_vad_recording_enter consumed=1 page=2
+
+
+[2026-11-18 07:14:30] I (22970363) kidpal_rn: voice_end: story front list_flush=0 page_state=2
+
+
+[2026-11-18 07:14:30] I (22970363) kidpal_rn: PAGE_SWITCH from=story to=story trigger=net local_from=3 local_to=3
+
+
+[2026-11-18 07:14:30] I (22970373) kidpal_rn: PAGE_RENDER in=3 local=3 sview=2 ssess=2 active_ok=1
+
+
+[2026-11-18 07:14:30] I (22970393) kidpal_rn: render page STORY (P4) count=16
+
+
+[2026-11-18 07:14:30] I (22970403) kidpal_rn: PAGE_RENDER out=3 local=3 sview=2 ssess=2
+
+
+[2026-11-18 07:14:30] I (22970463) kidpal_rn: voice_end: top=2
+
+
+[2026-11-18 07:14:31] I (22971083) MCP: story_prefetch_suspend page=2 voice_front=0
+
+
+[2026-11-18 07:14:38] I (22978353) Application: >> 今天早上老妈赶车
+
+
+[2026-11-18 07:14:38] I (22978423) MCP: story_guide_speech_edge substate=1
+
+
+[2026-11-18 07:14:41] I (22980983) MCP: story_guide_speech_edge substate=0
+
+
+[2026-11-18 07:14:41] I (22980993) Application: >> 估计要迟到了，跑的可快了
+
+
+[2026-11-18 07:14:41] I (22981063) MCP: story_guide_speech_edge substate=1
+
+
+[2026-11-18 07:14:43] I (22982823) Application: >> 老是丢三落四的
+
+
+[2026-11-18 07:14:43] I (22982883) MCP: story_guide_speech_edge substate=0
+
+
+[2026-11-18 07:14:43] I (22982883) MCP: story_guide_speech_edge substate=1
+
+
+[2026-11-18 07:14:46] W (22986183) MCP: story_guide_speech_watchdog substate=0 audio=none
+
+
+[2026-11-18 07:14:47] I (22987623) waveshare_rlcd_4_2: key_edge corr_id=kdp-6210407 key=1(boot) edge=down hold_ms=0
+
+
+[2026-11-18 07:14:48] I (22987863) waveshare_rlcd_4_2: key_edge corr_id=kdp-6210647 key=1(boot) edge=up hold_ms=240
+
+
+[2026-11-18 07:14:48] I (22987863) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-6210647 key=1(boot) gesture=1(click)
+
+
+[2026-11-18 07:14:48] I (22988053) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-6210837 key=1(boot) gesture=click hold_ms=430 overlay=0
+
+
+[2026-11-18 07:14:48] I (22988053) MCP: story_key discard_rec cancel_count=2
+
+
+[2026-11-18 07:14:48] I (22988053) Application: local_close_settle corr_id=kdp-6210837 src=discard_record state=session_end_requested
+
+
+[2026-11-18 07:14:48] I (22988083) StateMachine: State: listening -> idle
+
+
+[2026-11-18 07:14:48] I (22988083) Application: local_close_settle corr_id=kdp-6210867 src=overlay_close state=idle
+
+
+[2026-11-18 07:14:48] I (22988613) Application: keybar_scene_reset corr_id=kdp-6211397 src=session_end
+
+
+[2026-11-18 07:15:02] I (23001683) waveshare_rlcd_4_2: key_edge corr_id=kdp-6224467 key=0(key) edge=down hold_ms=0
+
+
+[2026-11-18 07:15:02] I (23001883) waveshare_rlcd_4_2: key_edge corr_id=kdp-6224667 key=0(key) edge=up hold_ms=200
+
+
+[2026-11-18 07:15:02] I (23001883) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-6224667 key=0(key) gesture=1(click)
+
+
+[2026-11-18 07:15:02] I (23002063) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-6224847 key=0(key) gesture=click hold_ms=380 overlay=0
+
+
+[2026-11-18 07:15:03] I (23002723) MCP: story_key rec_session_slot page=0
+
+
+[2026-11-18 07:15:03] I (23002763) kidpal_rn: show_chat: VOICE layer push (top=3)
+
+
+[2026-11-18 07:15:03] I (23002773) StateMachine: State: idle -> listening
+
+
+[2026-11-18 07:15:03] I (23002773) LcdDisplay: voice_look scene=0 top=3
+
+
+[2026-11-18 07:15:03] I (23002843) MCP: story_prefetch_armed screen=0 missing=4
+
+
+[2026-11-18 07:15:03] I (23002843) MCP: story_list_dispatch corr_id=kdp-6225627 items=16 counter=21 degrade=false
+
+
+[2026-11-18 07:15:03] I (23002843) MCP: story_list_gate defer_front page=0 voice_front=1 restore=1
+
+
+[2026-11-18 07:15:04] I (23003543) MCP: story_vad_recording_enter consumed=1 page=2
+
+
+[2026-11-18 07:15:04] I (23003543) kidpal_rn: voice_end: story front list_flush=0 page_state=2
+
+
+[2026-11-18 07:15:04] I (23003543) kidpal_rn: PAGE_SWITCH from=story to=story trigger=net local_from=3 local_to=3
+
+
+[2026-11-18 07:15:04] I (23003553) kidpal_rn: PAGE_RENDER in=3 local=3 sview=2 ssess=2 active_ok=1
+
+
+[2026-11-18 07:15:04] I (23003583) kidpal_rn: render page STORY (P4) count=16
+
+
+[2026-11-18 07:15:04] I (23003593) kidpal_rn: PAGE_RENDER out=3 local=3 sview=2 ssess=2
+
+
+[2026-11-18 07:15:04] I (23003643) kidpal_rn: voice_end: top=2
+
+
+[2026-11-18 07:15:04] I (23003743) MCP: story_prefetch_suspend page=2 voice_front=0
+
+
+[2026-11-18 07:17:43] I (23162853) waveshare_rlcd_4_2: key_edge corr_id=kdp-6385637 key=1(boot) edge=down hold_ms=0
+
+
+[2026-11-18 07:17:43] I (23163013) waveshare_rlcd_4_2: key_edge corr_id=kdp-6385797 key=1(boot) edge=up hold_ms=160
+
+
+[2026-11-18 07:17:43] I (23163013) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-6385797 key=1(boot) gesture=1(click)
+
+
+[2026-11-18 07:17:43] I (23163203) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-6385987 key=1(boot) gesture=click hold_ms=350 overlay=0
+
+
+[2026-11-18 07:17:43] I (23163203) MCP: story_key discard_rec cancel_count=3
+
+
+[2026-11-18 07:17:43] I (23163203) Application: local_close_settle corr_id=kdp-6385987 src=discard_record state=session_end_requested
+
+
+[2026-11-18 07:17:43] I (23163413) StateMachine: State: listening -> idle
+
+
+[2026-11-18 07:17:43] I (23163413) Application: local_close_settle corr_id=kdp-6386197 src=overlay_close state=idle
+
+
+[2026-11-18 07:17:43] I (23163843) Application: keybar_scene_reset corr_id=kdp-6386627 src=session_end
+
+
+[2026-11-18 07:18:15] I (23195523) waveshare_rlcd_4_2: key_edge corr_id=kdp-6418307 key=0(key) edge=down hold_ms=0
+
+
+[2026-11-18 07:18:17] I (23197023) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-6419807 key=0(key) gesture=long hold_ms=1500 overlay=0
+
+
+[2026-11-18 07:18:18] I (23198513) waveshare_rlcd_4_2: key_edge corr_id=kdp-6421297 key=0(key) edge=up hold_ms=2990
+
+
+[2026-11-18 07:18:18] I (23198513) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-6421297 key=0(key) gesture=3(long_press)
+
+
+[2026-11-18 07:18:19] I (23198953) waveshare_rlcd_4_2: key_edge corr_id=kdp-6421737 key=0(key) edge=down hold_ms=0
+
+
+[2026-11-18 07:18:20] I (23200453) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-6423237 key=0(key) gesture=long hold_ms=1500 overlay=0
+
+
+[2026-11-18 07:18:20] I (23200453) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-6423237 action=2(home)
+
+
+[2026-11-18 07:18:20] I (23201023) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=23200290
+
+
+[2026-11-18 07:18:20] I (23201083) kidpal_rn: show_home: LOCAL_PAGE front (layer top=2)
+
+
+[2026-11-18 07:18:22] I (23202453) waveshare_rlcd_4_2: key_edge corr_id=kdp-6425237 key=0(key) edge=up hold_ms=3500
+
+
+[2026-11-18 07:18:22] I (23202453) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-6425237 key=0(key) gesture=3(long_press)
+
+
+[2026-11-18 07:18:22] I (23202823) waveshare_rlcd_4_2: key_edge corr_id=kdp-6425607 key=0(key) edge=down hold_ms=0
+
+
+[2026-11-18 07:18:23] I (23203083) waveshare_rlcd_4_2: key_edge corr_id=kdp-6425867 key=0(key) edge=up hold_ms=260
+
+
+[2026-11-18 07:18:23] I (23203263) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-6426047 key=0(key) gesture=click hold_ms=440 overlay=0
+
+
+[2026-11-18 07:18:23] I (23203263) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-6426047 action=1(session_toggle)
+
+
+[2026-11-18 07:18:23] I (23204053) kidpal_rn: show_chat: VOICE layer push (top=3)
+
+
+[2026-11-18 07:18:23] I (23204063) StateMachine: State: idle -> listening
+
+
+[2026-11-18 07:18:24] I (23204063) LcdDisplay: voice_look scene=0 top=3
+
+
+[2026-11-18 07:21:36] I (23396143) waveshare_rlcd_4_2: key_edge corr_id=kdp-6618927 key=1(boot) edge=down hold_ms=0
+
+
+[2026-11-18 07:21:36] I (23396313) waveshare_rlcd_4_2: key_edge corr_id=kdp-6619097 key=1(boot) edge=up hold_ms=170
+
+
+[2026-11-18 07:21:36] I (23396313) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-6619097 key=1(boot) gesture=1(click)
+
+
+[2026-11-18 07:21:36] I (23396493) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-6619277 key=1(boot) gesture=click hold_ms=350 overlay=3
+
+
+[2026-11-18 07:21:36] I (23396493) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-6619277 action=4(overlay_close)
+
+
+[2026-11-18 07:21:36] I (23396503) StateMachine: State: listening -> idle
+
+
+[2026-11-18 07:21:36] I (23396503) Application: local_close_settle corr_id=kdp-6619287 src=overlay_close state=idle
+
+
+[2026-11-18 07:21:36] I (23396513) kidpal_rn: PAGE_SWITCH from=home to=home trigger=key local_from=0 local_to=0
+
+
+[2026-11-18 07:21:36] I (23396523) kidpal_rn: PAGE_RENDER in=0 local=0 sview=7 ssess=7 active_ok=1
+
+
+[2026-11-18 07:21:36] I (23397063) kidpal_rn: render page HOME (P1)
+
+
+[2026-11-18 07:21:36] I (23397073) kidpal_rn: PAGE_RENDER out=0 local=0 sview=7 ssess=7
+
+
+[2026-11-18 07:21:36] I (23397143) kidpal_rn: dismiss_front_overlay: LOCAL_PAGE front (layer top=2)
+
+
+[2026-11-18 07:21:36] I (23397943) Application: keybar_scene_reset corr_id=kdp-6620727 src=session_end
+
+
+[2026-11-18 07:45:00] I (34162) Application: << 18:40 的书法课
+
+
+[2026-11-18 07:45:00] I (34162) StateMachine: State: listening -> speaking
+
+
+[2026-11-18 07:45:00] I (34162) LcdDisplay: voice_look scene=2 top=7
+
+
+[2026-11-18 07:45:00] I (34162) LcdDisplay: voice_look_skip scene=2 top=7 reason=reminder_persist
+
+
+[2026-11-18 07:45:00] I (34172) LcdDisplay: voice_look scene=2 top=7
+
+
+[2026-11-18 07:45:00] I (34172) LcdDisplay: voice_look_skip scene=2 top=7 reason=reminder_persist
+
+
+[2026-11-18 07:45:04] I (37632) Application: << 提前 15 分钟准备哦
+
+
+[2026-11-18 07:45:04] I (37632) LcdDisplay: voice_look scene=2 top=7
+
+
+[2026-11-18 07:45:04] I (37632) LcdDisplay: voice_look_skip scene=2 top=7 reason=reminder_persist
+
+
+[2026-11-18 07:45:06] I (40442) StateMachine: State: speaking -> listening
+
+
+[2026-11-18 07:45:06] I (40442) LcdDisplay: voice_look scene=0 top=7
+
+
+[2026-11-18 07:45:06] I (40442) LcdDisplay: voice_look_skip scene=0 top=7 reason=reminder_persist
+
+
+[2026-11-18 07:45:09] I (43302) waveshare_rlcd_4_2: rtc_writeback corr_id=kdp-43302 ok rtc=07:45:10 date=11-18
+
+
+[2026-11-18 07:45:22] I (56092) I2S_IF: Pending out channel for in channel running
+
+
+[2026-11-18 07:45:22] I (56092) AudioCodec: Set output enable to false
+
+
+[2026-11-18 07:45:55] I (89222) waveshare_rlcd_4_2: key_edge corr_id=kdp-89222 key=1(boot) edge=down hold_ms=0
+
+
+[2026-11-18 07:45:55] I (89392) waveshare_rlcd_4_2: key_edge corr_id=kdp-89392 key=1(boot) edge=up hold_ms=170
+
+
+[2026-11-18 07:45:56] I (89582) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-89582 key=1(boot) gesture=click hold_ms=360 overlay=7
+
+
+[2026-11-18 07:45:56] I (89582) kidpal_rn: PAGE_SWITCH from=home to=home trigger=key local_from=0 local_to=0
+
+
+[2026-11-18 07:45:56] I (89582) kidpal_rn: PAGE_RENDER in=0 local=0 sview=0 ssess=0 active_ok=1
+
+
+[2026-11-18 07:45:56] I (89962) kidpal_rn: render page HOME (P1)
+
+
+[2026-11-18 07:45:56] I (89972) kidpal_rn: PAGE_RENDER out=0 local=0 sview=0 ssess=0
+
+
+[2026-11-18 07:45:56] I (90022) kidpal_rn: dismiss_front_overlay: LOCAL_PAGE front (layer top=2)
+
+
+[2026-11-18 07:45:58] I (91682) waveshare_rlcd_4_2: key_edge corr_id=kdp-91682 key=0(key) edge=down hold_ms=0
+
+
+[2026-11-18 07:45:58] I (91862) waveshare_rlcd_4_2: key_edge corr_id=kdp-91862 key=0(key) edge=up hold_ms=180
+
+
+[2026-11-18 07:45:58] I (91862) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-91862 key=0(key) gesture=1(click)
+
+
+[2026-11-18 07:45:58] I (92042) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-92042 key=0(key) gesture=click hold_ms=360 overlay=0
+
+
+[2026-11-18 07:45:58] I (92042) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-92042 action=1(session_toggle)
+
+
+[2026-11-18 07:45:59] I (92112) Application: local_close_settle corr_id=kdp-92112 src=toggle_chat state=session_end
+
+
+[2026-11-18 07:45:59] I (92112) StateMachine: State: listening -> idle
+
+
+[2026-11-18 07:45:59] I (92112) Application: local_close_settle corr_id=kdp-92112 src=overlay_close state=idle
+
+
+[2026-11-18 07:45:59] I (92172) kidpal_rn: show_chat: VOICE layer push (top=3)
+
+
+[2026-11-18 07:45:59] I (92202) Application: keybar_scene_reset corr_id=kdp-92202 src=session_end
+
+
+[2026-11-18 07:45:59] I (92692) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=92043
+
+
+[2026-11-18 07:45:59] I (92772) kidpal_rn: voice_end: top=2
+
+
+[2026-11-18 07:46:03] I (97442) waveshare_rlcd_4_2: key_edge corr_id=kdp-97442 key=0(key) edge=down hold_ms=0
+
+
+[2026-11-18 07:46:04] I (97642) waveshare_rlcd_4_2: key_edge corr_id=kdp-97642 key=0(key) edge=up hold_ms=200
+
+
+[2026-11-18 07:46:04] I (97642) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-97642 key=0(key) gesture=1(click)
+
+
+[2026-11-18 07:46:04] I (97832) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-97832 key=0(key) gesture=click hold_ms=390 overlay=0
+
+
+[2026-11-18 07:46:04] I (97832) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-97832 action=1(session_toggle)
+
+
+[2026-11-18 07:46:04] I (98632) kidpal_rn: show_chat: VOICE layer push (top=3)
+
+
+[2026-11-18 07:46:04] I (98632) StateMachine: State: idle -> listening
+
+
+[2026-11-18 07:46:05] I (98642) LcdDisplay: voice_look scene=0 top=3
+
+
+[2026-11-18 07:49:25] I (299052) waveshare_rlcd_4_2: key_edge corr_id=kdp-299052 key=1(boot) edge=down hold_ms=0
+
+
+[2026-11-18 07:49:25] I (299192) waveshare_rlcd_4_2: key_edge corr_id=kdp-299192 key=1(boot) edge=up hold_ms=140
+
+
+[2026-11-18 07:49:25] I (299192) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-299192 key=1(boot) gesture=1(click)
+
+
+[2026-11-18 07:49:25] I (299382) waveshare_rlcd_4_2: key_dispatch corr_id=kdp-299382 key=1(boot) gesture=click hold_ms=330 overlay=3
+
+
+[2026-11-18 07:49:25] I (299382) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-299382 action=4(overlay_close)
+
+
+[2026-11-18 07:49:25] I (299382) StateMachine: State: listening -> idle
+
+
+[2026-11-18 07:49:25] I (299392) Application: local_close_settle corr_id=kdp-299392 src=overlay_close state=idle
+
+
+[2026-11-18 07:49:25] I (299432) Application: keybar_scene_reset corr_id=kdp-299432 src=session_end
+
+
+[2026-11-18 07:49:25] I (299982) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=299270
+
+
+[2026-11-18 07:49:25] I (300092) kidpal_rn: voice_end: top=2
+
+
+[2026-11-18 07:49:25] I (301212) kidpal_rn: dismiss_front_overlay: LOCAL_PAGE front (layer top=2)
+
+

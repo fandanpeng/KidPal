@@ -186,6 +186,80 @@ mergeOrder: 77
 - **spec 漂移（出 Pod 后由主线程路由，本 Pod 不改 spec）**：requirements §2.1 逐字冻结「记录会话不适用 60s 会话超时」、AC5 只覆盖「有素材 + 2 轮引导无回应」；D3 对空素材记录会话新增设备侧超时 = 对该豁免的**收窄**，spec 本身有洞。`docsSyncRequired=false` 的现值与 D3 实际影响不一致 → review-packet 显式申报，主线程按需求面轻量注记处理（§2.1 记录会话段加对账句或 §7 开放问题 7 追加），不必重开 `/requirement-change` 全档。
 - 轮 B 清单口径修正：`device-round-a-evidence.md` B-D3 的「随后普通问答**立即**可应答」与已冻结 accepted residual（pending ≤10s 抑制窗）冲突 → 改为「≥10s 后普通问答可应答；或 10s 内首次话语允许被抑制、再按一次即恢复」。
 
+### 真机轮 B 修复轮（2026-11-18）技术方案（planner+architect 预评）
+
+> **留痕**：2026-11-18，planner Step 1g 前置技术预评档。输入 = 真机轮 B 实测（human 2026-11-18 指示「按 B 修」，pod-events `human-correction`）+ planner 亲拉的设备日志（`device-evidence/round-b/kplog-excerpt.txt`，源 `KPLOG000.TXT` 全量 sha256 `21599cbc…`）。效力声明同前：architect 意见为 advisory 输入，**不豁免任何门、不改验收与 TaskPackage 事实、不构成通过判据**。本子节为 planner 只读消费 plan.md 规则的例外写入点（`task-intake-and-slicing.md` 例外条款）。
+
+**一、轮 B 实测（human 持板）**
+
+- D1 通过、D2 通过、A5 归档通过。
+- D3 失败：故事页起会话、全程不说话，07:15:03 listen start → 07:17:43 手动丢弃（2m41s），无 `story_empty_session_timeout`。
+- A6 回归失败：普通会话 07:18:23 → 07:21:36（3m13s），无 `session_idle_timeout`；**A6 producer 本轮一字未动**，轮 A 同判据可正常触发（`seconds=60`）。
+
+**二、planner 只读定位（设备日志，新证据）**
+
+1. **D3 的真根因不是电平门**：每次**故事**会话进入聆听后 0.25–0.7 秒内必出一条 `MCP: story_vad_recording_enter consumed=1 page=2`（本日志窗口 07:14:30、07:15:04；`grep` 全量 12 条均落在会话起步 1 秒内）。该行唯一发射点 = `application.cc:436` 的 `KidpalStoryVadEnterRecording()`，前置条件含 `s_vad_speaking == 1` → 即 **VAD 在无人说话时让出一记 speech 沿**。该沿把 `s_story_rec_entered` 置真，而它正是 D3 producer 的「从未收到素材」判据；**置真后该会话对 D3 producer 永久不可达，与 VAD 电平其后是否回落无关**。副作用：记录会话 0.7 秒内从列表页跳到 RECORDING 录音页（`PAGE_SWITCH … sview=2`），孩子一句话没说。
+2. **A6 窗内零状态迁移**：07:18:23 `idle -> listening` → 07:21:36 手动 `overlay_close`，中间无 `State:` 行 → `clock_ticks_` 未被 `HandleStateChangedEvent`（`:1314`）清零，计时连续增长；`clock_ticks_` 全仓只有两处写点（`:420` VAD 起音沿归零、`:452` 每 tick +1，`grep` 已核）。故 A6 未触发只能落在两因之一——**M1 电平恒真**（`!s_vad_speaking` 恒假）或 **M2 起音沿周期性清零**（永远到不了 60）。设备当前不打印 VAD 电平，日志无法再细分，这正是 human 要求补低频 listening 诊断行的直接理由。
+3. 控制组：07:14:30–07:14:48 是**有素材**的真实记录会话（07:14:38 起出 `>>` 转写；前一次收尾走 `stop_rec archive_pend=1` → `story_sd_write` → `story_saved_stamp seq=32`）——记录语境与归档链正常，缺陷只在「空素材」一支与「普通会话静置」一支。
+
+**三、本轮必须满足的设计约束（planner 定，architect 给方案）**
+
+1. **主判据去电平门化**：收尾判据不得以瞬时 `s_vad_speaking` 电平为必要条件；须以「最后一次**有效**语音活动时间戳」类判据承载，并定义「有效」（能区分短促噪声 / 环境噪声顶住 VAD 与真的在说话）。
+2. **A7 语义保住**：连续讲 >90 秒不得被误收——新判据必须在 M1/M2 两种失效下都保住 A7，并给出论证。
+3. **M1/M2 都要被覆盖**：电平恒真与起音沿风暴两条路径都必须能走到收尾；若用「VAD 卡死看门狗」，阈值须严格大于 90 秒并给出依据。
+4. **D3 复用同一新判据**：记录语境正向门保留；「从未收到素材」判据**须换源**——现判据 `s_story_rec_entered` 已被证明会被起步噪声沿提前置真；新素材信号须与 front 累积器同源（front 的素材 = 引擎 `stt` 文本），避免设备与网关对「有没有素材」判断不一致。D3 口径不变：只释放、不归档。
+5. **可观测性（human 必办）**：设备侧低频 listening 诊断行（state / VAD 电平 / 计时分量 / 记录语境标志 / 距上次有效语音秒数），限频且轮转友好；两条 producer 命中审计行保留并可加 `src=` / `last_voice_age_s=` 字段。**须绕开 `diag_log.acceptance.c`（DLG-A4）对 `clock_ticks_ % 10` 恰 0 的负锚**。
+6. **可测性**：判据语义须能被 host 机判（优先纯逻辑缝 + 注入 tick 序列的真行为断言），不得整段落回 `application.cc` 只剩源文本锚；真机轮只承载「真实 VAD/能量环境下」的端到端确认。
+7. **零改动面**：`docs/contracts/**`、`engine-patch/**`、引擎侧、`mcp_server.cc` 不改（如需扩单，走 planner 扩单通道回评后补 manifest）。
+
+**四、architect 预评回执**
+
+> dispatch `a691226a871b7ede5`（architect，只读 advisory，2026-11-18；pod-events `dispatch-completed` 有记录）。下为 planner 摘录 + 逐条对账；对不上的条目见「planner 裁定」节。
+
+1. **方案 = B+（推荐并采纳）**：判据本体搬进新的纯逻辑 seam `firmware/main/session_voice_watch.{c,h}`（host 可编、可注入 tick 序列做真行为断言），`application.cc` 只留接线。第三路证据 = **引擎 `stt` 到达时刻**（不用输入能量）。否掉能量档的理由：能量地板无任何标定数据（轮 A/B 三源证据里零个电平数），盲选地板会把缺陷换成「掐断正在讲话的孩子」，且要动 AFE/AudioService 五个文件（含抽象基类），风险与收益不成比例；正确顺序 = 先观测后门控。
+2. **核心取舍定理（本方案的地基）**：只用「VAD 电平 + 时间」两个量，**不可能**同时满足 A7（连续电平 ≥90s 不收尾）与「电平卡死 ≤70s 收尾」——这两种情形在信号层面逐 tick 同构。要把卡死收尾压到 70s 量级必须引入第三证据并接受其缺失时的降级。
+3. **失效模式从 2 种扩到 4 种**：M1 电平卡死；M2 起音沿风暴；**M3 电平闩锁跨会话**（`AfeAudioProcessor::Stop()` 不复位成员 `is_speaking_`，`application.cc` 的 `s_vad_speaking` 也无迁移复位点）；**M4 记录语境镜像卡死**（`kidpal_story_session_ctx_active()` 残留 → A6 被硬豁免、D3 又不满足素材门）。
+4. **判据定义（seam 每 tick 一次）**：
+   - `level_run_s` = 电平连续为真秒数；`asr_age_s` = 距上次 stt 秒数（饱和 999）；`quiet_s` = 距上次**有效语音证据**秒数（主累加器）。
+   - `sustained_level = level_run_s >= 3 && level_run_s <= 100`（**下界拒短促噪声暴发 = M2 解药；上界截断电平可信窗 = M1/M3 解药**）。
+   - `asr_fresh = asr_age_s < 25`（语义级证据，把 A7 保护延伸到 >160s 真长讲）。
+   - `voice_evidence = sustained_level || asr_fresh`；`quiet_s` 无证据时 +1；`quiet_s >= idle_timeout_s(60)` → 收尾。`suspect = level_run_s > 100`（审计位，非独立触发源——**不引入第二个定时器**）。
+5. **阈值与依据**：`KIDPAL_VW_VOICE_SUSTAIN_S=3`（`vad_min_noise_ms=100` + `VAD_MODE_0` ⇒ 噪声电平连续段是几百毫秒量级，3s 留一个数量级余量；短于 3s 的真话语由 `asr_fresh` 兜住，故调大无 A7 风险）；`KIDPAL_VW_ASR_FRESH_S=25`（引擎相邻 stt 间距假设的 1.25~2.5 倍；A7 不硬依赖它）；`KIDPAL_VW_VAD_TRUST_S=100`（**human 硬约束「严格大于 A7 的 90s 界」**，留 10s 余量；100s 内电平恒被采信 ⇒ A7 无条件成立、零云端依赖）；`DIAG_INTERVAL_S=10`；`DIAG_MIN_GAP_S=3`。
+6. **逐场景结果**：纯静默 → 恰 60s 收尾（B-D3/A6 验收口径）；M1 电平卡死 → `suspect=1`、`100+60=160s` 收尾（有界）；M2 起音沿风暴 → 尖峰不采信，仍恰 60s 收尾；M3 闩锁 → 由 Listening 入口复位 `s_vad_speaking=false` + `watch reset` 掐掉，残余 ≤160s；A7 连续讲 → 有 stt 时永不收尾，零 stt（云端挂）时 ≤90s 绝不收尾（160s 才收）；M4 → 本轮只由诊断行 `rec_ctx=` 暴露、不修（`mcp_server.cc` 置位单点在 P2 边界与 manifest 外）。
+7. **D3 共用形态**：两个 producer 共用同一 `quiet_s`，在 `kidpal_story_session_ctx_active()` 上一正一负严格互斥；`tick()` 每 tick 恰一次且在两 producer 之前；**只释放不归档口径不变**，fire 之后仍走 `HandleEndVoiceSessionEvent()`，front 零 diff。
+8. **时钟基准**：继续用 1s tick；但累加器**不复用 `clock_ticks_`**（它有两个归零点，正是 M2 成因本体），改由 seam 自持 `quiet_s/level_run_s/asr_age_s/tick_s`；`clock_ticks_` 降级为诊断字段 `ticks=`，`MAIN_EVENT_VAD_CHANGE` 区因此**零 diff**。时序残差申报：clock timer `skip_unhandled_events=true` + 事件位幂等 ⇒ 计时只会偏慢不会偏快（安全方向）。
+9. **可观测性**：token `listening_diag`（`ESP_LOGI`——DEBUG 默认不落盘，本轮不能再吃这个亏），字段十件 `src/state/vad/run/quiet/asr/ticks/rec_ctx/rec_mat/suspect`；触发 = Listening 态每 10s + 跳变（电平/标志翻转、`suspect` 0→1、会话入口）受 3s 最小间隔封顶；非 Listening 态零输出。轮转预算：单行约 190 字节，最坏 ~3.8 KB/分钟，16MB 封顶 ≈ 70 小时 Listening；现实使用（每日约 30 分钟 Listening）约 140 天，**严格低于**被消掉的 `Unknown message type` WARN（24h 常开 ≈144 KB/日）。**不加运行期开关**（诊断行的价值就在真机窗）。
+10. **绕开 `clock_ticks_ % 10` 负锚**：分频决策住 seam 纯函数 `kidpal_voice_watch_diag_due()`（模数用 seam 自持 `tick_s`），`application.cc` 物理上不出现该字面；并在验收里再钉一次同字面 == 0 作双保险。
+11. **审计行加字段**：两条 producer 行保留 `seconds=`（轮 A 对账链不断）+ 追加 `quiet=` / `asr=` / `suspect=` / `src=idle|empty_story`；**不得改动 `local_close_settle` 既有四 token**（OCE-A1 钉它们）。
+12. **既有验收判定**：SCR-A5 只有一条断言假红（`!s_vad_speaking` 电平门在场）→ 极性反转为负锚 + 补 `kidpal_voice_watch_tick(` 正锚；SCR-A8 只一条假红（`!s_vad_speaking >=2`）→ 整条退役（同一事实单一承载点，防 co-red 噪声）；两件头注 `[S5]`/`coverage:` 行同步改写；`device-outcome` 成对申报保留但**范围收窄**（判据本体已可离线机判，只剩接线与主循环运行时）。
+13. **新增验收建议**：SCR-A9（静默 59 不 fire / 60 fire，真行为）、SCR-A10（M1 400 tick 卡死 → 恰 160 fire + `suspect=1`，**kill-shot**）、SCR-A11（M2 风暴 vs 4s 暴发成对，真行为）、SCR-A12（A7 有 stt 200 tick 零 fire + 零 stt 150 tick 零 fire，真行为）、SCR-A13（reset 跨会话零残留，真行为）、SCR-A14（诊断限频决策表 + 结构半，真行为+结构）、SCR-A15（application.cc 接线五件，结构）。变异清单 11 条，其中 #2（删可信窗上界）是轮 B 缺陷的唯一离线警报、#6（`VAD_TRUST_S` 100→30）是 A7 承重、#10（电平门回潮负锚）是回归防线。
+14. **manifest 扩单申请 3 件**：`firmware/main/session_voice_watch.c`（新）、`.h`（新）、`firmware/main/CMakeLists.txt`（additive 一行）。**已在册要改**：`application.cc`、`session_channel_resident.acceptance.c`、`firmware/main/test/host_app/main/CMakeLists.txt`（新 seam 源 + 注册序必须在 smoke 之前）；`application.h` 保持零 diff（用 file-static 而非成员）。
+
+**五、planner 裁定（对回执的采纳、修订与新增）**
+
+1. **采纳 B+ 与全部阈值（保守档）**。`VAD_TRUST_S` 取固定 100，不取「ASR 陈旧时收缩到 15」的激进档：后者把「麦克风常开」的运维缺陷换成「ASR 中断时把孩子话头掐断」的产品缺陷，而 A7 是本包已冻结、riskTier=high 的承重面。轮 C 的 `asr=` 字段就是把这条决策变成可量测数据的装置；若实测 160s 不可忍，再做快速后续批。
+2. **采纳四条失效模式扩表（M1–M4）**，含 M3 卫生复位（Listening 入口 `s_vad_speaking=false` + `watch reset`）。M3 的**根源**（`AfeAudioProcessor::Stop()` 不复位 `is_speaking_`）本轮不修：新判据对 M3 已鲁棒，而改它要连带决定「是否补发一次 offset 回调」（影响 `voice_detected_` → LED），是独立的需自验语义变更；列入 review-packet residual + 主线程路由（Pod 零写 `docs/debt/**`）。
+3. **采纳 M4「只诊断不修」的判断**：`mcp_server.cc` 置位单点在 P2 边界与 manifest 外；本轮由 `rec_ctx=` 字段使其可归因，修复归 P2/另立批。review-packet 显式申报。
+4. **采纳「不加运行期开关」**。诊断行是纯设备侧、无跨端配对语义，回滚固件即消失；加闸会在最需要它的真机窗被关掉。
+5. **采纳 manifest 扩单 3 件**（planner 扩单通道，见 taskpackage `notes` 与 `changeManifest[]` 回填）。`sdkconfig` 不入（不设编译期闸）。
+6. **【planner 修订 · 承重】D3 的「从未收到素材」判据必须换源**——architect 回执写「保留 `!s_story_rec_entered`」，与 planner 本轮亲拉的设备日志**直接冲突**，不予采纳：
+   - 证据：`device-evidence/round-b/kplog-excerpt.txt`。本日志 12 条 `story_vad_recording_enter` 全部落在故事会话起步后 1 秒内（本文件窗口 07:14:30 / 07:15:04），发射前置条件含 `s_vad_speaking == 1`——即**无人说话时 VAD 也会让出一记 speech 沿**，它把 `s_story_rec_entered` 置真；而 `s_story_rec_entered` 正是 D3 producer 的素材判据。**沿用旧信号 = D3 在真机上依旧结构性不可达**，修复等于白做。
+   - 修订：新增 `asr_seen` 到 seam 状态（`kidpal_voice_watch_note_asr()` 置 1，`reset()` 清 0），D3 producer 的素材门改为 `!s_voice_watch.asr_seen`。语义 = 「本会话引擎真的转写出一句话」——与 front 累积器的素材来源**同源**（front 的 accum 也只吃 `stt` 文本），设备与网关对「有没有素材」不再可能判断不一致；ASR 失败时两侧同时判无素材、同时释放不归档，口径自洽。
+   - `s_story_rec_entered` 保留原用途（录音页切换 + 幂等），**不进 producer 判据**；起步噪声沿导致的无端跳录音页登记为 residual（不阻塞，D3 收尾后回列表），根治归 `AfeAudioProcessor` 卫生复位后续批。
+   - 对应验收改动：SCR-A8 原 `!s_story_rec_entered` ≥1 tooth 重锚为 `!s_voice_watch.asr_seen`（或 seam 访问器形态）≥1；SCR-A15 接线五件增第 ⑥ 件（stt lambda 内 `kidpal_voice_watch_note_asr(` 恰 1，与 architect 的 ② 合并为同一行断言，但语义上另加一条「素材门读 asr_seen 而非 s_story_rec_entered」负锚：CLOCK_TICK 区 `!s_story_rec_entered` == 0）。
+7. **【planner 追加】验收条目合并纪律**：architect 建议 20→约 27 条；本 Pod 采纳但要求 SCR-A13/A14 各以单 case 多断言承载，SCR-A15 合并为一条多断言 case，避免 case 数膨胀。**不可降级为源文本的是 SCR-A10 与 SCR-A12**。
+8. **【planner 追加】轮 C 清单增补**（写进 review-packet）：C-1 审计行 `suspect=`/`quiet=` 必采（判本轮是否命中真实失效模式）；C-2 A7 窗内 `asr=` 列最大值（`ASR_FRESH_S=25` 的标定）；C-3 home 会话 `rec_ctx=` 恒 0（M4 排查）；C-4 静置窗 `run=` 是否反复归零（M2 排查）；C-5 日志落盘增量与预算对账；C-6 **D3 窗内 `rec_ctx=1` 且 `asr_seen=0` 且 `quiet` 到 60 即收尾**（新素材信号的真机承载）。
+
+**六、planner 白盒复核补丁（2026-11-18，builder 首版之后）**
+
+builder 首版把 `kidpal_voice_watch_reset(&s_voice_watch)` **无条件**落在 `case kDeviceStateListening:` 尾部（每次进入聆听全清七字段）。planner 复核发现的高风险回归：
+
+- 记录会话里**引导播报**（卡壳轻引导，`kidpal_speak` TTS）会让设备 `Listening → Speaking → Listening`。回到聆听时那次全清会把 `asr_seen`（D3 空素材 producer 的**唯一素材门**）清 0。
+- 后果：一个**有素材**、孩子已讲过话的故事会话，在引导播报后静置 60 秒会被 D3 判成「空素材」并释放——front 侧该 `listen stop` 走 `pending_stop` 释放、**不归档**（front `kidpal_story_discard` / pending-stop 释放链的口径），孩子已讲内容丢失。
+- 修法（seam 与接线各一处，均为 additive）：① 缝新增 `kidpal_voice_watch_reset_soft()`——清 `quiet_s / level_run_s / asr_age_s / tick_s / diag_last_s / suspect` 六件、**保留 `asr_seen`**；② 状态迁移监听器把 `old_state` 存进 file-static，`Listening` 入口按迁移来源分派：旧状态 == `kDeviceStateSpeaking` 走软复位，否则走全清。
+- 验收收紧（acceptance-author 补丁）：SCR-A13 追加「`reset_soft` 后 `asr_seen` 仍为 1、其余六件全 0；其后 `reset()` 仍七字段全清」；SCR-A15 追加 Listening 区三件（`reset_soft(&s_voice_watch)` ≥1、`reset(&s_voice_watch)` ≥1、`kDeviceStateSpeaking` ≥1）。红基线 320/5（仅 SCR-A13 / SCR-A15 两条设计态红）。
+- 教训（登记 pod-retro）：**「会话入口复位」这类卫生动作必须区分「新会话」与「会话内状态往返」**，否则会把有状态价值的会话级证据当成残留清掉；判据改造轮尤其要逐条追问「这个标志在什么时机被清、清了会不会丢素材」。
+
 # demo 证据形态（与 roadmap 一致）
 
 - host runner + server pytest：SCR-A1–A7 与 SCRF-B1–B6（含 B2b/B4b）的 RED→GREEN 和变异证据；四个收尾点负锚 / 五个真拆通道正锚 / discard→stop 有序不归档为承重齿。

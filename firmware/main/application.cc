@@ -61,6 +61,15 @@ bool g_story_guide_audio_seen = false;
 static bool s_vad_speaking = false;
 static bool s_story_rec_entered = false;
 
+/* 261116-channel-resident-core（真机轮 B 修复轮 tighten, 2026-11-18）: 状态迁移的
+ * 旧状态快照。写者 = Initialize 注册的状态迁移监听器（DeviceState 枚举标量，
+ * 与 s_vad_speaking 同级宽松度）；读者 = HandleStateChangedEvent 的 Listening case
+ * 尾部复位分派。初值 kDeviceStateIdle = 「新会话」路径。
+ * 用途：区分会话内 TTS 往返（旧状态 == Speaking -> 软复位，保 asr_seen）与跨会话
+ * 入口（七字段全清）。旧状态比较**写在 Listening case 内**是冻结接线形态（冻结件
+ * EQ-4）：上移到监听器算布尔属语义等价写法但会让 SCR-A15 红，故不得改形态。 */
+static DeviceState s_watch_prev_state = kDeviceStateIdle;
+
 /* 261014 VR-A2/A3 轮来源采样（fork② 判别器依据）: sentence_start 分支进 Speaking 前取
  * 真实设备态、每轮重置（single write point）; tts stop 出口据其判「出会话 speak 不回
  * 聆听」。文件级静态（单 Application 实例, 单写者 = sentence_start 回调 / 主循环读,
@@ -81,6 +90,23 @@ static DeviceState speaking_round_entered_from_ = kDeviceStateIdle;
 #include <time.h>          /* 261022-diag-log-content: localtime_r / struct tm（时间前缀产出） */
 #include "time_sync.h"
 #include "diagnostics/log_semantics.h" /* 261022-diag-log-content: 时间前缀缓存产出 + SystemInfo 降频决策 */
+#include "session_voice_watch.h" /* 261116 真机轮 B 修复轮: 语音看门缝（判据本体住纯逻辑 C 源） */
+
+/* 261116-channel-resident-core（真机轮 B 修复轮）: 语音看门缝实例与阈值配置。
+ * file-static 而非 Application 成员——本包 changeManifest 不含 application.h
+ * （成员化 = 公共头零 diff 破）。单写者 = 主循环（CLOCK_TICK tick / Listening 入口
+ * reset / stt 分支 lambda 内 note_asr 都在主循环上下文），与 s_vad_speaking 同级
+ * 宽松度；s_vad_speaking 本身仍由 VAD 回调任务写、主循环读（32 位标量）。 */
+static kidpal_voice_watch_t s_voice_watch;
+static kidpal_voice_watch_cfg_t s_voice_watch_cfg;
+
+/* 诊断行跳变快照（上一次 emit 时的电平 / 记录语境 / 录音页镜像 / suspect；
+ * 初值 -1 = 首次必判为跳变）。快照刻意放 application.cc 而非缝结构尾部：缝结构
+ * 保持冻结件镜像的七字段原形，诊断展示态不混进判据状态机。 */
+static int s_vw_diag_vad = -1;
+static int s_vw_diag_rec_ctx = -1;
+static int s_vw_diag_rec_mat = -1;
+static int s_vw_diag_suspect = -1;
 
 #define TAG "Application"
 
@@ -262,11 +288,20 @@ void Application::Initialize() {
 
     // Add state change listeners
     state_machine_.AddStateChangeListener([this](DeviceState old_state, DeviceState new_state) {
+        /* 旧状态快照供 Listening 入口按迁移来源分派复位（会话内 TTS 往返 vs 新会话）。 */
+        s_watch_prev_state = old_state;
         xEventGroupSetBits(event_group_, MAIN_EVENT_STATE_CHANGED);
     });
 
     // Start the clock timer to update the status bar
     esp_timer_start_periodic(clock_timer_handle_, 1000000);
+
+    /* 261116-channel-resident-core（真机轮 B 修复轮）: 语音看门缝阈值单源注入。
+     * cfg_default 填三件头宏阈值（sustain / asr 新鲜窗 / 电平可信窗）；空闲阈值由
+     * 本处注入既有命名常量——**唯一注入点**，两侧各写一个 60 = 两个阈值各自漂移
+     * （SCR-A15 ⑤ 钉这三件同区在世）。 */
+    kidpal_voice_watch_cfg_default(&s_voice_watch_cfg);
+    s_voice_watch_cfg.idle_timeout_s = kSessionIdleTimeoutS;
 
     // Add MCP common tools (only once during initialization)
     auto& mcp_server = McpServer::GetInstance();
@@ -486,44 +521,87 @@ void Application::Run() {
                 }
             }
 
-            /* 261116-channel-resident-core（P1 T2）: 60s 无语音超时 producer
-             * （requirements §2.1 结束三通道①）。判据四件（注释刻意不写判据原文的
-             * 符号字面——验收件按源文本计数，注释里的字面会稀释断言区分力）:
+            /* 261116-channel-resident-core（真机轮 B 修复轮）: 语音看门缝每 1 秒恰一次
+             * 推进（判据本体住 session_voice_watch.c，本区只留接线）。电平入参只作
+             * 「连续段时长」输入——它不是收尾的必要条件；收尾主累加器 = 缝内 quiet_s
+             * （距上次有效语音证据的秒数）。两条 producer 共用本 tick 的返回值。 */
+            int vw_act = kidpal_voice_watch_tick(&s_voice_watch, s_vad_speaking ? 1 : 0,
+                                                 &s_voice_watch_cfg);
+
+            /* 轮 B 可观测性（human 必办）: 低频聆听诊断行。触发 = 缝纯函数
+             * kidpal_voice_watch_diag_due（周期 10s + 跳变，最小间隔 3s 封顶；
+             * 模数走缝自持 tick 计数——本区不出现裸的 clock_ticks_ 取模形态，
+             * diag_log DLG-A4⑤ 与本包 SCR-A14 双钉）。非聆听态零输出。
+             * 跳变源 = 电平 / 记录语境 / 录音页镜像 / suspect 与上次 emit 快照比对。 */
+            {
+                int vw_vad = s_vad_speaking ? 1 : 0;
+                int vw_rec_ctx = kidpal_story_session_ctx_active() ? 1 : 0;
+                int vw_rec_mat = s_story_rec_entered ? 1 : 0;
+                int vw_changed = (vw_vad != s_vw_diag_vad) ||
+                                 (vw_rec_ctx != s_vw_diag_rec_ctx) ||
+                                 (vw_rec_mat != s_vw_diag_rec_mat) ||
+                                 (s_voice_watch.suspect != s_vw_diag_suspect);
+
+                if (GetDeviceState() == kDeviceStateListening &&
+                    kidpal_voice_watch_diag_due(s_voice_watch.tick_s,
+                                                s_voice_watch.diag_last_s,
+                                                KIDPAL_VW_DIAG_INTERVAL_S,
+                                                KIDPAL_VW_DIAG_MIN_GAP_S,
+                                                vw_changed) == 1) {
+                    const char *vw_src = vw_changed ? "edge" : "tick";
+
+                    ESP_LOGI(TAG, "listening_diag corr_id=kdp-%u src=%s state=%d vad=%d run=%d quiet=%d asr=%d ticks=%d rec_ctx=%d rec_mat=%d suspect=%d",
+                             static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu), vw_src,
+                             static_cast<int>(GetDeviceState()), vw_vad,
+                             s_voice_watch.level_run_s, s_voice_watch.quiet_s,
+                             s_voice_watch.asr_age_s, clock_ticks_, vw_rec_ctx, vw_rec_mat,
+                             s_voice_watch.suspect);
+                    s_voice_watch.diag_last_s = s_voice_watch.tick_s;
+                    s_vw_diag_vad = vw_vad;
+                    s_vw_diag_rec_ctx = vw_rec_ctx;
+                    s_vw_diag_rec_mat = vw_rec_mat;
+                    s_vw_diag_suspect = s_voice_watch.suspect;
+                }
+            }
+
+            /* 261116-channel-resident-core（P1 T2；真机轮 B 修复轮重锚）: 60s 无语音
+             * 超时 producer（requirements §2.1 结束三通道①）。判据三件:
              *   ① 设备态 == 聆听态（非聆听态不计时）
-             *   ② VAD 电平门（承重）: s_vad_speaking 是电平、VAD_CHANGE 只在起音沿
-             *      产生一次；一段无停顿的 90s 连续讲话只有一个上升沿，仅靠沿重置会在
-             *      第 60 秒误收（轮 A A7 直接翻车）。
-             *   ③ 空闲计时到阈值（状态迁移 / VAD 起音沿均归零）
-             *   ④ 记录语境硬豁免（requirements §2.1 v1.65；记录会话由引导/归档链收尾）
+             *   ② 记录语境硬豁免（requirements §2.1 v1.65；记录会话由引导/归档链或
+             *      下方空素材 producer 收尾）
+             *   ③ 缝返回空闲收尾动作（= 有效语音证据累计静默达阈值；电平卡死 / 起音沿
+             *      风暴两种轮 B 失效都走得到——判据本体见 session_voice_watch.c）
+             * 旧判据的瞬时电平必要条件与裸计时比较已退役（电平卡死时前者恒假、起音沿
+             * 风暴下后者反复归零，两者在真机日志里同构）。
              * 命中 -> 直接投统一收口处理器（主循环上下文 = 直调形态; 协议回调上下文
              * 走事件位, 两类不混用）。审计行 token = session_idle_timeout。 */
-            if (GetDeviceState() == kDeviceStateListening && !s_vad_speaking &&
-                clock_ticks_ >= kSessionIdleTimeoutS &&
-                !kidpal_story_session_ctx_active()) {
-                ESP_LOGI(TAG, "session_idle_timeout corr_id=kdp-%u seconds=%d",
+            if (GetDeviceState() == kDeviceStateListening &&
+                !kidpal_story_session_ctx_active() && vw_act == KVW_ACT_IDLE_FIRE) {
+                ESP_LOGI(TAG, "session_idle_timeout corr_id=kdp-%u seconds=%d quiet=%d asr=%d suspect=%d src=idle",
                          static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu),
-                         clock_ticks_);
+                         clock_ticks_, s_voice_watch.quiet_s, s_voice_watch.asr_age_s,
+                         s_voice_watch.suspect);
                 HandleEndVoiceSessionEvent();
             }
 
-            /* 261116-channel-resident-core（真机轮 A 修复轮 D3）: 空素材记录会话空闲
-             * 收尾 producer。判据五件:
+            /* 261116-channel-resident-core（真机轮 A 修复轮 D3；轮 B 修复轮换源）:
+             * 空素材记录会话空闲收尾 producer。判据四件:
              *   ① 设备态 == 聆听态
              *   ② 记录语境会话（正向门——与上方既有 60s 无语音 producer 的豁免门互补，
              *      两者恰好覆盖「非记录语境 / 空素材记录语境」两半）
-             *   ③ 本次会话从未收到素材（VAD 起音沿即置位素材信号，Idle 收尾阶段清位；
-             *      有素材的会话交引导/归档链收尾，不得被本 producer 误收）
-             *   ④ VAD 电平门（承重，与上方同款理由：无停顿长讲只有一个上升沿）
-             *   ⑤ 静置计时到空素材阈值
+             *   ③ 本会话**引擎从未转写出一句**（素材门读缝内 asr_seen；旧信号是 VAD 起音
+             *      沿置位的录音页镜像，轮 B 设备日志证明无人说话时起步 1 秒内也会让出
+             *      一记 speech 沿把它置真 -> 旧判据在真机上结构性不可达）
+             *   ④ 缝内静默秒数达到空素材阈值
              * 命中 -> 直调统一收口处理器（主循环上下文 = 直调形态，与上方同款）。
-             * 审计行 token 固定（见下方日志行；轮 B 三源对账的设备侧唯一可观测证据）。
-             * 注释刻意不写判据符号字面（验收件按源文本计数，会稀释断言区分力）。 */
+             * 审计行 token 固定（轮 B 三源对账的设备侧唯一可观测证据）。 */
             if (GetDeviceState() == kDeviceStateListening &&
-                kidpal_story_session_ctx_active() && !s_story_rec_entered &&
-                !s_vad_speaking && clock_ticks_ >= kStoryEmptySessionTimeoutS) {
-                ESP_LOGI(TAG, "story_empty_session_timeout corr_id=kdp-%u seconds=%d",
+                kidpal_story_session_ctx_active() && !s_voice_watch.asr_seen &&
+                s_voice_watch.quiet_s >= kStoryEmptySessionTimeoutS) {
+                ESP_LOGI(TAG, "story_empty_session_timeout corr_id=kdp-%u seconds=%d quiet=%d asr=%d suspect=%d src=empty_story",
                          static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu),
-                         clock_ticks_);
+                         clock_ticks_, s_voice_watch.quiet_s, s_voice_watch.asr_age_s,
+                         s_voice_watch.suspect);
                 HandleEndVoiceSessionEvent();
             }
 
@@ -911,6 +989,11 @@ void Application::InitializeProtocol() {
             if (cJSON_IsString(text)) {
                 ESP_LOGI(TAG, ">> %s", text->valuestring);
                 Schedule([this, display, message = std::string(text->valuestring)]() {
+                    /* 261116-channel-resident-core（真机轮 B 修复轮）: 引擎真的转写出
+                     * 一句话 = 「本会话有素材」的证据（与 front 累积器同源——front 的
+                     * accum 也只吃 stt 文本）。放 lambda 内 = 主循环上下文，与 tick /
+                     * reset 同写者，零锁。 */
+                    kidpal_voice_watch_note_asr(&s_voice_watch);
                     /* 语音轮演出 (包 260915-m1-k3-voice-round-ui, seam [2]): 思考触发 =
                      * 服务端 VAD 切句完成 (stt 下发) 同刻消费场景单源 —— 状态切换与页面
                      * 弹出同一时刻 (requirements §2.2 思考中行), 非 tts start、非定时器。
@@ -1436,6 +1519,42 @@ void Application::HandleStateChangedEvent() {
             if (play_popup_on_listening_) {
                 play_popup_on_listening_ = false;
                 audio_service_.PlaySound(Lang::Sounds::OGG_POPUP);
+            }
+
+            /* 261116-channel-resident-core（真机轮 B 修复轮, M3 卫生复位 + 迁移条件
+             * 分派）: 会话入口复位语音看门缝 + VAD 电平闩锁。AfeAudioProcessor::Stop()
+             * 不复位成员 is_speaking_，旧会话的电平可能被新会话继承（闩锁）。
+             *   - 旧状态 == Speaking（记录会话的引导播报 TTS 造成 Listening -> Speaking
+             *     -> Listening 往返）：软复位，清计时/诊断/审计六件但**保留 asr_seen**
+             *     ——它是 D3 空素材 producer 的唯一素材门，清 0 会把有素材的故事会话判成
+             *     空素材、静置 60 秒不归档地释放（孩子已讲内容丢失）；
+             *   - 其余入口（新会话）：七字段全清，跨会话零残留（quiet_s / asr_seen /
+             *     suspect / diag_last_s 不得继承上一会话）。
+             * 落位 = 本分支尾部（SendKidpalSessionCtx 与其页态解析块之后，不打断
+             * RSL-A2 的发送时点时序）；复位与发送互不依赖。 */
+            if (s_watch_prev_state == kDeviceStateSpeaking) {
+                kidpal_voice_watch_reset_soft(&s_voice_watch);  /* 会话内 TTS 往返：保素材证据 */
+            } else {
+                kidpal_voice_watch_reset(&s_voice_watch);       /* 新会话：七字段全清 */
+            }
+            s_vad_speaking = false;
+            /* 会话入口无条件诊断行（src=enter; 诊断限频的周期起点由本行把
+             * diag_last_s 归到复位后的 tick 基准）。 */
+            {
+                int vw_rec_ctx = kidpal_story_session_ctx_active() ? 1 : 0;
+                int vw_rec_mat = s_story_rec_entered ? 1 : 0;
+
+                ESP_LOGI(TAG, "listening_diag corr_id=kdp-%u src=enter state=%d vad=%d run=%d quiet=%d asr=%d ticks=%d rec_ctx=%d rec_mat=%d suspect=%d",
+                         static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu),
+                         static_cast<int>(GetDeviceState()), s_vad_speaking ? 1 : 0,
+                         s_voice_watch.level_run_s, s_voice_watch.quiet_s,
+                         s_voice_watch.asr_age_s, clock_ticks_, vw_rec_ctx, vw_rec_mat,
+                         s_voice_watch.suspect);
+                s_voice_watch.diag_last_s = s_voice_watch.tick_s;
+                s_vw_diag_vad = s_vad_speaking ? 1 : 0;
+                s_vw_diag_rec_ctx = vw_rec_ctx;
+                s_vw_diag_rec_mat = vw_rec_mat;
+                s_vw_diag_suspect = s_voice_watch.suspect;
             }
             break;
         case kDeviceStateSpeaking:

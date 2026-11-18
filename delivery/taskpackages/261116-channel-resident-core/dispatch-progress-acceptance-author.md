@@ -1,64 +1,60 @@
 # dispatch-progress · acceptance-author · 261116-channel-resident-core
 
-> 本文件 = 当前派发（真机轮 A 修复轮 D1/D2/D3 验收冻结）的自包含进度快照。
-> 覆盖写；不载 tokens / gates / rounds / verdict。
+> 本文件 = 当前派发（会话内素材证据跨 TTS 往返保活 · tighten-only 补丁）的自包含进度
+> 快照。覆盖写；不载 tokens / gates / rounds / verdict。
 
 ## 本轮目标（一句话）
 
-为真机轮 A 三条缺陷（D1 语境注入去边缘化 / D2 丢弃终止在途回合 + 迟到帧门 / D3 空素材
-收尾）冻结新增验收断言（SCRF-B7/B8/B9、SCR-A8/B10）并确认设计态红基线；RDG-A4 显式重锚。
+在已冻结的 `firmware/main/test/session_channel_resident.acceptance.c` 里，为「会话内
+素材证据（`asr_seen`）在 Listening→Speaking→Listening 往返中不得丢失」补一条契约
+（新增 `kidpal_voice_watch_reset_soft`）与对应断言，并实测红基线。
 
-## 已落盘文件
+## 已完成段落
 
-1. `server/acceptance/test_session_channel_resident.acceptance.py`
-   - 头注追加 B7–B10 scope + 修复轮强度申报（含 GAP/EQ/夹具自含性）。
-   - 新增 helpers：`AUDIO_BYTES` / `_frames_of_type` / `_frame_indices` /
-     `_is_release_frame` / `_is_listen_stop_frame` / `_is_abort_frame` / `_tts_frame` /
-     `_llm_frame` / `_mcp_probe_frame` / `_display_blocks_frame` /
-     `_start_recording_block` / `_log_lines_with` / `_log_capture`（+ `import logging`）。
-   - 新增 13 个 test method（4 个 class）：
-     - `ScrfRecordCtxUnconditionalAcceptance`（B7×3，:1380 起）
-     - `ScrfDiscardTerminatesRoundAcceptance`（B8×4，:1490 起；含 must-stay-green 对照齿）
-     - `ScrfClosedSessionFrameGateAcceptance`（B9×4，:1650 起）
-     - `ScrfEmptyMaterialReleaseAcceptance`（B10×2，:1837 起；预期设计态绿）
-2. `firmware/main/test/session_channel_resident.acceptance.c`
-   - 头注加设备结果标记（成对）：`device-outcome: SCR-A8` +
-     `host-uncompilable-path: firmware/main/application.cc`（与 launch-card 申报一致）。
-   - 头注强度申报追加 SCR-A8 行 + GAP-4。
-   - 新增 `TEST_CASE("会话通道常驻: 空素材空闲收尾producer (SCR-A8)", ...)`（:667 起）。
-3. `server/acceptance/test_record_dialogue_guide.acceptance.py`
-   - RDG-A4 重复 ctx(story) 断言显式重锚：旧钉「第二次零 active=true」→ 新钉「第二次
-     仍恰一帧 active=true + story_list 零新增」。
-   - 冻结契约 C 节「进语境两收敛入口」措辞同步为无条件注入（幂等由引擎认领缝承载）。
-   - REVISION LOG 追加两条 2026-11-17 条（旧钉→新钉→为什么→授权）。
+1. 输入通读：现冻结件全文 / `firmware/main/session_voice_watch.{c,h}` / application.cc
+   的 `case kDeviceStateListening:` 区（复位调用在 1519 行、诊断行与 `s_vad_speaking`
+   复位紧随其后）/ host_app 两侧 CMakeLists 编译口径。
+2. 变更点（仅本验收件，零实现面改动）：
+   - 头注 [S8] (5) 增补第六件 `reset_soft()` 语义（六清一保 + 跨会话仍走 `reset()`），
+     并把接线形态改写为「存 `old_state` + 按旧状态分派」的描述。
+   - 强度申报增补一行（软复位 -> SCR-A13 行为级 + SCR-A15 结构半 + 真机端到端留在
+     真机轮 B 重测，与 GAP-4 同族）。
+   - 头门控/哨兵段：共用原型块加 `void kidpal_voice_watch_reset_soft(kidpal_voice_watch_t *w);`
+     （同型重复声明，头在场/缺席两分支都生效），并加 `__attribute__((weak))` 哨兵实现，
+     哨兵**刻意把 `asr_seen` 清 0** -> 未实现态新断言必红。
+   - SCR-A13 同 case 追加：脏置 `asr_seen=1` + 六件非零 -> `reset_soft` 后 `asr_seen==1`
+     且其余六件全 0；再追一条「`reset_soft` 之后 `reset()` 七字段仍全 0」。
+   - SCR-A15 ③ 同 case 追加三条：`kidpal_voice_watch_reset_soft(&s_voice_watch) >= 1`、
+     `kidpal_voice_watch_reset(&s_voice_watch) >= 1`、`kDeviceStateSpeaking >= 1`；
+     两条计数一律带实参（裸 `kidpal_voice_watch_reset(` 是 `_reset_soft(` 的前缀子串）。
+     既有 `kidpal_voice_watch_reset(` 断言原样保留（只加不减）。
+   - 文件尾 REVISION LOG 2026-11-18 tighten 段 + RED baseline 判读口径补实测数字。
+   - 行为等价假设增补 EQ-4（「Listening 区内出现 `kDeviceStateSpeaking` ≙ 复位按迁移
+     条件分派」= 钉 planner 冻结的接线形态；把比较上移到状态迁移监听器属语义等价写法
+     但会在该断言下红，属冻结形态要求，非假红）。
 
-## 红基线（本轮已实跑）
+## 红基线（本轮实跑）
 
-- host（执行目录 `firmware/main/test/host_app`）：build 编译通道 error 0；
-  `307 Tests / 4 Failures / 0 Ignored` = 3 上游存量红（p1_auxbar_style AB-A1/A2/A4）
-  + 1 本包设计态红（SCR-A8：`kStoryEmptySessionTimeoutS` 缺席）。
-- server（仓根 `python -m pytest -q --import-mode=importlib -m "not live" server/acceptance`）：
-  `9 failed / 477 passed / 9 deselected`。9 红 = 新件 8（B7×3 / B8×2 / B9×3）+
-  RDG-A4 重锚 1；既有 473 条零回归。
-- 新件 5 条设计态绿（B8 源锚负锚、B8 KEY 收尾对照齿、B9 提醒令牌登记点、B10×2），
-  敏感性由 mutation 兜底（见交付报告变异表）。
+- 命令（仓根起）：`wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build`
+  → 编译通道 **error 0**（唯一 warning = 既有 helper `scr_exists` 未使用）。
+  运行：`wsl -d Ubuntu-24.04 -- ./firmware/main/test/host_app/build/host_infra_test.elf`
+- 结果：**320 Tests / 5 Failures / 0 Ignored**（exit=5）。5 红 = 3 条上游存量红
+  （p1_auxbar_style AB-A1 / AB-A2 / AB-A4）+ **恰 2 条本补丁设计态红**：
+  - SCR-A13（1349）`reset_soft 后 asr_seen = 0（期望 1）`；
+  - SCR-A15（1560）`Listening case 内 kidpal_voice_watch_reset_soft(&s_voice_watch) = 0 处（冻结 >=1）`。
+  其余本包 case 全绿（A5/A8/A9–A12/A14 与 A15 既有六件），证明新断言只打自己那一处缺失。
 
-## 下一步（builder / planner）
+## 转绿路径与变异敏感性（scratch，仓外 `/c/tmp/vwtight2`，不落仓）
 
-- builder 按 plan.md「真机轮 A 修复轮」D1/D2/D3 实施；`_inject_record_context_enter`
-  审计 token `story_record_ctx_enter` 在 front_app.py 只出现 1 次；实现注释不得复述
-  判据字面（B7 计数断言、SCR-A8 计数断言会因此稀释）。
-- builder 逐条做变异取证（转红→还原），并注意 DISCARD 分支腿集写死
-  `[(websocket, upstream)]`（`_alert_legs` 负锚会红）。
-- planner：TaskPackage `acceptance[]` 由 intent 细化冻结（本文件只冻结断言，不改
-  TaskPackage）；`mutationEvidence.perAcceptance` 需补 5 条新验收的变异记录。
+- 转绿：参考实现（`reset_soft` 六清一保）+ 假树 application.cc（Listening case 按
+  `s_watch_prev_state == kDeviceStateSpeaking` 分派）-> **15 cases / 15 passed**。
+- 变异（每个都被杀死，且只杀对应 case）：
+  - `reset_soft` 退化成全清（清 asr_seen）-> SCR-A13 红（1349）；
+  - `reset_soft` 漏清 `diag_last_s` -> SCR-A13 红（1354）；
+  - 接线退化成无条件软复位（丢跨会话全清路径）-> SCR-A15 红；
+  - 接线退化成无条件全清复位（= 当前真树现状）-> SCR-A15 红（1560）。
 
-## 本轮收紧（观测面补盲）
+## 下一步
 
-- 2026-11-18 `test_scr_b10_empty_material_stop_releases_without_archive`：B10「零新增
-  story_list」断言原只观测外层 `dev.sent_text`，漏掉 sweep 释放按
-  `_session_legs(sid) or _alert_legs` 投递的会话设备腿 `dev_leg`（builder kill-shot
-  变异未使该断言转红）。补一条对 `dev_leg.sent_text` 的同方向零新增断言（纯 additive，
-  原外层断言保留），语义方向不变、仅扩观测面；kill-shot 复核（运行时 monkeypatch 向会话
-  腿推 story_list）已使新断言转红（`1 != 0`）。`-k b10` 2 passed；全量非 live 486
-  passed 不变。
+- builder 落 `kidpal_voice_watch_reset_soft` 强符号 + application.cc 条件分派接线后，
+  按同命令重跑，期望只剩 3 条上游存量 AB 红。

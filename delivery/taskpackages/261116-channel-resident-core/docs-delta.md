@@ -47,3 +47,15 @@
   - `verifier-evidence/rounds/r3.json` / `r4.json` / `r5.json`（承重轮 fact；r3 = ok:false 事实占序）
 - **两条 debt 维持 deferred**：`TECH-261114-overlay-close-channel-rebuild-churn`、`TECH-261012-first-keypress-no-listening` 本轮零改账本文件；结项凭据仍是真机轮 B 目击（轮 A 为诊断轮且 FAILED，不构成结项凭据）。
 - **spec 漂移申报（不由本 Pod 改 spec）**：D3 对 requirements §2.1「记录会话不适用 60s 会话超时」的逐字冻结构成**收窄**——新增语义 = 空素材记录会话由设备侧 60s 收尾（释放、不归档、不推 story_list、不盖章），而 AC5 只覆盖「有素材 + 2 轮引导无回应」。`docsSyncRequired=false` 的现值与该实际影响不一致；本包对 `docs/requirements.md` 保持零 diff，**交主线程按需求面轻量注记处理**（§2.1 记录会话段补对账句，或 §7 开放问题追加），不写成「已同步」。
+
+## 真机轮 B 修复轮增记（2026-11-18，final r7 收口）
+
+- **canonical docs 本轮零 diff（实测）**：`git diff --stat HEAD -- docs/requirements.md docs/architecture.md docs/contracts docs/decisions docs/debt` 为空，`git status --porcelain -- docs` 为空。spec 面（`docs/requirements.md` / `docs/architecture.md`）与契约面（`docs/contracts/**`）本轮零改动，`docsSyncRequired=false` 与实测一致；上一节申报的 D3 对 §2.1 的收窄性影响仍然成立，去向不变（主线程需求面轻量注记，Pod 零写）。
+- **ADR**：`adrRequired=false`，本轮未产出新 ADR；判据改造属既有 ADR-019（会话/通道生命周期解耦）的实现细化，不改架构裁决文本。架构/依赖卫生：无新依赖、无跨层新调用、无循环依赖、无绕过契约的本地类型；新缝 `session_voice_watch.{c,h}` 为零芯片依赖纯逻辑 C 源（不 include ESP-IDF / FreeRTOS / LVGL，不读真实时钟），设备树与 host 树编同一份源。
+- **两条 tech debt 维持 `deferred`（本轮不改账本文件）**：`TECH-261114-overlay-close-channel-rebuild-churn` 与 `TECH-261012-first-keypress-no-listening` 的结项凭据 = **真机轮 C 通过**（轮 B 只部分通过：D1/D2/A5 归档通过，D3 与 A6 失败），故本轮不改成 `closed`、不写 `closedBy`，`docs/debt/tech/**` 零 diff。
+- **新增残余申报（不建 debt 文件，只在此与 review-packet 申报，由主线程决定是否立项）**：
+  1. `AfeAudioProcessor::Stop()` 不复位成员 `is_speaking_`（M3 电平闩锁的根源）。本轮判据对 M3 已鲁棒，并由 Listening 入口 `s_vad_speaking = false` + 缝的会话入口复位兜住；根源修复要连带决定「是否补发一次 offset 回调」（影响 `voice_detected_` → LED），属独立需自验的语义变更，归后续批。
+  2. 记录语境镜像卡死（M4）：`kidpal_story_session_ctx_active()` 残留会让 A6 被硬豁免、D3 又不满足素材门。本轮只由低频诊断行的 `rec_ctx=` 字段使其可归因、不修；置位单点在 `mcp_server.cc`（P2 边界、本包 manifest 外），修复归 P2。
+  3. 故事会话起步噪声沿导致无端跳录音页（VAD 在无人说话时让出 speech 沿，把 `s_story_rec_entered` 置真）。本轮 D3 判据已换源到缝内 `asr_seen`，该沿只剩页面副作用；根治归 `AfeAudioProcessor` 卫生复位后续批。
+  4. 设备构建 depfile 时序：新头文件首次引入不触发依赖它的验收 TU 重编（`session_voice_watch.h` 在验收件编红基线时尚不存在，depfile 从未登记它）。变异证据对头宏变异采用「先删 `.o` 强制重编」口径规避，属既有构建卫生问题，不在本包修。
+  5. `change-manifest` 闸经 `current/` 指针解析时恒判 pre-cutoff（本包恒报 `skipped: pre-cutoff`），闸的清单对账实际未执行；planner 已按闸本应执行的规则手工对账（清单外 0 件），诊断见 `gate-tooling-gap-manifest-cutoff.md`，修复面在 `.claude/**`、归主线程。
