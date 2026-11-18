@@ -12,6 +12,7 @@
   "scopeFile": "delivery/taskpackages/261116-channel-resident-core/test-scope-final.txt",
   "scopeBasis": "detect_changes（project C-AI-KidPal-pod-channel，since main / merge_base 73f43637，direction=inbound，depth=2）：68 changed files（含本包 delivery/docs 簿记件；实现/验收面 14 件）/ seed 445 符号 / impacted_total 304 节点（firmware/main 217、server/acceptance 73、server/gateway 10、server/tests 4）。合成另含 acceptanceTestsFile（6）∪ impactedTestsSeed（19 去重）∪ detect_changes 映射测试 ∪ 共享缝 ∪ 安全余量；per-Pod 图索引可用，正常圈定（未降级）。相对 r5 的 28 条只增不减（新增 builder 单测 session_voice_watch.test.c 与 font_assets_runtime.acceptance.c）。",
   "scopeEntries": 30,
+  "scopePostCommitRecheck": "收口 commit f368926c 后复核 detect_changes（Step 9b advisory）：69 changed files / seed 442 符号 / impacted_total 110 节点（server/acceptance 73、firmware/main 23、server/gateway 10、server/tests 4）——与圈定时 304 节点的膨胀面（图索引刷新过程态）指向同一测试面，实现面符号影响无外溢。",
   "scopeNote": "清单 = 本包冻结件（session_channel_resident 两件）∪ 本轮新缝 builder 单测（session_voice_watch.test.c）∪ impactedTestsSeed（固件 11 + 服务端 8）∪ detect_changes 映射测试（memory_isolation / points_e2e_spike / story_fetch / points_ledger_core / qq_points_channel / schedule_grid_restore / story_cancel_lifecycle_units）∪ 服务端单元面（archive_guard / reminder 源读 front_app）∪ host 冒烟（host_infra_smoke，含注册序守卫）。r5 已纳入项全部保留（圈定面只增不减）。排除项（story_units 装 story.py/display_schema.py 零改、engine_round_close_units 零触碰、archive/test_schedule_reminder 属退役面、p1_auxbar 上游存量）见清单尾注。",
   "evidenceRef": "delivery/taskpackages/261116-channel-resident-core/verifier-evidence/rounds/r7.json",
   "evidenceFact": {
