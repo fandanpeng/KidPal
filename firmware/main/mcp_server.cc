@@ -1174,6 +1174,18 @@ void KidpalStorySessionEndApply(int list_page) {
      * -> 强屏蔽位落 0, 声波 chrome 按常规语义恢复）。 */
     kidpal_render_node_story_session_page(g_story_view.page);
     kidpal_render_node_cache_story(&g_story_view, &g_story_list, &g_story_text);
+    /* 261116 真机轮 D 快修（2026-11-18，human 指示跳过完整流程）：自动收尾重绘。
+     * 记录会话在录音态入口已让出 VOICE 层（KidpalStoryVadEnterRecording 内显式
+     * voice_end），故 Idle 分支随后的 kidpal_render_node_voice_end() 在「VOICE 不在栈」
+     * 处早退、无人重绘故事页——空素材自动收尾后屏上残留最后一帧录音页（rec_seconds
+     * 冻结），而键帽已按复位后的 LIST 刷新（内容/键帽错位）。此处补落屏：守卫用既有
+     * story_on_screen（top==LOCAL_PAGE && 本地页==P3），离屏/覆盖层前台只填缓存不渲染，
+     * 与 StoryStampHoldCb（B-4）同口径；落在 rec timer 删除与 cache_story 之后，
+     * D4b-1 与 RSL2-A2 镜像同步次序不变；VOICE 仍在栈的正常路径守卫返 0，交 voice_end
+     * 渲染，不产生双重渲染。 */
+    if (kidpal_render_node_story_on_screen() == 1) {
+        kidpal_render_node_refresh_story();
+    }
     ESP_LOGI(TAG, "story_session_end corr_id=kdp-%u page=%d",
              static_cast<unsigned>(lv_tick_get() & 0xFFFFFFu), list_page);
 }
