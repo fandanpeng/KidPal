@@ -3,7 +3,7 @@
   "riskTier": "high",
   "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
   "producedBy": "supervisor-verdict-gate.mjs",
-  "ts": "2026-11-18T03:04:42.263Z",
+  "ts": "2026-11-18T14:36:53.093Z",
   "changeId": "261116-channel-resident-core",
   "originType": "proposal",
   "adjudication": {
@@ -27,7 +27,7 @@
     },
     "advisories": [],
     "precedentHits": [],
-    "circuitBreakerCompletedRounds": 7,
+    "circuitBreakerCompletedRounds": 9,
     "evidenceComplete": true
   },
   "provenance": {
@@ -47,9 +47,9 @@
         "precedentHits": []
       },
       "evidenceCompleteness": {
-        "bearingFactRef": "delivery/taskpackages/261116-channel-resident-core/verifier-evidence/rounds/r7.json",
+        "bearingFactRef": "delivery/taskpackages/261116-channel-resident-core/verifier-evidence/rounds/r9.json",
         "bearingFactOk": true,
-        "completedRounds": 7,
+        "completedRounds": 9,
         "closeoutArtifactsChecked": [
           "delivery/taskpackages/261116-channel-resident-core/docs-delta.md",
           "delivery/taskpackages/261116-channel-resident-core/review-packet.md"
@@ -77,10 +77,34 @@
       ".claude/verify-logs/1794970301006-docs-sync.log",
       ".claude/verify-logs/1794970301120-security.log",
       ".claude/verify-logs/1794970339215-unit.log",
-      ".claude/verify-logs/1794970375751-acceptance.log"
+      ".claude/verify-logs/1794970375751-acceptance.log",
+      ".claude/verify-logs/1795011258920-taskpackage-required.log",
+      ".claude/verify-logs/1795011259349-change-manifest.log",
+      ".claude/verify-logs/1795011277889-firmware-build.log",
+      ".claude/verify-logs/1795011278009-contract-lint.log",
+      ".claude/verify-logs/1795011278164-acceptance-coverage.log",
+      ".claude/verify-logs/1795011278292-mutation-check.log",
+      ".claude/verify-logs/1795011880107-taskpackage-required.log",
+      ".claude/verify-logs/1795011880500-change-manifest.log",
+      ".claude/verify-logs/1795011890392-firmware-build.log",
+      ".claude/verify-logs/1795011890494-contract-lint.log",
+      ".claude/verify-logs/1795011890640-acceptance-coverage.log",
+      ".claude/verify-logs/1795011891330-mutation-check.log",
+      ".claude/verify-logs/1795011891437-docs-sync.log",
+      ".claude/verify-logs/1795011891539-security.log",
+      ".claude/verify-logs/1795012034939-taskpackage-required.log",
+      ".claude/verify-logs/1795012035324-change-manifest.log",
+      ".claude/verify-logs/1795012045071-firmware-build.log",
+      ".claude/verify-logs/1795012045169-contract-lint.log",
+      ".claude/verify-logs/1795012045311-acceptance-coverage.log",
+      ".claude/verify-logs/1795012046005-mutation-check.log",
+      ".claude/verify-logs/1795012046115-docs-sync.log",
+      ".claude/verify-logs/1795012046218-security.log",
+      ".claude/verify-logs/1795012081853-unit.log",
+      ".claude/verify-logs/1795012117864-acceptance.log"
     ],
     "verifierEvidenceRefs": [
-      "delivery/taskpackages/261116-channel-resident-core/verifier-evidence/rounds/r7.json"
+      "delivery/taskpackages/261116-channel-resident-core/verifier-evidence/rounds/r9.json"
     ],
     "closeoutArtifactsChecked": [
       "delivery/taskpackages/261116-channel-resident-core/docs-delta.md",
