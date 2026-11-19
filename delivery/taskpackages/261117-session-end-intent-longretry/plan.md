@@ -66,3 +66,23 @@ mergeOrder: 78
 **红基线命令（沿用）**：`host: wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf（仓根起）；server: python -m pytest -q --import-mode=importlib -m "not live" server/acceptance（仓根起）`
 
 **红基线预期形态**：新验收件落地时设计态红（实现缺席）；不得以推算代替实跑，数值由 acceptance-author 冻结时回填。
+
+# 技术方案（planner+architect 预评 · 2026-11-19）
+
+> 本节由 planner 按 architect 前置技术预评（ARCH-ADVISORY planning 期档，2026-11-19，advisory 不豁免任何门）摘录回填；实施以 brief 与冻结验收为准。
+
+**总体**：八条 SEI 全部落在已 FROZEN 的契约 §1.4/§1.5/§1.6 与 arch §5.2 / §6.4 包络内，零新依赖、零引擎改动。最大风险不是功能写不出来，而是 `application.cc` / `mcp_server.cc` 被多件冻结验收用「函数定义顺序锚 + 区内子串计数」双向夹住，改动位置错了会出结构性假红、白烧 fixer 预算。
+
+**贯穿全包的最高优先纪律**：`application.cc` **零新增成员函数定义**。现有冻结件用 `"void Application::X()"` → `"void Application::Y()"` 成对字面锚切区，任意两个被锚函数之间插入新定义都会让某个区被截短/放大。确需 helper 时，唯一安全落点 = 文件顶部常量区的 `static` 自由函数。
+
+**逐条要点**：
+- **SEI-A1**：`mcp_server.cc:1737-1739` 的 `case 0` 改 `app.EndVoiceSession()`（事件位投递，跨任务不得直调 `HandleEndVoiceSessionEvent()`）；负锚切区取 `case 0:` → `case 1:` 之间（全文件另有 :1036 / :1741 两处 `AbortSpeaking`，不得误判）。同批改写 :1010-1027 DISCARD_RECORD 注释（P1 转手项），**不得写出带左括号的 `StopListening(`**——`record_session_live.acceptance.c` 的 RSL-A5 tooth 4 读原始文件不剥注释，会立即假红。
+- **SEI-A2/A3**：`application.cc:131` 表改 `{5,10,20,40,60}`，新增 `kAutoConnectSteadyRetryS=60`；task 体去 `attempt < 3` 字面、改无界循环 + 稳态 60；`auto_connect_in_flight_` 清位保持单点收尾。**注释不得复述符号字面**（`kAutoConnectBackoffS` / `kAutoConnectSteadyRetryS` / `kSessionIdleTimeoutS` / `kStoryEmptySessionTimeoutS`），否则源锚切到注释片段造成假红。网络断退出请求位：置位在 `HandleNetworkDisconnectedEvent` 函数体最顶端、三态门之外；`TryStartAutoConnect` 预检块加早退（守卫由三条件扩四条件，显式申报）；连接成功 / `HandleNetworkConnectedEvent` Idle 支路清位。退避睡眠建议分片（1 秒粒度重查意向位与退出位），使「截短」真截短、断网退出延迟 ≤1 秒。
+- **SEI-A4**：`application.h` 紧邻 `auto_connect_in_flight_` 加 `EventBits_t pending_manual_intent_ = 0`（直接存 `MAIN_EVENT_*` 位，最后写者胜、不做 OR 累积）。四处守卫块内**不得新增 `return;`**；`HandleStartListeningEvent` 的插入槽必须在 `kidpal_story_session_ctx_set(0);` 之后、`return;` 之前（RSL2-A3 序钉）。补投顺序：先清 `auto_connect_in_flight_`、再经 `Schedule` 投事件位（否则补投被自己吞掉）；只在成功路径补投，bail / 断网退出清而不投。「唤醒词」按两个代码点落地（`HandleWakeWordDetectedEvent` + `WakeWordInvoke`），语义仍四入口。
+- **SEI-B1**：`display_schema.py` 只扩 self_push 豁免口（新增 `SELF_PUSH_EXEMPT_CONTROL_ACTIONS = {start_organizing, end_session}`），**不得把 `end_session` 从 `GATEWAY_DECISION_CONTROL_ACTIONS` 摘出**（K0PTS-A3 四值逐个 assertIn）。同批反转 :134-140 / :157-159 两处「即便自推仍拒」注释。
+- **SEI-B2/B3**：截获落点恒为 `_relay_display_blocks_to_device`（两条 relay 路径唯一收敛点），插在 points 截获之后、`build_display_tool_calls` 之前；`continue` 必须早于 envelope 生成，否则设备收「降级 text + 自推」两帧（B3 「帧数恒 1」正是抓这个）。建议断言写成三重：恰 1 帧 control/end_session + 零帧友好降级 text + relay 输出不含该块。自推走设备腿、relay 读引擎腿，回环在结构上不可能——B3 的价值是抓错实现。不加会话态门控、不加每回合去重（契约语义 = 每个被截获薄意图一帧）。
+- **SEI-B4**：`AGENTS.md:31` home 行收窄；告别回合纪律写成「回合路由表」里的一行（行级定位是本仓最稳承载形态），新节标题不得含 课表/故事/提醒/记忆/底线；**`server/deploy/openclaw-system-prompt.v11.md` 绝对零 diff**（K1-E1 钉 sha256）。`OPENCLAW_SYSTEM_PROMPT_CARRIER` 改动可选、`provider.config.yaml` 目标零 diff；`server/deploy/manifest.yaml` 本包**不需要改**（AGENTS.md 条目已在册、md5 是 verify 期现算）。真机轮 B 前须按 `kidpal-ecs-gateway` 规程铺 AGENTS.md 到 ECS，B1 证据同时抓 live md5。
+
+**planner 裁决（2026-11-19）**：① 不抽纯逻辑缝，维持源锚结构齿 + 变异证据覆盖差一边界；② 意向位不设时效（忠于 arch 字面），超长离线后补投的观感项显式记入验收件与真机观测；③ 唤醒词按两代码点落地。
+
+**回填**：`changeManifest` 13→14 条（+`host_app/main/CMakeLists.txt`、+`session_channel_resident.acceptance.c`、+`provider.config.yaml`）；`impactedTestsSeed` 4→19 条。

@@ -437,6 +437,18 @@ static int scr_count_in_slice(const char *slice, const char *needle)
     return count;
 }
 
+/* Within-span contains: needle appears in [start, end). 0 if any arg invalid. */
+static int scr_span_contains(const char *start, const char *end, const char *needle)
+{
+    const char *hit;
+
+    if (start == NULL || end == NULL || needle == NULL || end < start) {
+        return 0;
+    }
+    hit = strstr(start, needle);
+    return hit != NULL && hit < end;
+}
+
 /* Slice of rel from the FIRST occurrence of start_needle up to (exclusive) the first
  * occurrence of end_needle AFTER it. Returns a malloc'd NUL-terminated slice or NULL.
  * Caller frees. end_needle == NULL -> slice to EOF. NOTE: the start needle itself is
@@ -638,7 +650,7 @@ TEST_CASE("会话通道常驻: 四收尾点收口负锚 (SCR-A1)",
  * SCR-A2 — 统一处理器动作序（SendStopListening 恰 1 + ResetDecoder 恰 1 在 Speaking
  *          分支内 + 三态门 / auto_connect_in_flight_ / !protocol_ 逐字在世）。
  * =========================================================================== */
-/* coverage: SCR-A2 -- HandleEndVoiceSessionEvent 统一处理器：protocol_->SendStopListening() 恰 1 + ResetDecoder() 恰 1 且位次在 Speaking 分支内（state == kDeviceStateSpeaking < ResetDecoder < SendStopListening）+ 三态门（kDeviceStateConnecting/Listening/Speaking）+ auto_connect_in_flight_ 守卫 + !protocol_ 早退逐字在世（261024 语义零偏移） */
+/* coverage: SCR-A2 -- HandleEndVoiceSessionEvent 统一处理器：protocol_->SendStopListening() 恰 1 + ResetDecoder() 恰 1 且位次在 Speaking 分支内（state == kDeviceStateSpeaking < ResetDecoder < SendStopListening）+ 三态门（kDeviceStateConnecting/Listening/Speaking）+ auto_connect_in_flight_ 守卫 + !protocol_ 早退逐字在世（261024 语义零偏移）+ [2026-11-19 加固 261117 P1 转手项] in-flight 分支置 pending_manual_intent_ + 审计行 manual_intent_queued（守卫不再裸 return） */
 TEST_CASE("会话通道常驻: 统一处理器动作序 (SCR-A2)",
           "[session_channel_resident][SCR-A2][structural]")
 {
@@ -685,6 +697,32 @@ TEST_CASE("会话通道常驻: 统一处理器动作序 (SCR-A2)",
     TEST_ASSERT_TRUE_MESSAGE(scr_contains(region, "auto_connect_in_flight_"),
         "SCR-A2 RED: HandleEndVoiceSessionEvent 区零 auto_connect_in_flight_ 守卫——"
         "与后台 AutoConnect 抢 websocket_ 的竞态入口（plan T1 守卫逐字保留）");
+
+    /* 2026-11-19 加固（261117-session-end-intent-longretry，P1 转手项）:
+     * in-flight 守卫分支不再裸 return——置人工意向位 + 审计行。判据 = 守卫分支
+     * （auto_connect_in_flight_ 起至其后第一个 return;）内两 needle 同现。 */
+    {
+        const char *p_flag = strstr(region, "auto_connect_in_flight_");
+        const char *p_ret = p_flag != NULL ? strstr(p_flag, "return;") : NULL;
+
+        TEST_ASSERT_TRUE_MESSAGE(p_flag != NULL && p_ret != NULL,
+            "SCR-A2 RED: HandleEndVoiceSessionEvent 区 in-flight 守卫分支无 return;"
+            "——分支形态漂移须复核（守卫须保留，动作由裸 return 改为置意向位 + return）");
+
+        /* 同 SEI-A4（session_end_intent_longretry.acceptance.c [S4]/[S5]）: 意向位成员
+         * 名与审计行 token 为跨包冻结 src 锚。 */
+        TEST_ASSERT_TRUE_MESSAGE(
+            scr_span_contains(p_flag, p_ret, "pending_manual_intent_"),
+            "SCR-A2 RED: HandleEndVoiceSessionEvent 区 in-flight 分支未置 "
+            "pending_manual_intent_——离线期「结束会话」人工入口仍静默 no-op"
+            "（长跑把按了没反应放大为恒定；arch §6.4 人工意向位）");
+
+        TEST_ASSERT_TRUE_MESSAGE(
+            scr_span_contains(p_flag, p_ret, "manual_intent_queued"),
+            "SCR-A2 RED: HandleEndVoiceSessionEvent 区 in-flight 分支无审计行 "
+            "manual_intent_queued——意图置位不可观测（真机轮 B8 无证据）");
+    }
+
     TEST_ASSERT_TRUE_MESSAGE(scr_contains(region, "!protocol_"),
         "SCR-A2 RED: HandleEndVoiceSessionEvent 区零 !protocol_ 早退——空协议指针"
         "解引用风险（plan T1 早退逐字保留）");
@@ -1751,4 +1789,22 @@ TEST_CASE("会话通道常驻: 语音看门缝接线六件 (SCR-A15)",
  *                  存量红（p1_auxbar_style AB-A1/A2/A4）+ 本补丁 2 条设计态红
  *                  （SCR-A13 软复位保素材、SCR-A15 条件分派三件）；其余本包 case
  *                  全绿，证明新断言各自只打自己那一处缺失。
+ *
+ *   2026-11-19  SCR-A2 加固（261117-session-end-intent-longretry，P1 转手项；
+ *               tighten-only 纯 additive：零放宽、零删除、零改既有断言语义）。
+ *               ① 旧钉：SCR-A2 只以 contains 判「in-flight 守卫逐字在场」——
+ *                  本包改动后原样保绿（守卫保留），判别力不足以覆盖 P2 新增语义。
+ *               ② 新钉（三件）：守卫在场（既有）+ in-flight 分支（auto_connect_in_flight_
+ *                  起至其后第一个 return;）内 **置 pending_manual_intent_**（离线期
+ *                  「结束会话」人工意向位，arch §6.4 长跑承重配套）+ **审计行
+ *                  manual_intent_queued**（意图置位可观测，真机轮 B8 证据锚）。
+ *               ③ 为什么：P1 冻结时统一处理器的 in-flight 分支是裸 return（人工入口
+ *                  永久 no-op）；P2 长跑把「按了没反应」从偶发放大为离线期恒定的风险
+ *                  由人工意向位消化。本件把该跨包不变量钉进 P1 冻结件（P1→P2 转手
+ *                  登记项），防止后续改动把守卫分支退回裸 return。
+ *               ④ 零偏移面：SCR-A1/A3/A4/A5/A6/A7/A8/A9–A15 全部断言零改动；
+ *                  SCR-A2 既有六条断言一字不动，仅追加两条（pending intent + audit）。
+ *               ⑤ 新增 src 锚（pending_manual_intent_ / manual_intent_queued）与
+ *                  SEI-A4 同名冻结（session_end_intent_longretry.acceptance.c
+ *                  [S4]/[S5]）——两件互为独立承载，改名须两件同批改。
  * =========================================================================== */

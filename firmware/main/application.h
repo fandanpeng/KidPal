@@ -168,6 +168,14 @@ private:
     // 标志互斥替代 Connecting 状态互斥（自动建连全程状态恒 Idle）。置位仅主循环 handler
     // 判定后、task 所有退出路径必清（泄漏 = 人工按键永久 no-op + 自动建连永久失效）。
     bool auto_connect_in_flight_ = false;
+    // 261117-session-end-intent-longretry（P2）: 网络断退出请求位——断网事件在函数体
+    // 最顶端（三态门之外）置位，令长跑自动建连 task 退出空转重试；网络恢复建连成功
+    // （HandleNetworkConnectedEvent）清位。只增不设时效（arch §6.4）。
+    bool network_exit_requested_ = false;
+    // 人工意向位（P2）: 离线期长跑 in-flight 时五个手工入口各置位（直接存 MAIN_EVENT_*
+    // 位, 最后写者胜、不做 OR 累积）；连上成功后先清 in-flight 再经 Schedule 补投该事件位
+    // （孩子那一次动作不丢——arch §6.4）。
+    EventBits_t pending_manual_intent_ = 0;
 
 
     // Event handlers

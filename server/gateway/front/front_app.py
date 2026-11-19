@@ -120,6 +120,10 @@ POINTS_DEDUP_SPEECH = "这条刚记过啦"
 # 收尾统一下行信号（q2 = ⓒ 裁定；契约 §1.4 start_organizing 表行——front 机械下发
 # 单源经自推通路 self_push=True 放行，relay 路径恒拒）。
 START_ORGANIZING_PAYLOAD = {"view": "control", "data": {"action": "start_organizing"}}
+# 云端结束意图薄意图的机械自推帧（契约 §1.4 截获转发类 end_session；261117-session-
+# end-intent-longretry）：front 从引擎 display 流截获模型薄意图后以 self_push=True
+# 自推恰一帧下发设备（relay 恒拒，防伪造/注入）。
+END_SESSION_PAYLOAD = {"view": "control", "data": {"action": "end_session"}}
 # 固定安抚句（R1-N4 丢稿口径：整理失败 = 当轮素材不归档 + 固定安抚句，不发明新语义；
 # PROPOSAL §6.3）。
 ORGANIZING_FAIL_SOOTHING = "刚才的话我没能记下来，我们再讲一次好吗？"
@@ -787,8 +791,9 @@ async def _push_display_payload(websocket, payload: dict) -> None:
     """front 机械自推单帧（不经 relay；Q7 天然豁免——自推不属引擎侧来源面）。
 
     把 payload 以设备 wire 形状的 kidpal/display mcp 帧下发恰一帧；过 display_schema
-    机械门（自推通路 self_push=True——结构性风险 1 分叉：start_organizing 机械下发
-    单源放行、end_session 即便自推仍拒；畸形不推记日志、零帧、不裸送）。"""
+    机械门（自推通路 self_push=True——结构性风险 1 分叉：截获转发类 start_organizing 与
+    end_session 机械下发单源放行；截获执行类 add_points/redeem_points 仍拒；畸形不推记
+    日志、零帧、不裸送）。"""
     ok, reason = gw_display.validate_display(payload, self_push=True)
     if not ok:
         log.warning("story_display_push skipped view=%s reason=%s",
@@ -990,6 +995,35 @@ def _expand_story_nav_intent(payload) -> "dict | None":
         log.warning("story_nav_expand_err corr_id=%s err=%s",
                     gw_mcp.corr_id(), type(e).__name__)
         return None
+
+
+async def _consume_end_session_intent(websocket, payload) -> bool:
+    """薄意图截获-自推缝（契约 §1.4 截获转发类 end_session；261117-session-end-intent-
+    longretry）。
+
+    payload 为 control/end_session 薄意图 -> 经 `_push_display_payload` 自推**恰一帧**
+    control/end_session（self_push=True 过 display_schema）。截获成功后返回 True（已消费，
+    走 continue，不再走 build_display_tool_calls / 降级 / 透传）。契约语义 = 每个被截获薄
+    意图恰一帧，不加每回合去重、不加会话态门控；回环在结构上不可能（自推走设备腿、relay
+    读引擎腿）。非 end_session 控制帧 -> 返回 False（既有路由零偏移）。
+
+    K6：correlationId 贯穿截获 / 推送两段日志；审计 token 独立（不复用既有记录语境
+    审计 token，避免三源对账字段漂移）。
+    """
+    if not isinstance(payload, dict) or payload.get("view") != "control":
+        return False
+    data = payload.get("data")
+    if not isinstance(data, dict) or data.get("action") != "end_session":
+        return False
+
+    corr_id = gw_mcp.corr_id()
+    log.info("end_session_intent intercepted corr_id=%s", corr_id)
+    try:
+        await _push_display_payload(websocket, dict(END_SESSION_PAYLOAD))
+    except Exception as exc:  # noqa: BLE001 — 推送失败不改变「已消费」语义（控制帧不透传）
+        log.warning("end_session_intent push_err corr_id=%s err=%s",
+                    corr_id, type(exc).__name__)
+    return True
 
 
 async def _consume_points_intent(websocket, payload, *, restore: bool = False,
@@ -2040,6 +2074,11 @@ async def _relay_display_blocks_to_device(blocks: list, websocket, session_id=No
         # **两侧 relay 路径收敛于此**（side-channel 与 fence 两路都过本函数）——消费即
         # continue，控制帧绝不透传给设备；拒绝路径同样已消费（不落账、不推送、不透传）。
         if await _consume_points_intent(websocket, parsed, upstream=upstream):
+            continue
+        # end_session 薄意图截获-自推缝（契约 §1.4 截获转发类；261117-session-end-intent-
+        # longretry）：两侧 relay 路径收敛于此——消费即 continue, 控制帧不透传（front
+        # 经 _push_display_payload 自推恰一帧，与降级/透传互斥，无回环双发）。
+        if await _consume_end_session_intent(websocket, parsed):
             continue
         if session_id is not None:
             # 边缘自查须在 _story_route_display_payload 的 acc.start 之前（消费即转

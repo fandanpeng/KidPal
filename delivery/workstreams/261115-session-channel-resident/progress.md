@@ -74,3 +74,30 @@
 - 快修（human 2026-11-19 指示跳过完整 dev-loop）：`KidpalStorySessionEndApply` 内 `story_on_screen` 守卫 + `refresh_story` 重绘（`3dff5bbd`）+ 结构锚 RSL2-A6；host 322/3（3 = 上游 p1_auxbar 存量）；变异实证。
 - debt 结项：`TECH-261114`（温通道时延/burst）与 `TECH-261012`（首按键）已 closed（closedBy 本包，真机凭据 + 根因消除，诚实注记见条目）。`TECH-261014-session-end` / `TECH-261014-autoconnect` 仍待 P2。
 - 遗留：P2 `261117-session-end-intent-longretry` 待从新 main 起分支（`end_session` 三段补链 + 长重连）；`docs/requirements.md:48` ⚠️ 对账注记主线程路由；引擎静音 ASR 幻觉建议登记 tech debt。
+
+## 2026-11-19 · P2 `261117-session-end-intent-longretry` launch 面准备与 intake
+
+**launch 面**：就地复用 worktree `C:/AI/KidPal-pod-m2`（human 2026-11-19 指示不新建树/分支、不 headless，planner 在本会话主线程驱动）；board 预填 worktreePath、状态 `queued → running`（intake）；专属图索引 `C-AI-KidPal-pod-m2` 在册；无 `delivery/intake/261117-*` spine（纯实现面变更）。
+
+**门结果**：`portfolio-reconcile --check-launch 261117-session-end-intent-longretry --base-ref HEAD` = `ok:true / blocking:[] / warn:[]`（launchPrecondition「P1 已合 main」已回填 verified，凭据 = P1 2026-11-19 合并与人工批准事件）；`settings-lint` = 0 RED / 0 WARN。
+
+**上游已知红基线（producer 记锚，五要素）**：
+
+- **server 面**：`495 passed, 9 deselected, 1 warning, 43 subtests passed`（0 failed）。
+  - 命令：`python -m pytest -q --import-mode=importlib -m "not live" "C:/AI/KidPal-pod-m2/server/acceptance"`（仓根起）
+  - 日期：2026-11-19 ｜ 量测 HEAD：`05417c1f` ｜ 面域：`server`
+- **host 面（firmware）**：`322 Tests 3 Failures 0 Ignored`——3 红全为既有 `p1_auxbar_style.acceptance.c` 存量红（`ic_wifi_14` / `ic_thermo_12` / `ic_batt_15`，AB-A4 / AB-A2 / AB-A1），与本 workstream 两包无关。
+  - 命令：`wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build` → `cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf`（仓根起）
+  - 日期：2026-11-19 ｜ 量测 HEAD：`05417c1f` ｜ 面域：`firmware`
+- **consumer 差异判停**：本 Pod 起包 HEAD = `05417c1f`；后续复用本锚前先核 `git diff --quiet 05417c1f HEAD -- server` / `-- firmware`，有差异重跑该面。
+
+**契约判定**：`NO_CONTRACT_CHANGE`（architect-reviewer 只读预审；契约 §1.4/§1.5/§1.6 已随 261115 批 FROZEN landed，reviewedCommit `87dbf775`；本包 = 纯实现兑现，零契约 diff）。
+
+**包级 base ref**：点火时 `git rev-parse HEAD` = `05417c1f`（常驻分支 `dev/pod-m2`）——包级 diff（终验 scope 圈定 / detect_changes / 白盒复核 / 合并范围）恒用此 ref，不用 main。
+
+## 2026-11-19 · P2 `261117-session-end-intent-longretry` integrator 收口（待 supervisor 门 + 真机轮 B）
+
+- **实现面**：end_session 三段补链落地——设备 `mcp_server.cc` case 0 收口统一处理器 `EndVoiceSession()`；front `display_schema` self_push 豁免口扩至 `{start_organizing, end_session}` + `front_app._consume_end_session_intent` 截获-自推恰一帧；自动重连改 `{5,10,20,40,60}` 封顶长跑 + 稳态 60s；离线期人工意向位 `pending_manual_intent_`（五入口置位 + 审计行 + 补投）；告别回合纪律落 `workspace-kidpal/AGENTS.md`。零引擎 / 契约 / spec / provider / carrier / v11 prompt diff。
+- **终验（final r2）**：`test-scope-final.txt`（41 条，detect_changes 112 种子 → 115 节点 + 显式并入固件源锚雷 + 19 seed + 共享 seam 余量）圈定真跑，十闸全绿 `observedGateExit=0`（unit 530 passed / acceptance 362 passed；firmware-build 真编译 pass）；`verifier-evidence-check` PASS（factOk=true）。
+- **closeout 制品**：`docs-delta.md`（docsSyncRequired=false）/ `review-packet.md`（含 demo 对账 + 未覆盖面申报 B1–B8）/ `verdict.json` + `verification.json`（advisory 投影）/ `test-scope-final.txt`；debt 两条 trigger/收口注记 append 刷新（status 维持 deferred）。
+- **仍未闭合**：① 真机轮 B（human 持板，KSE-E4 B1–B8）——本包合并出口，`device-round-evidence.md` 未生成、不伪造 PASS；② supervisor 合并门 + 前置升级闸（planner 主线程跑）；③ debt 两条轮 B PASS 后由主线程结项；④ `docs/requirements.md:48` ⚠️ 对账注记刷新 = 跨包事项主线程路由。

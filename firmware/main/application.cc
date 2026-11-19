@@ -124,11 +124,16 @@ static int s_vw_diag_suspect = -1;
 static bool s_sntp_started = false;
 
 /* -------------------------------------------------------------------------- *
- * K6（TaskPackage 260923-m3-k6-boot-auto-connect）[S3] 有界退避决策表：
- * 自动建连重试 3 次、递增秒序列 5s/10s/20s（封顶 3 次; host 齿钉决策表形态不钉
- * 时序, 实时节奏归真机窗 K6-A7; vTaskDelay 换算乘法形态见 TryStartAutoConnect task）。
+ * K6（TaskPackage 260923-m3-k6-boot-auto-connect）[S3] 自动建连退避决策表:
+ * 2026-11-19（261117-session-end-intent-longretry P2）由「3 次即止、递增秒序列
+ * 5s/10s/20s」改为封顶递增长跑——先按递增秒序列逐档退避, 档位耗尽后按稳态周期
+ * 恒等退避、无上限（arch §6.4「{5,10,20,40,60} 递增后恒 60 秒」）。host 齿钉决策表
+ * 形态不钉时序, 实时节奏归真机窗 K6-A7 / B4; vTaskDelay 换算乘法形态见
+ * TryStartAutoConnect task（换算按 1 秒分片重查意向位 / 网络断退出请求位）。
  * ------------------------------------------------------------------------ */
-static const int kAutoConnectBackoffS[3] = { 5, 10, 20 };
+static const int kAutoConnectBackoffS[] = { 5, 10, 20, 40, 60 };
+/* 封顶递增档位耗尽后的稳态重试周期（秒）——长跑无上限, 恒以本周期退避。 */
+static const int kAutoConnectSteadyRetryS = 60;
 
 /* -------------------------------------------------------------------------- *
  * 261116-channel-resident-core（P1 T2）会话空闲超时阈值: 聆听态连续 60 秒无语音
@@ -626,6 +631,9 @@ void Application::Run() {
 
 void Application::HandleNetworkConnectedEvent() {
     ESP_LOGI(TAG, "Network connected");
+    /* 261117-session-end-intent-longretry（P2）: 网络恢复（建连成功路径）清网络断退出
+     * 请求位——否则长跑自动建连的预检会永久早退（断网期置的位不复位即后续再也不建连）。 */
+    network_exit_requested_ = false;
     /* K5 [S2]: SNTP 校时挂在 WiFi got IP（本事件区）之后异步启动——不阻塞激活/
      * 主流程（esp_sntp_init 自身异步 + 监测在独立 task）；写回 PCF85063 由板级
      * sync 回调承接。幂等, 重连不重启。 */
@@ -649,6 +657,8 @@ void Application::HandleNetworkConnectedEvent() {
     } else if (state == kDeviceStateIdle) {
         // K6 (M3-K6 boot-auto-connect): 网络重连后 Idle 且通道未开 → 自动建连恢复
         // （触发点 2——断网重连自动恢复; main-loop handler 内判 + 起）。
+        // P2: 调自动建连之前再确认退出请求位已清（幂等防竞态）。
+        network_exit_requested_ = false;
         TryStartAutoConnect();
     }
 
@@ -658,6 +668,10 @@ void Application::HandleNetworkConnectedEvent() {
 }
 
 void Application::HandleNetworkDisconnectedEvent() {
+    /* 261117-session-end-intent-longretry（P2）: 网络断退出请求位——置位在函数体最顶端、
+     * 三态门之外：任何态下断网都要令长跑自动建连 task 退出空转重试（WiFi 已断时不得在
+     * 已断链上反复握手）。网络恢复建连成功时清位。 */
+    network_exit_requested_ = true;
     // Close current conversation when network disconnected
     auto state = GetDeviceState();
     if (state == kDeviceStateConnecting || state == kDeviceStateListening || state == kDeviceStateSpeaking) {
@@ -739,6 +753,14 @@ void Application::TryStartAutoConnect() {
         return;
     }
 
+    /* 261117-session-end-intent-longretry（P2）: 网络断退出请求位预检早退——网已断
+     * （断网事件置位、重连成功清位）时不起 task、不空转重试（守卫由三条件扩四条件,
+     * 显式申报；本预检必须位于置 in-flight 之前）。 */
+    if (network_exit_requested_) {
+        ESP_LOGI(TAG, "AutoConnect: network down (exit requested), skip");
+        return;
+    }
+
     /* [K6-A1] 守卫三条件（main-loop handler 内「判 + 起」, TOCTOU 判设闭合）:
      * state==Idle && 通道未开 && 非 in-flight。无协议对象时退化 no-op。 */
     if (GetDeviceState() != kDeviceStateIdle ||
@@ -749,24 +771,55 @@ void Application::TryStartAutoConnect() {
     auto_connect_in_flight_ = true;
 
     /* 后台 task（沿用 activation 模板: 栈 4096*2、优先级 2、lambda 直排——不阻塞主
-     * 循环; [S3] 3 次退避重试、每次尝试前重查守卫三条件、所有退出路径必清标志、
-     * 退出前打栈高水位日志）。 */
+     * 循环; [S3] 封顶递增长跑、每次尝试前重查守卫三条件、所有退出路径必清标志、退出前
+     * 打栈高水位日志）。长跑三退出条件: 成功建连 / bail（守卫被人工路径接管或通道已开）
+     * / 网络断退出请求位（WiFi 已断则不在已断链上空转）。 */
     xTaskCreate([](void* arg) {
         Application* app = static_cast<Application*>(arg);
-        for (int attempt = 0; attempt < 3; attempt++) {
+        const int backoff_count =
+            static_cast<int>(sizeof(kAutoConnectBackoffS) / sizeof(kAutoConnectBackoffS[0]));
+        bool connected = false;
+        int step = 0;   /* 退避档位：先走递增表, 耗尽后转稳态周期 */
+        while (true) {
             /* 重试前重查守卫三条件（违反即 bail——人工路径已接管或通道已开）。 */
             if (app->GetDeviceState() != kDeviceStateIdle ||
                 (app->protocol_ && app->protocol_->IsAudioChannelOpened())) {
                 break;
             }
+            /* 网络断退出请求位：网已断则退出（不空转重试）。 */
+            if (app->network_exit_requested_) {
+                break;
+            }
             if (app->protocol_->OpenAudioChannel()) {
+                connected = true;
                 break;  /* 成功: 通道开 + Idle = 首轮对话后稳态, 无状态迁移 */
             }
-            if (attempt < 2) {
-                vTaskDelay(pdMS_TO_TICKS(kAutoConnectBackoffS[attempt] * 1000));
+            /* 退避：封顶递增走表, 档位耗尽后恒稳态周期（无上限）。按 1 秒粒度分片睡眠,
+             * 每片重查人工意向位（→ 截短退避）与网络断退出请求位（→ ≤1s 退出）。 */
+            int delay_s = (step < backoff_count) ? kAutoConnectBackoffS[step]
+                                                 : kAutoConnectSteadyRetryS;
+            for (int s = 0; s < delay_s; ++s) {
+                vTaskDelay(pdMS_TO_TICKS(1000));
+                if (app->network_exit_requested_) {
+                    break;
+                }
+                if (app->pending_manual_intent_ != 0) {
+                    break;  /* 人工意向命中：截短退避、立即重试 */
+                }
             }
+            ++step;
         }
-        app->auto_connect_in_flight_ = false;  /* 所有退出路径（成功/重试耗尽/bail）必清 */
+        /* 所有退出路径（成功 / bail / 网络断）必清单点——先清 in-flight, 成功路径再经
+         * Schedule 补投人工意向位（先清后投, 否则补投被自身 in-flight 守卫吞掉）。只在
+         * 成功路径补投；bail / 断网退出清而不投（意向位保留, 下次成功建连仍可接续）。 */
+        app->auto_connect_in_flight_ = false;
+        if (connected && app->pending_manual_intent_ != 0) {
+            EventBits_t intent_bits = app->pending_manual_intent_;
+            app->pending_manual_intent_ = 0;
+            app->Schedule([app, intent_bits]() {
+                xEventGroupSetBits(app->event_group_, intent_bits);
+            });
+        }
         ESP_LOGI(TAG, "AutoConnect task exit, stack high water mark=%u",
                  (unsigned)uxTaskGetStackHighWaterMark(NULL));
         vTaskDelete(NULL);
@@ -1167,6 +1220,11 @@ void Application::HandleToggleChatEvent() {
     // K6 (M3-K6): 自动建连 in-flight 期间人工按键 no-op（守卫不加锁, 主循环 handler 内
     // 判设闭合; toggling 既有分支行为语义零改动）。
     if (auto_connect_in_flight_) {
+        /* 261117 P2: 离线期人工意向位——长跑 in-flight 时不再静默 no-op：置意向位 +
+         * 审计行, task 据此截短退避、连上后经 Schedule 补投（孩子那一次动作不丢）。 */
+        pending_manual_intent_ = MAIN_EVENT_TOGGLE_CHAT;
+        ESP_LOGI(TAG, "manual_intent_queued corr_id=kdp-%u src=queued_toggle",
+                 static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
         ESP_LOGI(TAG, "AutoConnect in-flight, ignore manual toggle");
         return;
     }
@@ -1222,6 +1280,11 @@ void Application::HandleStartListeningEvent() {
         /* RSL2-A3 [I2]（M3）: auto-connect 期被拒 -> 清记录语境标志（KPLOG 2026-10-27
          * 21:34:45 卡死直接根因: 置位后本分支 return, ctx 永久停 1, 长按 KEY 回不了首页）。 */
         kidpal_story_session_ctx_set(0);
+        /* 261117 P2: 离线期人工意向位——插入槽须在 ctx 清位之后、return 之前
+         * （RSL2-A3 序钉）：置意向位 + 审计行, 连上后经 Schedule 补投该次聆听入口。 */
+        pending_manual_intent_ = MAIN_EVENT_START_LISTENING;
+        ESP_LOGI(TAG, "manual_intent_queued corr_id=kdp-%u src=queued_listen",
+                 static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
         return;
     }
 
@@ -1304,6 +1367,12 @@ void Application::HandleEndVoiceSessionEvent() {
         return;
     }
     if (auto_connect_in_flight_) {
+        /* 261117 P2: 离线期人工意向位——结束会话入口在长跑 in-flight 时不静默 no-op：
+         * 置意向位 + 审计行, 连上后经 Schedule 补投结束会话事件位（收尾仍由统一处理器
+         * 单源执行, 本分支只登记意向）。 */
+        pending_manual_intent_ = MAIN_EVENT_END_VOICE_SESSION;
+        ESP_LOGI(TAG, "manual_intent_queued corr_id=kdp-%u src=queued_end",
+                 static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
         ESP_LOGI(TAG, "AutoConnect in-flight, ignore end voice session");
         return;
     }
@@ -1342,6 +1411,11 @@ void Application::HandleWakeWordDetectedEvent() {
         // K6 (M3-K6): 自动建连 in-flight 期间唤醒 no-op（守卫置于 EncodeWakeWord 之前
         // ——in-flight 期不启动唤醒音频编码; 既有分支行为语义零改动）。
         if (auto_connect_in_flight_) {
+            /* 261117 P2: 离线期人工意向位——唤醒词入口（检测沿）在长跑 in-flight 时不
+             * 静默 no-op：置意向位 + 审计行, 连上后经 Schedule 补投唤醒事件位。 */
+            pending_manual_intent_ = MAIN_EVENT_WAKE_WORD_DETECTED;
+            ESP_LOGI(TAG, "manual_intent_queued corr_id=kdp-%u src=queued_wake",
+                     static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
             ESP_LOGI(TAG, "AutoConnect in-flight, ignore wake word");
             return;
         }
@@ -1673,6 +1747,11 @@ void Application::WakeWordInvoke(const std::string& wake_word) {
     // K6 (M3-K6): 自动建连 in-flight 期间唤醒 invoke no-op（守卫; 本板非活路径, 一并
     // 加; 既有分支行为语义零改动）。
     if (auto_connect_in_flight_) {
+        /* 261117 P2: 离线期人工意向位——编程唤起入口在长跑 in-flight 时不静默 no-op：
+         * 置意向位 + 审计行, 连上后经 Schedule 补投唤醒事件位（与检测沿同主事件位）。 */
+        pending_manual_intent_ = MAIN_EVENT_WAKE_WORD_DETECTED;
+        ESP_LOGI(TAG, "manual_intent_queued corr_id=kdp-%u src=queued_invoke",
+                 static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
         ESP_LOGI(TAG, "AutoConnect in-flight, ignore wake word invoke");
         return;
     }
