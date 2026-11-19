@@ -2,13 +2,13 @@
 id: TECH-261012-first-keypress-no-listening
 title: 重启后首次按键不跳聆听页（human 口述「每次重启都有」）+ 实测复现：按键撞 781s 空闲通道超时 → WS 重建后会话失同步、音频通道秒关弹回 idle，连按两次恢复
 domain: tech
-status: deferred
+status: closed
 severity: SHOULD
 owner: dev 批（261010 device-reconnect 谱系 follow-up——常驻在线的通道保活/首按恢复语义）
 trigger: "待 P1 真机轮 A A3 真机凭据结项——261116-channel-resident-core（T5/T6 心跳保活 + T4 自愈巡检）已实现、离线绿；A3 = 闲置 >5 分钟首按键一次进聆听、无重连无「按了没反应」。依据 workstream PROPOSAL §6「debt 结项凭据必须真机、不是合入」，收口记账归主线程。原：下一次动固件连接生命周期/常驻在线逻辑的批"
 opened: 2026-10-12
-closed: ""
-closedBy: ""
+closed: "2026-11-19"
+closedBy: "261116-channel-resident-core"
 paths: ["firmware/main/application.cc", "server/deploy/kidpal-front.service"]
 source: 2026-10-12 真机轮（human 口述既有现象）+ 串口 c:/tmp/hv5-realtime-round3.log 两次按键全轨迹 + front/引擎日志对账
 ---
@@ -27,3 +27,5 @@ source: 2026-10-12 真机轮（human 口述既有现象）+ 串口 c:/tmp/hv5-re
 ---
 
 **收口注记（2026-11-16，integrator · 261116-channel-resident-core）**：本包按修法方向 A/B 的合取落地——front 每连接 30s 周期下行 `kidpal_keepalive` 裸心跳（`KIDPAL_CHANNEL_HEARTBEAT` 代码默认开、`0/false/off/no` 为回滚开关），设备 `OnIncomingJson` 加 no-op 分支消化心跳并跳过 Unknown WARN；设备侧「120s 无下行 = 死链」判据由此升级为「120s 无心跳 = 死链」，并在主循环 CLOCK_TICK 区加自愈巡检（Idle && 通道未开 → 复用既有 `TryStartAutoConnect`，零第二条重连路径）。离线面已过：final r2 十闸全绿、scr_b1/b2 心跳与保活断言全绿、server 全量 473 passed。**本条目未结项**：按 workstream PROPOSAL §6「debt 结项凭据必须真机、不是合入」待 P1 真机轮 A A3（闲置 >5 分钟首按键一次进聆听、无重连无「按了没反应」）凭据，收口记账归主线程。status 维持 `deferred`（本次仅刷新 trigger 指向真机验证；债务账 status 闭集不含「verifying」形态）。
+
+**结项（2026-11-19，consumed-by `261116-channel-resident-core`）**：根因链三段已结构性消除——① 781s/137s 空闲判死 → front 心跳保活（120s 判据语义升级）；② 重建后 front 把新连接当全新会话 → 通道常驻、不再重建；③ 音频通道秒关 → 会话边界带内信号（`listen stop`）收口。真机凭据：轮 A/E 长时间闲置窗口 `Channel timeout` = 0、无重连；轮 A 观察到的「首次按键不跳聆听」经三源核证实为**会话未收尾导致的 KEY 语义翻转**（第一下结束、第二下开始），其根因（记录语境 60s 豁免下的会话滞留）已由空素材 producer + 语音看门缝修复（轮 E：静置 60s 自动收尾、回列表）。**诚实注记：未单独复跑「闲置 5 分钟后首按」专项场景**，结项依据 = 根因消除 + 连续闲置窗口零 `Channel timeout` 日志。

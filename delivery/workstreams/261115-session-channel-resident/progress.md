@@ -66,3 +66,11 @@
 3. **G4 工具缺口**（`gate-tooling-gap-g4.md`）与本轮新发现（`gate-tooling-gap-overlap-index.md`）由主线程 `/gov-change` 修。
 4. **spec 漂移**：D3 收窄 requirements §2.1 记录会话 60s 豁免 → 主线程/需求面轻量注记；本 Pod 对 `docs/**` 零 diff。
 5. debt 两条维持 `deferred`（轮 B PASS 后结项）；spine/workstream 锚点更新归主线程。
+
+## 2026-11-19 · P1 `261116-channel-resident-core` merged 本地 main
+
+- 真机轮 E 聚焦复测通过（human 持板）：D3-UI 空素材会话 60s 自动收尾后立即回故事列表（KPLOG：`story_empty_session_timeout quiet=60` → `PAGE_RENDER in=3 sview=0` → `STORY_RENDER page=0 LIST`）；手动结束/归档/丢弃观感正常；A6 回答页驻留正常；注入测试提醒全链（front `delivered=True speech=True`、设备 `alert_render raised=1` + `alert_receipt ack=True dequeued=True` + TTS）。
+- 合并：`dev/pool-channel` → main（ff，`3a2dd854` 后持续提交）；前置升级闸 PASS（human-approval `d49568ee-20c7-4461-84b5-4dc49bc49e97`）。
+- 快修（human 2026-11-19 指示跳过完整 dev-loop）：`KidpalStorySessionEndApply` 内 `story_on_screen` 守卫 + `refresh_story` 重绘（`3dff5bbd`）+ 结构锚 RSL2-A6；host 322/3（3 = 上游 p1_auxbar 存量）；变异实证。
+- debt 结项：`TECH-261114`（温通道时延/burst）与 `TECH-261012`（首按键）已 closed（closedBy 本包，真机凭据 + 根因消除，诚实注记见条目）。`TECH-261014-session-end` / `TECH-261014-autoconnect` 仍待 P2。
+- 遗留：P2 `261117-session-end-intent-longretry` 待从新 main 起分支（`end_session` 三段补链 + 长重连）；`docs/requirements.md:48` ⚠️ 对账注记主线程路由；引擎静音 ASR 幻觉建议登记 tech debt。
