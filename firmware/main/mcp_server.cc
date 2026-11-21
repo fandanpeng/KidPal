@@ -1010,15 +1010,17 @@ bool StoryDispatchAct(int act) {
         case KSPV2_ACT_DISCARD_RECORD:
             /* K3 [S5]: BOOT 任一手势 = 丢弃退回列表（不设重录恢复 v1.49）。
              * 261021-p3-record-cancel-lifecycle F2（契约 §四 kidpal_story_discard,
-             * 2026-10-21 LANDED）: 先发显式丢弃帧、再关通道——同一 TCP 有序, front
-             * 泵先消费 discard（按本连接会话键权威取消、不归档）再处理断连;
-             * 关通道保留 = cancel-on-disconnect 兜底（OQ2 维持: 帧丢失/旧网关退化
-             * 路径仍由断开钩子收尾）。
-             * 发帧在本回调上下文直接调协议自由函数（与 KSPV2_ACT_INTERRUPT_GUIDE
+             * 2026-10-21 LANDED）: 先发显式丢弃帧、再投会话收尾——同一 TCP 有序，
+             * 收尾 helper（历史名、语义 = 投统一结束事件位）在主循环下一拍才发 listen
+             * stop 上行；front 泵先消费丢弃帧（按本连接会话键权威取消、routing 打回
+             * chat、不归档）再处理随后到达的 listen stop —— 帧先行、收尾后至, 丢弃
+             * 素材不会复活成归档（契约 §四 2026-11-16 发送时机重锚: 丢弃帧先于 listen
+             * stop）。
+             * 发丢弃帧在本回调上下文直接调协议自由函数（与 KSPV2_ACT_INTERRUPT_GUIDE
              * 的 AbortSpeaking 直接发送同款线程形态）——若经 Application::Schedule
-             * 排到主任务, 帧序会落到关通道之后 = 发不出去, 显式丢弃通道退化。
-             * 负锚: 严禁走收尾保存面（listen stop 上行会触发 front stop 归档 =
-             * 丢弃反被落盘, 语义反转回潮; 旧冻结表「KEY 长按=丢弃」已退役）。 */
+             * 排到主任务, 帧序会落到 listen stop 之后 = front 先归档、显式丢弃退化成
+             * 归档。负锚: cancel-on-disconnect 兜底必需（帧丢失 / 旧网关退化路径仍由
+             * 断开钩子收尾）；旧冻结表「KEY 长按=丢弃」已退役。 */
             ESP_LOGI(TAG, "story_key discard_rec cancel_count=%d",
                      g_story_view.cancel_count);
             SendKidpalStoryDiscard();
@@ -1734,8 +1736,12 @@ void McpServer::AddCommonTools() {
                     int a = kidpal_display_control_action(action.c_str());
                     cJSON_AddStringToObject(ack, "action", action.c_str());
                     switch (a) {
-                        case 0: /* end_session —— 结束会话回首页 (本地停播主地位不变) */
-                            app.AbortSpeaking(kAbortReasonNone);
+                        case 0: /* end_session —— 收口到统一会话结束处理器：投事件位
+                                   * （跨任务安全, 不得直调处理器），由主循环下一拍发
+                                   * listen stop + 回 Idle；前台页按 arch OQ3=c 回落，
+                                   * WS 通道保持常驻（ADR-019）。end_session 由 front
+                                   * 截获模型薄意图后机械自推单源下发（契约 §1.4）。 */
+                            app.EndVoiceSession();
                             break;
                         case 1: /* stop_speaking —— 云端确认停播补充 */
                             app.AbortSpeaking(kAbortReasonNone);

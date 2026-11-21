@@ -411,6 +411,13 @@ set(HOST_ACCEPTANCE_SRCS
     "../../../session_voice_watch.c"
     "../../session_voice_watch.test.c"
 
+    # 包 261117-session-end-intent-longretry（P2，workstream 261115-session-channel-
+    # resident）：SEI-A1..A4 + SEI-C1 注册序守卫冻结验收。纯树扫 application.cc /
+    # application.h / mcp_server.cc（源锚代理；运行时本体 host 不可编面，真机轮 B 承载）。
+    # **必须置于 host_infra_smoke.acceptance.c 之前**（smoke 末位 = 最先执行, 包 0
+    # boundary 齿注册序守卫; 本文件 SEI-C1 校验此序——登记行缺失或未置于 smoke 之前即红）。
+    "../../session_end_intent_longretry.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

@@ -1,0 +1,88 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r2.json)",
+  "changeId": "261117-session-end-intent-longretry",
+  "phase": "final",
+  "round": 2,
+  "invocationId": "5ab6f9ae-96ce-476f-a376-f094af3724be",
+  "outcome": "ok",
+  "observedGateExit": 0,
+  "gatesRun": 10,
+  "gatesNotExecuted": [],
+  "roundNote": "承重序列 = r1（scoped 8/8 绿，invocationId 96adee6f-26f1-4163-b928-4dc149c2712c）→ r2（final 10/10 绿，本收口终审；含 unit/acceptance 两 full 相位按 test-scope 圈定真跑）。final 缺 scope-file 则 fail-closed（verify.mjs exit 2、不发布 fact、不消耗序数）；本包 scope 落盘见 scopeFile。",
+  "scopeFile": "delivery/taskpackages/261117-session-end-intent-longretry/test-scope-final.txt",
+  "scopeBasis": "detect_changes（project C-AI-KidPal-pod-m2，since base 05417c1f / merge_base 05417c1f，direction=inbound，depth=2）：28 changed files（含本包 delivery 簿记件；实现/验收面 12 件）/ seed 112 符号 / impacted_total 115 节点（server/acceptance 54、server/gateway 22、server/tests 18、firmware/main 21）。per-Pod 图索引可用，正常圈定（未降级）。合成 = 本包 acceptanceTestsFile（5）∪ 显式并入的固件源锚雷（record_session_lifecycle / record_session_live / voice_round_ui / record_dialogue_guide(固件) / points_spike(固件) / host_app/main/CMakeLists.txt 注册序族）∪ impactedTestsSeed（19）∪ detect_changes 映射测试（archive/ 退役面按 SKIP_DIRS 不计）∪ 共享 seam 安全余量（离线装载 front_app / 直调 validate_display 的测试）；41 条，全部仓内存在。",
+  "scopeEntries": 41,
+  "scopePostCommitRecheck": "收口核对口径 = 工作树 diff（since 05417c1f）：detect_changes 112 种子 → 115 impacted 节点（server/acceptance 54、server/gateway 22、server/tests 18、firmware/main 21），全部映射到 test-scope-final.txt 内的文件，无清单外新测试文件；改动的实现面符号（front_app 截获缝 / display_schema 豁免口 / mcp_server case 0 / application 长跑循环 + 五入口）影响无外溢。手工作 change-manifest 对账（change-manifest 闸本轮因 gitFirstCommitDate 早于 MANIFEST_CUTOFF 结构性放行）：12 件改动的 firmware/server 文件 100% ⊆ changeManifest[]，清单外 0 件；carrier / provider.config.yaml 两件按设计零 diff。",
+  "scopeNote": "排除项：server/acceptance/archive/*（退役面，SKIP_DIRS 不计）；p1_auxbar_style 上游存量 3 红与本包无调用关系（host 面 322→327 Tests 侧，3 红族恒定）。固件 *.acceptance.c 由 acceptance 闸作「有验收文件 ⇒ 有验收入口」结构守卫（on-target 需实机，不在本闸 auto-run）；CMakeLists.txt 为注册序配置件（非可跑测试，列清单存证 SEI-C1 注册序守卫面）。",
+  "evidenceRef": "delivery/taskpackages/261117-session-end-intent-longretry/verifier-evidence/rounds/r2.json",
+  "evidenceFact": {
+    "artifactType": "verifier-round-fact",
+    "authority": "bearing",
+    "producedBy": "verify.mjs",
+    "ok": true,
+    "startedAt": "2026-11-19T15:29:20.267Z",
+    "completedAt": "2026-11-19T15:30:48.376Z"
+  },
+  "gateSummary": [
+    { "gate": "taskpackage-required", "kind": "governance", "ok": true, "ms": 317, "timing": "scoped" },
+    { "gate": "change-manifest", "kind": "governance", "ok": true, "ms": 421, "timing": "scoped", "note": "pre-cutoff 存量放行声明（gitFirstCommitDate 2026-09-11 < MANIFEST_CUTOFF 2026-09-28）——闸结构性放行；本轮 integrator 手工对账 12 件改动全部 ⊆ changeManifest[]、清单外 0 件" },
+    { "gate": "firmware-build", "kind": "structural", "ok": true, "ms": 9732, "timing": "scoped", "note": "VERIFY_FW_BUILD_REQUIRED=1 真编译 pass（esp32s3，增量构建，ccache 命中）" },
+    { "gate": "contract-lint", "kind": "structural", "ok": true, "ms": 107, "timing": "scoped", "note": "1 条 pre-existing 相对链接 broken 警告（260923 归档批缺件，非本轮引入）" },
+    { "gate": "acceptance-coverage", "kind": "functional", "ok": true, "ms": 122, "timing": "scoped", "note": "9 个 acceptance id 全覆盖（SEI-A1..A4 + SEI-B1..B4 + SEI-C1）；5 件冻结验收文件登记" },
+    { "gate": "mutation-check", "kind": "functional", "ok": true, "ms": 122, "timing": "scoped", "note": "9 条 per-acceptance 变异 evidence 齐（各 turnedRed + restored；证据 mutation-evidence/builder-round-1.md）" },
+    { "gate": "docs-sync", "kind": "governance", "ok": true, "ms": 105, "timing": "scoped", "note": "docsSyncRequired=false；spec/契约/架构/ADR 零 diff（另见 docs-delta.md）" },
+    { "gate": "security", "kind": "security", "ok": true, "ms": 111, "timing": "scoped", "note": "securityReviewRequired=false" },
+    { "gate": "unit", "kind": "functional", "ok": true, "ms": 39912, "timing": "full", "note": "530 passed, 7 deselected, 104 subtests passed（scope 求交真跑）" },
+    { "gate": "acceptance", "kind": "functional", "ok": true, "ms": 37071, "timing": "full", "note": "362 passed, 7 deselected, 15 subtests passed；serverAcceptanceFiles=48 / firmwareAcceptanceFiles=13（firmware on-target 需实机，闸只作结构/存在性核对）" }
+  ],
+  "mechanicalCheck": {
+    "tool": ".claude/scripts/verifier-evidence-check.mjs",
+    "args": "--change-id 261117-session-end-intent-longretry --phase final --round 2 --invocation-id 5ab6f9ae-96ce-476f-a376-f094af3724be",
+    "exit": 0,
+    "output": {
+      "ok": true,
+      "gate": "verifier-evidence",
+      "evidenceRef": "delivery/taskpackages/261117-session-end-intent-longretry/verifier-evidence/rounds/r2.json",
+      "factOk": true,
+      "observedGateExit": 0,
+      "phase": "final",
+      "round": 2
+    }
+  },
+  "hostRunner": {
+    "command": "VERIFY_FW_BUILD_REQUIRED=1 node .claude/hooks/verify.mjs --evidence-mode=round --phase=final --scope-file delivery/taskpackages/261117-session-end-intent-longretry/test-scope-final.txt --change-id 261117-session-end-intent-longretry --round 2 --invocation-id 5ab6f9ae-96ce-476f-a376-f094af3724be",
+    "runBy": "integrator（final r2 收口，本机亲跑 firmware-build 真编译 + unit/acceptance full 相位）",
+    "result": "final 10/10 闸绿；observedGateExit=0",
+    "acceptanceGreen": "SEI-A1..A4 + SEI-C1 固件源锚结构核验绿（真机行为归轮 B）；unit 530 passed / acceptance 362 passed",
+    "threeFailures": [
+      "（上游存量，与最终 r2 fact 无关——final 用 -m \"not live\" 起 scope 求交，未跑 host_infra_test.elf 全量；此前 builder 实跑 327 Tests / 3 Failures 的 3 红全为 p1_auxbar_style AB-A1/A2/A4 存量族，与本包零调用关系）"
+    ],
+    "conclusion": "本包零新增红；3 红族为 p1_auxbar 上游存量，与本包无调用关系。"
+  },
+  "serverSuite": {
+    "command": "python -m pytest -q --import-mode=importlib -m \"not live\"（unit/acceptance 两闸按 test-scope-final.txt 求交）",
+    "runBy": "integrator（final r2 收口，闸内真跑）",
+    "result": "unit: 530 passed / 7 deselected / 104 subtests（37.43s）；acceptance: 362 passed / 7 deselected / 15 subtests（34.99s）",
+    "conclusion": "本包新冻结验收 + 19 条 must-stay-green seed + 共享 seam 安全余量离线全绿，零新增失败。"
+  },
+  "deviceRound": {
+    "declared": false,
+    "status": "PENDING (round B)",
+    "roundB": {
+      "status": "not-run（真机轮 B 由 human 持板验收，KSE-E4 B1–B8）",
+      "evidenceRef": null,
+      "excerpts": [],
+      "checklist": "B1 说拜拜全链通（收口/麦克风关/OQ3=c 回落/通道常驻）；B2 告别语不误伤；B3 伪造防护（引擎流注入 relay 恒拒）；B4 拔网线自愈（5/10/20/40/60 后稳态 60s）；B5 重启 front 60s 内自愈；B6 离线期提醒覆盖窗（覆盖不到如实记录）；B7 离线 30 分钟电量差（回填 arch §8.1 风险 15）；B8 长跑期人工入口不僵死（每次审计行、连上后接续）。60s 自动关闭轮 A 已发生（A6），本轮回证。",
+      "note": "device-round-evidence.md 未生成、未伪造 PASS；未 PASS 前不得合并。"
+    }
+  },
+  "docsSync": {
+    "required": false,
+    "deltaRef": "delivery/taskpackages/261117-session-end-intent-longretry/docs-delta.md",
+    "conclusion": "spec（requirements/architecture）/ 契约 / ADR 本包零 diff（git diff 实测）；契约 §1.4/§1.5/§1.6 与 arch §5.2/§6.4 已随上游架构批 FROZEN。debt 两条 trigger/收口注记 append 刷新（status 维持 deferred，不结项）。provider.config.yaml / carrier / v11 prompt 零 diff。"
+  },
+  "adr": {
+    "required": false,
+    "produced": []
+  }
+}

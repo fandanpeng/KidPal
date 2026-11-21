@@ -55,8 +55,15 @@ MAX_DATA_BYTES = 65536
 # （与 start_organizing 唯一豁免口不同；设备只消费执行后的权威积分视图）。
 GATEWAY_DECISION_CONTROL_ACTIONS = frozenset(
     {"end_session", "start_organizing", "add_points", "redeem_points"})
-# 可由 display 流透传的 control action（决定类与可透传类不相交——start_organizing
-# 只走 front 自推通路 self_push=True 放行, relay 路径恒拒）。
+# self_push 豁免口（契约 §1.4「截获转发类」 / §1.5-3；261117-session-end-intent-
+# longretry 2026-11-19 由 {start_organizing} 扩为 {start_organizing, end_session}）：
+# 截获转发类两个动作 = front 从引擎 display 流截获模型薄意图（end_session）或自行检出
+# 收尾（start_organizing）后，以 front 机械自推单源恰一帧下发设备（self_push=True）；
+# relay 路径对全部网关决定类仍恒拒（防伪造/注入）。add_points/redeem_points（截获执行
+# 类）不在本集——relay 与 self_push 双路径恒拒。
+SELF_PUSH_EXEMPT_CONTROL_ACTIONS = frozenset({"start_organizing", "end_session"})
+# 可由 display 流透传的 control action（决定类与可透传类不相交——start_organizing /
+# end_session 只走 front 自推通路 self_push=True 放行, relay 路径恒拒）。
 FORWARDABLE_CONTROL_ACTIONS = frozenset({"stop_speaking", "start_recording"})
 
 # 积分来源门禁（契约 §1.5 / §1.3⑦⑧；K0PTS-A3）：完整 points 帧只能由 front 依据
@@ -135,9 +142,11 @@ def validate_display(payload, *, self_push=False) -> tuple[bool, str]:
     分叉, 261019-p3-record-dialogue-guide）:
       False（relay/引擎侧路径, 既有语义一字不动）: 网关决定类（GATEWAY_DECISION_
         CONTROL_ACTIONS）一律拒绝——伪造/注入的网关决定不得经 display 流透传。
-      True（front 机械自推专用通路 _push_display_payload）: 网关决定类中仅
-        start_organizing 放行（front 机械下发单源, q2 = ⓒ）; end_session 即便自推仍
-        拒绝（会话结束决定不因通路放行）。其余 floor 照跑。
+      True（front 机械自推专用通路 _push_display_payload）: 网关决定类中
+        start_organizing 与 end_session 放行（二者同型「截获转发类」，front 机械下发
+        单源；2026-11-19 反转——end_session 由「即便自推仍拒」改为放行，见契约 §1.4
+        变更记录 + 261117-session-end-intent-longretry）；add_points / redeem_points
+        仍拒（截获执行类，控制帧不发任何一端）。其余 floor 照跑。
     """
     if not isinstance(payload, dict):
         return (False, "display payload must be a JSON object, not a raw/dirty value")
@@ -154,10 +163,13 @@ def validate_display(payload, *, self_push=False) -> tuple[bool, str]:
             return (False, "control view requires data.action map")
         action = data.get("action")
         if action in GATEWAY_DECISION_CONTROL_ACTIONS:
-            # 契约 §1.4: 网关决定类不是可被 display 流盲转发的意图. start_organizing
-            # 唯一豁免口 = front 自推通路（self_push=True）——机械下发单源放行;
-            # end_session 即便自推仍拒（会话结束决定不因通路放行）.
-            if self_push and action == "start_organizing":
+            # 契约 §1.4: 网关决定类不是可被 display 流盲转发的意图. 截获转发类
+            # （start_organizing / end_session）唯一豁免口 = front 自推通路
+            # （self_push=True）——机械下发单源放行; 截获执行类（add_points /
+            # redeem_points）即便 self_push 仍拒（控制帧不发任何一端，只发执行后权威
+            # 积分视图）。2026-11-19 end_session 由「即便自推仍拒」反转为放行
+            # （截获转发类，front 截获模型薄意图后机械自推单源恰一帧；契约 §1.4/§1.5）。
+            if self_push and action in SELF_PUSH_EXEMPT_CONTROL_ACTIONS:
                 pass  # front 自推放行（落位到下方 forwardable 分支外的放行通道）
             else:
                 return (False, f"control/{action} is a gateway intent decision, not forwardable")

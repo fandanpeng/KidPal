@@ -1,0 +1,68 @@
+# test-scope-final —— 包 261117-session-end-intent-longretry（P2，workstream 261115-session-channel-resident）
+# final 终验影响面圈定清单（integrator Step 4）。仓根相对路径，一行一个，# 注释行被闸忽略。
+#
+# 圈定依据：
+#   ① detect_changes（project=C-AI-KidPal-pod-m2，base 05417c1f → 工作树，direction=inbound，depth=2）
+#      112 种子符号 → 115 impacted 节点；本清单收录其映射到的测试文件（archive/ 面按 SKIP_DIRS 退役不计）。
+#   ② taskpackage impactedTestsSeed（19 条）。
+#   ③ 本包 acceptanceTestsFile（5 件冻结验收）。
+#   ④ 共享 seam 相关测试（grep front_app.py / display_schema.py / validate_display /
+#      _relay_display_blocks_to_device / end_session 命中、离线装载 front_app 或直调 validate_display 者）——安全余量。
+#   「图不可用」三分法：本 Pod per-repo 图索引（C-AI-KidPal-pod-m2）可用，detect_changes 正常圈定（非降级）。
+#
+# 说明（显式并入的固件源锚件，detect_changes 未必连得上，按 planner 派单强制并入）：
+#   record_session_lifecycle / record_session_live / voice_round_ui / record_dialogue_guide(固件) /
+#   points_spike(固件) / host_app/main/CMakeLists.txt 注册序族。固件 *.acceptance.c 由 acceptance 闸
+#   做「有验收文件 ⇒ 有验收入口」结构守卫（on-target 需真机/台架，不在本闸 auto-run）；
+#   CMakeLists.txt 为注册序配置件（非可跑测试，列此存证 SEI-C1 注册序守卫面）。
+
+# ── ① 本包冻结验收（acceptanceTestsFile / SEI-A1..A4 + SEI-B1..B4 + SEI-C1）──
+firmware/main/test/session_end_intent_longretry.acceptance.c
+firmware/main/test/boot_auto_connect.acceptance.c
+firmware/main/test/session_channel_resident.acceptance.c
+server/acceptance/test_session_end_intent.acceptance.py
+server/acceptance/test_record_dialogue_guide.acceptance.py
+
+# ── ② 显式并入的固件源锚必绿雷 + 注册序族 ──
+firmware/main/test/record_session_lifecycle.acceptance.c
+firmware/main/test/record_session_live.acceptance.c
+firmware/main/test/voice_round_ui.acceptance.c
+firmware/main/test/record_dialogue_guide.acceptance.c
+firmware/main/test/points_spike.acceptance.c
+firmware/main/test/host_app/main/CMakeLists.txt
+
+# ── ③ impactedTestsSeed 服务端必绿/收紧件 ──
+server/acceptance/test_points_e2e_spike.acceptance.py
+server/acceptance/test_session_channel_resident.acceptance.py
+server/acceptance/test_points_ledger_core.acceptance.py
+server/tests/test_points_spike_units.py
+server/acceptance/test_261022_m5_k1_prompt_carrier_migration.acceptance.py
+server/acceptance/test_261023_agents_md_static_semantics_alignment.acceptance.py
+server/acceptance/test_prompt_v7_round_routing.acceptance.py
+server/acceptance/test_261022_honcho_memory.acceptance.py
+server/tests/test_archive_guard_units.py
+server/acceptance/test_m4k3_record_session_live.acceptance.py
+
+# ── ④ detect_changes 影响面映射测试（blast radius）──
+server/acceptance/test_261022_memory_isolation.acceptance.py
+server/acceptance/test_m3k1_schedule_producer.acceptance.py
+server/acceptance/test_m3k3_voice_schedule_entry.acceptance.py
+server/acceptance/test_m4k1_story_cloud_link.acceptance.py
+server/acceptance/test_points_device_ui.acceptance.py
+server/acceptance/test_record_cancel_lifecycle.acceptance.py
+server/acceptance/test_record_front_polish.acceptance.py
+server/acceptance/test_schedule_grid_restore.acceptance.py
+server/acceptance/test_story_cover_nav.acceptance.py
+server/tests/test_reminder_units.py
+server/tests/test_schedule_producer_units.py
+server/tests/test_story_cancel_lifecycle_units.py
+server/tests/test_story_units.py
+
+# ── ⑤ 共享 seam 相关测试（安全余量：离线装载 front_app / 直调 validate_display）──
+server/acceptance/test_261013_qq_schedule_write_closure.acceptance.py
+server/acceptance/test_261022_persistent_session.acceptance.py
+server/acceptance/test_261022_schedule_injection.acceptance.py
+server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py
+server/acceptance/test_qq_points_channel.acceptance.py
+server/acceptance/test_story_fetch.py
+server/acceptance/test_tech260928_school_start_wiring.acceptance.py

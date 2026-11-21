@@ -16,7 +16,8 @@ Scope of record（taskpackage acceptance RDG-A1..A7）:
   RDG-A4 Package B 等价信号注入引擎腿（进/出语境）+ engine-patch 认领/chat 第三守卫/
         stop-truncation 豁免重绑/引导注入不尾随（验收种子 1 host 半）。
   RDG-A5 display_schema 自推通路分叉（start_organizing 网关决定类 relay 拒转 +
-        front 自推放行；end_session/start_recording 既有语义零偏移）。
+        front 自推放行；end_session 2026-11-19 由「即便自推仍拒」反转为「self_push
+        放行」（截获转发类，契约 §1.4）；start_recording 既有语义零偏移）。
   RDG-A6 卡壳计时 sweep（stuck-due 引导轮不归档；2 轮无回应自动收尾 → 三式收尾
         统一下发 start_organizing、重复幂等；pending-stop 10s 挂起窗口保留）。
   RDG-A7 S-F1.4-AC6 host 半：引导/整理 speak 注入 = kidpal_speak 内部指令同型、
@@ -92,10 +93,13 @@ front_app.py 面离线装载（fastapi 缺席本地 stub，M4K1/SC 先例），e
         self_push=False（relay/引擎侧路径）：control/start_organizing 一律拒绝
         （伪造/注入的网关决定类不得经 display 流透传）；其余既有行为一字不动
         （end_session 拒转、start_recording/stop_speaking 可透传、story floor 等）。
-        self_push=True（front 自推专用通路）：网关决定类中 **start_organizing**
-        放行（front 机械下发单源；end_session 即便自推仍拒绝——会话结束决定不因
-        通路放行）；其余 floor 照跑。
-    FORWARDABLE_CONTROL_ACTIONS 不含 start_organizing（决定类与可透传类不相交）。
+        self_push=True（front 自推专用通路）：网关决定类中 **start_organizing 与
+        end_session** 放行（front 机械下发单源，二者同型「截获转发类」；2026-11-19
+        反转——end_session 由「即便自推仍拒」改为放行，见契约 §1.4 变更记录 +
+        261117-session-end-intent-longretry）；start_recording/stop_speaking 与其余
+        floor 照跑，add_points/redeem_points 仍恒拒。
+    FORWARDABLE_CONTROL_ACTIONS 不含 start_organizing / end_session（决定类与可透传类
+    不相交）。
 
   C) server/gateway/front/front_app.py（接线面；离线可装载纪律不变）:
 
@@ -275,6 +279,24 @@ REVISION LOG
              新增 story_list 零新增守卫，未放宽任何其余断言。
   2026-11-17 同条引用的 `up2, _` 显式改名为 `up2, dev2`（新守卫取设备腿帧所需；
              无独立语义变化，与上条同批落盘）。
+  2026-11-19 RDG-A5 end_session 自推判据**冻结齿反转**（frozen-inversion；
+             261117-session-end-intent-longretry，按该包 exitCriteria KSE-E2 口径
+             显式申报，非静默改齿）。
+             旧钉：`validate_display({view:control, data:{action:end_session}},
+             self_push=True)[0]` 为 **False**（「会话结束决定不因通路放行」）。
+             新钉：为 **True**（end_session 属契约 §1.4①「截获转发类」——front 截获
+             引擎 display 流中的模型薄意图后机械自推单源恰一帧下发，与 start_organizing
+             同型；self_push 豁免口由 {start_organizing} 扩为 {start_organizing,
+             end_session}）。
+             为什么：契约 §1.4 变更记录（2026-11-16 架构批 FROZEN landed，reviewedCommit
+             87dbf775）已把 end_session 归入截获转发类 + §1.6 新增告别回合纪律；若 self_push
+             仍拒，云端结束意图三段补链的「front 自推」段永远下发不出去（
+             TECH-261014-session-end-channels-unwired 实现侧实测断链②）。本包兑现实现与
+             prompt 承载，不改契约。
+             保绿面（不得顺手翻）：relay 缺省路径的 `end_session` assertFalse 保持原样
+             （test_rdg_a5_start_organizing_gateway_decision_rejected_on_relay 承载；
+             防伪造/注入破口）；add_points/redeem_points self_push 恒拒由
+             261117-session-end-intent-longretry 新冻结件 SEI-B1 承载。
 """
 
 from __future__ import annotations
@@ -1278,8 +1300,9 @@ class RdgDisplaySchemaForkAcceptance(unittest.TestCase):
             "RDG-A5 RED: relay 把 control/start_organizing 透传给设备 —— 决定类只能走 "
             "front 机械下发单源（契约 §1.4）。")
 
-    # coverage: RDG-A5 -- 自推通路分叉：self_push 放行 start_organizing；front 自推缝
-    #                   真跑恰一帧；end_session 即便自推仍拒
+    # coverage: RDG-A5 -- 自推通路分叉：self_push 放行 start_organizing 与 end_session
+    #                   （截获转发类，2026-11-19 反转）；front 自推缝真跑恰一帧；
+    #                   end_session relay 缺省恒拒（must-stay-green，另一 case 承载）
     def test_rdg_a5_self_push_fork_admits_front_start_organizing(self):
         ds = _display_schema()
         payload = {"view": "control", "data": {"action": START_ORGANIZING_ACTION}}
@@ -1293,12 +1316,13 @@ class RdgDisplaySchemaForkAcceptance(unittest.TestCase):
             f"RDG-A5 RED: 自推通路仍拒 start_organizing ({reason}) —— front 机械下发"
             "被自拒（结构性风险 1：start_organizing 入网关决定类后自推通路不分叉 = "
             "收尾永远下发不出去）。")
-        ok_end, _ = ds.validate_display(
+        ok_end, reason_end = ds.validate_display(
             {"view": "control", "data": {"action": "end_session"}}, self_push=True)
-        self.assertFalse(
+        self.assertTrue(
             ok_end,
-            "RDG-A5 RED: end_session 借 self_push 放行 —— 自推豁免只许 start_organizing"
-            "（会话结束决定不因通路放行）。")
+            f"RDG-A5 RED: end_session 借 self_push 仍被拒（{reason_end}）—— 自推豁免须"
+            "同时放行 start_organizing 与 end_session（二者同为截获转发类，契约 §1.4；"
+            "2026-11-19 反转：会话结束决定由 front 机械自推单源下发）。")
         # front 自推缝真跑：恰一帧下发给设备腿。
         with tempfile.TemporaryDirectory(prefix="rdg_a5_push_") as tmp:
             with _front_with_stories(tmp) as front:
