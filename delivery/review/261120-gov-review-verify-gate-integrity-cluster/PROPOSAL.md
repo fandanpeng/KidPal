@@ -538,3 +538,59 @@ V5-C 正负配对两条全绿：负例「显式路径打错」→ 非 0 且点�
 5. **V4 case1/case2 夹具用行首形态**：FROZEN §2.3 的修前实测夹具把 Unity 断言写在行中（`void t(void){ TEST_ASSERT_...; }`），而 §6 V4 表 case1 明写「纯 Unity **行首**」。实施按 V4 表用行首形态（变体 (c) 的识别前提），并**另立一条纯函数负例** `unity-midline-only-negative-forward-boundary` 钉住行中形态当下不识别这一前向边界（§4.1 条 3）。两种形态修前均为红（反转①实证），故红基线不受此差异影响。
 6. **两处夹具/断言自身缺陷在实施期被抓出并修正**（记录以免复犯）：① 首版夹具把 `current/taskpackage.json` 写成只含 `{changeId}` 的瘦投影，而无参形态下闸读的正是投影文件 → 判别落到「manifest 缺失」而非「清单外改动」，V1 的 `outOfManifest` 断言红；修正为 canonical 与 current/ **双写完整副本**（与真仓一致，`taskpackage-required-check.mjs:301-321` 本就强制两者散列一致）。② 「未知旗标不得再报错误话」的断言用裸字面 `TaskPackage file does not exist` 取反，而 usage 文本为解释病灶恰好引用了该短语 → 断言自相矛盾恒红；改为匹配 JSON 形态 `"message": "TaskPackage file does not exist"`。
 7. **未做项（FROZEN 明列为可选）**：§6 V1 括注的「更强形态」——在夹具上跑通完整 `verify.mjs --phase=scoped` 闸链并取其 evidence 条目——**未执行**。理由：`verify.mjs` 会 `persistVerifyRuns` 落盘轮次证据，在夹具外有写入副作用，且 FROZEN 已明写「跑不通不阻验收，无参 CLI 同形已足够」；消费层属性已由无参 spawn（零位置参数 + `cwd` 与 `CLAUDE_PROJECT_DIR` 同指夹具根）承担，并以 `verify.mjs --self-check` 18/18 佐证消费方未破损。
+
+## 11. 实现评审记录（architect-reviewer）
+
+### R1 实现评审 - 2026-11-21 - architect-reviewer
+
+verdict: GREEN
+
+本轮为真实 diff 实现评审（按 §9 SHOULD-1 判档：reviewer 亲自 spawn 真实无参 CLI 复跑 V1/V4/V3/V5，不采信作者自证）。审对象 = `main...1c19f794`（实现 commit `f09c19c6` + 批记录 `d22e5636` + 主线程记账 `1c19f794`）。结论：实现与 FROZEN v0.2 意图/边界/验收一致，判别力经本 reviewer **独立夹具**（非作者自证）实证成立，scope 与记账事实吻合，给 GREEN。
+
+**钉点取舍（重要）**：`reviewedCommit` 取 `1c19f794`（本批最后一个**非证据**提交）而非 `f09c19c6`。理由 = 前置升级闸 `collectDirectImplementationGate`（`pre-merge-escalation-gate.mjs:157/165-166`）要求 `reviewedCommit..source` 只剩证据尾改动；`1c19f794` 记账件（两条 ARQ 归位 `_archive/2026/`、`docs/debt/gov/INDEX.md`、`task_plan.md`）属**非证据尾**，若把 `f09c19c6` 当 reviewedCommit 会令 `f09c19c6..source` 含这批非证据改动而 BLOCK。故钉在 `1c19f794`，本 reviewer 已连同记账件一并审（见第四节）。
+
+#### 一、scope（实际非证据 diff ⊆ §8 manifest）
+
+`git diff --name-only main...1c19f794` = **11 件**，逐件归位：3 件实现面（`change-manifest-check.mjs` / `acceptance-coverage-check.mjs` / `taskpackage-authoring.md`）↔ manifest 第 1–3 行；`docs/debt/gov/_archive/2026/{ARQ 三件}` ↔ 第 7 行目录条目；`docs/debt/gov/INDEX.md` ↔ 第 6 行；`task_plan.md` ↔ 第 8 行；`delivery/review/261120.../{PROPOSAL,events}` 与 `delivery/review/INDEX.md` 由 `isEvidenceTailPath` 豁免（`governance-gate-shared.mjs:121-126`）。**非证据 diff 全数 ⊆ manifest，零出界**（rename 的两条 ARQ 源径已删除、不在 changed 集；目的径落在第 7 行目录前缀内，实测 `isDirectImplementationPathInScope` 段前缀匹配成立）。
+
+**四件零改动实证**：`git diff --name-only main...1c19f794` 不含 `.claude/verify-gates.json`、`.claude/scripts/lib/current-pointer-shared.mjs`、`.claude/scripts/taskpackage-required-check.mjs`，亦不含 `delivery/taskpackages/**`（实现 commit 只动 3 件）。与 §6 V6(c)/(d) 一致。
+
+#### 二、判别力（本 reviewer 独立夹具亲跑，非作者自证）
+
+我先跑作者随闸的 `--self-check` 确认其断言全绿（`change-manifest` 43/43、`acceptance-coverage` 28/28 = 纯函数 14 + CLI 14），但**判别力凭据以下为我自建、不经作者夹具代码的独立实证**：
+
+- **V1 独立两侧夹具**（临时 `git init` 仓：commit A 以 `GIT_COMMITTER_DATE` 回填 `2026-09-11` 只建 `current/taskpackage.json`；commit B 当日建 `269901-indep/` 包目录 + `firmware/base.c`；工作树留未提交、未被 `server/**` 覆盖的 `firmware/new.c`）：**先自证三基准分处两侧**（投影 `2026-09-11` < cutoff，包目录 `2026-11-21` ≥ cutoff，两者异侧）→ 无参 spawn 真闸（`process.execPath [script]`、cwd 与 `CLAUDE_PROJECT_DIR` 同指夹具仓）→ **exit 1 / 无 `skipped` / `outOfManifest:["firmware/new.c"]` / `cutoffBasis.kind=package-dir` / `firstCommitDate=2026-11-21`**。把 manifest 改覆盖 `firmware/**` 再跑 → **exit 0 / ok:true / 无 skipped / reconciledFaceCount:1**（证非恒红）。
+- **反转复核（恢复投影基准必绿=测试必败）**：把闸复制到仓外、仅把 `cutoffBasis(ctx.changeId)` 换回 `gitFirstCommitDate(tpPath)`（= 修前 bug 的投影基准）后跑同一夹具 → **exit 0 / skipped:"pre-cutoff" / basis.kind=projection-file**。同一夹具下新实现红、恢复旧基准绿 —— 证明该判据**由 cutoff 基准修正承重**、判别力非空。
+- **V0 真存量夹具**（投影与包目录**同**回填 `2026-09-11`，manifest 为空 `[]`）：无参 → **exit 0 / skipped:"pre-cutoff" / basis.kind=package-dir**。因 manifest 空时若放行分支失效必红，绿即证明 pre-cutoff 放行**由包目录基准驱动且语义未变**。
+- **V3 真仓前后对比**：无参（current → `261104-k5-story-cover-nav`）→ `ok:true / manifestSize:29 / reconciledFaceCount:0 / basis package-dir 2026-11-04`（修前 `skipped:"pre-cutoff" / 2026-09-11`）；显式 k5 路径与 `261031-openclaw-cron-trigger-gating`（`manifestSize:9 / basis 2026-10-31`）结论一致，与 §10.3 / ARQ 结项追注逐字吻合。
+- **V4 独立夹具**（临时目录 + current 投影 + 带 `// coverage: UP-A1` 的 `.c` 件，无参 spawn）：纯 Unity 行首断言件 → **exit 0**（修前假红已消）；仅注释内带括号 Unity 字样 → **exit 1**（prose 负例保持红）；仅 `#define` 宏包装件 → **exit 0**；真无断言 → **exit 1**。V5-A：`--change-id` → exit 0 且回显来源 `--change-id 旗标`；`--help` → exit 0；`--bogus` → exit 2。
+- **V6 独立普查**（`git ls-files firmware server tools`，757 件）：5 个假红文件以新 `hasRealAssertion`（含 `UNITY_ASSERT_RE`）复判 **5/5 转绿**（含 `red-baseline/unity.h` 靠 `#define` 行）；语料修前 154 → 修后 159（= +5，无意外新增）；**翻红(true→false) = 0**（既有六支模式未删，第七支为纯 `||` 追加，结构上不可能翻红）。
+
+#### 三、冻结边界未越
+
+- **N/A 语义**：独立构造「无 current、无任何参数」临时目录无参跑 → **exit 0 / skipped:"no-taskpackage-context"**（一字未改）。§3.3 第一行分支经核与修前语义一致。
+- **pre-cutoff 放行**：V0 夹具已证 exit 0 + `skipped:"pre-cutoff"`（见上）。
+- **只有两类转非 0**：`explicit && !found`（显式路径打错 / `--change-id` 指向不存在包）→ exit 1；`--` 未知旗标 → exit 2。实测 V5-C 负例两向均 exit 1，`--bogus` exit 2。
+- **`--help` exit 0**：change-manifest 与 acceptance-coverage 两闸实测均 exit 0 + usage，且不输出 `"ok":true` 假绿 JSON。
+- **changeId 不可得 ≠ 上下文不可解析**：§3.3 bullet 2 的 `cutoffBasis` 不可得分支（包目录无提交历史）实跑 → 不跳过、进对账（fail-closed），`cutoffBasis.firstCommitDate===null`。
+- **真实闸链不受影响**：`verify-gates.json` 注册无参、`verify.mjs:271-272` 原样 spawn 不追加旗标；全仓实测无 `DEV_LOOP_TASKPACKAGE`/`TASKPACKAGE_PATH` 赋值/导出，故真实 verify 恒走无参 + current 回退，fail-loud 两分支只在调用方显式误用时触发。
+
+#### 四、消费方与记账事实
+
+- **消费方不回归**：`verify.mjs --self-check` 18/18、`taskpackage-required-check --self-check` 23/23、`mutation-check --self-check` 14/14 全绿（本 reviewer 亲跑）。无机械消费方解析旧 `skipped`/`pre-cutoff` 字面、亦无消费方解析旧 self-check 标签 `acceptance-coverage-python-assert`（全仓 grep 零命中）。`--self-check` 输出 `selfCheck` 标签改名、`contextSource` 新增字段均为形状兼容加字段（§10.5 如实记）。
+- **主线程记账件与实现事实一致**：两条 ARQ 已翻 `status: closed` / `closed 2026-11-21` / `closedBy=本批`，追注的 OQ-1=甲 / OQ-2=(c) / OQ-3 符号名、真仓前后对比（k5 29 / 2026-11-04；cron 9 / 2026-10-31）、自检 43/43 与 28/28 均与本 reviewer 亲跑逐项吻合；`task_plan.md` P10 行诚实标「实现落地、合并收口待补」；`delivery/review/INDEX.md` 该批状态 = `frozen`，与 PROPOSAL FROZEN v0.2 一致。
+
+#### 五、偏差复核（§10.5 六条）
+
+六条偏差均为「非 manifest 外改动」且已如实记，逐条核：① 实现 commit 署名行为 `Co-Authored-By: Claude Fable 5`，与本仓惯例（`Claude Opus 4.8`）及主线程派单不同——**非代码/非 tree 内容**，不影响 reviewedTree；作者已如实上报，交主线程 / human 定夺是否 `--amend`（**若 amend 则全部后代 SHA 变、本钉点须按新 SHA 重落**）。② `--change-id` 缺值 exit 2（设计文本未明列的向严新增，防静默回落 current 对错包跑闸）可接受。③ self-check 标签改名（无消费方）④ `contextSource` 加字段（形状兼容）⑤ V4 夹具用行首形态（合 §6 V4 表，并另钉行中前向边界负例）⑥ 两处夹具自缺陷实施期抓出并修正（瘦投影→双写、裸字面断言→JSON 形态）——均属如实、无害。⑦ 可选「完整 verify.mjs --phase=scoped 闸链」未做，合 FROZEN §6 V1 括注（非必做），消费层属性已由无参 spawn 承担。
+
+#### Findings
+
+- 无 BLOCKING / SHOULD（实现正确、判别力实证成立、边界与消费方无破损）。
+- **NIT-7（记账，交主线程/human）**：实现 commit 的 `Co-Authored-By` 署名行（`Claude Fable 5`）异于仓内惯例与派单要求（见 §10.5 条 1）。不改代码、不改 tree；若统一为 `Claude Opus 4.8` 需 `--amend`，届时全部后代 SHA 变、本 §11 钉点须按新 SHA 重落并回审。
+- **NIT-8（观察）**：`--change-id` 缺值 → exit 2 为设计文本未明列的向严分支（§10.5 条 2），本 reviewer 认可其方向（防对错包跑闸），仅记录在案。
+
+（实现评审 verdict 见下钉点；本 reviewer 已亲跑前置升级闸，回报内含放行结果。）
+
+reviewedCommit: 1c19f7946e03167666f1ede478fe90e7ad7505de
+reviewedTree: 3c5476fc8564d440846f557dc435bf7949b3da43
