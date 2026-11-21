@@ -1,115 +1,87 @@
 {
-  "changeId": "261104-k5-story-cover-nav",
-  "title": "故事封皮导航——P4 封皮、列表/阅读下沉、逐层返回与 story_list 共享帧消费",
+  "changeId": "261117-session-end-intent-longretry",
+  "title": "云端结束意图三段补链 + 自动重连封顶长跑与离线期人工意向不丢",
   "rigor": "full",
   "sourceType": "proposal",
   "origin": {
     "type": "proposal",
     "upstreamType": "proposal",
-    "upstreamRef": "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md",
-    "upstreamFrozen": "sha1:4eca114e6998e14e",
-    "workstream": "261103-star-points-story-cover"
+    "upstreamRef": "delivery/workstreams/261115-session-channel-resident/PROPOSAL.md",
+    "upstreamFrozen": "sha1:bc53e2b9d5cf772d",
+    "workstream": "261115-session-channel-resident"
   },
-  "subsystem": "firmware P4 封皮与故事层级导航 + front/OpenClaw story_list P4 共享帧 + 书封资产",
-  "story": "S-F2.6 · 故事封皮与分层导航（AC1–AC4）+ S-F2.1 · 看「星星记录本」列表（AC1–AC7 回归）+ S-F2.2 · 对话式引导记录（AC1 入口回归）+ S-F2.3 · 回看记录（AC1、AC2）+ S-F2.4 · 星星保存成就盖章（AC2 现存计数半）。",
-  "planRef": "delivery/taskpackages/261104-k5-story-cover-nav/plan.md",
+  "subsystem": "firmware control end_session 消费与自动重连策略 + front display 门禁与提示词承载",
+  "story": "S-F1.4 · 日程提醒（离线期提醒必达与自愈）+ requirements §2.1 结束通道②（云端结束意图）+ requirements §2.1 结束通道③（再按 KEY）+ requirements §2.2 四态演出回归",
+  "planRef": "delivery/taskpackages/261117-session-end-intent-longretry/plan.md",
   "sourceRefs": [
-    "S-F2.6-AC1",
-    "S-F2.6-AC2",
-    "S-F2.6-AC3",
-    "S-F2.6-AC4",
-    "S-F2.1-AC1",
-    "S-F2.1-AC2",
-    "S-F2.1-AC3",
-    "S-F2.1-AC4",
-    "S-F2.1-AC5",
-    "S-F2.1-AC6",
-    "S-F2.1-AC7",
-    "S-F2.2-AC1",
-    "S-F2.3-AC1",
-    "S-F2.3-AC2",
-    "S-F2.4-AC2",
-    "docs/requirements.md#§2.3",
-    "docs/requirements.md#§2.4",
-    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-01",
-    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-07",
-    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-08",
-    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-09",
-    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§5",
-    "delivery/workstreams/261103-star-points-story-cover/task_plan.md#K5",
-    "docs/contracts/interface-contract.md#§1.3③",
-    "docs/contracts/interface-contract.md#§四-kidpal_session_ctx",
-    "docs/decisions/ADR.md#ADR-018",
-    "docs/debt/tech/TECH-261028-p3-reader-key-falls-to-session-toggle.md"
+    "docs/requirements.md#§2.1",
+    "docs/requirements.md#S-F1.4",
+    "docs/architecture.md#§5.2",
+    "docs/architecture.md#§6.4",
+    "docs/contracts/interface-contract.md#§1.4",
+    "docs/contracts/interface-contract.md#§1.5",
+    "docs/contracts/interface-contract.md#§1.6",
+    "docs/decisions/ADR.md#ADR-019",
+    "delivery/review/261115-arch-review-session-channel-resident/PROPOSAL.md#T1",
+    "delivery/review/261115-arch-review-session-channel-resident/PROPOSAL.md#T2",
+    "delivery/review/261115-arch-review-session-channel-resident/PROPOSAL.md#T5",
+    "docs/debt/tech/TECH-261014-session-end-channels-unwired.md",
+    "docs/debt/tech/TECH-261014-autoconnect-gives-up-silently.md"
   ],
   "acceptanceRefs": [
-    "docs/requirements.md#S-F2.6",
-    "docs/requirements.md#S-F2.1",
-    "docs/requirements.md#S-F2.2",
-    "docs/requirements.md#S-F2.3",
-    "docs/requirements.md#S-F2.4-AC2",
-    "docs/requirements.md#§2.3",
-    "docs/requirements.md#§2.4",
-    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§5"
+    "docs/requirements.md#§2.1",
+    "docs/requirements.md#S-F1.4",
+    "docs/contracts/interface-contract.md#§1.4",
+    "docs/contracts/interface-contract.md#§1.5",
+    "docs/contracts/interface-contract.md#§1.6",
+    "delivery/review/261115-arch-review-session-channel-resident/PROPOSAL.md#§5"
   ],
   "acceptance": [
-    "KCN-C1: 封皮四件（书封形态两向长墨段 / 标题「星星记录本」在墨 / 星星计数在墨 / 大星徽在墨）+ 四点页点第 4 实心 + 覆盖层态页点隐藏 + 键帽（打开 / 下一页）。回引 S-F2.6-AC1、requirements §2.4。设计态红 = 封皮 COVER 渲染分支与键帽行未落",
-    "KCN-C2: 封皮计数两态（数据已送达如实显示含 ×0 / 数据未达 rc=0 且计数带零墨不误显）+ render_node P4 分支出现 KSTORY_PAGE_COVER 分派。回引 S-F2.6-AC1 补充规则、S-F2.1-AC5/AC6。设计态红 = COVER 分支缺席",
-    "KCN-C3: 手势矩阵（COVER KEY 短→COVER_OPEN 进列表 / BOOT→GLOBAL / KEY 长→GLOBAL / KEY 双=NONE；LIST KEY 长→COVER_BACK；READER KEY 长→LIST；COVER 不进 300ms 双击消歧）。回引 S-F2.6-AC2/AC3、S-F2.1-AC2、requirements §2.3。设计态红 = COVER case 与新动作码缺席",
-    "KCN-C4: 页态逐层返回序列（阅读→列表→封皮→首页，每按一次只上一层）+ 板级 BOOT 入口 reset 结构锚（StoryEnterCover 调用点存在）。回引 S-F2.6-AC3/AC1、PROPOSAL §5。设计态红 = 入口 reset seam 缺席",
-    "KCN-C5: restore 三态（restore 帧只填缓存不导航且活动子态零重置 / 非 restore 完整帧 = 进场帧进封皮 / 畸形帧降级）+ kidpal_story_list_load 不改 page + mcp 路由结构锚（restore 分支不调 view_init）。回引 S-F2.6-AC1/AC4、S-F2.1-AC6、D-07/D-08。设计态红 = list_load 缺席、mcp 仍 view_init",
-    "KCN-C9: ic_coin_52_52.bin（KAP1 头、52x52、stride 7）+ 产线三处白名单登记 + KSTORY_ART_CACHE_SLOTS>=8。回引 S-F2.6、D-09、K5S-E3 离线半。设计态红 = 资产未产出、槽未扩容",
-    "KCN-C10: 回归锚（封皮计数只信 story_list.total / 删除同步减 / K0a 阅读键零回归 / 记录语境入口）+ host 登记序。回引 S-F2.1-AC1..AC7、S-F2.2-AC1、S-F2.3-AC1/AC2、S-F2.4-AC2、D-01。设计态红 = 登记序与新 seam 缺席",
-    "C6: display_schema 放行 {\"view\":\"story_list\",\"data\":{}} 薄载荷 + 其余畸形仍拒 + 白名单零扩（无 story_cover view）+ front _expand_story_nav_intent 展开为非 restore 完整帧且 Q7 不误杀自展帧。回引 S-F2.6（契约 §1.3③/§1.5）。设计态红 = 薄载荷口与展开 seam 缺席",
-    "C7: 五调用点 restore 判定（ctx 建立 / 删除后 / 归档成功翻 true；WS 建连保持 true；归档失败离页帧保持 False = human 2026-11-15 裁定「离页导航帧例外」）。回引 S-F2.6-AC1/AC4、D-07。设计态红 = 三处未翻 true",
-    "C8: 语境三分（story_cover 普通问答不 acc.start / 不推 story_list / 不注记录信号；story 列表仍记录语境；未知 source_page 拒绝并 warning）。回引 S-F2.6-AC4（契约 §四）。设计态红 = story_cover 语境未接线"
+    "SEI-A1",
+    "SEI-A2",
+    "SEI-A3",
+    "SEI-A4",
+    "SEI-B1",
+    "SEI-B2",
+    "SEI-B3",
+    "SEI-B4",
+    "SEI-C1"
   ],
   "acceptanceTestsFile": [
-    "firmware/main/test/story_cover_nav.acceptance.c",
-    "server/acceptance/test_story_cover_nav.acceptance.py"
+    "firmware/main/test/session_end_intent_longretry.acceptance.c",
+    "server/acceptance/test_session_end_intent.acceptance.py",
+    "server/acceptance/test_record_dialogue_guide.acceptance.py",
+    "firmware/main/test/boot_auto_connect.acceptance.c",
+    "firmware/main/test/session_channel_resident.acceptance.c"
   ],
-  "redBaselineCommand": "host: wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf（仓根起；执行目录 = firmware/main/test/host_app）；server: python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance（仓根起）",
-  "redBaselineResult": "2026-11-15 @ 03630b65 工作树（acceptance-author 冻结实跑 + planner 独立复跑，两次数值一致）：host = 293 Tests / 7 Failures / 0 Ignored（4 条设计态红：SPV2-A1 / KB-A3 / CG-A2 / RSL-A10，红因全为实现缺席；3 条 p1_auxbar 存量红 AB-A1/A2/A4，本包未触碰）；server = 9 failed / 448 passed / 9 deselected / 33 subtests passed（9 红全为本批设计态红，零存量红污染；分件 = 新件 6f、M4K1 2f、M4K3 1f）。新 host 件未登记 CMakeLists（acceptance-author 写面边界），其运行时红基线以临时线束证据为准（7 条全红），builder 第一步登记后即为正式 runner 成员（见 dispatch-progress-acceptance-author.md D1）。",
+  "redBaselineCommand": "host: wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf（仓根起）；server: python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance（仓根起）",
+  "redBaselineResult": "acceptance-author 实跑（2026-11-19，HEAD 05417c1f）：server = 495 passed / 7 failed / 9 deselected / 43 subtests（零连带红；7 红 = RDG-A5 frozen-inversion 1 + SEI-B1 1 + SEI-B2 2 + SEI-B3 2 + SEI-B4 1，均为设计态红）；host = 322 Tests / 5 Failures（3 上游存量 p1_auxbar_style AB-A1/A2/A4 + 本包 K6-A2 退避表 re-baseline、SCR-A2 意向位加固两处设计态红）；新 firmware 冻结件注册前 standalone 通道 = 5 Tests / 5 Failures（SEI-C1/A1/A2/A3/A4 各首红，编译零 error 零 warning）。待 host_app/main/CMakeLists.txt 注册后回跑 host 全量（预期 327 Tests）。",
   "exitCriteria": [
-    "K5S-E1: Pod 内冻结验收覆盖封皮四件、四点第 4 实心、KEY 打开列表、BOOT wrap、逐层返回、语音只到封皮、覆盖层页点消失及故事三 story 回归；S-F2.1 AC7 覆盖正文未留存且取不回时的可见提示与不显示别篇。红基线和变异证据齐全。",
-    "K5S-E2: story_list 共享帧消费证据表明封皮计数只信 total，后台恢复/归档/删除推送均 restore:true，显式「打开故事」空 data 薄载荷只进封皮；不新增 story_cover view 或 cover_total。",
-    "K5S-E3: `ic-coin` 与书封经既有资产管线产出并在设备可见，V9 design review 完成；故事列表/阅读/录音等未变帧沿 V8/V9 口径，不因下沉重画或改文案。",
-    "K5S-E4: 一轮真机完成四页并集、封皮→列表→阅读及逐级返回、语音入口、删除/盖章计数、记录语境与阅读键回归；看屏、串口、front/引擎日志互证。",
-    "K5S-E5: 本包只承担导航并集收口 owner，review-packet 对账 PROPOSAL §5 的导航项并列明跨包端到端余项；整列车真机+真实 QQ 收口轮由主线程另组织，不以本包合并自动宣称 workstream 完成。",
-    "K5S-E6: TECH-261028 已在 K0a 修复，本包只做回归不重复承接；实际 diff 限于 changeManifest，K0a/K2 的枚举语境、积分页和四点基线零回退。"
+    "KSE-E1: Pod 内冻结验收覆盖 SEI-A1–A4 与 SEI-B1–B4 全部断言；红基线与变异证据齐全；relay 侧与 points spike 两条天然保绿齿逐条列证。",
+    "KSE-E2: 冻结齿反转显式申报——test_record_dialogue_guide.acceptance.py 的 self_push=True + end_session 由 assertFalse 改 assertTrue，断言消息随裁定改写；boot_auto_connect.acceptance.c 的 K6-A2 tooth5 按新退避表重写。每条列出「旧钉什么 → 新钉什么 → 为什么」。",
+    "KSE-E3: 部署面承载——workspace-kidpal AGENTS.md 与 OPENCLAW_SYSTEM_PROMPT_CARRIER 的静态语义三面相等不变式保绿（ADR-001）；prompt 落 ECS 后与仓内制品一致。",
+    "KSE-E4: 一轮真机轮 B（human 持板）全绿，编号沿 package-split §4.3 B1–B8：B1 说「拜拜」全链通（模型产薄意图 → front 截获 → 自推恰一帧 → 设备结束会话、麦克风关、按 OQ3=c 回落、通道仍常驻）；B2 告别语不误伤（「拜拜，明天再聊」只结束会话）；B3 伪造防护（引擎流注入 end_session → relay 恒拒、仅 front 截获-自推单源可下发）；B4 拔网线自愈（退避 5/10/20/40/60 后稳态 60s；恢复后自动重连；期间按 KEY 不再静默 no-op、连上后接续）；B5 重启 front 自愈（60s 内自动重连，对照原始事故）；B6 离线期提醒不丢（60s 超时重推 ×3 覆盖窗；覆盖不到 = 如实记录，不在本批扩范围）；B7 离线 30 分钟电量差（回填 arch §8.1 风险 15）；B8 长跑期人工入口不僵死（每次有审计行、连上后能接续，绝不「按了永远没反应」）。60s 自动关闭在轮 A 已首次发生（A6），本轮回证即可。",
+    "KSE-E5: 三源日志互证（设备 KPLOG / front systemd / 引擎 docker）；证据落本包 current/。"
   ],
   "iterationBudget": 3,
   "fixBudget": 4,
   "supervisorBlockBudget": 2,
   "contractRefs": [
-    "docs/contracts/interface-contract.md#§1.3③",
-    "docs/contracts/interface-contract.md#§1.3④",
+    "docs/contracts/interface-contract.md#§1.4",
     "docs/contracts/interface-contract.md#§1.5",
-    "docs/contracts/interface-contract.md#§1.6",
-    "docs/contracts/interface-contract.md#§四-kidpal_session_ctx"
+    "docs/contracts/interface-contract.md#§1.6"
   ],
   "docRefs": [
-    "delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md",
-    "delivery/workstreams/261103-star-points-story-cover/review.md",
-    "delivery/workstreams/261103-star-points-story-cover/task_plan.md",
-    "delivery/taskpackages/261104-k5-story-cover-nav/plan.md",
+    "delivery/workstreams/261115-session-channel-resident/PROPOSAL.md",
+    "delivery/review/261115-arch-review-session-channel-resident/PROPOSAL.md",
+    "delivery/review/261115-arch-review-session-channel-resident/package-split.md",
     "docs/requirements.md",
     "docs/architecture.md",
     "docs/contracts/interface-contract.md",
-    "docs/decisions/ADR.md",
-    "docs/debt/tech/TECH-261028-p3-reader-key-falls-to-session-toggle.md",
-    "docs/debt/tech/TECH-261022-p3-record-session-state-churn.md",
-    "docs/ui/kidpal-ui-design-v9.html",
-    "docs/ui/UIUX-DESIGN-BRIEF.md",
-    "docs/ui/V9/story-cover.png",
-    "docs/ui/V9/canvas-p1.png",
-    "docs/ui/V9/canvas-p2.png",
-    "docs/ui/V9/points-home.png",
-    "docs/ui/V9/canvas-p3.png",
-    "docs/ui/V9/p3-reader.png"
+    "docs/decisions/ADR.md"
   ],
   "docsSyncRequired": false,
-  "docsSyncReason": "封皮、P4 分层、story_list 共享帧、restore 与会话语境均已由 v1.71 和 landed 架构/契约冻结。",
+  "docsSyncReason": "契约 §1.4/§1.5/§1.6 与 arch §5.2/§6.4 已随架构批冻结；本包只兑现实现与 prompt 承载，不改 spec 语义。",
   "docsOwner": "integrator",
   "securityReviewRequired": false,
   "adrRequired": false,
@@ -122,218 +94,311 @@
   "mutationRequired": true,
   "mutationEvidence": {
     "perAcceptance": [
-      {"acceptance": "KCN-C1: 封皮四件（书封形态两向长墨段 / 标题「星星记录本」在墨 / 星星计数在墨 / 大星徽在墨）+ 四点页点第 4 实心 + 覆盖层态页点隐藏 + 键帽（打开 / 下一页）。回引 S-F2.6-AC1、requirements §2.4。设计态红 = 封皮 COVER 渲染分支与键帽行未落", "turnedRed": true, "sensitive": true, "restored": true, "mutation": "firmware/main/display/keybar.c PAGE_P4 页槽行由「打开 / 下一页」改回列表残留行「说话·双击看 / 下移」", "command": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf", "evidence": "story_cover_nav.acceptance.c:676: ...(KCN-C1):FAIL ... KCN-C1 RED: P4 页槽键帽 (左=说话·双击看, 右=下移) 期望 (打开, 下一页)——封皮键帽「打开 / 下一页」未落（S-F2.6-AC1; 现状 (说话·双击看, 下移) = 列表行残留） || 汇总 301 Tests 5 Failures", "restoredCheck": "golden:597 封皮四件+四点第4实心+键帽 (KCN-C1):PASS", "collateral": "KB-A3 同红（允许，prompt 明示）"},
-      {"acceptance": "KCN-C2: 封皮计数两态（数据已送达如实显示含 ×0 / 数据未达 rc=0 且计数带零墨不误显）+ render_node P4 分支出现 KSTORY_PAGE_COVER 分派。回引 S-F2.6-AC1 补充规则、S-F2.1-AC5/AC6。设计态红 = COVER 分支缺席", "turnedRed": true, "sensitive": true, "restored": true, "mutation": "firmware/main/display/story_page.c COVER 渲染分支计数块 `if (list != NULL)` 改为 `if (1)`（数据未达 list==NULL 时仍画计数）", "command": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf", "evidence": "story_cover_nav.acceptance.c:749: ...(KCN-C2):FAIL ... KCN-C2 RED: 数据未达（list==NULL）时封皮仍画计数（带墨 82）——篇数未知不能显 ×0 误导（S-F2.1-AC6 同型判据） || 汇总 301 Tests 4 Failures", "restoredCheck": "golden:701 封皮计数两态 (KCN-C2):PASS", "collateral": "无（仅 C2）"},
-      {"acceptance": "KCN-C3: 手势矩阵（COVER KEY 短→COVER_OPEN 进列表 / BOOT→GLOBAL / KEY 长→GLOBAL / KEY 双=NONE；LIST KEY 长→COVER_BACK；READER KEY 长→LIST；COVER 不进 300ms 双击消歧）。回引 S-F2.6-AC2/AC3、S-F2.1-AC2、requirements §2.3。设计态红 = COVER case 与新动作码缺席", "turnedRed": true, "sensitive": true, "restored": true, "mutation": "firmware/main/display/story_page.c COVER KEY 短按块去掉 `v->page = KSTORY_PAGE_LIST;`（返回 COVER_OPEN 但不进列表）", "command": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf", "evidence": "story_cover_nav.acceptance.c:797: ...(KCN-C3):FAIL ... KCN-C3 RED: COVER KEY 短按 act=13 page=7, 期望 COVER_OPEN(=13) 且 page=LIST(0)——封皮 KEY 短按不进列表（S-F2.6-AC2） || 汇总 301 Tests 4 Failures", "restoredCheck": "golden:781 手势矩阵 COVER/LIST/READER (KCN-C3):PASS", "collateral": "无（仅 C3）"},
-      {"acceptance": "KCN-C4: 页态逐层返回序列（阅读→列表→封皮→首页，每按一次只上一层）+ 板级 BOOT 入口 reset 结构锚（StoryEnterCover 调用点存在）。回引 S-F2.6-AC3/AC1、PROPOSAL §5。设计态红 = 入口 reset seam 缺席", "turnedRed": true, "sensitive": true, "restored": true, "mutation": "firmware/main/display/story_page.c COVER KEY 长按块加 `v->page = KSTORY_PAGE_LIST;`（action 仍 GLOBAL 但页态错留 LIST，逐层返回第 2 层破）", "command": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf", "evidence": "story_cover_nav.acceptance.c:893: ...(KCN-C4):FAIL ... KCN-C4 RED: 封皮长按 act=-2 page=0, 期望 GLOBAL 且页态由全局层接管（封皮->首页） || 汇总 301 Tests 4 Failures", "restoredCheck": "golden:864 页态逐层返回序列 (KCN-C4):PASS", "collateral": "无（仅 C4；C3 tooth2 只校 act 不校 page，保持绿）"},
-      {"acceptance": "KCN-C5: restore 三态（restore 帧只填缓存不导航且活动子态零重置 / 非 restore 完整帧 = 进场帧进封皮 / 畸形帧降级）+ kidpal_story_list_load 不改 page + mcp 路由结构锚（restore 分支不调 view_init）。回引 S-F2.6-AC1/AC4、S-F2.1-AC6、D-07/D-08。设计态红 = list_load 缺席、mcp 仍 view_init", "turnedRed": true, "sensitive": true, "restored": true, "mutation": "firmware/main/display/story_page.c kidpal_story_list_load 在 NULL 检查后加 `v->page = KSTORY_PAGE_LIST;`（restore 帧导航，破「只填缓存不导航」）", "command": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf", "evidence": "story_cover_nav.acceptance.c:971: ...(KCN-C5):FAIL ... KCN-C5 RED: list_load 改动了 page（7 -> 0）——restore 帧必须只填缓存不导航、活动子态零重置（plan D; TECH-261022 churn 防线） || 汇总 301 Tests 4 Failures", "restoredCheck": "golden:929 restore 三态与缓存装载 (KCN-C5):PASS", "collateral": "无（仅 C5）"},
-      {"acceptance": "KCN-C9: ic_coin_52_52.bin（KAP1 头、52x52、stride 7）+ 产线三处白名单登记 + KSTORY_ART_CACHE_SLOTS>=8。回引 S-F2.6、D-09、K5S-E3 离线半。设计态红 = 资产未产出、槽未扩容", "turnedRed": true, "sensitive": true, "restored": true, "mutation": "firmware/main/display/story_page.c `#define KSTORY_ART_CACHE_SLOTS` 8→7（资产缓存槽未扩容）", "command": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf", "evidence": "story_cover_nav.acceptance.c:1094: ...(KCN-C9):FAIL ... KCN-C9 RED: KSTORY_ART_CACHE_SLOTS = 7 < 8——7 枚已被既有资产占满, 封皮再加资产会静默不可用（plan F 风险点; 须扩容为纯逻辑常量） || 汇总 301 Tests 4 Failures", "restoredCheck": "golden:1033 ic_coin 资产与产线白名单 (KCN-C9):PASS", "collateral": "无（仅 C9；源扫描 tooth4）"},
-      {"acceptance": "KCN-C10: 回归锚（封皮计数只信 story_list.total / 删除同步减 / K0a 阅读键零回归 / 记录语境入口）+ host 登记序。回引 S-F2.1-AC1..AC7、S-F2.2-AC1、S-F2.3-AC1/AC2、S-F2.4-AC2、D-01。设计态红 = 登记序与新 seam 缺席", "turnedRed": true, "sensitive": true, "restored": true, "mutation": "firmware/main/display/story_page.c kidpal_story_counter 改为恒返回 list->count（以 items.length 顶替 total）", "command": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf", "evidence": "story_cover_nav.acceptance.c:1148: ...(KCN-C10):FAIL ... KCN-C10 RED: counter 语义漂移（total=0->0 / 2->2 / 12(items=2)->2）——星星计数须恒信 story_list.total（契约 §1.3③ / S-F2.4-AC2 现存篇数） || 汇总 301 Tests 7 Failures", "restoredCheck": "golden:1124 回归锚+登记序 (KCN-C10):PASS", "collateral": "连带 C5 tooth1 + SPV2-A7 + SPV2-A8（同一 counter-total 语义族；C10 为回归锚，其「计数只信 total」与这些断言同源，连带在族内）"},
-      {"acceptance": "C6: display_schema 放行 {\"view\":\"story_list\",\"data\":{}} 薄载荷 + 其余畸形仍拒 + 白名单零扩（无 story_cover view）+ front _expand_story_nav_intent 展开为非 restore 完整帧且 Q7 不误杀自展帧。回引 S-F2.6（契约 §1.3③/§1.5）。设计态红 = 薄载荷口与展开 seam 缺席", "turnedRed": true, "sensitive": true, "restored": true, "mutation": "server/gateway/display_schema.py story_list floor 删除 `if data == {}: return (True, \"ok\")` 早退（薄载荷不再放行）", "command": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance/test_story_cover_nav.acceptance.py -k c6", "evidence": "test_story_cover_nav.acceptance.py:356: AssertionError: False is not true : C6 RED: story_list 薄载荷 `{'view':'story_list','data':{}}` 被真门拒绝 (story_list items must be an array) —— 契约 §1.3③/§1.5「增认 data:{} 导航薄载荷」未落地 || 1 failed, 1 passed, 8 deselected", "restoredCheck": "还原后 -k c6: `2 passed, 8 deselected`", "collateral": "无（仅 test_c6_story_list_thin_payload_floor；front_expands 子测仍绿）"},
-      {"acceptance": "C7: 五调用点 restore 判定（ctx 建立 / 删除后 / 归档成功翻 true；WS 建连保持 true；归档失败离页帧保持 False = human 2026-11-15 裁定「离页导航帧例外」）。回引 S-F2.6-AC1/AC4、D-07。设计态红 = 三处未翻 true", "turnedRed": true, "sensitive": true, "restored": true, "mutation": "server/gateway/front/front_app.py 删除执行后重推（:1074）`_push_story_list(websocket, restore=True)` 改回缺省 `_push_story_list(websocket)`（restore=False）", "command": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance/test_story_cover_nav.acceptance.py -k c7", "evidence": "test_story_cover_nav.acceptance.py:450: AssertionError: False is not true : C7 RED: 删除执行后重推（:1047）未带 restore:true —— 对账重推只填缓存不抢前台被破。 || 1 failed, 4 passed, 5 deselected", "restoredCheck": "还原后 -k c7: `5 passed, 5 deselected`", "collateral": "无（仅 test_c7_delete_repush_restore_true）"},
-      {"acceptance": "C8: 语境三分（story_cover 普通问答不 acc.start / 不推 story_list / 不注记录信号；story 列表仍记录语境；未知 source_page 拒绝并 warning）。回引 S-F2.6-AC4（契约 §四）。设计态红 = story_cover 语境未接线", "turnedRed": true, "sensitive": true, "restored": true, "mutation": "server/gateway/front/front_app.py session_ctx 记录语境分支 `source_page == \"story\"` 扩为 `source_page in (\"story\",\"story_cover\")`（story_cover 误切记录语境）", "command": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance/test_story_cover_nav.acceptance.py -k c8", "evidence": "test_story_cover_nav.acceptance.py:550: AssertionError: 'accumulate' != 'chat' ... C8 RED: story_cover 误切记录语境（routing != chat）—— 封皮发起普通问答, 不得 acc.start（S-F2.6-AC4 / 契约 §四「普通问答语境」）。 || 1 failed, 2 passed, 7 deselected", "restoredCheck": "还原后 -k c8: `3 passed, 7 deselected`", "collateral": "无（仅 test_c8_story_cover_plain_qa；story/unknown 子测仍绿）"}
-    ],
-    "note": "Finalize 态（2026-11-15）：perAcceptance 由 verifier 变异轮逐条回填（每条须 turnedRed/sensitive/restored）；真机目击归 K5S-E4 device-round-evidence.md。"
+      {
+        "acceptance": "SEI-C1: 新冻结验收件登记进 HOST_ACCEPTANCE_SRCS 且位次先于 host_infra_smoke",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "host_app/main/CMakeLists.txt 删本件登记行",
+        "command": "wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf（执行目录 firmware/main/test/host_app）",
+        "evidence": "SEI-C1 转红：「HOST_ACCEPTANCE_SRCS 无本冻结件登记行」；还原后全绿"
+      },
+      {
+        "acceptance": "SEI-A1: mcp_server.cc control case 0 内 EndVoiceSession( 恰 1、AbortSpeaking( 恰 0、SendStopListening( 恰 0；case 1 保绿",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "case 0 改回 AbortSpeaking(kAbortReasonNone)",
+        "command": "wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf（执行目录 firmware/main/test/host_app）",
+        "evidence": "SEI-A1 转红：「case 0 内 EndVoiceSession( = 0 处（冻结恰 1）」；还原后全绿"
+      },
+      {
+        "acceptance": "SEI-A2: kAutoConnectBackoffS 首定义值序 5<10<20<40<60 + kAutoConnectSteadyRetryS 首定义含 60",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "退避表改回 {5,10,20}",
+        "command": "wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf（执行目录 firmware/main/test/host_app）",
+        "evidence": "SEI-A2 转红：「首定义缺档位（须含 5/10/20/40/60 全五档）」；还原后全绿"
+      },
+      {
+        "acceptance": "SEI-A3: 长跑无 attempt 上限字面、三退出条件与网络断退出请求位在场、清 in-flight 先于 Schedule 补投",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "删 HandleNetworkDisconnectedEvent 的 network_exit_requested_ 置位",
+        "command": "wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf（执行目录 firmware/main/test/host_app）",
+        "evidence": "SEI-A3 转红：「HandleNetworkDisconnectedEvent 区无 network_exit_requested_ 置位」；还原后全绿"
+      },
+      {
+        "acceptance": "SEI-A4: 五个人工入口 in-flight 分支置 pending_manual_intent_ + 审计行 + return；task 段查位清位",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "ToggleChat in-flight 分支删 pending_manual_intent_ 置位",
+        "command": "wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf（执行目录 firmware/main/test/host_app）",
+        "evidence": "SEI-A4 转红：「ToggleChat in-flight 分支未置 pending_manual_intent_」；还原后全绿"
+      },
+      {
+        "acceptance": "SEI-B1: self_push 放行 end_session；relay 缺省恒拒；points 类 self_push 恒拒",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "display_schema.py 豁免集缩回 {start_organizing}",
+        "command": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance",
+        "evidence": "SEI-B1 转红：「自推通路仍拒 end_session」；还原后 502 passed"
+      },
+      {
+        "acceptance": "SEI-B2: 引擎 display 流 control/end_session 被截获，设备腿恰收一帧自推、零降级 text、relay 无透传",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "front_app.py 截获接线断开（if False and ...）",
+        "command": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance",
+        "evidence": "SEI-B2 两条转红：设备腿 control/end_session 帧数 = 0；还原后绿"
+      },
+      {
+        "acceptance": "SEI-B3: 两条 relay 入口单意图设备显示帧恰 1（无二次截获/回环）；同批两块同型意图恰 2 帧",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "_consume_end_session_intent 自推两帧",
+        "command": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance",
+        "evidence": "SEI-B3 两条转红：单块设备显示帧总数 = 2（应恰 1）；还原后绿"
+      },
+      {
+        "acceptance": "SEI-B4: AGENTS.md 告别回合行 + home 行收窄；三面相等载体零 diff",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "AGENTS.md home 行重加「再见」",
+        "command": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance",
+        "evidence": "SEI-B4 转红：「home 行仍含『再见』」；还原后绿"
+      }
+    ]
   },
   "crossEnd": {
     "counterparts": [
       {
-        "path": "server/gateway/front/front_app.py",
-        "symbol": "_push_story_list"
-      },
-      {
-        "path": "server/gateway/front/front_app.py",
-        "symbol": "_consume_kidpal_control"
-      },
-      {
         "path": "server/gateway/display_schema.py",
         "symbol": "validate_display"
+      },
+      {
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "pump_upstream_to_client"
+      },
+      {
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "_push_display_payload"
+      },
+      {
+        "path": "firmware/main/mcp_server.cc",
+        "symbol": "McpServer::DoTool"
       }
     ],
     "exempt": ""
   },
   "changeManifest": [
-    "firmware/main/display/story_page.c",
-    "firmware/main/display/story_page.h",
-    "firmware/main/display/kidpal_render_node.h",
-    "firmware/main/display/kidpal_render_node.cc",
-    "firmware/main/display/keybar.c",
-    "firmware/main/display/keybar.h",
-    "firmware/main/display/lcd_display.cc",
-    "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc",
     "firmware/main/mcp_server.cc",
-    "firmware/main/mcp_server.h",
     "firmware/main/application.cc",
-    "firmware/main/test/story_cover_nav.acceptance.c",
-    "firmware/main/test/story_page_v2.acceptance.c",
-    "firmware/main/test/record_session_live.acceptance.c",
-    "firmware/main/test/keybar_three_slot.acceptance.c",
-    "firmware/main/test/chrome_ghost.acceptance.c",
-    "firmware/main/test/chrome_ghost.test.c",
+    "firmware/main/application.h",
+    "firmware/main/test/session_end_intent_longretry.acceptance.c",
+    "firmware/main/test/boot_auto_connect.acceptance.c",
+    "firmware/main/test/session_channel_resident.acceptance.c",
     "firmware/main/test/host_app/main/CMakeLists.txt",
-    "server/gateway/front/front_app.py",
     "server/gateway/display_schema.py",
+    "server/gateway/front/front_app.py",
+    "server/acceptance/test_session_end_intent.acceptance.py",
+    "server/acceptance/test_record_dialogue_guide.acceptance.py",
     "server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md",
-    "server/acceptance/test_story_cover_nav.acceptance.py",
-    "server/acceptance/test_m4k1_story_cloud_link.acceptance.py",
-    "server/acceptance/test_m4k3_record_session_live.acceptance.py",
-    "tools/asset-pipeline/gen_assets.mjs",
-    "tools/asset-pipeline/gen_art_spiffs.mjs",
-    "tools/simulator/LvglWindowsSimulator/assets/assets.c",
-    "tools/simulator/LvglWindowsSimulator/assets/assets.h",
-    "firmware/main/assets/spiffs_root/ic_coin_52_52.bin"
+    "server/deploy/OPENCLAW_SYSTEM_PROMPT_CARRIER",
+    "server/deploy/provider.config.yaml"
   ],
   "impactedTestsSeed": [
     {
-      "path": "firmware/main/test/story_page_v2.acceptance.c",
+      "path": "server/acceptance/test_record_dialogue_guide.acceptance.py",
+      "kind": "frozen-inversion",
+      "note": "红面唯一一处 = test_rdg_a5_self_push_fork_admits_front_start_organizing（约 :1296-1300）：self_push=True + end_session 由 assertFalse 改 assertTrue，断言消息随裁定改写；同件散文面（模块 docstring、冻结契约复述、coverage 注释）同批对账。relay 缺省路径的 end_session assertFalse 保绿、不得顺手一起翻。"
+    },
+    {
+      "path": "server/acceptance/test_points_e2e_spike.acceptance.py",
+      "kind": "must-stay-green",
+      "note": "K0PTS-A3：GATEWAY_DECISION_CONTROL_ACTIONS 四值逐个 assertIn（故 end_session 不得从该集合摘出，只扩豁免口）；add_points/redeem_points 在 self_push 下恒拒；end_session relay 缺省恒拒。K0PTS-A4：_consume_points_intent 仍须在 _relay_display_blocks_to_device 函数体内被引用，区锚函数名不得改。"
+    },
+    {
+      "path": "firmware/main/test/boot_auto_connect.acceptance.c",
       "kind": "frozen-rebaseline",
-      "note": "列表 KEY 长按由原回首页改回封皮，列表/阅读/删除/盖章其余行为保留；阅读键以 K0a 修复为基线。"
+      "note": "真红面 = K6-A2 tooth 7（钉 `[3]` 字面），按新表重钉为「值序 5<10<20<40<60」+「kAutoConnectSteadyRetryS 首定义片段含 60」，放弃钉数组长度字面；tooth 6 新表下仍绿但判别力被稀释，建议同批收紧追加 40/60 位序。同批改写散文面 :38 / :64 / :257 / :320-327 / :694 / :1589 / :1628。"
+    },
+    {
+      "path": "firmware/main/test/session_channel_resident.acceptance.c",
+      "kind": "tighten",
+      "note": "SCR-A2 现为 contains 断言（「守卫在场」），本包改动后原样保绿；重锚性质 = 加固（非反转）：升级为「守卫在场 + pending_manual_intent_ 置位 + 审计行」三件，把 P1 转手的跨包不变量钉进 P1 冻结件。同件 SCR-A1/A3/A5/A7/A8/A15 均在改动半径内，逐条列证保绿。"
+    },
+    {
+      "path": "firmware/main/test/record_session_lifecycle.acceptance.c",
+      "kind": "must-stay-green",
+      "note": "RSL2-A3 硬雷：HandleStartListeningEvent 内须含字面「AutoConnect in-flight」（日志文本不得改写）、该锚到其后第一个 return; 之间须含 kidpal_story_session_ctx_set(0、全函数该清位 ≥3。SEI-A4 插入槽必须在该清位之后、return; 之前，且不得新增任何 return;。"
     },
     {
       "path": "firmware/main/test/record_session_live.acceptance.c",
-      "kind": "frozen-rebaseline",
-      "note": "K0a 的枚举驱动映射为基线，新增 story_cover 普通语境，story 列表仍切记录语境。"
+      "kind": "must-stay-green",
+      "note": "RSL-A5 tooth 4 硬雷：[case KSPV2_ACT_DISCARD_RECORD: → case KSPV2_ACT_NONE:) 区断言 StopListening( 计数恰 0 且读原始文件不剥注释——改写 DISCARD_RECORD 注释时不得写出带左括号的 StopListening( 字面（沿用「listen stop」无括号措辞）；tooth 3 另钉 SendKidpalStoryDiscard( 偏移先于 CloseAudioChannel。"
     },
     {
-      "path": "firmware/main/test/keybar_three_slot.acceptance.c",
-      "kind": "frozen-rebaseline",
-      "note": "K0a 四点为基线，P4 封皮与故事子页键帽/页点按 v1.71 收紧，覆盖层隐藏不变。"
+      "path": "firmware/main/test/voice_round_ui.acceptance.c",
+      "kind": "must-stay-green",
+      "note": "OCE-A1：HandleEndVoiceSessionEvent 区九项计数与三处次序（ResetDecoder < AbortSpeaking < SendStopListening）；CloseAudioChannel() 恰 0、ScheduleResidentRebuild() 恰 0、LOW_POWER 恰 0。SEI-A4 意向位就插在该函数守卫块，任何字面误入即红。"
     },
     {
-      "path": "server/acceptance/test_m4k1_story_cloud_link.acceptance.py",
-      "kind": "frozen-rebaseline",
-      "note": " landed 契约要求后台 story_list 恒 restore:true；只重锚载荷与 P4 消费，不削弱归档/删除对账。"
+      "path": "firmware/main/test/record_dialogue_guide.acceptance.c",
+      "kind": "must-stay-green",
+      "note": "RDG-F1 钉 kidpal_display_control_action 决策表：end_session 返回 0 不得移位（SEI-A1 只改 case 0 动作、不改 view_router 映射值）。"
+    },
+    {
+      "path": "firmware/main/test/points_spike.acceptance.c",
+      "kind": "must-stay-green",
+      "note": "K0PTS-F1 同样钉 end_session==0 与 add_points/redeem_points 返回 UNKNOWN，与固件 RDG-F1 互为独立承载。"
+    },
+    {
+      "path": "firmware/main/test/host_app/main/CMakeLists.txt",
+      "kind": "must-stay-green",
+      "note": "新增验收件登记行必须置于 host_infra_smoke.acceptance.c 之前（注册序纪律）；多件冻结验收（K6-A6、RSL2、KCN-C10、K2PTS 等）各自钉注册序，位置错会一次打红多件。"
+    },
+    {
+      "path": "server/acceptance/test_session_channel_resident.acceptance.py",
+      "kind": "must-stay-green",
+      "note": "SCRF-B7 钉 story_record_ctx_enter 在 front_app.py 内恰 1 次（单一 emit 点）——SEI-B2 新函数与新审计行不得复用该 token；SCRF-B6 列 test_record_dialogue_guide.acceptance.py 为不得静默删件的 oracle（改可以、删不行）。"
+    },
+    {
+      "path": "server/acceptance/test_points_ledger_core.acceptance.py",
+      "kind": "must-stay-green",
+      "note": "以 self_push=True 真跑 validate_display 的 points 面判据：豁免口扩到 end_session 后必须仍逐条保绿，是「豁免口未误扩」的独立承载（server/tests/test_points_spike_units.py 同族）。"
+    },
+    {
+      "path": "server/tests/test_points_spike_units.py",
+      "kind": "must-stay-green",
+      "note": "同族 self_push 放行/reject 单测；SEI-B1 扩豁免口后保绿。"
+    },
+    {
+      "path": "server/acceptance/test_261022_m5_k1_prompt_carrier_migration.acceptance.py",
+      "kind": "must-stay-green",
+      "note": "K1-E1 五行回合路由逐行定位 + K1-E1 v11 sha256 零 diff（server/deploy/openclaw-system-prompt.v11.md 绝对零 diff）+ K1-E3 静态面声明接线四件；SEI-B4 改 AGENTS.md 后全部保绿。"
+    },
+    {
+      "path": "server/acceptance/test_261023_agents_md_static_semantics_alignment.acceptance.py",
+      "kind": "must-stay-green",
+      "note": "节窗口判法：新节标题不得含 课表/故事/提醒/记忆/底线 五词；全文负锚禁 （v12）/旧守则/KIDPAL_SEMANTIC_JSON。"
+    },
+    {
+      "path": "server/acceptance/test_prompt_v7_round_routing.acceptance.py",
+      "kind": "must-stay-green",
+      "note": "PN-A4 / RF-A4 已 supersede 改钉 AGENTS.md 回合路由行，SEI-B4 新行不得破坏世系最小锚。"
+    },
+    {
+      "path": "server/acceptance/test_261022_honcho_memory.acceptance.py",
+      "kind": "must-stay-green",
+      "note": "K3 记忆节 heading 正则与 needle 不受新节影响；另直读 front_app.py。"
+    },
+    {
+      "path": "server/tests/test_archive_guard_units.py",
+      "kind": "must-stay-green",
+      "note": "以 AST 从 front_app.py 抽三件守卫符号 exec；front_app.py 必须保持可 ast.parse（最早语法烟雾报警）。"
     },
     {
       "path": "server/acceptance/test_m4k3_record_session_live.acceptance.py",
-      "kind": "frozen-rebaseline",
-      "note": "既有条件推送时点与恰一帧语义保留，按新契约补 restore 与 P4 模块导航断言。"
-    },
-    {
-      "path": "firmware/main/test/chrome_ghost.acceptance.c",
-      "kind": "regression",
-      "note": "共享 keybar/故事转场，键帽鬼影和成功归档层栈收口不得因封皮下沉回归。"
-    },
-    {
-      "path": "firmware/main/test/chrome_ghost.test.c",
-      "kind": "regression",
-      "note": "键帽过渡窗集合补 LIST 子态后的白盒单测重锚（否则云端列表渲染窗键帽会闪成封皮行）。"
+      "kind": "must-stay-green",
+      "note": "直读 front_app.py 源文本，且被 SCRF-B6 列为不得删件的 oracle。"
     }
   ],
   "uiux": {
-    "uiuxRequired": true,
-    "uiuxLevel": 4,
-    "designRefs": [
-      "docs/ui/V9/story-cover.png",
-      "docs/ui/V9/canvas-p1.png",
-      "docs/ui/V9/canvas-p2.png",
-      "docs/ui/V9/points-home.png",
-      "docs/ui/V9/canvas-p3.png",
-      "docs/ui/V9/p3-reader.png"
-    ],
-    "sharedUiRefs": [
-      "docs/ui/kidpal-ui-design-v9.html",
-      "docs/ui/UIUX-DESIGN-BRIEF.md"
-    ],
-    "uiAcceptanceRefs": [
-      "story-cover",
-      "canvas-p1",
-      "canvas-p2",
-      "points-home",
-      "canvas-p3",
-      "p3-reader"
-    ],
-    "designReviewRequired": true,
-    "designReviewEvidenceRequired": true,
-    "repoVisualArtifactRequired": false
+    "uiuxRequired": false,
+    "uiuxLevel": 0,
+    "designRefs": [],
+    "sharedUiRefs": []
   },
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
-    "delivery/workstreams/261103-star-points-story-cover/"
+    "delivery/workstreams/261115-session-channel-resident/"
   ],
-  "riskTier": "high",
-  "riskRationale": "重组系统导航、故事模块层级、全局键位、front/Prompt 与既有记录会话，共享冻结面多且需真机验证逐层返回和零回归，故为 high。",
+  "riskTier": "medium",
+  "riskRationale": "end_session 三段补链中 prompt 与 front 截获是 additive、设备侧只改一个 case 分支；display_schema 的 self_push 豁免口从 1 值扩到 2 值但 relay 恒拒不变；长重试改退避表形态与 task 循环边界，守卫三条件不变；新增人工意向位只在离线期活跃、稳态零路径。",
   "gateProfile": [
     "evidence-integrity",
     "test-quality",
     "state-machine",
     "mcp-tool-contract"
   ],
-  "mergeOrder": 76,
+  "mergeOrder": 78,
   "dependsOn": [
-    "261104-k2-points-device-ui",
-    "261104-k4-reward-goal-config"
+    "261116-channel-resident-core"
+  ],
+  "launchPreconditions": [
+    {
+      "predicate": "P1 已合 main（统一会话结束处理器与常驻模型守卫语义在场）",
+      "scope": "package:261116-channel-resident-core",
+      "status": "verified",
+      "evidence": "P1 `261116-channel-resident-core` 2026-11-19 合入本地 main（前置升级闸 PASS，human-approval d49568ee-20c7-4461-84b5-4dc49bc49e97；progress.md 2026-11-19 节）；本树 dev/pod-m2 已 ff 至 main tip 05417c1f"
+    }
   ],
   "decisionCoverage": [
     {
-      "decision": "D-01 · 四页封皮、故事下沉与逐层返回",
-      "summary": "K0a 四页骨架之上新增 P4 封皮，列表/阅读成为子页，阅读→列表→封皮→首页逐层返回。",
-      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-01"],
-      "landsIn": "exitCriteria:K5S-E1"
+      "decision": "B1 · end_session 改「front 截获 + 机械自推单源」",
+      "summary": "relay 直转恒拒；self_push 豁免口扩至 end_session；设备 case 0 收口统一处理器。",
+      "sourceRefs": [
+        "docs/contracts/interface-contract.md#§1.4",
+        "docs/contracts/interface-contract.md#§1.5"
+      ],
+      "landsIn": "exitCriteria:KSE-E1"
     },
     {
-      "decision": "D-07-story · 后台 story_list 只填缓存不抢前台",
-      "summary": "恢复/归档/删除推送统一 restore:true；显式打开故事与后台数据更新分流。",
-      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-07", "docs/contracts/interface-contract.md#§1.3③"],
-      "landsIn": "exitCriteria:K5S-E2"
+      "decision": "B2 · 告别回合 prompt 纪律（home 收窄）",
+      "summary": "孩子明确告别 → 口语一句 + control/end_session；不得用 home 承载告别。",
+      "sourceRefs": [
+        "docs/contracts/interface-contract.md#§1.6"
+      ],
+      "landsIn": "exitCriteria:KSE-E3"
     },
     {
-      "decision": "D-08-story · story_list 改 P4 共享帧与六值语境",
-      "summary": "空 data 薄载荷只进封皮，封皮/列表计数复用 total，story_cover 普通语境与 story 记录语境分开。",
-      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-08"],
-      "landsIn": "exitCriteria:K5S-E2"
+      "decision": "B3 · 自动重连封顶长跑 {5,10,20,40,60} + 恒 60s",
+      "summary": "3 次即止退役；守卫三条件与零第二条重连路径保持。",
+      "sourceRefs": [
+        "docs/architecture.md#§6.4"
+      ],
+      "landsIn": "exitCriteria:KSE-E1"
     },
     {
-      "decision": "D-09-cover · 书封与 ic-coin 走既有资产管线",
-      "summary": "封皮书封和大星徽沿 V9 与 KAP1 产线落地，pt-cat 等既有资产复用。",
-      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§3.1-D-09"],
-      "landsIn": "exitCriteria:K5S-E3"
+      "decision": "B4 · 人工意向位（离线期入口置意向、截短退避、连上后补投）",
+      "summary": "长跑期人工入口不再永久 no-op，孩子那一次动作不丢。",
+      "sourceRefs": [
+        "docs/architecture.md#§6.4"
+      ],
+      "landsIn": "exitCriteria:KSE-E1"
     },
     {
-      "decision": "业务目的 8 · TECH-261028 消费关系",
-      "summary": "阅读键缺陷已由 K0a 修复，本包只验证其不在封皮改造中回归，不重复修或重复结项。",
-      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§1-目的8", "docs/debt/tech/TECH-261028-p3-reader-key-falls-to-session-toggle.md"],
-      "landsIn": "exitCriteria:K5S-E6"
-    },
-    {
-      "decision": "§5 · workstream 收口之导航并集",
-      "summary": "本包承担 BOOT 四页与阅读到首页逐层返回的并集证据；跨包账本/QQ 联合收口由主线程另组织。",
-      "sourceRefs": ["delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md#§5"],
-      "landsIn": "exitCriteria:K5S-E5"
+      "decision": "B5 · end_session 页面落点按 OQ3=c",
+      "summary": "三条结束通道同落点；不新增 page-landing 特例分支。",
+      "sourceRefs": [
+        "docs/contracts/interface-contract.md#§1.4",
+        "docs/architecture.md#§5.2"
+      ],
+      "landsIn": "exitCriteria:KSE-E4"
     }
   ],
   "crossPackageBehaviors": [
     {
-      "topic": "K0a 四页骨架到 K5 封皮分层",
-      "owner": "261104-k0a-four-page-skeleton",
-      "carriedBy": "261104-k5-story-cover-nav",
-      "note": "K0a 的 P4 平级故事只是过渡态，K5 在其枚举/阅读键基线上新增封皮并下沉列表/阅读，不重修 TECH-261028。"
+      "topic": "统一会话结束处理器（六触发源收口）",
+      "owner": "261116-channel-resident-core",
+      "carriedBy": "261117-session-end-intent-longretry",
+      "note": "P2 的 end_session 触发源必须收口到 P1 建立的处理器，不另起收尾路径。"
     },
     {
-      "topic": "story_list.total 在封皮与列表间复用",
-      "owner": "261104-k5-story-cover-nav",
-      "carriedBy": "261104-k5-story-cover-nav",
-      "note": "计数只有 story_list.total 一个权威源，删除/归档重推同步封皮与列表；不新增 view 或 cover_total。"
-    },
-    {
-      "topic": "source_page 的 story_cover 子页扩展",
-      "owner": "261104-k0a-four-page-skeleton",
-      "carriedBy": "261104-k5-story-cover-nav",
-      "note": "K0a 建枚举映射，K2 扩 points_ledger，K5 最后扩 story_cover；封皮普通问答，列表仍为 story 记录语境。"
-    },
-    {
-      "topic": "K4/K5 共享资产管线串行",
-      "owner": "261104-k4-reward-goal-config",
-      "carriedBy": "261104-k5-story-cover-nav",
-      "note": "K4 先产场景资产，K5 后在同一产线补 ic-coin 与书封；不并行修改生成器或生成件。"
-    },
-    {
-      "topic": "workstream 导航并集与跨包联合收口分界",
-      "owner": "261104-k5-story-cover-nav",
-      "carriedBy": "261104-k5-story-cover-nav",
-      "note": "K5 只收导航并集，PROPOSAL §5 全项由主线程另组织跨包真机+真实 QQ 轮，不留给 K5 单 Pod 自证。"
+      "topic": "常驻模型下的守卫三条件语义与 SCR-A2 重锚",
+      "owner": "261116-channel-resident-core",
+      "carriedBy": "261117-session-end-intent-longretry",
+      "note": "P2 的长重试守卫语义以 P1 的常驻模型为基线；P1 冻结件的 SCR-A2 由本包重锚。"
     }
   ],
-  "notes": "影响面机械辅证：图索引确认 story_page/kidpal_render_node/keybar/application 发送单点、front _push_story_list 的六个调用者与 display_schema story_list floor；ADR-018 明确否决 story_cover view/cover_total。相邻冻结锚非零命中：story_page_v2、record_session_live、keybar_three_slot、chrome_ghost、server M4K1/M4K3 story_list 断言； landed 契约的后台 restore:true 与旧实现/注释存在差距，由 acceptance-author 留痕重锚而非改契约。K5 依赖 K2 与 K4，借 K4 的传递依赖保证排在 K3 后，mergeOrder=76。2026-11-15 Step 1g ARCH-ADVISORY 预评校准（planner 已落 plan.md 技术方案节）：封皮落 story_page.c 子态（删 manifest 的 story_cover.c/.h 与 firmware/main/CMakeLists.txt，无新源文件）；生成件名按命名律改为 ic_coin_52_52.bin；补 boards .cc 与 chrome_ghost.test.c；display_schema/front 的薄载荷与 restore 对齐属实现落地（契约 §1.3③/§1.5 已 LANDED，无需改契约文本）。human 2026-11-15 两项裁定：① 归档失败离页帧（front_app.py:1728）保持 restore=False 按「离页导航帧」例外处理 + review-packet 留痕 + ARQ 建议契约措辞排除；② BOOT 从 P3 进 P4 的封皮入口 reset 走板级 BOOT 钩子（waveshare-s3-rlcd-4.2.cc → McpServer::StoryEnterCover）。2026-11-15 扩单（architect ARCH-ADVISORY 评估 APPROVE，planner 落 manifest）：append `firmware/main/mcp_server.h`——StoryEnterCover 为板级入口 reset 所需新增公有类方法，声明必须落 mcp_server.h（waveshare-s3-rlcd-4.2.cc:148 → mcp_server.cc:1534 成对），1g 按「McpServer 新缝」口径起草时未把类声明头文件展开进粗 glob。同批 architect 复核 builder 的 StoryEnterCover 实现偏离（不用 ScheduleStoryRender）成立且必要：该路径会先置 s_local_page=STORY 导致板级 cycle_next 算出 HOME 跳错页，builder 改主任务内 cache_story 同步后由 cycle_next 以封皮态渲 P4，四页循环/layer/日志/K0a 冻结面零改。三条留痕风险交 review-packet：A 归档失败离页帧（restore=False 例外）到设备按非 restore 完整帧落封皮而非列表；B restore 在 READER/RECORDING/STAMP 驻留时会多一次基层重绘（页态零重置成立，闪帧观察项）；C 封皮渲染未含「小伴」，归 uiuxLevel 4 design review 偏差项。"
+  "notes": "本包是 2 包列车的 P2（mergeOrder 78），必须从 P1 合并后的 main 起分支。与 P1 在 application.cc **同一批函数内改不相交行段**（HandleEndVoiceSessionEvent 与 HandleToggleChatEvent：P1 改收尾动作序、本包改 in-flight 守卫行），重取行号锚时须覆盖这两处。引擎侧零 diff；prompt 静态承载 = server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md，部署由 agent 按 kidpal-ecs-gateway 规程执行。条件件口径：package-split 标「条件」的 server/deploy/manifest.yaml 未入 manifest；若实施中判定必须改，走 planner 扩单通道回评补 manifest。真机轮 B 由 human 持板。 intake（2026-11-19，planner）：① 契约四分类 = NO_CONTRACT_CHANGE（architect-reviewer 只读预审：契约 §1.4/§1.5/§1.6 已由 261115 批 FROZEN landed，reviewedCommit 87dbf775；本包 = 实现走偏回归 + 设备端本地处置 + prompt 载体对账，零契约 diff、不转 /arch-change）。② 非新机制批：复用既有会话收尾、自动重连与 display 门禁子系统，无新依赖集成、无数据迁移。③ scope-map 核对：builder/fixer 实现面 allow 覆盖 firmware/** 与 server/**；验收件（*.acceptance.*）归 acceptance-author；契约面禁写不变。④ closeout 写点：docs-delta / review-packet = integrator；docs/debt 条目刷新 = integrator（scope-map 已授写槽）；TECH-261014 两结项凭据须真机轮 B 后由主线程结项，本包只刷 trigger + 收口注记。⑥ 前置技术预评（architect，2026-11-19）三处 planner 裁决：a) **不抽纯逻辑缝**——维持 `application.cc` 源锚结构齿 + 变异证据覆盖差一边界（保持与 P1 同强度口径，避免 manifest 涨到 17 条）；b) **意向位不设时效**——忠于 arch §6.4「孩子那一次动作不丢」字面，离线超长后补投的观感项显式记入验收件与真机轮观测（设界需回 /arch-change）；c) **「唤醒词」入口按两个代码点落地**（`HandleWakeWordDetectedEvent` + `WakeWordInvoke`），语义仍是 arch §6.4 的四个入口。另回填：`changeManifest` 补 3 条（`host_app/main/CMakeLists.txt` 注册序必补、`session_channel_resident.acceptance.c` SCR-A2 加固、`provider.config.yaml` 条件件保零 diff）；`impactedTestsSeed` 由 4 条扩到 19 条（含 record_session_lifecycle / record_session_live / voice_round_ui 三颗必红雷与 AGENTS.md 承载四件）。"
 }

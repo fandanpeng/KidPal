@@ -1,0 +1,164 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r9.json)",
+  "changeId": "261116-channel-resident-core",
+  "phase": "final",
+  "round": 9,
+  "invocationId": "9cee1805-4f5b-4621-bf69-be61013cb78f",
+  "outcome": "ok",
+  "observedGateExit": 0,
+  "gatesRun": 10,
+  "gatesNotExecuted": [],
+  "roundNote": "承重序列 = r1（scoped 8/8 绿）→ r2（final 10/10 绿，P1 收口）→ r3（scoped，ok:false，mutation-check 红：mutationEvidence acceptance 字段截断致失配，非实现缺陷；事实占序不抹）→ r4（scoped 8/8 绿）→ r5（final 10/10 绿，真机轮 A 修复轮终审）→ r6（scoped 8/8 绿，真机轮 B 修复轮）→ r7（final 10/10 绿，轮 B 修复轮终审）→ r8（scoped 8/8 绿，真机轮 C 修复轮 builder 面转绿，invocationId ffeeab66-d5f9-4a44-849a-40ba9faaf93b）→ r9（final 10/10 绿，真机轮 C 修复轮终审，含 unit/acceptance 两 full 相位按 test-scope 圈定真跑）。final 缺 scope-file 则 fail-closed；本包 scope 落盘见 scopeFile。",
+  "scopeFile": "delivery/taskpackages/261116-channel-resident-core/test-scope-final-r9.txt",
+  "scopeBasis": "detect_changes（project C-AI-KidPal-pod-channel，since base/261115-session-channel-resident / merge_base 3b3832cb，direction=inbound，depth=2）：89 changed files（含本包 delivery/docs 簿记件；实现/验收面 16 件）/ seed 490 符号 / impacted_total 138 节点（server/acceptance 78、server/gateway 21、server/tests 16、firmware/main 23）；本轮增量复核（since HEAD，覆盖未提交工作树）= 18 changed files / seed 46 / impacted_total 51，与包级指向同一 server 测试面。合成另含 acceptanceTestsFile（6）∪ impactedTestsSeed（25 去重）∪ detect_changes 映射测试 ∪ 共享缝 ∪ 安全余量；per-Pod 图索引可用，正常圈定（未降级）。相对 r7 的 30 条只增一项 server/tests/test_story_units.py。",
+  "scopeEntries": 31,
+  "scopePostCommitRecheck": "收口 commit b0c0d9a4 后复核 detect_changes（Step 9b advisory）：96 changed files / seed 488 符号 / impacted_total 121 节点（server/acceptance 75、firmware/main 23、server/gateway 17、server/tests 6）——与圈定时 138 节点（server/acceptance 78、server/gateway 21、server/tests 16、firmware/main 23）指向同一测试面，未出现清单外新测试文件；实现面符号影响无外溢。",
+  "scopeNote": "清单 = 本包冻结件（session_channel_resident 两件）∪ 轮 B 新缝 builder 单测（session_voice_watch.test.c）∪ impactedTestsSeed（固件 11 + 服务端 8 + 轮 C 新增 3）∪ detect_changes 映射测试（memory_isolation / points_e2e_spike / story_fetch / points_ledger_core / qq_points_channel / schedule_grid_restore / story_cancel_lifecycle_units）∪ 服务端单元面（archive_guard / reminder 源读 front_app + story_units 负锚）∪ host 冒烟（host_infra_smoke，含注册序守卫）。r7 已纳入项全部保留（圈定面只增不减）。排除项（archive/test_schedule_reminder 属退役面、p1_auxbar 上游存量、engine_round_close_units 零触碰）见清单尾注。",
+  "evidenceRef": "delivery/taskpackages/261116-channel-resident-core/verifier-evidence/rounds/r9.json",
+  "evidenceFact": {
+    "artifactType": "verifier-round-fact",
+    "authority": "bearing",
+    "producedBy": "verify.mjs",
+    "ok": true,
+    "startedAt": "2026-11-18T14:27:14.573Z",
+    "completedAt": "2026-11-18T14:28:37.875Z"
+  },
+  "gateSummary": [
+    {
+      "gate": "taskpackage-required",
+      "kind": "governance",
+      "ok": true,
+      "ms": 289,
+      "timing": "scoped"
+    },
+    {
+      "gate": "change-manifest",
+      "kind": "governance",
+      "ok": true,
+      "ms": 383,
+      "timing": "scoped",
+      "note": "pre-cutoff 存量放行声明（gitFirstCommitDate 早于 MANIFEST_CUTOFF）——闸经 current/ 指针解析时结构性失效；本轮 integrator 按闸应执行规则手工对账（工作树实现面 3 件全部命中 changeManifest[]、清单外 0 件），见 gate-tooling-gap-manifest-cutoff.md"
+    },
+    {
+      "gate": "firmware-build",
+      "kind": "structural",
+      "ok": true,
+      "ms": 9742,
+      "timing": "scoped",
+      "note": "VERIFY_FW_BUILD_REQUIRED=1 真编译 build-pass（xiaozhi.bin 0x329580 bytes / app 分区 8% free；本轮固件零 diff，增量构建）"
+    },
+    {
+      "gate": "contract-lint",
+      "kind": "structural",
+      "ok": true,
+      "ms": 97,
+      "timing": "scoped",
+      "note": "存量 warning 一条（契约内相对链接目标缺件，非本轮引入）"
+    },
+    {
+      "gate": "acceptance-coverage",
+      "kind": "functional",
+      "ok": true,
+      "ms": 140,
+      "timing": "scoped",
+      "note": "31 acceptance id 全覆盖（SCR-A1..A15 + SCRF-B1..B10 含 B2b/B4b + SCRF-C1..C4）"
+    },
+    {
+      "gate": "mutation-check",
+      "kind": "functional",
+      "ok": true,
+      "ms": 693,
+      "timing": "scoped",
+      "note": "31 条 per-acceptance 变异 evidence 齐；轮 C 修复轮 8 条（mutation-evidence/round-c-fix.md）含 R4 删除 / 阈值 2→0 / 删段级过滤 / 集合污染单字 / 加回安抚 / 删页面退出帧 / reason 改名 / 守卫移位（两处同移才转红）"
+    },
+    {
+      "gate": "docs-sync",
+      "kind": "governance",
+      "ok": true,
+      "ms": 109,
+      "timing": "scoped",
+      "note": "docsSyncRequired=false；spec/契约/架构/ADR/debt 本轮实测零 diff（git diff + git status 双核）；轮 C 新增占位守卫/段级过滤的架构面注记判断与既有 D3 收窄注记一并交主线程（Pod 零改 spec）"
+    },
+    {
+      "gate": "security",
+      "kind": "security",
+      "ok": true,
+      "ms": 102,
+      "timing": "scoped",
+      "note": "securityReviewRequired=false"
+    },
+    {
+      "gate": "unit",
+      "kind": "functional",
+      "ok": true,
+      "ms": 35635,
+      "timing": "full",
+      "note": "302 passed, 3 deselected, 102 subtests passed（scope 求交真跑；含本轮新增 server/tests/test_story_units.py）"
+    },
+    {
+      "gate": "acceptance",
+      "kind": "functional",
+      "ok": true,
+      "ms": 36009,
+      "timing": "full",
+      "note": "204 passed, 3 deselected, 13 subtests passed；serverAcceptanceFiles=14 / firmwareAcceptanceFiles=12（firmware on-target 需实机，闸只作结构/存在性核对）"
+    }
+  ],
+  "mechanicalCheck": {
+    "tool": ".claude/scripts/verifier-evidence-check.mjs",
+    "args": "--change-id 261116-channel-resident-core --phase final --round 9 --invocation-id 9cee1805-4f5b-4621-bf69-be61013cb78f",
+    "exit": 0,
+    "output": {
+      "ok": true,
+      "gate": "verifier-evidence",
+      "evidenceRef": "delivery/taskpackages/261116-channel-resident-core/verifier-evidence/rounds/r9.json",
+      "factOk": true,
+      "observedGateExit": 0,
+      "phase": "final",
+      "round": 9
+    }
+  },
+  "hostRunner": {
+    "command": "cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- bash -lc \"./build/host_infra_test.elf\"",
+    "runBy": "integrator（final r9 收口，本机亲跑）",
+    "result": "321 Tests 3 Failures 0 Ignored",
+    "acceptanceGreen": "SCR-A1..A15 与 builder 单测全绿（本轮固件零 diff，沿用轮 B 修复轮构建）",
+    "threeFailures": [
+      "p1_auxbar_style.acceptance.c AB-A1 ic_batt_15 消费点未接入",
+      "p1_auxbar_style.acceptance.c AB-A2 ic_thermo_12 落位漂出授权域",
+      "p1_auxbar_style.acceptance.c AB-A4 ic_wifi_14 消费点缺失"
+    ],
+    "conclusion": "3 红全 p1_auxbar 上游存量族，与本包无调用关系；本包零新增红。"
+  },
+  "serverSuite": {
+    "command": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance server/tests",
+    "runBy": "integrator（final r9 收口，本机亲跑）",
+    "result": "799 passed / 0 failed / 9 deselected / 137 subtests（78.4s）",
+    "conclusion": "轮 C 两层守卫离线成立，既有 27 条冻结验收零松动，零新增失败。"
+  },
+  "deviceRound": {
+    "declared": false,
+    "status": "PENDING (round C)",
+    "roundC": {
+      "status": "online-evidence-only（planner 只读取证，不是完整真机轮）",
+      "evidenceRef": "delivery/taskpackages/261116-channel-resident-core/device-evidence/round-c/device-round-c-online-evidence.md",
+      "excerpts": [
+        "device-evidence/round-c/ecs-front-journal-2120-2134.txt",
+        "device-evidence/round-c/engine-asr-2120-2123.txt",
+        "device-evidence/round-c/ecs-story-2026-11-18-s33477cee.md",
+        "device-evidence/round-c/ecs-story-2026-11-18-sbe0bff90.md"
+      ],
+      "checklist": "A6 / A7 / D3 空素材（含 dropped=silent_asr_hallucination 观察）/ A5 回归 / 引导播报回归 + 本轮追加「整理占位回归（不归档 + 设备退出 ORGANIZING）」+ 诊断采集项 C-1..C-6；通过后 human 交付 sourceCommit + sha256(xiaozhi.bin) 才生成 device-round-evidence.md",
+      "note": "device-round-evidence.md 未生成、未伪造 PASS；未 PASS 前不得合并。"
+    }
+  },
+  "docsSync": {
+    "required": false,
+    "deltaRef": "delivery/taskpackages/261116-channel-resident-core/docs-delta.md",
+    "conclusion": "docs/requirements.md / docs/architecture.md / docs/contracts/** / docs/decisions/** / docs/debt/** 本轮零 diff（git diff 与 git status 双实测）；上游引擎静音 ASR 幻觉建议主线程立项 tech debt（本 Pod 不建文件）；规格漂移注记沿用 pending-human-ruling 待裁四"
+  },
+  "adr": {
+    "required": false,
+    "produced": []
+  }
+}

@@ -35,10 +35,11 @@
  *       ③ 置 auto_connect_in_flight_ = true;
  *       ④ xTaskCreate 后台 task（task 名 "AutoConnect"，沿用 activation 模板
  *          application.cc:361-366: 栈 4096*2、优先级 2、lambda 直排——不阻塞主循环）。
- *       task 体（lambda 内）: 3 次重试、退避经 [S3] kAutoConnectBackoffS、每次尝试
- *       前重查守卫三条件（违反即 bail）、所有退出路径（成功 / 重试耗尽 / bail）必清
- *       auto_connect_in_flight_、退出前打一行 uxTaskGetStackHighWaterMark 日志
- *       （plan 任务模板，真机锚 A7-④ 顺带核）。
+ *       task 体（lambda 内）: 封顶递增长跑（2026-11-19 改形：原「3 次重试」退役，退避经
+ *       [S3] kAutoConnectBackoffS 走 {5,10,20,40,60} 递增后恒 kAutoConnectSteadyRetryS
+ *       = 60 秒无上限）、每次尝试前重查守卫三条件（违反即 bail）、所有退出路径（成功 /
+ *       bail / 网络断退出请求位）必清 auto_connect_in_flight_、退出前打一行
+ *       uxTaskGetStackHighWaterMark 日志（plan 任务模板，真机锚 A7-④ 顺带核）。
  *     - 触发点 1 = HandleActivationDoneEvent 函数区内调 TryStartAutoConnect()（末尾
  *       接线）；触发点 2 = HandleNetworkConnectedEvent 函数区 Idle 支路（新
  *       kDeviceStateIdle 分支）调 TryStartAutoConnect()。
@@ -60,9 +61,11 @@
  *
  *   [S3] 有界退避决策表（K5 留根常识②: host 齿钉决策表形态，不钉实时时序——时序归
  *        真机窗 K6-A7）: application.cc 冻结命名常量
- *        `kAutoConnectBackoffS`，冻结形态 = 3 元素递增秒值表 `{ 5, 10, 20 }`
- *        （封顶 3 次、5s/10s/20s 递增序列，plan 方案形状），定义 + task 内消费
- *        >= 2 处。每次重试前重查三条件 = [S1] task 体三条件 token 下界承载。
+ *        `kAutoConnectBackoffS`（2026-11-19 改形：原 3 元素 `{ 5, 10, 20 }` 封顶 3 次
+ *        退役 → 五元素递增 `{ 5, 10, 20, 40, 60 }`）+
+ *        `kAutoConnectSteadyRetryS`（封顶递增后恒 60 秒稳态长跑周期），
+ *        各定义 + task 内消费 >= 2 处。每次重试前重查三条件 = [S1] task 体三条件 token
+ *        下界承载。
  *        （命名常量是本冻结件的缝契约裁定——与 K5 kidpal_ts_* 先例同款：给 mutation
  *        敏感性与决策表形态一个可机判的锚；换算 vTaskDelay 的乘法形态实现自由。）
  *
@@ -167,20 +170,18 @@
  *             P1 屏显不变）= deferred 设备轮（RC-A4）。
  *   coverage: RC-A2 分类互斥 -> test 8（分类写点单点 + OnDisconnected 消费先于回调 +
  *             A 区零 ScheduleResidentRebuild + 三会话收尾点零直调缝 + 全文件 helper
- *             恰 5 处——261024-vq-overlay-close-end-session 重钉 4→5, 定义 + 四调用点;
- *             第四调用点 HandleEndVoiceSessionEvent 未纳入零直调缝守卫 = 按该包
- *             plan ⑧-2 冻结口径, planner 可另案收紧）。真机半 = deferred 设备轮
- *             （RC-B4/B5 对账）。
- *   coverage: RC-A3 复用守卫 -> test 9（B helper 区复用 TryStartAutoConnect + 经
- *             Schedule( 回主循环 + 零 OpenAudioChannel/零退避消费/零 SetDeviceState
- *             + kResidentRebuildDelayS 定义消费下界 + A 区零 OpenAudioChannel）。
+ *             恰 0 处——2026-11-16 261116-channel-resident-core P1 重钉: 常驻重建机制
+ *             整条退役, 回潮守卫; 原 5 处口径见 REVISION 墓碑）。真机半 = deferred
+ *             设备轮（RC-B4/B5 对账）。
+ *   coverage: RC-A3 复用守卫 -> RETIRED 2026-11-16（261116-channel-resident-core P1:
+ *             B helper / kResidentRebuildDelayS 整条退役; 现代承载 =
+ *             session_channel_resident SCR-A1/SCR-A7; 见 TEST 9 墓碑）。
  *   coverage: RC-B1 永不休眠 -> test 10（板级文件零休眠接线 needle + 直连 sleep API
  *             零命中 + common 层休眠入口文件在世 canary + CanEnterSleepMode 既有门
  *             在世）。设计态绿（现状结构事实钉死; 变异敏感 = 板级加接线即红）。
- *   coverage: RC-B2 常驻重建 -> test 11（T=5 冻结进首定义片段 + 四会话收尾点各恰
- *             一次——261024-vq-overlay-close-end-session 追加 HandleEndVoiceSession-
- *             Event 第四项 + 各区既有 close token 零偏移锚）。真机半（收尾 T 秒内
- *             重建、跨夜提醒可达）= deferred 设备轮（RC-B4）。
+ *   coverage: RC-B2 常驻重建 -> RETIRED 2026-11-16（261116-channel-resident-core P1:
+ *             T=5 与四调用点常驻重建整条退役; 四收尾点收口的现代承载 =
+ *             session_channel_resident SCR-A1; 见 TEST 11 墓碑）。
  *   coverage: RC-B3 负锚 -> test 12（五路径零重建排程 + 既有 close token 在世）。
  *             实现前 trivially green（负锚在 B 缝在世后才承载）; 变异敏感 = 任一负锚
  *             区新增重建排程即红。
@@ -256,8 +257,10 @@
  *   2) firmware/main/application.cc: 定义 `void Application::TryStartAutoConnect()`
  *      （[S1] 内部序①②③④；task 体 lambda 直排 xTaskCreate 内，task 名
  *      "AutoConnect"，沿用 activation 模板: 栈 4096*2、优先级 2）；文件内定义
- *      `static const int kAutoConnectBackoffS[3] = { 5, 10, 20 };`（[S3]，文件域或
- *      函数域皆可——needle 扫 application.cc 全文；vTaskDelay 换算乘法形态自由）。
+ *      `kAutoConnectBackoffS` 五元素递增秒表 `{ 5, 10, 20, 40, 60 }` 与
+ *      `kAutoConnectSteadyRetryS = 60`（[S3]，文件域或函数域皆可——needle 扫
+ *      application.cc 全文；vTaskDelay 换算乘法形态自由）。2026-11-19 改形：原
+ *      `kAutoConnectBackoffS[3] = { 5, 10, 20 }` 三档封顶退役，长跑改无上限。
  *      纪律: 缝区（含 task lambda）内零 SetDeviceState( 调用、零 Settings 写 API。
  *   3) 触发点接线: HandleActivationDoneEvent 末尾 + HandleNetworkConnectedEvent 新
  *      Idle 支路（kDeviceStateIdle 分支）各调 TryStartAutoConnect()。
@@ -326,13 +329,19 @@
  *   - application.cc `OpenAudioChannel()` 恰 4 处（同上四点; builder 在 task 体
  *     新增第 5 处属预期, 本 needle 只钉人工四处不减）。
  *   - `auto_connect_in_flight_` / `TryStartAutoConnect` / `kAutoConnectBackoffS`
- *     全仓零命中（设计态红前提, 2026-09-23 grep 实证）。 */
+ *     全仓零命中（设计态红前提, 2026-09-23 grep 实证）。
+ *   - 2026-11-19 追加：`kAutoConnectSteadyRetryS` 全仓零命中（261117 长跑改形新
+ *     needle 的设计态红前提, 2026-11-19 grep 实证）。 */
 #define KAC_CONNECTING_NEEEDLE "SetDeviceState(kDeviceStateConnecting)"
 #define KAC_OPEN_CHANNEL_ND    "OpenAudioChannel()"
 #define KAC_FLAG_ND            "auto_connect_in_flight_"
 #define KAC_SEAM_FN_ND         "void Application::TryStartAutoConnect()"
 #define KAC_SEAM_CALL_ND       "TryStartAutoConnect()"
 #define KAC_BACKOFF_ND         "kAutoConnectBackoffS"
+/* 2026-11-19（261117-session-end-intent-longretry）：封顶递增长跑的稳态周期常量
+ * （arch §6.4「{5,10,20,40,60} 后恒 60 秒」）。K6-A2 tooth 7 由「钉 [3] 长度」重钉为
+ * 「钉本常量首定义含 60」——常量为单源命名常量（值改须回 planner 重冻结）。 */
+#define KAC_STEADY_ND          "kAutoConnectSteadyRetryS"
 
 /* RC 批 needle（261010-device-reconnect-on-server-close 包新增; 值 = 2026-10-11
  * 冻结基线逐 needle 实证——`local_close_pending_` / `ScheduleResidentRebuild` /
@@ -693,7 +702,7 @@ TEST_CASE("开机自动建连: 自动建连缝正锚 (K6-A1)",
  * MUST-STAY-GREEN 半：OnNetworkError lambda 区可切 + MAIN_EVENT_ERROR 既有路由在世。
  * RED today：缝未实现。
  * ------------------------------------------------------------------------ */
-/* coverage: K6-A2 -- 静默失败锚：OnNetworkError lambda in-flight 拦截分支（不置 MAIN_EVENT_ERROR）+ 置位前序 + 退避决策表形态（封顶 3 次 + 5s/10s/20s 递增序列 kAutoConnectBackoffS）+ 重试前三条件重查下界 + 失败全程 Idle */
+/* coverage: K6-A2 -- 静默失败锚：OnNetworkError lambda in-flight 拦截分支（不置 MAIN_EVENT_ERROR）+ 置位前序 + 退避决策表形态（2026-11-19 重钉：封顶递增长跑 5<10<20<40<60（tooth 6 收紧）+ kAutoConnectSteadyRetryS=60（tooth 7，放弃钉 [3] 长度字面））+ 重试前三条件重查下界 + 失败全程 Idle */
 TEST_CASE("开机自动建连: 静默失败+有界退避决策表 (K6-A2)",
           "[boot_auto_connect][K6-A2][structural]")
 {
@@ -740,8 +749,9 @@ TEST_CASE("开机自动建连: 静默失败+有界退避决策表 (K6-A2)",
                "定义 + task 内消费）——有界退避决策表未落（重试风暴或无重试入口）",
                n));
 
-    /* tooth 6 (RED today, 决策表形态): 表值 = { 5, 10, 20 } 递增秒序列（5s/10s/20s,
-     * plan 定值; 形态钉值序不钉排版——首定义片段内 5 < 10 < 20 位序）。 */
+    /* tooth 6 (决策表形态; 2026-11-19 收紧追加 40/60): 表值 = { 5, 10, 20, 40, 60 }
+     * 递增秒序列（arch §6.4 封顶递增长跑; 形态钉值序不钉排版——首定义片段内
+     * 5 < 10 < 20 < 40 < 60 位序）。 */
     {
         char *def = kac_region_between(KAC_APP_CC, KAC_BACKOFF_ND, ";");
         TEST_ASSERT_NOT_NULL_MESSAGE(def,
@@ -750,22 +760,31 @@ TEST_CASE("开机自动建连: 静默失败+有界退避决策表 (K6-A2)",
             const char *p5 = def != NULL ? strstr(def, "5") : NULL;
             const char *p10 = def != NULL ? strstr(def, "10") : NULL;
             const char *p20 = def != NULL ? strstr(def, "20") : NULL;
+            const char *p40 = def != NULL ? strstr(def, "40") : NULL;
+            const char *p60 = def != NULL ? strstr(def, "60") : NULL;
             TEST_ASSERT_TRUE_MESSAGE(p5 != NULL && p10 != NULL && p20 != NULL &&
-                                         p5 < p10 && p10 < p20,
-                "K6-A2 RED: kAutoConnectBackoffS 首定义非 { 5, 10, 20 } 递增秒序列"
-                "——退避形态偏离冻结值（5s/10s/20s, plan 方案形状; 偏离回 planner "
+                                         p40 != NULL && p60 != NULL &&
+                                         p5 < p10 && p10 < p20 && p20 < p40 && p40 < p60,
+                "K6-A2 RED: kAutoConnectBackoffS 首定义非 { 5, 10, 20, 40, 60 } 递增秒"
+                "序列——退避形态偏离冻结值（arch §6.4 封顶递增长跑; 偏离回 planner "
                 "重冻结）");
         }
         free(def);
     }
 
-    /* tooth 7 (RED today, 封顶形态): 表长 3（[3] 字面同现——封顶 3 次的决策表形态
-     * 承载; 无界重试 = 表退化或缺失）。 */
+    /* tooth 7 (2026-11-19 frozen-rebaseline): 稳态长跑常量——kAutoConnectSteadyRetryS
+     * 首定义片段含 60（封顶递增后退避恒 60 秒长跑周期）。
+     * 旧钉 = 表长 `[3]` 字面（3 次封顶形态），随 261117-session-end-intent-longretry
+     * 长跑改形退役：值序 tooth 6 已隐含五元素，不再钉数组长度字面（放弃钉长度是
+     * planner 2026-11-19 裁决，见文件尾「2026-11-19 重钉留痕」）。 */
     {
-        char *def = kac_region_between(KAC_APP_CC, KAC_BACKOFF_ND, ";");
-        TEST_ASSERT_TRUE_MESSAGE(def != NULL && kac_contains(def, "[3]"),
-            "K6-A2 RED: kAutoConnectBackoffS 定义无 [3] 长度——退避封顶 3 次形态"
-            "未落（重试无界 = 连接风暴）");
+        char *def = kac_region_between(KAC_APP_CC, KAC_STEADY_ND, ";");
+        TEST_ASSERT_NOT_NULL_MESSAGE(def,
+            "K6-A2 RED: kAutoConnectSteadyRetryS 首定义片段切取失败——稳态长跑命名常量"
+            "缺席（长跑改形后单源命名常量）");
+        TEST_ASSERT_TRUE_MESSAGE(kac_contains(def, "60"),
+            "K6-A2 RED: kAutoConnectSteadyRetryS 首定义不含 60——稳态长跑周期值偏离冻结值"
+            "（arch §6.4: 封顶递增后恒 60 秒）");
         free(def);
     }
 
@@ -1183,8 +1202,8 @@ TEST_CASE("断线重连常驻: 服务端断自动重连排程 (RC-A1)",
  * MUST-STAY-GREEN 半：三会话收尾点区 + A 区 + OnDisconnected 区可切（锚在世）。
  * RED today：分类写点计数 0 ≠ 1（标记未落）。
  * ------------------------------------------------------------------------ */
-/* coverage: RC-A2 -- 服务端断路径与常驻重建路径触发分类互斥：分类写点单点（local_close_pending_ = true 恰 1）+ OnDisconnected 消费先于回调 + A 区零 ScheduleResidentRebuild + 三会话收尾点零直调 TryStartAutoConnect + 全文件 ScheduleResidentRebuild() 恰 5 处（定义 + 四调用点, 第四点 = HandleEndVoiceSessionEvent, 零泄漏面） */
-/* coverage: OCE-A2 -- 既有断言重钉（本文件承载面）: RC-A2 tooth 6 全文件 ScheduleResidentRebuild() 计数 4→5（定义 + 四会话收尾点, 第四点 = HandleEndVoiceSessionEvent）+ RC-B2 sites 数组追加第四项承载；verifier round 1 判红锚 = RC-A2 tooth6 重钉段 */
+/* coverage: RC-A2 -- 服务端断路径与常驻重建路径触发分类互斥：分类写点单点（local_close_pending_ = true 恰 1）+ OnDisconnected 消费先于回调 + A 区零 ScheduleResidentRebuild + 三会话收尾点零直调 TryStartAutoConnect + 全文件 ScheduleResidentRebuild() 恰 0 处（2026-11-16 P1 重钉: 常驻重建机制整条退役, 回潮守卫） */
+/* coverage: OCE-A2 -- 既有断言重钉（本文件承载面）: RC-A2 tooth 6 全文件 ScheduleResidentRebuild() 计数 4→5（261024）再 →0（2026-11-16 P1 整条退役）+ RC-B2 整条退役（见 TEST 11 墓碑）；verifier 判红锚 = RC-A2 tooth6 重钉段 */
 /* coverage: OCE-A3 -- 回归网（四族全绿 + host 全量零新增红 vs 冻结基线 236T3F）: 判据锚 = verifier round evidence（host 全量 runner 结果），本标记为覆盖登记、非本文件单断言承载 */
 TEST_CASE("断线重连常驻: 本地关分类互斥 (RC-A2)",
           "[boot_auto_connect][RC-A2][structural]")
@@ -1261,16 +1280,18 @@ TEST_CASE("断线重连常驻: 本地关分类互斥 (RC-A2)",
         free(region);
     }
 
-    /* tooth 6 (RED today; OCE-A2 重钉, 261024-vq-overlay-close-end-session):
-     * 全 application.cc ScheduleResidentRebuild() 恰 5 处（定义 + 四调用点;
-     * 泄漏到其它路径 = 分类面破）。重钉事由: 新增第四会话收尾点
-     * HandleEndVoiceSessionEvent（播报态关层结束会话, TECH-261024 修复）也调
-     * helper, 原计数恰 4 改后必红——「定义 + 三调用点」改钉「定义 + 四调用点」。 */
+    /* tooth 6 (重钉 2026-11-16, 261116-channel-resident-core P1; 原「全文件
+     * ScheduleResidentRebuild() 恰 5 = 定义 + 四调用点」)：
+     *   ！旧钉什么：全 application.cc 恰 5 处（定义 + 四会话收尾点）。
+     *   ！新钉什么：恰 0 处——P1 通道常驻后会话结束不再拆通道、不再 5s 重建，
+     *     ScheduleResidentRebuild 函数/常量/全部调用点整条删净（§6.4 / ADR-019）。
+     *   ！为什么：RC-B2 与 RC-A3 一并退役（见下方 TEST 11 / TEST 9 墓碑）；本齿改为
+     *     回潮守卫：任何重新引入常驻重建调用的改动 = 红。 */
     n = kac_count_in_file(KAC_APP_CC, KAC_B_HELPER_CALL_ND);
-    TEST_ASSERT_TRUE_MESSAGE(n == 5,
-        kac_fm("RC-A2 RED: application.cc ScheduleResidentRebuild() = %d 处（冻结恰 5: "
-               "定义 + 四会话收尾点, OCE-A2 重钉 261024-vq-overlay-close-end-session）"
-               "——触发点泄漏或缺失", n));
+    TEST_ASSERT_TRUE_MESSAGE(n == 0,
+        kac_fm("RC-A2 RED: application.cc ScheduleResidentRebuild() = %d 处（P1 冻结恰 0: "
+               "常驻重建机制整条退役）——通道常驻后仍排 5s 重建（拆而再建绕路回潮；"
+               "§6.4 / ADR-019 破）", n));
 }
 
 /* -------------------------------------------------------------------------- *
@@ -1279,7 +1300,22 @@ TEST_CASE("断线重连常驻: 本地关分类互斥 (RC-A2)",
  * MUST-STAY-GREEN 半：A 区既有零直连 OpenAudioChannel(（现状即绿）。
  * RED today：B helper 未实现（声明/定义/常量全零命中）。
  * ------------------------------------------------------------------------ */
-/* coverage: RC-A3 -- 重连复用 TryStartAutoConnect：B helper 区消费 kResidentRebuildDelayS + 排入 TryStartAutoConnect + 经 Schedule( 回主循环 + 区内 OpenAudioChannel(/kAutoConnectBackoffS/SetDeviceState( 恒 0（零第二条重连路径 / 零新退避消费 / 屏显零触碰）+ kResidentRebuildDelayS 定义消费下界 + A 区零 OpenAudioChannel（连接只经既有 AutoConnect task） */
+/* ========================================================================
+ * RETIRED 2026-11-16 (261116-channel-resident-core P1 — 通道常驻核心):
+ *   ！旧钉什么：RC-A3「重连复用 TryStartAutoConnect」——B helper
+ *     ScheduleResidentRebuild 区消费 kResidentRebuildDelayS + 排入
+ *     TryStartAutoConnect + 经 Schedule( 回主循环 + 区内零 OpenAudioChannel/零退避/
+ *     零 SetDeviceState；kResidentRebuildDelayS 定义消费下界；A 区零 OpenAudioChannel。
+ *   ！新钉什么：整条退役（无替代断言留在本件）。P1 删净常驻重建机制（§6.4 / ADR-019:
+ *     通道常驻 + 会话边界带内信号，会话结束不再拆通道），ScheduleResidentRebuild 函数 /
+ *     kResidentRebuildDelayS 常量 / 全部调用点归 0。「零第二条重连路径」的现代承载 =
+ *     session_channel_resident.acceptance.c SCR-A7（自愈巡检区零 OpenAudioChannel(）+
+ *     SCR-A1（四收尾点零 ScheduleResidentRebuild(）。
+ *   ！为什么：B helper 不再存在，原结构齿的每个 needle 都无法命中；保留即恒红假红。
+ * 墓碑保留代码供审计（#if 0 = 不编译不注册）。
+ * ======================================================================== */
+#if 0
+/* coverage: RC-A3 -- RETIRED（见上墓碑）。 */
 TEST_CASE("断线重连常驻: 重连复用守卫 (RC-A3)",
           "[boot_auto_connect][RC-A3][structural]")
 {
@@ -1340,6 +1376,7 @@ TEST_CASE("断线重连常驻: 重连复用守卫 (RC-A3)",
 
     free(helper);
 }
+#endif /* RC-A3 RETIRED (261116-channel-resident-core P1) */
 
 /* -------------------------------------------------------------------------- *
  * TEST 10 — RC-B1 永不休眠结构事实（板级零休眠接线 needle; 设计态绿——现状结构
@@ -1397,7 +1434,19 @@ TEST_CASE("断线重连常驻: 永不休眠结构事实 (RC-B1)",
  * MUST-STAY-GREEN 半：三调用点区既有 close token 在世（现状即绿）。
  * RED today：kResidentRebuildDelayS / ScheduleResidentRebuild 全仓零命中。
  * ------------------------------------------------------------------------ */
-/* coverage: RC-B2 -- 会话收尾类本地关 → T 秒内恰一次常驻重建排程：kResidentRebuildDelayS 首定义片段含 5（T 冻结值, 改值须回 planner 重冻结）+ 定义消费下界 + 四会话收尾点（:805/:849/:1189 plan 归类表 + HandleEndVoiceSessionEvent 261024-vq-overlay-close-end-session 追加, 各恰 1; builder 复核 :1189 语义后留痕为验收前提）各调 ScheduleResidentRebuild() 恰 1 + 各区既有 close token 零偏移锚 */
+/* ========================================================================
+ * RETIRED 2026-11-16 (261116-channel-resident-core P1 — 通道常驻核心):
+ *   ！旧钉什么：RC-B2「会话收尾 → T 秒内恰一次常驻重建」——kResidentRebuildDelayS
+ *     首定义含 5 + 定义消费下界 + 四会话收尾点各调 ScheduleResidentRebuild() 恰 1。
+ *   ！新钉什么：整条退役（无替代断言留在本件）。P1 通道常驻后会话结束不再拆通道、不再
+ *     5s 重建（§6.4 / ADR-019），kResidentRebuildDelayS 与 ScheduleResidentRebuild 全删。
+ *     「四收尾点收口」的现代承载 = session_channel_resident.acceptance.c SCR-A1（四区
+ *     负锚三件 + 正锚闭集 + src token）。
+ *   ！为什么：T=5 与「四调用点各恰 1」的每个 needle 都指向已删除机制；保留即恒红假红。
+ * 墓碑保留代码供审计（#if 0 = 不编译不注册）。
+ * ======================================================================== */
+#if 0
+/* coverage: RC-B2 -- RETIRED（见上墓碑）。 */
 TEST_CASE("断线重连常驻: 常驻重建T值冻结 (RC-B2)",
           "[boot_auto_connect][RC-B2][structural]")
 {
@@ -1474,6 +1523,7 @@ TEST_CASE("断线重连常驻: 常驻重建T值冻结 (RC-B2)",
         free(region);
     }
 }
+#endif /* RC-B2 RETIRED (261116-channel-resident-core P1) */
 
 /* -------------------------------------------------------------------------- *
  * TEST 12 — RC-B3 负锚：五条零重建路径（网络断关/Reboot/OTA/AEC/ResetProtocol）。
@@ -1688,4 +1738,20 @@ TEST_CASE("断线重连常驻: 负锚五路径零重建 (RC-B3)",
  *               （定义 + 三调用点）」措辞滞后于 tooth 6 重钉断言（恰 5、定义 + 四调用
  *               点, 第四点 = HandleEndVoiceSessionEvent）——同步修注, 纯注释行、零断言
  *               逻辑变更、零测试计数变化。
+ *
+ *   2026-11-19  重钉留痕（261117-session-end-intent-longretry, KSE-E2；acceptance-author
+ *               frozen-rebaseline + tighten，非语义放松）:
+ *     K6-A2 tooth 7 —— 旧钉：`kAutoConnectBackoffS` 首定义片段含 `[3]` 字面（封顶 3 次
+ *       的决策表形态）。新钉：`kAutoConnectSteadyRetryS` 首定义片段含 `60`（封顶递增
+ *       后退避恒 60 秒长跑周期），**放弃钉数组长度字面**（planner 2026-11-19 裁决）。
+ *       为什么：arch §6.4（261115 架构批 FROZEN）+ ADR-019 ④ 把「3 次即止」改为
+ *       `{5,10,20,40,60}` 后恒 60 秒长跑——[3] 长度随改形必红（假红），新形态的单源
+ *       机判锚 = 稳态命名常量值；值序由 tooth 6 承载（元素数已隐含五档）。
+ *     K6-A2 tooth 6 —— 旧钉：首定义片段值序 5<10<20。新钉：5<10<20<40<60（收紧追加
+ *       40/60 位序）。为什么：新表五档，旧位序对新表判别力被稀释（{5,10,20} 是任何
+ *       含前三档的表的前缀），追加后两档把「仍是三档旧表」打红。
+ *     零偏移面：K6-A2 tooth 1-5/8/9 与 K6-A1/A3/A4/A5/A6、RC-A1/A2/A3/B1/B3 全部断言
+ *       零改动；上两处旧钉 → 新钉的换算定义见上。历史 RED baseline / MUTATION MAP 段
+ *       （1578-1642 区）保留 2026-09-23 原始实测记录不覆盖；其内「kAutoConnectBackoffS
+ *       零命中」「表长 [3] 摘除」按当时树判读，今天的对应判读 = 本段 tooth 6/7 新钉。
  * --------------------------------------------------------------------------- */

@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/tech/_archive/2026/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**2026 年已结 29 条**（薄行：证据正文在条目文件里，点 ID 即达）。
+**2026 年已结 31 条**（薄行：证据正文在条目文件里，点 ID 即达）。
 
 | ID | title | 已结日期 | 依据 |
 |---|---|---|---|
@@ -40,3 +40,5 @@
 | [ARQ-260831-small-cjk-1bpp-readability](ARQ-260831-small-cjk-1bpp-readability.md) | 16px 以下 CJK 文字在 1bpp 真机的可读性下限未实测，直接锁死 V3 设计稿字号下限 | 2026-10-28 | consumed-by: 261028-font-typography-scaleup（change-intake §3a 立项消费结项） |
 | [ARQ-260918-spec-face-3page-reconcile](ARQ-260918-spec-face-3page-reconcile.md) | spec 面两文件仍写撤页前的旧实现态：`docs/architecture.md` 三处过时叙述 + 一处未收回的【修复项】标记，`docs/requirements.md` 行 166 ② 页序漂移台账行未消解 | 2026-11-04 | consumed-by 261103-arch-review-star-points-story-cover（主线程 Track B 落地 b930f498） |
 | [TECH-261114-openclaw-gateway-eventloop-stalls](TECH-261114-openclaw-gateway-eventloop-stalls.md) | OpenClaw 网关事件循环 ~31s 级阻塞（两个实证触发源：kidpal session store 同步写+cleanup 失败循环、remote model catalog 刷新）——真机语音轮最差 33s 无响应 | 2026-11-15 | 主线程——P0 ①②③ 执行并验证通过（catalog 关断 11-14 23:00 至 11-15 23:00 五个检查点全静默 / 会话库 177→1 与墓碑 58MB→988KB 达标 / 11-15 真机轮 3-6s 无冻结、全天零 liveness 冻结零 cleanup failed）；残项转 TECH-261115-openclaw-upgrade-batch-residuals |
+| [TECH-261012-first-keypress-no-listening](TECH-261012-first-keypress-no-listening.md) | 重启后首次按键不跳聆听页（human 口述「每次重启都有」）+ 实测复现：按键撞 781s 空闲通道超时 → WS 重建后会话失同步、音频通道秒关弹回 idle，连按两次恢复 | 2026-11-19 | 261116-channel-resident-core |
+| [TECH-261114-overlay-close-channel-rebuild-churn](TECH-261114-overlay-close-channel-rebuild-churn.md) | overlay_close 即断 WS + 5s 后常驻重建属绕路——冷通道按键进聆听 1.57s（温通道 0.82s）、每次重建付全套 bootstrap burst；候选 A「close 不断通道」为 P1-⑤ 延迟优化，待现有开发任务完成后排期，建议与 TECH-261014 家族合并立包 | 2026-11-19 | 261116-channel-resident-core |

@@ -1,0 +1,119 @@
+# device KPLOG excerpt — 261116 P1 round A (2026-11-17 22:46:30–22:53:30 CST)
+# source: /c/tmp/roundA-full.log (= KPLOG000b.TXT merged window), lines filtered to semantic tokens
+[2026-11-17 22:46:31] I (1925052) MCP: story_key rec_session_slot page=0
+[2026-11-17 22:46:31] I (1925482) StateMachine: State: idle -> listening
+[2026-11-17 22:46:32] I (1926312) MCP: story_prefetch_armed screen=0 missing=4
+[2026-11-17 22:46:32] I (1926322) MCP: story_list_dispatch corr_id=kdp-1926312 items=16 counter=20 degrade=false
+[2026-11-17 22:46:32] I (1926322) MCP: story_list_gate defer_front page=0 voice_front=1 restore=1
+[2026-11-17 22:46:33] I (1926452) MCP: story_prefetch_suspend page=0 voice_front=1
+[2026-11-17 22:46:34] I (1927772) MCP: story_vad_recording_enter consumed=1 page=2
+[2026-11-17 22:46:44] I (1937532) Application: >> 123 45677452321
+[2026-11-17 22:46:44] I (1937532) MCP: story_guide_speech_edge substate=1
+[2026-11-17 22:46:47] W (1940712) MCP: story_guide_speech_watchdog substate=0 audio=none
+[2026-11-17 22:46:49] I (1942682) MCP: story_key discard_rec cancel_count=1
+[2026-11-17 22:46:49] I (1942692) Application: local_close_settle corr_id=kdp-1942692 src=discard_record state=session_end_requested
+[2026-11-17 22:46:49] I (1942792) StateMachine: State: listening -> idle
+[2026-11-17 22:46:49] I (1942792) Application: local_close_settle corr_id=kdp-1942792 src=overlay_close state=idle
+[2026-11-17 22:46:49] I (1943512) Application: keybar_scene_reset corr_id=kdp-1943512 src=session_end
+[2026-11-17 22:46:50] I (1943722) Application: >> 嗯
+[2026-11-17 22:46:53] I (1947242) Application: << 嗯～
+[2026-11-17 22:46:53] I (1947242) StateMachine: State: idle -> speaking
+[2026-11-17 22:46:55] I (1948722) StateMachine: State: speaking -> idle
+[2026-11-17 22:46:55] I (1949052) Application: keybar_scene_reset corr_id=kdp-1949052 src=session_end
+[2026-11-17 22:46:57] I (1950542) MCP: story_key rec_session_slot page=0
+[2026-11-17 22:46:57] I (1950972) StateMachine: State: idle -> listening
+[2026-11-17 22:46:58] I (1951832) MCP: story_prefetch_armed screen=0 missing=4
+[2026-11-17 22:46:58] I (1951832) MCP: story_list_dispatch corr_id=kdp-1951832 items=16 counter=20 degrade=false
+[2026-11-17 22:46:58] I (1951842) MCP: story_list_gate defer_front page=0 voice_front=1 restore=1
+[2026-11-17 22:46:58] I (1951952) MCP: story_prefetch_suspend page=0 voice_front=1
+[2026-11-17 22:47:02] I (1955822) MCP: story_vad_recording_enter consumed=1 page=2
+[2026-11-17 22:47:04] I (1958602) Application: >> 明天是星期几？
+[2026-11-17 22:47:04] I (1958642) MCP: story_guide_speech_edge substate=1
+[2026-11-17 22:47:08] W (1961672) MCP: story_guide_speech_watchdog substate=0 audio=none
+[2026-11-17 22:47:11] I (1965472) MCP: story_key discard_rec cancel_count=2
+[2026-11-17 22:47:11] I (1965482) Application: local_close_settle corr_id=kdp-1965482 src=discard_record state=session_end_requested
+[2026-11-17 22:47:11] I (1965572) StateMachine: State: listening -> idle
+[2026-11-17 22:47:11] I (1965572) Application: local_close_settle corr_id=kdp-1965572 src=overlay_close state=idle
+[2026-11-17 22:47:12] I (1966312) Application: keybar_scene_reset corr_id=kdp-1966312 src=session_end
+[2026-11-17 22:47:13] I (1966432) Application: >> 嗯
+[2026-11-17 22:47:16] I (1970302) Application: << NO_REPLY
+[2026-11-17 22:47:16] I (1970302) StateMachine: State: idle -> speaking
+[2026-11-17 22:47:18] I (1971672) MCP: story_prefetch_armed screen=0 missing=4
+[2026-11-17 22:47:20] I (1973692) StateMachine: State: speaking -> idle
+[2026-11-17 22:47:20] I (1973722) MCP: story_prefetch_send id=2026-11-17-sae28111c remaining=3
+[2026-11-17 22:47:20] I (1973792) Application: keybar_scene_reset corr_id=kdp-1973792 src=session_end
+[2026-11-17 22:47:20] I (1974162) MCP: story_fetch_prefetch_cached corr_id=kdp-1974152 id=2026-11-17-sae28111c
+[2026-11-17 22:47:25] I (1978732) MCP: story_prefetch_send id=2026-10-28-s6db51543 remaining=2
+[2026-11-17 22:47:25] I (1978782) MCP: story_fetch_prefetch_cached corr_id=kdp-1978762 id=2026-10-28-s6db51543
+[2026-11-17 22:47:30] I (1983732) MCP: story_prefetch_send id=2026-10-27-s4195dc45 remaining=1
+[2026-11-17 22:47:30] I (1983782) MCP: story_fetch_prefetch_cached corr_id=kdp-1983762 id=2026-10-27-s4195dc45
+[2026-11-17 22:47:35] I (1988732) MCP: story_prefetch_send id=2026-10-24-sc16cfba5 remaining=0
+[2026-11-17 22:47:35] I (1988792) MCP: story_fetch_prefetch_cached corr_id=kdp-1988772 id=2026-10-24-sc16cfba5
+[2026-11-17 22:47:59] I (2012502) MCP: story_key rec_session_slot page=0
+[2026-11-17 22:47:59] I (2012932) StateMachine: State: idle -> listening
+[2026-11-17 22:47:59] I (2013392) MCP: story_prefetch_armed screen=0 missing=4
+[2026-11-17 22:47:59] I (2013392) MCP: story_list_dispatch corr_id=kdp-2013392 items=16 counter=20 degrade=false
+[2026-11-17 22:47:59] I (2013392) MCP: story_list_gate defer_front page=0 voice_front=1 restore=1
+[2026-11-17 22:48:00] I (2013492) MCP: story_prefetch_suspend page=0 voice_front=1
+[2026-11-17 22:48:00] I (2014142) MCP: story_vad_recording_enter consumed=1 page=2
+[2026-11-17 22:48:00] I (2014382) MCP: story_key discard_rec cancel_count=3
+[2026-11-17 22:48:00] I (2014382) Application: local_close_settle corr_id=kdp-2014382 src=discard_record state=session_end_requested
+[2026-11-17 22:48:00] I (2014402) StateMachine: State: listening -> idle
+[2026-11-17 22:48:00] I (2014402) Application: local_close_settle corr_id=kdp-2014402 src=overlay_close state=idle
+[2026-11-17 22:48:00] I (2015382) Application: >> Okay
+[2026-11-17 22:48:00] I (2015682) Application: keybar_scene_reset corr_id=kdp-2015682 src=session_end
+[2026-11-17 22:48:06] I (2019742) Application: << 嗯～时间不早啦
+[2026-11-17 22:48:06] I (2019742) StateMachine: State: idle -> speaking
+[2026-11-17 22:48:08] I (2021722) Application: << 快十一点了，早点睡吧，明天还要上学呢～晚安
+[2026-11-17 22:48:13] I (2027012) StateMachine: State: speaking -> idle
+[2026-11-17 22:48:13] I (2027032) Application: keybar_scene_reset corr_id=kdp-2027032 src=session_end
+[2026-11-17 22:48:15] I (2029382) MCP: story_key rec_session_slot page=0
+[2026-11-17 22:48:15] I (2029432) StateMachine: State: idle -> listening
+[2026-11-17 22:48:16] I (2030302) MCP: story_prefetch_armed screen=0 missing=4
+[2026-11-17 22:48:16] I (2030312) MCP: story_list_dispatch corr_id=kdp-2030302 items=16 counter=20 degrade=false
+[2026-11-17 22:48:16] I (2030362) MCP: story_list_gate defer_front page=0 voice_front=1 restore=1
+[2026-11-17 22:48:16] I (2030392) MCP: story_prefetch_suspend page=0 voice_front=1
+[2026-11-17 22:48:18] I (2031442) MCP: story_vad_recording_enter consumed=1 page=2
+[2026-11-17 22:48:21] I (2035092) MCP: story_key discard_rec cancel_count=4
+[2026-11-17 22:48:21] I (2035102) Application: local_close_settle corr_id=kdp-2035102 src=discard_record state=session_end_requested
+[2026-11-17 22:48:21] I (2035362) StateMachine: State: listening -> idle
+[2026-11-17 22:48:21] I (2035362) Application: local_close_settle corr_id=kdp-2035362 src=overlay_close state=idle
+[2026-11-17 22:48:21] I (2036082) Application: keybar_scene_reset corr_id=kdp-2036082 src=session_end
+[2026-11-17 22:48:22] I (2036332) Application: >> 嗯
+[2026-11-17 22:48:26] I (2040182) Application: << 嗯
+[2026-11-17 22:48:30] I (2043892) StateMachine: State: idle -> speaking
+[2026-11-17 22:48:30] I (2043912) MCP: story_prefetch_armed screen=0 missing=4
+[2026-11-17 22:48:32] I (2046322) Application: << 睡吧，晚安～
+[2026-11-17 22:48:32] I (2046802) StateMachine: State: speaking -> idle
+[2026-11-17 22:48:32] I (2046822) MCP: story_prefetch_send id=2026-11-17-sae28111c remaining=3
+[2026-11-17 22:48:32] I (2047282) Application: keybar_scene_reset corr_id=kdp-2047282 src=session_end
+[2026-11-17 22:48:33] I (2047342) MCP: story_fetch_prefetch_cached corr_id=kdp-2047332 id=2026-11-17-sae28111c
+[2026-11-17 22:48:38] I (2051872) MCP: story_prefetch_send id=2026-10-28-s6db51543 remaining=2
+[2026-11-17 22:48:38] I (2051942) MCP: story_fetch_prefetch_cached corr_id=kdp-2051902 id=2026-10-28-s6db51543
+[2026-11-17 22:49:44] I (2118352) MCP: story_key rec_session_slot page=0
+[2026-11-17 22:49:44] I (2118792) StateMachine: State: idle -> listening
+[2026-11-17 22:49:45] I (2119252) MCP: story_prefetch_armed screen=0 missing=4
+[2026-11-17 22:49:45] I (2119252) MCP: story_list_dispatch corr_id=kdp-2119242 items=16 counter=20 degrade=false
+[2026-11-17 22:49:45] I (2119252) MCP: story_list_gate defer_front page=0 voice_front=1 restore=1
+[2026-11-17 22:49:45] I (2119352) MCP: story_prefetch_suspend page=0 voice_front=1
+[2026-11-17 22:49:46] I (2119962) MCP: story_vad_recording_enter consumed=1 page=2
+[2026-11-17 22:49:51] I (2126152) Application: >> 明天吃烤肉呀！明天吃烤肉
+[2026-11-17 22:49:52] I (2126332) MCP: story_guide_speech_edge substate=1
+[2026-11-17 22:49:55] W (2129512) MCP: story_guide_speech_watchdog substate=0 audio=none
+[2026-11-17 22:49:58] I (2132352) MCP: story_key discard_rec cancel_count=5
+[2026-11-17 22:49:58] I (2132362) Application: local_close_settle corr_id=kdp-2132362 src=discard_record state=session_end_requested
+[2026-11-17 22:49:58] I (2132402) StateMachine: State: listening -> idle
+[2026-11-17 22:49:58] I (2132402) Application: local_close_settle corr_id=kdp-2132402 src=overlay_close state=idle
+[2026-11-17 22:49:58] I (2133112) Application: keybar_scene_reset corr_id=kdp-2133112 src=session_end
+[2026-11-17 22:49:59] I (2133272) Application: >> うん
+[2026-11-17 22:50:02] I (2136532) Application: << 嗯
+[2026-11-17 22:50:02] I (2136532) StateMachine: State: idle -> speaking
+[2026-11-17 22:50:04] I (2138082) Application: << 晚安啦～
+[2026-11-17 22:50:06] I (2140082) StateMachine: State: speaking -> idle
+[2026-11-17 22:50:06] I (2140112) Application: keybar_scene_reset corr_id=kdp-2140112 src=session_end
+[2026-11-17 22:51:03] I (2197792) MCP: story_key rec_session_slot page=0
+[2026-11-17 22:51:03] I (2197912) StateMachine: State: idle -> listening
+[2026-11-17 22:51:04] I (2198702) MCP: story_prefetch_armed screen=0 missing=4
+[2026-11-17 22:51:04] I (2198702) MCP: story_list_dispatch corr_id=kdp-2198702 items=16 counter=20 degrade=false
+[2026-11-17 22:51:04] I (2198702) MCP: story_list_gate defer_front page=0 voice_front=1 restore=1
+[2026-11-17 22:51:04] I (2198802) MCP: story_prefetch_suspend page=0 voice_front=1

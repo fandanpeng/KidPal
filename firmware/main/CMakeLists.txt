@@ -161,6 +161,13 @@ set(SOURCES "audio/audio_codec.cc"
             # （KIDPAL_LOG_TIME_PREFIX_CAP=32 / KIDPAL_LOG_SYSINFO_INTERVAL_MS=60000LL）。
             # main 目录非 GLOB, 必须在此显式登记（persist 包教训：登记是缺口高发位）。
             "diagnostics/log_semantics.c"
+            # 包 261116-channel-resident-core（真机轮 B 修复轮）：session_voice_watch.c =
+            # 语音会话「有效语音证据」看门缝（quiet_s 主累加器 / 电平可信窗 / asr 新鲜窗 /
+            # 诊断限频决策表；冻结尾宏 KIDPAL_VW_* 住 session_voice_watch.h）。零芯片依赖 /
+            # 零 ESP-IDF / 零 FreeRTOS / 零 LVGL -> host_app linux target 与设备树同源
+            # （host 接线见 test/host_app/main/CMakeLists.txt HOST_ACCEPTANCE_SRCS）。
+            # main 目录非 GLOB, 必须在此显式登记（persist 包教训：登记是缺口高发位）。
+            "session_voice_watch.c"
             "assets.cc"
             "main.cc"
             )

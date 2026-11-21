@@ -1,0 +1,404 @@
+{
+  "changeId": "261117-session-end-intent-longretry",
+  "title": "云端结束意图三段补链 + 自动重连封顶长跑与离线期人工意向不丢",
+  "rigor": "full",
+  "sourceType": "proposal",
+  "origin": {
+    "type": "proposal",
+    "upstreamType": "proposal",
+    "upstreamRef": "delivery/workstreams/261115-session-channel-resident/PROPOSAL.md",
+    "upstreamFrozen": "sha1:bc53e2b9d5cf772d",
+    "workstream": "261115-session-channel-resident"
+  },
+  "subsystem": "firmware control end_session 消费与自动重连策略 + front display 门禁与提示词承载",
+  "story": "S-F1.4 · 日程提醒（离线期提醒必达与自愈）+ requirements §2.1 结束通道②（云端结束意图）+ requirements §2.1 结束通道③（再按 KEY）+ requirements §2.2 四态演出回归",
+  "planRef": "delivery/taskpackages/261117-session-end-intent-longretry/plan.md",
+  "sourceRefs": [
+    "docs/requirements.md#§2.1",
+    "docs/requirements.md#S-F1.4",
+    "docs/architecture.md#§5.2",
+    "docs/architecture.md#§6.4",
+    "docs/contracts/interface-contract.md#§1.4",
+    "docs/contracts/interface-contract.md#§1.5",
+    "docs/contracts/interface-contract.md#§1.6",
+    "docs/decisions/ADR.md#ADR-019",
+    "delivery/review/261115-arch-review-session-channel-resident/PROPOSAL.md#T1",
+    "delivery/review/261115-arch-review-session-channel-resident/PROPOSAL.md#T2",
+    "delivery/review/261115-arch-review-session-channel-resident/PROPOSAL.md#T5",
+    "docs/debt/tech/TECH-261014-session-end-channels-unwired.md",
+    "docs/debt/tech/TECH-261014-autoconnect-gives-up-silently.md"
+  ],
+  "acceptanceRefs": [
+    "docs/requirements.md#§2.1",
+    "docs/requirements.md#S-F1.4",
+    "docs/contracts/interface-contract.md#§1.4",
+    "docs/contracts/interface-contract.md#§1.5",
+    "docs/contracts/interface-contract.md#§1.6",
+    "delivery/review/261115-arch-review-session-channel-resident/PROPOSAL.md#§5"
+  ],
+  "acceptance": [
+    "SEI-A1",
+    "SEI-A2",
+    "SEI-A3",
+    "SEI-A4",
+    "SEI-B1",
+    "SEI-B2",
+    "SEI-B3",
+    "SEI-B4",
+    "SEI-C1"
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/session_end_intent_longretry.acceptance.c",
+    "server/acceptance/test_session_end_intent.acceptance.py",
+    "server/acceptance/test_record_dialogue_guide.acceptance.py",
+    "firmware/main/test/boot_auto_connect.acceptance.c",
+    "firmware/main/test/session_channel_resident.acceptance.c"
+  ],
+  "redBaselineCommand": "host: wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf（仓根起）；server: python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance（仓根起）",
+  "redBaselineResult": "acceptance-author 实跑（2026-11-19，HEAD 05417c1f）：server = 495 passed / 7 failed / 9 deselected / 43 subtests（零连带红；7 红 = RDG-A5 frozen-inversion 1 + SEI-B1 1 + SEI-B2 2 + SEI-B3 2 + SEI-B4 1，均为设计态红）；host = 322 Tests / 5 Failures（3 上游存量 p1_auxbar_style AB-A1/A2/A4 + 本包 K6-A2 退避表 re-baseline、SCR-A2 意向位加固两处设计态红）；新 firmware 冻结件注册前 standalone 通道 = 5 Tests / 5 Failures（SEI-C1/A1/A2/A3/A4 各首红，编译零 error 零 warning）。待 host_app/main/CMakeLists.txt 注册后回跑 host 全量（预期 327 Tests）。",
+  "exitCriteria": [
+    "KSE-E1: Pod 内冻结验收覆盖 SEI-A1–A4 与 SEI-B1–B4 全部断言；红基线与变异证据齐全；relay 侧与 points spike 两条天然保绿齿逐条列证。",
+    "KSE-E2: 冻结齿反转显式申报——test_record_dialogue_guide.acceptance.py 的 self_push=True + end_session 由 assertFalse 改 assertTrue，断言消息随裁定改写；boot_auto_connect.acceptance.c 的 K6-A2 tooth5 按新退避表重写。每条列出「旧钉什么 → 新钉什么 → 为什么」。",
+    "KSE-E3: 部署面承载——workspace-kidpal AGENTS.md 与 OPENCLAW_SYSTEM_PROMPT_CARRIER 的静态语义三面相等不变式保绿（ADR-001）；prompt 落 ECS 后与仓内制品一致。",
+    "KSE-E4: 一轮真机轮 B（human 持板）全绿，编号沿 package-split §4.3 B1–B8：B1 说「拜拜」全链通（模型产薄意图 → front 截获 → 自推恰一帧 → 设备结束会话、麦克风关、按 OQ3=c 回落、通道仍常驻）；B2 告别语不误伤（「拜拜，明天再聊」只结束会话）；B3 伪造防护（引擎流注入 end_session → relay 恒拒、仅 front 截获-自推单源可下发）；B4 拔网线自愈（退避 5/10/20/40/60 后稳态 60s；恢复后自动重连；期间按 KEY 不再静默 no-op、连上后接续）；B5 重启 front 自愈（60s 内自动重连，对照原始事故）；B6 离线期提醒不丢（60s 超时重推 ×3 覆盖窗；覆盖不到 = 如实记录，不在本批扩范围）；B7 离线 30 分钟电量差（回填 arch §8.1 风险 15）；B8 长跑期人工入口不僵死（每次有审计行、连上后能接续，绝不「按了永远没反应」）。60s 自动关闭在轮 A 已首次发生（A6），本轮回证即可。",
+    "KSE-E5: 三源日志互证（设备 KPLOG / front systemd / 引擎 docker）；证据落本包 current/。"
+  ],
+  "iterationBudget": 3,
+  "fixBudget": 4,
+  "supervisorBlockBudget": 2,
+  "contractRefs": [
+    "docs/contracts/interface-contract.md#§1.4",
+    "docs/contracts/interface-contract.md#§1.5",
+    "docs/contracts/interface-contract.md#§1.6"
+  ],
+  "docRefs": [
+    "delivery/workstreams/261115-session-channel-resident/PROPOSAL.md",
+    "delivery/review/261115-arch-review-session-channel-resident/PROPOSAL.md",
+    "delivery/review/261115-arch-review-session-channel-resident/package-split.md",
+    "docs/requirements.md",
+    "docs/architecture.md",
+    "docs/contracts/interface-contract.md",
+    "docs/decisions/ADR.md"
+  ],
+  "docsSyncRequired": false,
+  "docsSyncReason": "契约 §1.4/§1.5/§1.6 与 arch §5.2/§6.4 已随架构批冻结；本包只兑现实现与 prompt 承载，不改 spec 语义。",
+  "docsOwner": "integrator",
+  "securityReviewRequired": false,
+  "adrRequired": false,
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline",
+    "firmware-build",
+    "live-manual"
+  ],
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": [
+      {
+        "acceptance": "SEI-C1: 新冻结验收件登记进 HOST_ACCEPTANCE_SRCS 且位次先于 host_infra_smoke",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "host_app/main/CMakeLists.txt 删本件登记行",
+        "command": "wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf（执行目录 firmware/main/test/host_app）",
+        "evidence": "SEI-C1 转红：「HOST_ACCEPTANCE_SRCS 无本冻结件登记行」；还原后全绿"
+      },
+      {
+        "acceptance": "SEI-A1: mcp_server.cc control case 0 内 EndVoiceSession( 恰 1、AbortSpeaking( 恰 0、SendStopListening( 恰 0；case 1 保绿",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "case 0 改回 AbortSpeaking(kAbortReasonNone)",
+        "command": "wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf（执行目录 firmware/main/test/host_app）",
+        "evidence": "SEI-A1 转红：「case 0 内 EndVoiceSession( = 0 处（冻结恰 1）」；还原后全绿"
+      },
+      {
+        "acceptance": "SEI-A2: kAutoConnectBackoffS 首定义值序 5<10<20<40<60 + kAutoConnectSteadyRetryS 首定义含 60",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "退避表改回 {5,10,20}",
+        "command": "wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf（执行目录 firmware/main/test/host_app）",
+        "evidence": "SEI-A2 转红：「首定义缺档位（须含 5/10/20/40/60 全五档）」；还原后全绿"
+      },
+      {
+        "acceptance": "SEI-A3: 长跑无 attempt 上限字面、三退出条件与网络断退出请求位在场、清 in-flight 先于 Schedule 补投",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "删 HandleNetworkDisconnectedEvent 的 network_exit_requested_ 置位",
+        "command": "wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf（执行目录 firmware/main/test/host_app）",
+        "evidence": "SEI-A3 转红：「HandleNetworkDisconnectedEvent 区无 network_exit_requested_ 置位」；还原后全绿"
+      },
+      {
+        "acceptance": "SEI-A4: 五个人工入口 in-flight 分支置 pending_manual_intent_ + 审计行 + return；task 段查位清位",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "ToggleChat in-flight 分支删 pending_manual_intent_ 置位",
+        "command": "wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf（执行目录 firmware/main/test/host_app）",
+        "evidence": "SEI-A4 转红：「ToggleChat in-flight 分支未置 pending_manual_intent_」；还原后全绿"
+      },
+      {
+        "acceptance": "SEI-B1: self_push 放行 end_session；relay 缺省恒拒；points 类 self_push 恒拒",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "display_schema.py 豁免集缩回 {start_organizing}",
+        "command": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance",
+        "evidence": "SEI-B1 转红：「自推通路仍拒 end_session」；还原后 502 passed"
+      },
+      {
+        "acceptance": "SEI-B2: 引擎 display 流 control/end_session 被截获，设备腿恰收一帧自推、零降级 text、relay 无透传",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "front_app.py 截获接线断开（if False and ...）",
+        "command": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance",
+        "evidence": "SEI-B2 两条转红：设备腿 control/end_session 帧数 = 0；还原后绿"
+      },
+      {
+        "acceptance": "SEI-B3: 两条 relay 入口单意图设备显示帧恰 1（无二次截获/回环）；同批两块同型意图恰 2 帧",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "_consume_end_session_intent 自推两帧",
+        "command": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance",
+        "evidence": "SEI-B3 两条转红：单块设备显示帧总数 = 2（应恰 1）；还原后绿"
+      },
+      {
+        "acceptance": "SEI-B4: AGENTS.md 告别回合行 + home 行收窄；三面相等载体零 diff",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "AGENTS.md home 行重加「再见」",
+        "command": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance",
+        "evidence": "SEI-B4 转红：「home 行仍含『再见』」；还原后绿"
+      }
+    ]
+  },
+  "crossEnd": {
+    "counterparts": [
+      {
+        "path": "server/gateway/display_schema.py",
+        "symbol": "validate_display"
+      },
+      {
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "pump_upstream_to_client"
+      },
+      {
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "_push_display_payload"
+      },
+      {
+        "path": "firmware/main/mcp_server.cc",
+        "symbol": "McpServer::DoTool"
+      }
+    ],
+    "exempt": ""
+  },
+  "changeManifest": [
+    "firmware/main/mcp_server.cc",
+    "firmware/main/application.cc",
+    "firmware/main/application.h",
+    "firmware/main/test/session_end_intent_longretry.acceptance.c",
+    "firmware/main/test/boot_auto_connect.acceptance.c",
+    "firmware/main/test/session_channel_resident.acceptance.c",
+    "firmware/main/test/host_app/main/CMakeLists.txt",
+    "server/gateway/display_schema.py",
+    "server/gateway/front/front_app.py",
+    "server/acceptance/test_session_end_intent.acceptance.py",
+    "server/acceptance/test_record_dialogue_guide.acceptance.py",
+    "server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md",
+    "server/deploy/OPENCLAW_SYSTEM_PROMPT_CARRIER",
+    "server/deploy/provider.config.yaml"
+  ],
+  "impactedTestsSeed": [
+    {
+      "path": "server/acceptance/test_record_dialogue_guide.acceptance.py",
+      "kind": "frozen-inversion",
+      "note": "红面唯一一处 = test_rdg_a5_self_push_fork_admits_front_start_organizing（约 :1296-1300）：self_push=True + end_session 由 assertFalse 改 assertTrue，断言消息随裁定改写；同件散文面（模块 docstring、冻结契约复述、coverage 注释）同批对账。relay 缺省路径的 end_session assertFalse 保绿、不得顺手一起翻。"
+    },
+    {
+      "path": "server/acceptance/test_points_e2e_spike.acceptance.py",
+      "kind": "must-stay-green",
+      "note": "K0PTS-A3：GATEWAY_DECISION_CONTROL_ACTIONS 四值逐个 assertIn（故 end_session 不得从该集合摘出，只扩豁免口）；add_points/redeem_points 在 self_push 下恒拒；end_session relay 缺省恒拒。K0PTS-A4：_consume_points_intent 仍须在 _relay_display_blocks_to_device 函数体内被引用，区锚函数名不得改。"
+    },
+    {
+      "path": "firmware/main/test/boot_auto_connect.acceptance.c",
+      "kind": "frozen-rebaseline",
+      "note": "真红面 = K6-A2 tooth 7（钉 `[3]` 字面），按新表重钉为「值序 5<10<20<40<60」+「kAutoConnectSteadyRetryS 首定义片段含 60」，放弃钉数组长度字面；tooth 6 新表下仍绿但判别力被稀释，建议同批收紧追加 40/60 位序。同批改写散文面 :38 / :64 / :257 / :320-327 / :694 / :1589 / :1628。"
+    },
+    {
+      "path": "firmware/main/test/session_channel_resident.acceptance.c",
+      "kind": "tighten",
+      "note": "SCR-A2 现为 contains 断言（「守卫在场」），本包改动后原样保绿；重锚性质 = 加固（非反转）：升级为「守卫在场 + pending_manual_intent_ 置位 + 审计行」三件，把 P1 转手的跨包不变量钉进 P1 冻结件。同件 SCR-A1/A3/A5/A7/A8/A15 均在改动半径内，逐条列证保绿。"
+    },
+    {
+      "path": "firmware/main/test/record_session_lifecycle.acceptance.c",
+      "kind": "must-stay-green",
+      "note": "RSL2-A3 硬雷：HandleStartListeningEvent 内须含字面「AutoConnect in-flight」（日志文本不得改写）、该锚到其后第一个 return; 之间须含 kidpal_story_session_ctx_set(0、全函数该清位 ≥3。SEI-A4 插入槽必须在该清位之后、return; 之前，且不得新增任何 return;。"
+    },
+    {
+      "path": "firmware/main/test/record_session_live.acceptance.c",
+      "kind": "must-stay-green",
+      "note": "RSL-A5 tooth 4 硬雷：[case KSPV2_ACT_DISCARD_RECORD: → case KSPV2_ACT_NONE:) 区断言 StopListening( 计数恰 0 且读原始文件不剥注释——改写 DISCARD_RECORD 注释时不得写出带左括号的 StopListening( 字面（沿用「listen stop」无括号措辞）；tooth 3 另钉 SendKidpalStoryDiscard( 偏移先于 CloseAudioChannel。"
+    },
+    {
+      "path": "firmware/main/test/voice_round_ui.acceptance.c",
+      "kind": "must-stay-green",
+      "note": "OCE-A1：HandleEndVoiceSessionEvent 区九项计数与三处次序（ResetDecoder < AbortSpeaking < SendStopListening）；CloseAudioChannel() 恰 0、ScheduleResidentRebuild() 恰 0、LOW_POWER 恰 0。SEI-A4 意向位就插在该函数守卫块，任何字面误入即红。"
+    },
+    {
+      "path": "firmware/main/test/record_dialogue_guide.acceptance.c",
+      "kind": "must-stay-green",
+      "note": "RDG-F1 钉 kidpal_display_control_action 决策表：end_session 返回 0 不得移位（SEI-A1 只改 case 0 动作、不改 view_router 映射值）。"
+    },
+    {
+      "path": "firmware/main/test/points_spike.acceptance.c",
+      "kind": "must-stay-green",
+      "note": "K0PTS-F1 同样钉 end_session==0 与 add_points/redeem_points 返回 UNKNOWN，与固件 RDG-F1 互为独立承载。"
+    },
+    {
+      "path": "firmware/main/test/host_app/main/CMakeLists.txt",
+      "kind": "must-stay-green",
+      "note": "新增验收件登记行必须置于 host_infra_smoke.acceptance.c 之前（注册序纪律）；多件冻结验收（K6-A6、RSL2、KCN-C10、K2PTS 等）各自钉注册序，位置错会一次打红多件。"
+    },
+    {
+      "path": "server/acceptance/test_session_channel_resident.acceptance.py",
+      "kind": "must-stay-green",
+      "note": "SCRF-B7 钉 story_record_ctx_enter 在 front_app.py 内恰 1 次（单一 emit 点）——SEI-B2 新函数与新审计行不得复用该 token；SCRF-B6 列 test_record_dialogue_guide.acceptance.py 为不得静默删件的 oracle（改可以、删不行）。"
+    },
+    {
+      "path": "server/acceptance/test_points_ledger_core.acceptance.py",
+      "kind": "must-stay-green",
+      "note": "以 self_push=True 真跑 validate_display 的 points 面判据：豁免口扩到 end_session 后必须仍逐条保绿，是「豁免口未误扩」的独立承载（server/tests/test_points_spike_units.py 同族）。"
+    },
+    {
+      "path": "server/tests/test_points_spike_units.py",
+      "kind": "must-stay-green",
+      "note": "同族 self_push 放行/reject 单测；SEI-B1 扩豁免口后保绿。"
+    },
+    {
+      "path": "server/acceptance/test_261022_m5_k1_prompt_carrier_migration.acceptance.py",
+      "kind": "must-stay-green",
+      "note": "K1-E1 五行回合路由逐行定位 + K1-E1 v11 sha256 零 diff（server/deploy/openclaw-system-prompt.v11.md 绝对零 diff）+ K1-E3 静态面声明接线四件；SEI-B4 改 AGENTS.md 后全部保绿。"
+    },
+    {
+      "path": "server/acceptance/test_261023_agents_md_static_semantics_alignment.acceptance.py",
+      "kind": "must-stay-green",
+      "note": "节窗口判法：新节标题不得含 课表/故事/提醒/记忆/底线 五词；全文负锚禁 （v12）/旧守则/KIDPAL_SEMANTIC_JSON。"
+    },
+    {
+      "path": "server/acceptance/test_prompt_v7_round_routing.acceptance.py",
+      "kind": "must-stay-green",
+      "note": "PN-A4 / RF-A4 已 supersede 改钉 AGENTS.md 回合路由行，SEI-B4 新行不得破坏世系最小锚。"
+    },
+    {
+      "path": "server/acceptance/test_261022_honcho_memory.acceptance.py",
+      "kind": "must-stay-green",
+      "note": "K3 记忆节 heading 正则与 needle 不受新节影响；另直读 front_app.py。"
+    },
+    {
+      "path": "server/tests/test_archive_guard_units.py",
+      "kind": "must-stay-green",
+      "note": "以 AST 从 front_app.py 抽三件守卫符号 exec；front_app.py 必须保持可 ast.parse（最早语法烟雾报警）。"
+    },
+    {
+      "path": "server/acceptance/test_m4k3_record_session_live.acceptance.py",
+      "kind": "must-stay-green",
+      "note": "直读 front_app.py 源文本，且被 SCRF-B6 列为不得删件的 oracle。"
+    }
+  ],
+  "uiux": {
+    "uiuxRequired": false,
+    "uiuxLevel": 0,
+    "designRefs": [],
+    "sharedUiRefs": []
+  },
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/261115-session-channel-resident/"
+  ],
+  "riskTier": "medium",
+  "riskRationale": "end_session 三段补链中 prompt 与 front 截获是 additive、设备侧只改一个 case 分支；display_schema 的 self_push 豁免口从 1 值扩到 2 值但 relay 恒拒不变；长重试改退避表形态与 task 循环边界，守卫三条件不变；新增人工意向位只在离线期活跃、稳态零路径。",
+  "gateProfile": [
+    "evidence-integrity",
+    "test-quality",
+    "state-machine",
+    "mcp-tool-contract"
+  ],
+  "mergeOrder": 78,
+  "dependsOn": [
+    "261116-channel-resident-core"
+  ],
+  "launchPreconditions": [
+    {
+      "predicate": "P1 已合 main（统一会话结束处理器与常驻模型守卫语义在场）",
+      "scope": "package:261116-channel-resident-core",
+      "status": "verified",
+      "evidence": "P1 `261116-channel-resident-core` 2026-11-19 合入本地 main（前置升级闸 PASS，human-approval d49568ee-20c7-4461-84b5-4dc49bc49e97；progress.md 2026-11-19 节）；本树 dev/pod-m2 已 ff 至 main tip 05417c1f"
+    }
+  ],
+  "decisionCoverage": [
+    {
+      "decision": "B1 · end_session 改「front 截获 + 机械自推单源」",
+      "summary": "relay 直转恒拒；self_push 豁免口扩至 end_session；设备 case 0 收口统一处理器。",
+      "sourceRefs": [
+        "docs/contracts/interface-contract.md#§1.4",
+        "docs/contracts/interface-contract.md#§1.5"
+      ],
+      "landsIn": "exitCriteria:KSE-E1"
+    },
+    {
+      "decision": "B2 · 告别回合 prompt 纪律（home 收窄）",
+      "summary": "孩子明确告别 → 口语一句 + control/end_session；不得用 home 承载告别。",
+      "sourceRefs": [
+        "docs/contracts/interface-contract.md#§1.6"
+      ],
+      "landsIn": "exitCriteria:KSE-E3"
+    },
+    {
+      "decision": "B3 · 自动重连封顶长跑 {5,10,20,40,60} + 恒 60s",
+      "summary": "3 次即止退役；守卫三条件与零第二条重连路径保持。",
+      "sourceRefs": [
+        "docs/architecture.md#§6.4"
+      ],
+      "landsIn": "exitCriteria:KSE-E1"
+    },
+    {
+      "decision": "B4 · 人工意向位（离线期入口置意向、截短退避、连上后补投）",
+      "summary": "长跑期人工入口不再永久 no-op，孩子那一次动作不丢。",
+      "sourceRefs": [
+        "docs/architecture.md#§6.4"
+      ],
+      "landsIn": "exitCriteria:KSE-E1"
+    },
+    {
+      "decision": "B5 · end_session 页面落点按 OQ3=c",
+      "summary": "三条结束通道同落点；不新增 page-landing 特例分支。",
+      "sourceRefs": [
+        "docs/contracts/interface-contract.md#§1.4",
+        "docs/architecture.md#§5.2"
+      ],
+      "landsIn": "exitCriteria:KSE-E4"
+    }
+  ],
+  "crossPackageBehaviors": [
+    {
+      "topic": "统一会话结束处理器（六触发源收口）",
+      "owner": "261116-channel-resident-core",
+      "carriedBy": "261117-session-end-intent-longretry",
+      "note": "P2 的 end_session 触发源必须收口到 P1 建立的处理器，不另起收尾路径。"
+    },
+    {
+      "topic": "常驻模型下的守卫三条件语义与 SCR-A2 重锚",
+      "owner": "261116-channel-resident-core",
+      "carriedBy": "261117-session-end-intent-longretry",
+      "note": "P2 的长重试守卫语义以 P1 的常驻模型为基线；P1 冻结件的 SCR-A2 由本包重锚。"
+    }
+  ],
+  "notes": "本包是 2 包列车的 P2（mergeOrder 78），必须从 P1 合并后的 main 起分支。与 P1 在 application.cc **同一批函数内改不相交行段**（HandleEndVoiceSessionEvent 与 HandleToggleChatEvent：P1 改收尾动作序、本包改 in-flight 守卫行），重取行号锚时须覆盖这两处。引擎侧零 diff；prompt 静态承载 = server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md，部署由 agent 按 kidpal-ecs-gateway 规程执行。条件件口径：package-split 标「条件」的 server/deploy/manifest.yaml 未入 manifest；若实施中判定必须改，走 planner 扩单通道回评补 manifest。真机轮 B 由 human 持板。 intake（2026-11-19，planner）：① 契约四分类 = NO_CONTRACT_CHANGE（architect-reviewer 只读预审：契约 §1.4/§1.5/§1.6 已由 261115 批 FROZEN landed，reviewedCommit 87dbf775；本包 = 实现走偏回归 + 设备端本地处置 + prompt 载体对账，零契约 diff、不转 /arch-change）。② 非新机制批：复用既有会话收尾、自动重连与 display 门禁子系统，无新依赖集成、无数据迁移。③ scope-map 核对：builder/fixer 实现面 allow 覆盖 firmware/** 与 server/**；验收件（*.acceptance.*）归 acceptance-author；契约面禁写不变。④ closeout 写点：docs-delta / review-packet = integrator；docs/debt 条目刷新 = integrator（scope-map 已授写槽）；TECH-261014 两结项凭据须真机轮 B 后由主线程结项，本包只刷 trigger + 收口注记。⑥ 前置技术预评（architect，2026-11-19）三处 planner 裁决：a) **不抽纯逻辑缝**——维持 `application.cc` 源锚结构齿 + 变异证据覆盖差一边界（保持与 P1 同强度口径，避免 manifest 涨到 17 条）；b) **意向位不设时效**——忠于 arch §6.4「孩子那一次动作不丢」字面，离线超长后补投的观感项显式记入验收件与真机轮观测（设界需回 /arch-change）；c) **「唤醒词」入口按两个代码点落地**（`HandleWakeWordDetectedEvent` + `WakeWordInvoke`），语义仍是 arch §6.4 的四个入口。另回填：`changeManifest` 补 3 条（`host_app/main/CMakeLists.txt` 注册序必补、`session_channel_resident.acceptance.c` SCR-A2 加固、`provider.config.yaml` 条件件保零 diff）；`impactedTestsSeed` 由 4 条扩到 19 条（含 record_session_lifecycle / record_session_live / voice_round_ui 三颗必红雷与 AGENTS.md 承载四件）。"
+}

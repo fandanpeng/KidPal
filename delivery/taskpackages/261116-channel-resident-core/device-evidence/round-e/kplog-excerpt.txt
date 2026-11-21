@@ -1,0 +1,16 @@
+=== round E · D3-UI 自动收尾重绘（2026-11-19） ===
+[2026-11-19 07:49:21] I (29773613) Application: story_empty_session_timeout corr_id=kdp-12996397 seconds=2 quiet=60 asr=113 suspect=0 src=empty_story
+[2026-11-19 07:49:21] I (29773983) kidpal_rn: PAGE_RENDER in=3 local=3 sview=0 ssess=0 active_ok=1
+[2026-11-19 07:49:21] I (29773993) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=111
+[2026-11-19 07:49:21] I (29774413) MCP: story_session_end corr_id=kdp-12996584 page=0
+[2026-11-19 07:49:53] I (29806233) kidpal_rn: PAGE_RENDER in=3 local=3 sview=2 ssess=2 active_ok=1
+[2026-11-19 07:50:15] I (29828843) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=22
+[2026-11-19 07:50:25] I (29837673) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=22
+
+=== round E · 提醒必达（测试提醒 rmd-test-261116-220242） ===
+[2026-11-19 22:02:59] I (80992283) MCP: alert_render corr_id=rmd-test-261116-220242 raised=1 actions=7 tone=ogg_popup speak_leg=engine armed=1
+[2026-11-19 22:02:59] I (80992283) MCP: alert_receipt corr_id=rmd-test-261116-220242 rpc_id=1840316458 ack=true dequeued=true
+[2026-11-19 22:03:00] I (80993103) Application: << 这是一条测试提醒
+[2026-11-19 22:03:00] I (80993103) LcdDisplay: voice_look_skip scene=2 top=7 reason=reminder_persist
+[2026-11-19 22:03:00] I (80993113) LcdDisplay: voice_look_skip scene=2 top=7 reason=reminder_persist
+[2026-11-19 22:03:03] I (80996233) LcdDisplay: voice_look_skip scene=2 top=7 reason=reminder_persist

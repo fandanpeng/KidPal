@@ -1,0 +1,56 @@
+# engine docker excerpt — 261116 P1 round A (2026-11-17 22:46–22:53 CST)
+# source: ECS docker logs xiaozhi-esp32-server (pulled 2026-11-17)
+261117 22:46:32[0.9.6_SiQwOpEdnonoOp][core.connection]-INFO-kidpal record-context: 进入记录语境（抑制 LLM）
+261117 22:46:32[0.9.6_SiQwOpEdnonoOp][core.handle.textMessageProcessor]-INFO-收到listen消息：{"session_id":"c1fa8409-704e-4bf9-8bfc-e6762f7980bd","type":"listen","state":"start","mode":"auto"}
+261117 22:46:44[0.9.6_00000000000000][core.providers.asr.base]-INFO-识别文本: 123 45677452321。
+261117 22:46:44[0.9.6_SiQwOpEdnonoOp][core.connection]-INFO-kidpal record-context: 抑制 LLM 派发（记录语境闭嘴回显）: 123 45677452321。
+261117 22:46:49[0.9.6_SiQwOpEdnonoOp][core.handle.textMessageProcessor]-INFO-收到listen消息：{"session_id":"c1fa8409-704e-4bf9-8bfc-e6762f7980bd","type":"listen","state":"stop"}
+261117 22:46:50[0.9.6_00000000000000][core.providers.asr.base]-INFO-识别文本: 嗯。
+261117 22:46:50[0.9.6_SiQwOpEdnonoOp][core.handle.abortHandle]-INFO-Abort message received
+261117 22:46:50[0.9.6_SiQwOpEdnonoOp][core.handle.abortHandle]-INFO-Abort message received-end
+261117 22:46:50[0.9.6_SiQwOpEdnonoOp][core.connection]-INFO-kidpal record-context: 退出记录语境（恢复 LLM）
+261117 22:46:50[0.9.6_SiQwOpEdnonoOp][core.connection]-INFO-大模型收到用户消息: 嗯。
+261117 22:46:53[0.9.6_SiQwOpEdnonoOp][core.handle.sendAudioHandle]-INFO-发送第一段语音: 嗯～
+261117 22:46:58[0.9.6_SiQwOpEdnonoOp][core.connection]-INFO-kidpal record-context: 进入记录语境（抑制 LLM）
+261117 22:46:58[0.9.6_SiQwOpEdnonoOp][core.handle.textMessageProcessor]-INFO-收到listen消息：{"session_id":"c1fa8409-704e-4bf9-8bfc-e6762f7980bd","type":"listen","state":"start","mode":"auto"}
+261117 22:47:05[0.9.6_00000000000000][core.providers.asr.base]-INFO-识别文本: 明天是星期几？
+261117 22:47:05[0.9.6_SiQwOpEdnonoOp][core.connection]-INFO-kidpal record-context: 抑制 LLM 派发（记录语境闭嘴回显）: 明天是星期几？
+261117 22:47:12[0.9.6_SiQwOpEdnonoOp][core.handle.textMessageProcessor]-INFO-收到listen消息：{"session_id":"c1fa8409-704e-4bf9-8bfc-e6762f7980bd","type":"listen","state":"stop"}
+261117 22:47:13[0.9.6_00000000000000][core.providers.asr.base]-INFO-识别文本: 嗯。
+261117 22:47:13[0.9.6_SiQwOpEdnonoOp][core.handle.abortHandle]-INFO-Abort message received
+261117 22:47:13[0.9.6_SiQwOpEdnonoOp][core.handle.abortHandle]-INFO-Abort message received-end
+261117 22:47:13[0.9.6_SiQwOpEdnonoOp][core.connection]-INFO-kidpal record-context: 退出记录语境（恢复 LLM）
+261117 22:47:13[0.9.6_SiQwOpEdnonoOp][core.connection]-INFO-大模型收到用户消息: 嗯。
+261117 22:47:16[0.9.6_SiQwOpEdnonoOp][core.handle.sendAudioHandle]-INFO-发送第一段语音: NO_REPLY
+261117 22:47:59[0.9.6_SiQwOpEdnonoOp][core.connection]-INFO-kidpal record-context: 进入记录语境（抑制 LLM）
+261117 22:48:00[0.9.6_SiQwOpEdnonoOp][core.handle.textMessageProcessor]-INFO-收到listen消息：{"session_id":"c1fa8409-704e-4bf9-8bfc-e6762f7980bd","type":"listen","state":"start","mode":"auto"}
+261117 22:48:01[0.9.6_SiQwOpEdnonoOp][core.handle.textMessageProcessor]-INFO-收到listen消息：{"session_id":"c1fa8409-704e-4bf9-8bfc-e6762f7980bd","type":"listen","state":"stop"}
+261117 22:48:01[0.9.6_00000000000000][core.providers.asr.base]-INFO-识别文本: Okay.
+261117 22:48:01[0.9.6_SiQwOpEdnonoOp][core.connection]-INFO-kidpal record-context: 退出记录语境（恢复 LLM）
+261117 22:48:01[0.9.6_SiQwOpEdnonoOp][core.connection]-INFO-大模型收到用户消息: Okay.
+261117 22:48:06[0.9.6_SiQwOpEdnonoOp][core.handle.sendAudioHandle]-INFO-发送第一段语音: 嗯～时间不早啦
+261117 22:48:16[0.9.6_SiQwOpEdnonoOp][core.connection]-INFO-kidpal record-context: 进入记录语境（抑制 LLM）
+261117 22:48:16[0.9.6_SiQwOpEdnonoOp][core.handle.textMessageProcessor]-INFO-收到listen消息：{"session_id":"c1fa8409-704e-4bf9-8bfc-e6762f7980bd","type":"listen","state":"start","mode":"auto"}
+261117 22:48:22[0.9.6_SiQwOpEdnonoOp][core.handle.textMessageProcessor]-INFO-收到listen消息：{"session_id":"c1fa8409-704e-4bf9-8bfc-e6762f7980bd","type":"listen","state":"stop"}
+261117 22:48:22[0.9.6_00000000000000][core.providers.asr.base]-INFO-识别文本: 嗯。
+261117 22:48:22[0.9.6_SiQwOpEdnonoOp][core.connection]-INFO-kidpal record-context: 退出记录语境（恢复 LLM）
+261117 22:48:22[0.9.6_SiQwOpEdnonoOp][core.connection]-INFO-大模型收到用户消息: 嗯。
+261117 22:48:26[0.9.6_SiQwOpEdnonoOp][core.handle.sendAudioHandle]-INFO-发送第一段语音: 嗯
+261117 22:49:45[0.9.6_SiQwOpEdnonoOp][core.connection]-INFO-kidpal record-context: 进入记录语境（抑制 LLM）
+261117 22:49:45[0.9.6_SiQwOpEdnonoOp][core.handle.textMessageProcessor]-INFO-收到listen消息：{"session_id":"c1fa8409-704e-4bf9-8bfc-e6762f7980bd","type":"listen","state":"start","mode":"auto"}
+261117 22:49:52[0.9.6_00000000000000][core.providers.asr.base]-INFO-识别文本: 明天吃烤肉呀！明天吃烤肉。
+261117 22:49:52[0.9.6_SiQwOpEdnonoOp][core.connection]-INFO-kidpal record-context: 抑制 LLM 派发（记录语境闭嘴回显）: 明天吃烤肉呀！明天吃烤肉。
+261117 22:49:59[0.9.6_SiQwOpEdnonoOp][core.handle.textMessageProcessor]-INFO-收到listen消息：{"session_id":"c1fa8409-704e-4bf9-8bfc-e6762f7980bd","type":"listen","state":"stop"}
+261117 22:49:59[0.9.6_00000000000000][core.providers.asr.base]-INFO-识别文本: うん。
+261117 22:49:59[0.9.6_SiQwOpEdnonoOp][core.handle.abortHandle]-INFO-Abort message received
+261117 22:49:59[0.9.6_SiQwOpEdnonoOp][core.handle.abortHandle]-INFO-Abort message received-end
+261117 22:49:59[0.9.6_SiQwOpEdnonoOp][core.connection]-INFO-kidpal record-context: 退出记录语境（恢复 LLM）
+261117 22:49:59[0.9.6_SiQwOpEdnonoOp][core.connection]-INFO-大模型收到用户消息: うん。
+261117 22:50:03[0.9.6_SiQwOpEdnonoOp][core.handle.sendAudioHandle]-INFO-发送第一段语音: 嗯
+261117 22:51:05[0.9.6_SiQwOpEdnonoOp][core.connection]-INFO-kidpal record-context: 进入记录语境（抑制 LLM）
+261117 22:51:05[0.9.6_SiQwOpEdnonoOp][core.handle.textMessageProcessor]-INFO-收到listen消息：{"session_id":"c1fa8409-704e-4bf9-8bfc-e6762f7980bd","type":"listen","state":"start","mode":"auto"}
+261117 22:53:24[0.9.6_SiQwOpEdnonoOp][core.handle.textMessageProcessor]-INFO-收到listen消息：{"session_id":"c1fa8409-704e-4bf9-8bfc-e6762f7980bd","type":"listen","state":"stop"}
+261117 22:53:24[0.9.6_00000000000000][core.providers.asr.base]-INFO-识别文本: 嗯。
+261117 22:53:24[0.9.6_SiQwOpEdnonoOp][core.connection]-INFO-kidpal record-context: 退出记录语境（恢复 LLM）
+261117 22:53:24[0.9.6_SiQwOpEdnonoOp][core.connection]-INFO-大模型收到用户消息: 嗯。
+261117 22:53:28[0.9.6_SiQwOpEdnonoOp][core.handle.sendAudioHandle]-INFO-发送第一段语音: 嗯～

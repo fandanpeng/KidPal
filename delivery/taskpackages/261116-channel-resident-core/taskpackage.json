@@ -1,0 +1,781 @@
+{
+  "changeId": "261116-channel-resident-core",
+  "title": "通道常驻核心——会话结束收口到 listen stop、front 心跳保活与设备自愈巡检、60s 无语音超时接线",
+  "rigor": "full",
+  "sourceType": "proposal",
+  "origin": {
+    "type": "proposal",
+    "upstreamType": "proposal",
+    "upstreamRef": "delivery/workstreams/261115-session-channel-resident/PROPOSAL.md",
+    "upstreamFrozen": "sha1:bc53e2b9d5cf772d",
+    "workstream": "261115-session-channel-resident"
+  },
+  "subsystem": "firmware 语音会话生命周期与通道保活（application.cc / protocols）+ front 心跳与每会话收尾（front_app.py）",
+  "story": "S-F1.4 · 日程提醒（提醒必达与录音态排队例外）+ requirements §2.1 结束三通道（60s 无语音超时 / 云端结束意图上游 / 再按 KEY）+ requirements §2.3 录音态子态按键口径 + S-F2.2 · 对话式引导记录（AC4 取消与三式收尾回归）",
+  "planRef": "delivery/taskpackages/261116-channel-resident-core/plan.md",
+  "sourceRefs": [
+    "docs/requirements.md#§2.1",
+    "docs/requirements.md#§2.3",
+    "docs/requirements.md#S-F1.4",
+    "docs/requirements.md#S-F2.2-AC4",
+    "docs/architecture.md#§6.4",
+    "docs/architecture.md#§5.1.1",
+    "docs/architecture.md#§5.1.2",
+    "docs/architecture.md#§5.2",
+    "docs/contracts/interface-contract.md#§四-listen",
+    "docs/contracts/interface-contract.md#§四-kidpal_keepalive",
+    "docs/contracts/interface-contract.md#§四-kidpal_story_discard",
+    "docs/contracts/interface-contract.md#§四-kidpal_session_ctx",
+    "docs/decisions/ADR.md#ADR-019",
+    "delivery/review/261115-arch-review-session-channel-resident/PROPOSAL.md#T1",
+    "delivery/review/261115-arch-review-session-channel-resident/PROPOSAL.md#T2",
+    "delivery/review/261115-arch-review-session-channel-resident/PROPOSAL.md#T3",
+    "delivery/review/261115-arch-review-session-channel-resident/PROPOSAL.md#T4",
+    "docs/debt/tech/TECH-261114-overlay-close-channel-rebuild-churn.md",
+    "docs/debt/tech/TECH-261012-first-keypress-no-listening.md",
+    "delivery/taskpackages/261116-channel-resident-core/device-round-a-evidence.md",
+    "delivery/taskpackages/261116-channel-resident-core/device-evidence/round-b/kplog-excerpt.txt",
+    "delivery/taskpackages/261116-channel-resident-core/device-evidence/round-c/device-round-c-online-evidence.md",
+    "delivery/taskpackages/261116-channel-resident-core/device-evidence/round-c/ecs-front-journal-2120-2134.txt",
+    "delivery/taskpackages/261116-channel-resident-core/device-evidence/round-c/engine-asr-2120-2123.txt",
+    "delivery/taskpackages/261116-channel-resident-core/device-evidence/round-c/ecs-story-2026-11-18-s33477cee.md"
+  ],
+  "acceptanceRefs": [
+    "docs/requirements.md#S-F1.4",
+    "docs/requirements.md#§2.1",
+    "docs/requirements.md#§2.3",
+    "docs/requirements.md#S-F2.2-AC4",
+    "docs/architecture.md#§6.4",
+    "docs/contracts/interface-contract.md#§四-listen",
+    "docs/contracts/interface-contract.md#§四-kidpal_keepalive",
+    "delivery/review/261115-arch-review-session-channel-resident/PROPOSAL.md#§5",
+    "docs/decisions/ADR.md#ADR-013",
+    "delivery/taskpackages/261116-channel-resident-core/device-round-a-evidence.md",
+    "delivery/taskpackages/261116-channel-resident-core/device-evidence/round-b/kplog-excerpt.txt"
+  ],
+  "acceptance": [
+    "SCR-A1: 四收尾点（CloseAudioChannel helper / HandleToggleChatEvent Listening / HandleEndVoiceSessionEvent / WakeWordInvoke Listening）各区负锚 protocol_->CloseAudioChannel( = 0、ScheduleResidentRebuild( = 0、SetPowerSaveLevel(PowerSaveLevel::LOW_POWER) = 0，正锚按上下文二分（helper 区 EndVoiceSession( / toggle 与 wake-invoke 区 HandleEndVoiceSessionEvent( / handler 区 SendStopListening(），四 src 审计 token 各自在区。回引 docs/architecture.md#§6.4、docs/decisions/ADR.md#ADR-019",
+    "SCR-A2: HandleEndVoiceSessionEvent 统一处理器动作序——protocol_->SendStopListening() 恰 1、ResetDecoder() 恰 1 且位次在 Speaking 分支内（kDeviceStateSpeaking < ResetDecoder < SendStopListening）、三态门与 auto_connect_in_flight_ 守卫与 !protocol_ 早退逐字在世（261024 语义零偏移）。回引 docs/architecture.md#§6.4、docs/requirements.md#§2.3",
+    "SCR-A3: 五个真拆通道点（HandleNetworkDisconnectedEvent / Reboot / UpgradeFirmware / SetAecMode / ResetProtocol）各 protocol_->CloseAudioChannel() 恰 1（must-stay-green）。回引 docs/architecture.md#§6.4",
+    "SCR-A4: Idle 分支八件清位链逐条保留（EnableVoiceProcessing(false) / EnableWakeWordDetection(true) / kidpal_story_session_end / KidpalStorySessionEndSync / kidpal_keybar_scene_reset 含 front_is_reminder REMINDER 豁免 / kidpal_render_node_voice_end / kidpal_story_session_ctx_set(0) / RaiseReminderQueue）。回引 docs/requirements.md#S-F1.4、docs/requirements.md#§2.3",
+    "SCR-A5: 60s 无语音超时 producer——命名常量 kSessionIdleTimeoutS 值 60 + kDeviceStateListening + !s_vad_speaking 电平门 + kidpal_story_session_ctx_active() 豁免 + HandleEndVoiceSessionEvent 投递五件在世；VAD 说话沿 clock_ticks_ = 0；不接纯模型事件（SES_EVT_SESSION_TIMEOUT_60S 命中文件数保 2）。回引 docs/requirements.md#§2.1、docs/architecture.md#§5.1.1。【轮 B 重锚，2026-11-18】电平门断言极性反转：CLOCK_TICK 区 `!s_vad_speaking` **恰 0**（禁止回潮）+ 正锚 `kidpal_voice_watch_tick(` ≥1（驱动点从裸判据改为缝调用）；判据本体迁入纯逻辑缝 session_voice_watch，`clock_ticks_` 降级为诊断字段；旧钉→新钉→为什么见验收件 REVISION LOG。",
+    "SCR-A6: kidpal_keepalive no-op 分支位于 OnIncomingJson 的 #endif 之后、Unknown message type 的 ESP_LOGW 之前（区内偏移位次断言）。回引 docs/contracts/interface-contract.md#§四-kidpal_keepalive",
+    "SCR-A7: 自愈巡检——CLOCK_TICK 区 IsAudioChannelOpened( ≥1、TryStartAutoConnect( ≥1、守卫 auto_connect_in_flight_ 偏移 < IsAudioChannelOpened( 偏移、区内 OpenAudioChannel( = 0（零第二条重连路径）。回引 docs/architecture.md#§6.4",
+    "SCRF-B1: 心跳 producer（front）——channel_heartbeat_enabled() 默认开、0/false/off/no 关；一个周期设备腿恰收一帧 {\"type\":\"kidpal_keepalive\"} 且 sleep-first（窗内零帧）；=0 零帧；发送抛异常静默且 finally cancel(ws_disconnect) 仍落。回引 docs/contracts/interface-contract.md#§四-kidpal_keepalive、delivery/review/261115-arch-review-session-channel-resident/PROPOSAL.md#§5",
+    "SCRF-B2: listen stop 分层收尾——chat 零动作零注入；accumulate 非空已被归档路径消费且收尾不二次动作；pending_stop 禁 cancel 禁释放且重复 stop 幂等。回引 docs/architecture.md#§5.1.2、docs/requirements.md#S-F2.2-AC4",
+    "SCRF-B2b: pending 保护与 sweep 释放——listen stop 后 +9s 零释放、+10.5s sweep 释放且 active=false 恰一帧入归属腿（_session_legs(sid) or _alert_legs）；先投 stt 走恢复归档则不重复释放。回引 docs/architecture.md#§5.1.2",
+    "SCRF-B3: discard→stop 有序不归档——同一 session 先 kidpal_story_discard 再 listen stop → routing 回 chat、_story_finish_session 未被调、STORIES_DIR 零新增。回引 docs/contracts/interface-contract.md#§四-kidpal_story_discard、docs/requirements.md#S-F2.2-AC4",
+    "SCRF-B4: ctx 边沿兜底分态——accumulate → acc.cancel(reason=session_end_stale) + 释放；pending_stop → 不动作（只在未发 stop 时可达）；chat 但记录语境标记真 → 只释放；重复 ctx(非 story) 零新增注入。回引 docs/contracts/interface-contract.md#§四-kidpal_session_ctx",
+    "SCRF-B4b: pending_stop 边沿不动作（F-01 复发防线）——ctx(home) 到达时零 cancel、零 release_pending、零 active=false，routing 仍 pending_stop；随后 stt 仍恰一篇归档。回引 docs/architecture.md#§5.1.2",
+    "SCRF-B5: 连接级 teardown 保绿——断开 → 限时收尾、腿双摘除 + acc.cancel(reason=ws_disconnect) 逐字不变。回引 docs/architecture.md#§5.1.2",
+    "SCRF-B6: 既有冻结 oracle 保绿回归网——test_m4k1 / test_m4k3 / test_record_cancel_lifecycle / test_record_dialogue_guide / test_record_front_polish 关键 frozen 测试函数在场且全量 suite 绿留痕。回引 delivery/review/261115-arch-review-session-channel-resident/PROPOSAL.md#§5",
+    "SCRF-B7: ctx(source_page=story) 每会话**无条件**注入 kidpal_record_context active=true（真泵行为级）——① 首帧 ctx(story) 后本连接引擎腿恰 1 帧 active=true、story_list 沿边缘推；② routing 已 accumulate 的重复 ctx(story) 后累计**恰 2 帧**（每次无条件一帧）且 story_list 零新增；③ control/start_recording 消费沿在已 accumulate 时 `_story_route_display_payload` 返 True（enter_edge→consumed）且泵路径注入恰 1 帧；④ 审计 token `story_record_ctx_enter` 在 front_app.py 源文本恰 1 处，真跑泵日志含 `src=ctx_story` + `edge=true`（首）/`edge=false`（重复）+ `injected=true`。释放语义与 SCRF-B2/B2b/B4/B4b/B5 零变化。载体 = `test_scr_b7_repeat_ctx_story_injects_again_story_list_stays_edge_only` / `test_scr_b7_start_recording_consumption_injects_when_accumulating` / `test_scr_b7_audit_token_single_emit_point`。回引 docs/contracts/interface-contract.md#§四-kidpal_session_ctx、docs/decisions/ADR.md#ADR-013、device-round-a-evidence.md#三",
+    "SCRF-B8: 丢弃（kidpal_story_discard）分支内、返回前经**泵内本连接引擎腿**发 kidpal_record_context active=false（legs=[(websocket, upstream)]）——① 本连接引擎腿 active=false 恰 1 帧且帧序严格**先于**随后转发的 listen stop；② 另一已登记全局提醒腿收 0 帧（不得回退 _alert_legs；discard 分支源文本 `_alert_legs` 命中 0）；③ 重复 stop 零第二次注入（标记清单点承载幂等）；④ 全程**零 abort 帧**（本轮决策：不发 abort——轮 A 实证 abort 已收仍产 TTS + 引擎冻结纪律禁止置 client_abort）；⑤ **对照齿（must-stay-green）**：ctx+feed+stop（不发 discard）→ 恰 1 篇归档 + start_organizing 恰 1，且 active=false 出现在 stop **之后**（防修过头毁 KEY 尾音归档）。载体 = `test_scr_b8_discard_releases_context_before_forwarded_stop` / `test_scr_b8_repeated_stop_injects_no_second_release` / `test_scr_b8_discard_branch_has_no_global_alert_legs` / `test_scr_b8_key_stop_still_archives_once_and_releases_after_stop`。回引 docs/architecture.md#§5.1.2、docs/decisions/ADR.md#ADR-013、device-round-a-evidence.md#一",
+    "SCRF-B9: 会话关闭迟到帧门（front 侧）——arm 点 = `_release_record_context`（真实 discard 路径可达）；门内**丢弃**引擎腿→设备腿二进制音频帧与 `type in (tts, llm)` 文本帧，**放行** `stt` 与 `mcp`（各恰 1）；下一次 `listen start` / ctx(story) **disarm**；front 自注 speak 令牌登记后整轮放行（sentence_start + 音频 + tts stop 共 3 帧；**先判令牌后清令牌**，stop 帧放行后才清位 → 之后 tts/音频重新丢弃）；`_deliver_alert_now` 提醒 speech 同样登记令牌（提醒 mcp 帧必达 + 其后 tts 不被误丢）。载体 = `test_scr_b9_gate_drops_late_audio_tts_llm_keeps_mcp_and_stt` / `test_scr_b9_gate_disarms_on_next_listen_start_and_ctx_story` / `test_scr_b9_speak_token_allows_round_then_tts_stop_clears` / `test_scr_b9_alert_speech_registers_expected_round_token`。回引 docs/requirements.md#S-F1.4、docs/decisions/ADR.md#ADR-003、server/gateway/reminders.py 两腿投递、device-round-a-evidence.md#一",
+    "SCR-A8: 空素材空闲收尾 producer（设备 application.cc CLOCK_TICK 区，**host 不可编面 → 源锚代理**）——`kStoryEmptySessionTimeoutS` 首现到下一分号含 60、定义位次在既有无语音超时常量之后；区内 `kidpal_story_session_ctx_active()` ≥2（恰一处非否定 = 新 producer 正向记录语境门）、`!s_story_rec_entered` ≥1（有素材不命中）、`!s_vad_speaking` ≥2、`HandleEndVoiceSessionEvent()` ≥2、审计 token `story_empty_session_timeout` 在世、`OpenAudioChannel(` = 0、无 `clock_ticks_ % 10`；**交叉负锚** = 既有 60s 常量首现行仍为其定义行（新常量/注释不得写回该字面，否则 SCR-A5 假红）。载体 = `TEST_CASE(\"会话通道常驻: 空素材空闲收尾producer (SCR-A8)\")`；头注成对 `device-outcome: SCR-A8` + `host-uncompilable-path: firmware/main/application.cc`。回引 docs/requirements.md#§2.1、docs/requirements.md#§2.3、device-round-a-evidence.md#二。【轮 B 重锚，2026-11-18】素材门换源：`asr_seen` ≥1（seam 内「本会话引擎真的转写出一句」，与 front 累积器同源）+ `!s_story_rec_entered` 恰 0（旧门退役负锚）；`!s_vad_speaking` ≥2 整条退役（同一事实由 SCR-A5 全区负锚单一承载）。根因 = 轮 B 设备日志 12 条 story_vad_recording_enter 全落会话起步 1 秒内——无人说话时 VAD 也让出一记 speech 沿并把 s_story_rec_entered 置真，旧信号下 D3 在真机上结构性不可达。",
+    "SCRF-B10: 空素材收尾=释放口径（front 半；**设计态绿 must-stay-green + 轮 B 离线代理，不造红**）——空素材 stop → pending_stop → +10.5s sweep：active=false 恰 1 帧、`_story_finish_session` 零调用、STORIES_DIR 零新增、零 start_organizing、零新增 story_list、routing 回 chat；尾音幻听「嗯。」进入收尾单源但被内容守卫拒绝，同口径。载体 = `test_scr_b10_empty_material_stop_releases_without_archive` / `test_scr_b10_tail_hallucination_rejected_same_release_contract`。回引 docs/architecture.md#§5.1.2、docs/requirements.md#S-F2.2-AC4、device-round-a-evidence.md#二",
+    "SCR-A9: 有效语音判据与 60s 静默收尾（纯逻辑缝 session_voice_watch 真行为）——静默注入 120 tick：tick 1..59 返回 KVW_ACT_NONE、tick 60 恰返回 KVW_ACT_IDLE_FIRE 且 quiet_s == 60，其后 sticky（61..120 持续 FIRE）；末端 tick_s / level_run_s / asr_seen / suspect = 120 / 0 / 0 / 0。回引 docs/requirements.md#§2.1（结束通道①）、architecture.md#§5.1.1",
+    "SCR-A10: VAD 电平卡死看门狗语义（真行为，kill-shot）——恒定 vad=1 共 400 tick 且零 stt：tick 100 quiet_s == 0（可信窗内采信）、tick 101 quiet_s == 1（KIDPAL_VW_VAD_TRUST_S=100 到期）、tick 1..159 零 fire、tick 160 恰 FIRE 且 suspect == 1（sticky）；首次 fire 恰在第 160 tick。回引轮 B A6 回归（M1 电平卡死）与 human 2026-11-18 指示①",
+    "SCR-A11: 起音沿风暴拒绝（真行为，成对）——(a) 每 5 tick 一个 1 tick 尖峰（[1,0,0,0,0] 重复 200 tick）→ 首次 fire 恰 60；(b) 4 tick 连续暴发（[1,1,1,1,0] 重复 200 tick）→ 零 fire 且 quiet_s 峰值 ≤3。下界 KIDPAL_VW_VOICE_SUSTAIN_S=3 由两侧钉死。回引轮 B（M2 起音沿风暴）",
+    "SCR-A12: A7「连续讲 >90 秒不误收」承重（真行为，成对）——(a) 恒定 vad=1 共 200 tick + 每 10 tick 一次 note_asr → 零 fire 且 asr_seen == 1；(b) 恒定 vad=1 共 150 tick + 零 stt → tick 1..150 零 fire（可信窗 100 > A7 的 90 秒界，A7 不依赖云端 ASR）。回引 exitCriteria KRC-E4 A7 与 human 2026-11-18 指示①",
+    "SCR-A13: 缝状态卫生与跨会话零残留（真行为）——cfg_default 三阈值 = 3/25/100 且 idle_timeout_s 保持调用方注入值 60；50 tick 后 level_run_s / tick_s = 50/50；note_asr 后 asr_seen == 1 且 asr_age_s == 0；reset() 七字段全零（含 asr_seen / suspect）；reset 后首 tick quiet_s == 1。【2026-11-18 tighten】追加会话内软复位断言：reset_soft() 后 asr_seen == 1 且其余六件（quiet_s / level_run_s / asr_age_s / tick_s / diag_last_s / suspect）全 0；其后 reset() 仍七字段全清。回引 docs/requirements.md#§2.1、§2.3 与 M3 闩锁卫生复位",
+    "SCR-A14: 低频 listening 诊断行（真行为 + 结构）——diag_due 决策表（周期每 10 秒恰一次 / changed 提前 / 抖动被 min_gap=3 封顶 / 非法入参与时钟回退 fail-closed）；结构半：CLOCK_TICK 区 token listening_diag ≥1、字段 quiet= / vad= / rec_ctx= / asr= / suspect= / run= 各 ≥1、且 clock_ticks_ % 10 恰 0。回引 human 2026-11-18 可观测性必办、architecture.md#§5.4 轮转预算",
+    "SCR-A15: application.cc 接线六件 + 缝登记（结构，源锚代理；application.cc 不进 host 构建）——① CLOCK_TICK 区 kidpal_voice_watch_tick( 恰 1；② stt 区（\"stt\"..\"llm\"）kidpal_voice_watch_note_asr( 恰 1；③ Listening case kidpal_voice_watch_reset( ≥1；④ CLOCK_TICK 区 !s_vad_speaking 恰 0；⑤ Initialize 区 cfg_default( + idle_timeout_s + kSessionIdleTimeoutS 三件在世；⑥ CLOCK_TICK 区 !s_story_rec_entered 恰 0（D3 素材门换源）；附 seam 头六宏字面（3/25/100/10/3/999）与 firmware/main/CMakeLists.txt 登记 session_voice_watch.c。【2026-11-18 tighten】Listening 区追加迁移条件分派三件：`kidpal_voice_watch_reset_soft(&s_voice_watch)` ≥1、`kidpal_voice_watch_reset(&s_voice_watch)` ≥1、`kDeviceStateSpeaking` ≥1——防「引导播报 TTS 造成 Listening→Speaking→Listening」时全清复位把本会话素材证据（asr_seen）清掉、致有素材的故事会话被 D3 判成空素材不归档释放。回引 plan.md 轮 B 节第 14 条与 [S8] 接线六件",
+    "SCRF-C1: 段级静音幻觉过滤 + pending_stop 不归档（真机轮 C 修复轮 · 主防线，端到端）——记录语境起会话（ctx_story）→ `listen stop` 累积空落 pending_stop（`story_stop archived=false reason=pending_stop` + `session_end_boundary action=protected`，分层保护零回退）；随后引擎上行 `stt=Okay.`：`_story_feed_from_stt` 段级过滤命中（stt 整段归一化 `okay` ∈ `_FRONT_SILENT_ASR_HALLUCINATIONS`）、返回 False、`_story_finish_session` **零调用**（`_finish_spy == []`）、累积器仍空（`build_organizing_input` 为 None）、routing 仍 `pending_stop`；注入时钟 +10.5s 由既有 `_story_timeout_sweep` 释放：`active=false` 恰一帧、零 `start_organizing`、零 `story_text`、`story_list` 零新增、STORIES_DIR 零新增（不落 MD）、seq 账本不增（零盖章）、routing 回 chat；审计 `story_feed_guard dropped=silent_asr_hallucination` 恰 1。**该路径精确兑现 human「不推 story_list」原话**（会话从未进整理回合）。附：stt 转发不受影响（过滤只作用于旁路消费、不得挪到转发前或 `continue`——SCRF-B9 语义延伸）。回引 delivery/taskpackages/261116-channel-resident-core/device-evidence/round-c/（ecs-front-journal-2120-2134.txt / engine-asr-2120-2123.txt）与 human 2026-11-18 要求①②",
+    "SCRF-C2: 整理产物占位守卫（真机轮 C 修复轮 · 后防线，承重）——素材须过得了段级过滤与素材守卫（用 `好的。`：compact=2，不在段级集合、`<2` 拦不住）→ 整理回合 stub 返回占位 `（没有可整理的内容）` → 命中机械判据 R1–R4（本 case 走 **R4**：单行 + 原串整串括号包裹 + 剥壳后 8 字 ≤16；结构判据、措辞无关）→ 零归档（MD 零新增 / seq 账本不增 / 零 `story_saved_stamp`）、零 `story_text`、零 `kidpal_speak` 安抚（静默释放类）、`start_organizing` 恰 1（守卫**不得前移**到演出之前——S-F2.2-AC4 演出盖住延迟 + 261020 D4-1）、`story_list` 页面退出恰 1 且 `total==0` / `items==[]` / `restore` 缺省或 false（ORGANIZING 过渡态唯一机械退出载体——261021 R6 困页实证 + SAO-A1 已于 261021 包按同一理由重钉）、`active=false` 恰 1、routing 回 chat、审计 `story_finish archived=false reason=organize_placeholder` 恰 1（**与 `organize_failed`/`empty_material` 分档**，不复用同 token）。判据判别力：R1 空正文 / R2 去空白 <2 字 / R3 占位族（「没有可整理的内容」「无内容」「Nothing to organize.」等，整串相等绝不子串）/ R4 括号族（`【无】` / `(no content)` / `（本轮素材不足）`）各自拒；真实短故事（`冰淇淋 / 想吃冰淇淋。` 与 `糖葫芦 / 正文一句话。`，后者的 body compact=5 = FP-A5 阈值上界）放行；引号族（`他说了「你好」`）不被 R4 误伤；**否决「title == body → 判占位」**（SAO 三条 title==body 冻结桩会一次全红）。结构：守卫在 `archive_story` 之前（AST 位次，seq 不得先占号）、`reason_sink` 为 keyword-only（保 memory_isolation 位置参数签名）。回引 device-evidence/round-c/ecs-story-2026-11-18-s33477cee.md 与 human 2026-11-18 要求①",
+    "SCRF-C3: A5 正常路径回归（真机轮 C 修复轮 · must-stay-green）——真实素材 + 正常两行整理输出 → `story_finish archived=true`、STORIES_DIR 恰新增 1 篇且标题/正文 == 整理结果、`story_text` 恰一帧、`story_list` 推送含新篇、seq 账本 +1（盖章）、routing 回 chat；与既有 SCRF-B8 KEY 归档件同口径，证明轮 C 两层守卫互不吞没正常素材；同时钉住 reason 分档未吞丢稿类——`llm_unavailable` / `empty_reply` / `archive_valueerror` 仍走安抚 + 页面退出帧（SAO-A1 四件保绿：安抚经 `kidpal_speak` 恰一、`story_text` 零帧、`story_list` 恰一帧且 total==0/items==[]、routing 回 chat）。回引 device-evidence/round-c/ecs-story-2026-11-18-sbe0bff90.md 与 human 2026-11-18 要求③",
+    "SCRF-C4: 素材侧过滤保守性与集合不变式（真机轮 C 修复轮 · 判据判别力）——过滤判据 = stt **整段**归一化后与 `_FRONT_SILENT_ASR_HALLUCINATIONS` 相等（绝不子串）：`Okay.` / `okay` / `OKAY！` / `ok` / `Thank you.` / `うん。` / `そう。` / `はい。` / `いいえ。` 命中（审计 `dropped=silent_asr_hallucination`）；**`嗯。` 不命中**（compact=1 <2，留给既有素材守卫 `insignificant_material`——SCRF-B10 case 2「收尾沿被消费」保绿的机械依据）；混排真话「嗯，然后我们去公园」「Okay，我知道了」「谢谢你，这个字怎么写」「让我们一起说thank you吧」照常 feed 入累积器（与既有 `_archive_material_reject_reason` 整串口径同族）；三段式（真话 → Okay. → 真话）后 `build_organizing_input` 恰含两句真话、不含 Okay；**集合不变式：`_FRONT_SILENT_ASR_HALLUCINATIONS` 每个元素归一化去空白后长度 ≥2**（独立冻结断言）；判定单源可换表（monkeypatch 模块常量后判定随动）；`pending_stop` 下被过滤**不即时释放**（routing 仍 pending_stop——防吞 1.7s 后才到的真实转写），+10s sweep 释放；收尾词判定面零影响（`_story_finish_on_phrase(stt=说完了)` 仍 True）、stt 转发帧数不受过滤影响。回引 human 2026-11-18 要求②「白名单/归一化要保守，不得误伤孩子真说的话」"
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/session_channel_resident.acceptance.c",
+    "server/acceptance/test_session_channel_resident.acceptance.py",
+    "firmware/main/test/boot_auto_connect.acceptance.c",
+    "firmware/main/test/voice_round_ui.acceptance.c",
+    "firmware/main/test/record_session_live.acceptance.c",
+    "server/acceptance/test_m4k3_record_session_live.acceptance.py"
+  ],
+  "redBaselineCommand": "host: wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf（仓根起；执行目录 = firmware/main/test/host_app）；server: python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance（仓根起）",
+  "redBaselineResult": "修复轮基线（2026-11-17，acceptance-author 实跑）：host 307 Tests / 4 Failures / 0 Ignored（3 上游存量 p1_auxbar_style AB-A1/A2/A4 + 1 本轮设计态红 SCR-A8 空素材 producer 缺失）；server 9 failed / 477 passed / 9 deselected（既有 473 零回归；9 设计态红 = SCRF-B7×3 + SCRF-B8×2（帧序/幂等）+ SCRF-B9×3 + RDG-A4 重锚件；SCRF-B10×2、B8 源锚负锚、B8 KEY 对照齿、B9 提醒令牌 共 5 条设计态绿，如实申报为 must-stay-green/离线代理，不造红）。\n轮 B 修复轮基线（2026-11-18，acceptance-author 实跑）：host 314 Tests / 12 Failures / 0 Ignored——3 红 = 上游存量 p1_auxbar_style AB-A1/A2/A4（仍只有这 3 个）；9 红 = 本轮设计态红（SCR-A5 区零 kidpal_voice_watch_tick(、SCR-A8 asr_seen 零处、SCR-A9/A10/A11/A12/A13/A14 因 weak 哨兵返回 -2 或零值、SCR-A15 接线六件零处），首红点均为「实现缺席」而非 infra 失败；MUST-STAY-GREEN 的 SCR-A1/A2/A3/A4/A6/A7 全绿。编译通道 error 0（唯一 warning = 既有未使用 helper scr_exists，HEAD 同态）。另做仓外 scratch 线束验证「转绿路径存在」（参考实现下 A9–A13 行为断言全绿，红只剩 application.cc 接线三件与 A14 结构半）与 6 条变异敏感性（每个新行为 case 至少被一个变异杀死）。server 面本轮零改动，沿用 486 passed / 0 failed。\n轮 C 修复轮基线（2026-11-18，acceptance-author 实跑）：server 全量 `python -m pytest -q --import-mode=importlib -m 'not live' server/acceptance` = **13 failed / 490 passed / 9 deselected / 35 subtests passed**；本件单跑 13 failed / 32 passed / 2 subtests passed（37 collected，收集零错误）。13 红全为**设计态红**（实现缺席、无 infra 红）：SCRF-C1 段级过滤缺席致 `Okay.` 入 pending_stop 累积器并触发收尾单源（实记 `['sess-c1']`）；SCRF-C2 端到端占位回复被当正文归档、落盘文件名逐字为 `2026-11-18-s33477cee.md`（真机垃圾篇原样复现），判别力 8 条拒绝样本 SUBFAILED（放行面 `冰淇淋/想吃冰淇淋。`、`糖葫芦/正文一句话。`、引号族与 title==body 负锚已绿）；SCRF-C4 命中族 / pending 即时释放 / 集合常量缺失共 3 条。设计态绿（must-stay-green，如实申报）：SCRF-C3 两条 + SCRF-C4 收尾词面。既有 B1..B10 `-k scr_b` = 28 passed 零改动。host 面本轮零改动，沿用 321 Tests / 3 Failures（3 红 = 上游存量 p1_auxbar_style）。",
+  "exitCriteria": [
+    "KRC-E1: Pod 内冻结验收覆盖 SCR-A1–A7 与 SCRF-B1–B6 全部断言，红基线与变异证据齐全；四个收尾点负锚与五个真拆通道正锚为 must-stay-green 对照。",
+    "KRC-E2: 既有冻结齿重写留痕——boot_auto_connect.acceptance.c 的 RC-B2 / RC-A3 整条退役、K6-A1/A3/A5 保绿；voice_round_ui.acceptance.c 的 local_close_settle src token 族保绿、同区三件套断言按 SCR-A1 负锚重写；record_session_live.acceptance.c 的录音丢弃面改为「discard 先、会话结束事件后」有序断言。每条列出「旧钉什么 → 新钉什么 → 为什么」，不得静默改齿。",
+    "KRC-E3: 心跳部署极性按 PROPOSAL §2A 执行——代码默认开、`KIDPAL_CHANNEL_HEARTBEAT=0` 为回滚开关；验收覆盖「默认发」与「=0 不发」两态。",
+    "KRC-E4: 一轮真机轮 A（human 持板）全绿，A1–A10 沿 package-split §4.3；A11–A13 为包内追加（SD 噪声 / RC-B6 / 回滚剧本）：A1 温通道进聆听 ≤0.82s 对照 KPLOG029；A2 连续 5 次「结束→再说话」零冷通道零 burst（front bootstrap 六件每连接恰一次）；A3 闲置 >5 分钟首按键一次进聆听、SD 日志有心跳痕迹且零 Unknown message type；A4 会话间隙提醒必达且真出声（S-F1.4 + ADR-003 承重实证）；A5 记录会话全链四式（引导态 KEY 结束无归档；间隔 >10s 下一次问答必须正常应答、间隔 <10s 允许首次话语被抑制 = accepted residual 但再按一次即恢复且 ≤10s 释放已发生 / 录音态 KEY 收尾归档+start_organizing+story_text+盖章 / 录音态 BOOT 丢弃不入册 / 连续 2 轮引导无回应自动收尾）；A6 60s 静默自动关闭真机首次发生；A7 连续讲 >90s 不被误收；A8 录音态提醒排队例外（排队不弹 → 收尾回 Idle 立刻弹）；A9 查字窗关闭路径（播报完不回聆听、查字窗驻留到按键或 5 分钟）；A10 24h 日切（测试环境临时调小 close_connection_no_voice_time 复现，不改生产值）；A11 SD 日志无 Unknown message type 噪声；A12 RC-B6 省电档观测口径按 §6.4 重定；A13 front/固件回滚剧本可执行（两半一起回滚）。",
+    "KRC-E5: 真机与离线证据互证——设备 KPLOG、front systemd 日志、引擎 docker logs 三源对齐；证据落本包 current/。",
+    "KRC-E6（真机轮 A 修复轮）: D1/D2/D3 三条缺陷各自冻结验收断言在场（SCRF-B7/B8/B9、SCR-A8/B10），逐条设计态红→转绿并有变异证据（精确字符串改坏→对应断言转红→sha1 还原）；host 与 server 离线全量零新增红；final 轮十闸全绿。",
+    "KRC-E7（真机轮 B 复测）: review-packet 写入轮 B 复测清单（B-D1/B-D2/B-D3 + A5/A6/A7 回归），三源证据口径与 device-round-a-evidence.md 一致；真机目击结果由 human 持板后落 device-round-evidence.md（未 PASS 前不得合并）。",
+    "KRC-E8（真机轮 B 修复轮）: 新判据（session_voice_watch 双路有效语音证据 + 有界电平可信窗）与 D3 素材判据换源（asr_seen，与 front 累积器同源）各有冻结断言，逐条设计态红→转绿；SCR-A5 / SCR-A8 显式重锚留痕（旧钉→新钉→为什么）；低频 listening 诊断行（listening_diag，十字段）在场且绕开 clock_ticks_ % 10 负锚；变异证据覆盖 SCR-A10 kill-shot（删可信窗上界 = 轮 B 缺陷形态）与 SCR-A12 A7 承重；host 与 server 离线全量零新增红；final 轮全闸绿；轮 C 真机复测清单（A6/A7/D3/A5 + suspect/asr/rec_ctx/run 采集项）落 review-packet。",
+    "KRC-E9（真机轮 C 修复轮）: ① 主修——`_story_finish_session` 整理回合返回后置占位守卫机械可判（占位族整串等价 / 有效字符阈值），命中走 archived=false 同款释放（出语境恰一帧、零归档 / 零 MD / 零 story_text / 零盖章 / routing 回 chat；ORGANIZING 已进入时恰一帧 story_list 页面退出且列表内容零新增），判据与偏差理由写进 plan.md 轮 C 节与冻结验收 SCRF-C2；② 素材侧静音幻觉段级过滤（整段归一化相等、绝不子串）使 `Okay.` 类迟到转写不进累积器，pending_stop 由既有 10s sweep 释放（SCRF-C1/C4）；③ A5 正常路径回归不破（SCRF-C3）；④ 变异证据覆盖占位守卫与段级过滤两层（mutation-evidence/round-c-fix.md）；⑤ host 与 server 离线全量零新增红；final 轮全闸绿；⑥ review-packet 登记「引擎静音 ASR 幻觉（Okay./嗯。）」为上游残余并建议主线程登记 tech debt，真机轮 C 复测清单在场；不得伪造真机 PASS。"
+  ],
+  "iterationBudget": 3,
+  "fixBudget": 4,
+  "supervisorBlockBudget": 2,
+  "contractRefs": [
+    "docs/contracts/interface-contract.md#§四-listen",
+    "docs/contracts/interface-contract.md#§四-kidpal_keepalive",
+    "docs/contracts/interface-contract.md#§四-kidpal_story_discard",
+    "docs/contracts/interface-contract.md#§四-kidpal_session_ctx"
+  ],
+  "docRefs": [
+    "delivery/workstreams/261115-session-channel-resident/PROPOSAL.md",
+    "delivery/review/261115-arch-review-session-channel-resident/PROPOSAL.md",
+    "delivery/review/261115-arch-review-session-channel-resident/package-split.md",
+    "docs/requirements.md",
+    "docs/architecture.md",
+    "docs/contracts/interface-contract.md",
+    "docs/decisions/ADR.md",
+    "delivery/taskpackages/261116-channel-resident-core/device-round-a-evidence.md",
+    "delivery/taskpackages/261116-channel-resident-core/device-evidence/round-b/kplog-excerpt.txt"
+  ],
+  "docsSyncRequired": false,
+  "docsSyncReason": "会话/通道解耦与保活机制已由 architecture §6.4 + ADR-019 + 契约 §四冻结；本包只兑现实现，不改 spec 语义。requirements:48 ⚠️ 对账注记按 workstream 留根 1 由主线程路由。",
+  "docsOwner": "integrator",
+  "securityReviewRequired": false,
+  "adrRequired": false,
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline",
+    "firmware-build",
+    "live-manual"
+  ],
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": [
+      {
+        "acceptance": "SCR-A1: 四收尾点（CloseAudioChannel helper / HandleToggleChatEvent Listening / HandleEndVoiceSessionEvent / WakeWordInvoke Listening）各区负锚 protocol_->CloseAudioChannel( = 0、ScheduleResidentRebuild( = 0、SetPowerSaveLevel(PowerSaveLevel::LOW_POWER) = 0，正锚按上下文二分（helper 区 EndVoiceSession( / toggle 与 wake-invoke 区 HandleEndVoiceSessionEvent( / handler 区 SendStopListening(），四 src 审计 token 各自在区。回引 docs/architecture.md#§6.4、docs/decisions/ADR.md#ADR-019",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "CloseAudioChannel() helper 体内插回 if (protocol_) { protocol_->CloseAudioChannel(); }",
+        "command": "wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf（执行目录 firmware/main/test/host_app）",
+        "evidence": "host 306 Tests / 5 Failures（当时基线 4 = 3 上游 + RCL-F1 待重锚假红；重锚后基线 3 → +1）；session_channel_resident.acceptance.c:316 (SCR-A1):FAIL，无其它 co-red；还原 sha1 一致后复跑回基线（RCL-F1 重锚后 306/3，仅上游 3 红）",
+        "restoredCheck": "application.cc sha1 与备份一致；复跑 306/4"
+      },
+      {
+        "acceptance": "SCR-A2: HandleEndVoiceSessionEvent 统一处理器动作序——protocol_->SendStopListening() 恰 1、ResetDecoder() 恰 1 且位次在 Speaking 分支内（kDeviceStateSpeaking < ResetDecoder < SendStopListening）、三态门与 auto_connect_in_flight_ 守卫与 !protocol_ 早退逐字在世（261024 语义零偏移）。回引 docs/architecture.md#§6.4、docs/requirements.md#§2.3",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "handler Speaking 分支内复制一行 audio_service_.ResetDecoder()（区内计数 1→2）",
+        "command": "wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf（执行目录 firmware/main/test/host_app）",
+        "evidence": "host 306/5；session_channel_resident.acceptance.c:385 (SCR-A2):FAIL，无 co-red",
+        "restoredCheck": "sha1 一致；复跑回基线（RCL-F1 重锚后 306/3，仅上游 3 红）"
+      },
+      {
+        "acceptance": "SCR-A3: 五个真拆通道点（HandleNetworkDisconnectedEvent / Reboot / UpgradeFirmware / SetAecMode / ResetProtocol）各 protocol_->CloseAudioChannel() 恰 1（must-stay-green）。回引 docs/architecture.md#§6.4",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "Reboot() 区内 protocol_->CloseAudioChannel(); → protocol_->SendStopListening();",
+        "command": "wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf（执行目录 firmware/main/test/host_app）",
+        "evidence": "host 306/5；session_channel_resident.acceptance.c:451 (SCR-A3):FAIL",
+        "restoredCheck": "sha1 一致；复跑回基线（RCL-F1 重锚后 306/3，仅上游 3 红）"
+      },
+      {
+        "acceptance": "SCR-A4: Idle 分支八件清位链逐条保留（EnableVoiceProcessing(false) / EnableWakeWordDetection(true) / kidpal_story_session_end / KidpalStorySessionEndSync / kidpal_keybar_scene_reset 含 front_is_reminder REMINDER 豁免 / kidpal_render_node_voice_end / kidpal_story_session_ctx_set(0) / RaiseReminderQueue）。回引 docs/requirements.md#S-F1.4、docs/requirements.md#§2.3",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "Idle 链 kidpal_keybar_scene_reset(); → kidpal_keybar_scene_restore();",
+        "command": "wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf（执行目录 firmware/main/test/host_app）",
+        "evidence": "host 306/5；session_channel_resident.acceptance.c:484 (SCR-A4):FAIL；co-red record_session_lifecycle RSL2-A2 :727 与 chrome_ghost CG-A1 :1074（三齿同钉该符号，预期同向）。另如实申报：RaiseReminderQueue 单独改名不转红——application.cc:1342 既有注释含该符号字面（注释区，本包未动），故敏感证据改用同区 kidpal_keybar_scene_reset 承载",
+        "restoredCheck": "sha1 一致；复跑回基线（RCL-F1 重锚后 306/3，仅上游 3 红）"
+      },
+      {
+        "acceptance": "SCR-A5: 60s 无语音超时 producer——命名常量 kSessionIdleTimeoutS 值 60 + kDeviceStateListening + !s_vad_speaking 电平门 + kidpal_story_session_ctx_active() 豁免 + HandleEndVoiceSessionEvent 投递五件在世；VAD 说话沿 clock_ticks_ = 0；不接纯模型事件（SES_EVT_SESSION_TIMEOUT_60S 命中文件数保 2）。回引 docs/requirements.md#§2.1、docs/architecture.md#§5.1.1",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "static const int kSessionIdleTimeoutS = 60; → = 30;",
+        "command": "wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf（执行目录 firmware/main/test/host_app）",
+        "evidence": "host 306/5；session_channel_resident.acceptance.c:521 (SCR-A5):FAIL",
+        "restoredCheck": "sha1 一致；复跑回基线（RCL-F1 重锚后 306/3，仅上游 3 红）"
+      },
+      {
+        "acceptance": "SCR-A6: kidpal_keepalive no-op 分支位于 OnIncomingJson 的 #endif 之后、Unknown message type 的 ESP_LOGW 之前（区内偏移位次断言）。回引 docs/contracts/interface-contract.md#§四-kidpal_keepalive",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "else if (strcmp(type->valuestring, kidpal_keepalive) == 0) → else if (false)",
+        "command": "wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf（执行目录 firmware/main/test/host_app）",
+        "evidence": "host 306/5；session_channel_resident.acceptance.c:574 (SCR-A6):FAIL",
+        "restoredCheck": "sha1 一致；复跑回基线（RCL-F1 重锚后 306/3，仅上游 3 红）"
+      },
+      {
+        "acceptance": "SCR-A7: 自愈巡检——CLOCK_TICK 区 IsAudioChannelOpened( ≥1、TryStartAutoConnect( ≥1、守卫 auto_connect_in_flight_ 偏移 < IsAudioChannelOpened( 偏移、区内 OpenAudioChannel( = 0（零第二条重连路径）。回引 docs/architecture.md#§6.4",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "巡检判据两操作数互换（IsAudioChannelOpened 前置于 auto_connect_in_flight_）",
+        "command": "wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf（执行目录 firmware/main/test/host_app）",
+        "evidence": "host 306/5；session_channel_resident.acceptance.c:626 (SCR-A7):FAIL（standalone 复跑确认）",
+        "restoredCheck": "sha1 一致；复跑回基线（RCL-F1 重锚后 306/3，仅上游 3 红）"
+      },
+      {
+        "acceptance": "SCRF-B1: 心跳 producer（front）——channel_heartbeat_enabled() 默认开、0/false/off/no 关；一个周期设备腿恰收一帧 {\"type\":\"kidpal_keepalive\"} 且 sleep-first（窗内零帧）；=0 零帧；发送抛异常静默且 finally cancel(ws_disconnect) 仍落。回引 docs/contracts/interface-contract.md#§四-kidpal_keepalive、delivery/review/261115-arch-review-session-channel-resident/PROPOSAL.md#§5",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "channel_heartbeat_enabled 极性反转（not in → in）",
+        "command": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance -k test_scr_b1_heartbeat_gate_default_on_and_rollback_off",
+        "evidence": "AssertionError: True is not false : SCRF-B1 RED: channel_heartbeat_enabled('0') 未关 —— 回滚开关识别集不全（1 failed / 14 deselected）",
+        "restoredCheck": "front_app.py sha1 一致；复跑全绿"
+      },
+      {
+        "acceptance": "SCRF-B2: listen stop 分层收尾——chat 零动作零注入；accumulate 非空已被归档路径消费且收尾不二次动作；pending_stop 禁 cancel 禁释放且重复 stop 幂等。回引 docs/architecture.md#§5.1.2、docs/requirements.md#S-F2.2-AC4",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "_story_listen_stop_boundary 的 pending_stop 保护分支改成 acc.cancel(reason=session_end_stale) + 释放",
+        "command": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance -k test_scr_b2_pending_protected_and_repeated_stop_idempotent",
+        "evidence": "AssertionError: chat != pending_stop ... SCRF-B2 RED: accum 空 stop 后未落 pending_stop（1 failed）",
+        "restoredCheck": "sha1 一致；复跑全绿"
+      },
+      {
+        "acceptance": "SCRF-B2b: pending 保护与 sweep 释放——listen stop 后 +9s 零释放、+10.5s sweep 释放且 active=false 恰一帧入归属腿（_session_legs(sid) or _alert_legs）；先投 stt 走恢复归档则不重复释放。回引 docs/architecture.md#§5.1.2",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "sweep 的 await _release_record_context(...) → pass",
+        "command": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance -k test_scr_b2b_sweep_releases_at_ten_seconds",
+        "evidence": "Lists differ: [] != ['sess-b2b'] ... SCRF-B2b RED: +10s sweep 未释放记录语境（1 failed）",
+        "restoredCheck": "sha1 一致；复跑全绿"
+      },
+      {
+        "acceptance": "SCRF-B3: discard→stop 有序不归档——同一 session 先 kidpal_story_discard 再 listen stop → routing 回 chat、_story_finish_session 未被调、STORIES_DIR 零新增。回引 docs/contracts/interface-contract.md#§四-kidpal_story_discard、docs/requirements.md#S-F2.2-AC4",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "discard 分支 cancel(reason=discard) → dropped = False",
+        "command": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance -k test_scr_b3_discard_then_stop_no_archive",
+        "evidence": "Lists differ: ['sess-b3'] != [] ... SCRF-B3 RED: discard→stop 触发了 _story_finish_session（1 failed）",
+        "restoredCheck": "sha1 一致；复跑全绿"
+      },
+      {
+        "acceptance": "SCRF-B4: ctx 边沿兜底分态——accumulate → acc.cancel(reason=session_end_stale) + 释放；pending_stop → 不动作（只在未发 stop 时可达）；chat 但记录语境标记真 → 只释放；重复 ctx(非 story) 零新增注入。回引 docs/contracts/interface-contract.md#§四-kidpal_session_ctx",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "ctx 边沿 accumulate 分支删掉 acc.cancel(reason=session_end_stale)（只留释放）",
+        "command": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance -k test_scr_b4_accumulate_cancels_and_releases",
+        "evidence": "('sess-b4-acc', 'session_end_stale') not found in [] ... SCRF-B4 RED: 非 story ctx 后未落 cancel（1 failed）",
+        "restoredCheck": "sha1 一致；复跑全绿"
+      },
+      {
+        "acceptance": "SCRF-B4b: pending_stop 边沿不动作（F-01 复发防线）——ctx(home) 到达时零 cancel、零 release_pending、零 active=false，routing 仍 pending_stop；随后 stt 仍恰一篇归档。回引 docs/architecture.md#§5.1.2",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "ctx 边沿 pending_stop 保护分支改成 cancel + 释放",
+        "command": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance -k test_scr_b4b_pending_stop_edge_then_stt_archives_once",
+        "evidence": "Lists differ: [('sess-b4b', 'session_end_stale')] != [] ... SCRF-B4b RED: ctx 边沿把 pending_stop 取消了（1 failed）",
+        "restoredCheck": "sha1 一致；复跑全绿"
+      },
+      {
+        "acceptance": "SCRF-B5: 连接级 teardown 保绿——断开 → 限时收尾、腿双摘除 + acc.cancel(reason=ws_disconnect) 逐字不变。回引 docs/architecture.md#§5.1.2",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "teardown 的 _get_story_acc().cancel(session_id, reason=ws_disconnect) → pass",
+        "command": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance -k test_scr_b5_teardown_completes_cancel_and_legs_removed",
+        "evidence": "('sess-b5', 'ws_disconnect') not found in [] ... SCRF-B5 RED: 断连收尾 cancel(ws_disconnect) 未落（1 failed）",
+        "restoredCheck": "sha1 一致；复跑全绿"
+      },
+      {
+        "acceptance": "SCRF-B6: 既有冻结 oracle 保绿回归网——test_m4k1 / test_m4k3 / test_record_cancel_lifecycle / test_record_dialogue_guide / test_record_front_polish 关键 frozen 测试函数在场且全量 suite 绿留痕。回引 delivery/review/261115-arch-review-session-channel-resident/PROPOSAL.md#§5",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "临时把 server/acceptance/test_m4k1_story_cloud_link.acceptance.py 改名挂起（presence 守卫变异），跑完立即改回",
+        "command": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance -k test_scr_b6_frozen_oracles_present",
+        "evidence": "AssertionError: False is not true : SCRF-B6 RED: 既有冻结 oracle test_m4k1_story_cloud_link.acceptance.py 丢失（1 failed）",
+        "restoredCheck": "文件名还原 + sha1 一致；复跑全绿"
+      },
+      {
+        "acceptance": "SCRF-B7: ctx(source_page=story) 每会话**无条件**注入 kidpal_record_context active=true（真泵行为级）——① 首帧 ctx(story) 后本连接引擎腿恰 1 帧 active=true、story_list 沿边缘推；② routing 已 accumulate 的重复 ctx(story) 后累计**恰 2 帧**（每次无条件一帧）且 story_list 零新增；③ control/start_recording 消费沿在已 accumulate 时 `_story_route_display_payload` 返 True（enter_edge→consumed）且泵路径注入恰 1 帧；④ 审计 token `story_record_ctx_enter` 在 front_app.py 源文本恰 1 处，真跑泵日志含 `src=ctx_story` + `edge=true`（首）/`edge=false`（重复）+ `injected=true`。释放语义与 SCRF-B2/B2b/B4/B4b/B5 零变化。载体 = `test_scr_b7_repeat_ctx_story_injects_again_story_list_stays_edge_only` / `test_scr_b7_start_recording_consumption_injects_when_accumulating` / `test_scr_b7_audit_token_single_emit_point`。回引 docs/contracts/interface-contract.md#§四-kidpal_session_ctx、docs/decisions/ADR.md#ADR-013、device-round-a-evidence.md#三",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "ctx 注入条件改回边缘门（`if upstream is not None:` → `if ctx_push_edge and upstream is not None:`）；另三组：`return True`→`return enter_edge`、token 改非超串名、删 `_inject_record_context_enter` 调用",
+        "command": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance -k \"b7 or a4\"",
+        "evidence": "turned red: test_scr_b7_repeat_ctx_story_injects_again_story_list_stays_edge_only / test_scr_b7_start_recording_consumption_injects_when_accumulating / B7 三例（token 变异）→ 全绿还原；详见 delivery/taskpackages/261116-channel-resident-core/mutation-evidence/round-a-fix.md #1-#4"
+      },
+      {
+        "acceptance": "SCRF-B8: 丢弃（kidpal_story_discard）分支内、返回前经**泵内本连接引擎腿**发 kidpal_record_context active=false（legs=[(websocket, upstream)]）——① 本连接引擎腿 active=false 恰 1 帧且帧序严格**先于**随后转发的 listen stop；② 另一已登记全局提醒腿收 0 帧（不得回退 _alert_legs；discard 分支源文本 `_alert_legs` 命中 0）；③ 重复 stop 零第二次注入（标记清单点承载幂等）；④ 全程**零 abort 帧**（本轮决策：不发 abort——轮 A 实证 abort 已收仍产 TTS + 引擎冻结纪律禁止置 client_abort）；⑤ **对照齿（must-stay-green）**：ctx+feed+stop（不发 discard）→ 恰 1 篇归档 + start_organizing 恰 1，且 active=false 出现在 stop **之后**（防修过头毁 KEY 尾音归档）。载体 = `test_scr_b8_discard_releases_context_before_forwarded_stop` / `test_scr_b8_repeated_stop_injects_no_second_release` / `test_scr_b8_discard_branch_has_no_global_alert_legs` / `test_scr_b8_key_stop_still_archives_once_and_releases_after_stop`。回引 docs/architecture.md#§5.1.2、docs/decisions/ADR.md#ADR-013、device-round-a-evidence.md#一",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "删 discard 分支 `_release_record_context(session_id, [(websocket, upstream)])`；另两组：腿集改 `_session_legs(...) or _alert_legs`、释放挪到 listen stop 转发之前",
+        "command": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance -k b8",
+        "evidence": "turned red: test_scr_b8_discard_releases_context_before_forwarded_stop / test_scr_b8_repeated_stop_injects_no_second_release / test_scr_b8_discard_branch_has_no_global_alert_legs / 对照齿 test_scr_b8_key_stop_still_archives_once_and_releases_after_stop；详见 delivery/taskpackages/261116-channel-resident-core/mutation-evidence/round-a-fix.md #5/#6/#16"
+      },
+      {
+        "acceptance": "SCRF-B9: 会话关闭迟到帧门（front 侧）——arm 点 = `_release_record_context`（真实 discard 路径可达）；门内**丢弃**引擎腿→设备腿二进制音频帧与 `type in (tts, llm)` 文本帧，**放行** `stt` 与 `mcp`（各恰 1）；下一次 `listen start` / ctx(story) **disarm**；front 自注 speak 令牌登记后整轮放行（sentence_start + 音频 + tts stop 共 3 帧；**先判令牌后清令牌**，stop 帧放行后才清位 → 之后 tts/音频重新丢弃）；`_deliver_alert_now` 提醒 speech 同样登记令牌（提醒 mcp 帧必达 + 其后 tts 不被误丢）。载体 = `test_scr_b9_gate_drops_late_audio_tts_llm_keeps_mcp_and_stt` / `test_scr_b9_gate_disarms_on_next_listen_start_and_ctx_story` / `test_scr_b9_speak_token_allows_round_then_tts_stop_clears` / `test_scr_b9_alert_speech_registers_expected_round_token`。回引 docs/requirements.md#S-F1.4、docs/decisions/ADR.md#ADR-003、server/gateway/reminders.py 两腿投递、device-round-a-evidence.md#一",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "门内二进制丢弃改转发；另四组：丢弃集合删 llm、加 mcp、删 `_deliver_alert_now` 令牌登记、tts stop 先清后判",
+        "command": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance -k b9",
+        "evidence": "turned red: test_scr_b9_gate_drops_late_audio_tts_llm_keeps_mcp_and_stt / test_scr_b9_speak_token_allows_round_then_tts_stop_clears / test_scr_b9_alert_speech_registers_expected_round_token；详见 delivery/taskpackages/261116-channel-resident-core/mutation-evidence/round-a-fix.md #7-#11"
+      },
+      {
+        "acceptance": "SCR-A8: 空素材空闲收尾 producer（设备 application.cc CLOCK_TICK 区，**host 不可编面 → 源锚代理**）——`kStoryEmptySessionTimeoutS` 首现到下一分号含 60、定义位次在既有无语音超时常量之后；区内 `kidpal_story_session_ctx_active()` ≥2（恰一处非否定 = 新 producer 正向记录语境门）、`!s_story_rec_entered` ≥1（有素材不命中）、`!s_vad_speaking` ≥2、`HandleEndVoiceSessionEvent()` ≥2、审计 token `story_empty_session_timeout` 在世、`OpenAudioChannel(` = 0、无 `clock_ticks_ % 10`；**交叉负锚** = 既有 60s 常量首现行仍为其定义行（新常量/注释不得写回该字面，否则 SCR-A5 假红）。载体 = `TEST_CASE(\"会话通道常驻: 空素材空闲收尾producer (SCR-A8)\")`；头注成对 `device-outcome: SCR-A8` + `host-uncompilable-path: firmware/main/application.cc`。回引 docs/requirements.md#§2.1、docs/requirements.md#§2.3、device-round-a-evidence.md#二",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "`kStoryEmptySessionTimeoutS = 60;` → `= 30;`；另三组：删 `!s_story_rec_entered`、审计 token 改名、既有 60s 常量定义行前插含其字面 + ASCII `;` 的注释（交叉负锚）",
+        "command": "wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf（执行目录 firmware/main/test/host_app）",
+        "evidence": "turned red: (SCR-A8):FAIL（307/4）；交叉变异同时 (SCR-A5):FAIL（307/5）；详见 delivery/taskpackages/261116-channel-resident-core/mutation-evidence/round-a-fix.md #12-#15"
+      },
+      {
+        "acceptance": "SCRF-B10: 空素材收尾=释放口径（front 半；**设计态绿 must-stay-green + 轮 B 离线代理，不造红**）——空素材 stop → pending_stop → +10.5s sweep：active=false 恰 1 帧、`_story_finish_session` 零调用、STORIES_DIR 零新增、零 start_organizing、零新增 story_list、routing 回 chat；尾音幻听「嗯。」进入收尾单源但被内容守卫拒绝，同口径。载体 = `test_scr_b10_empty_material_stop_releases_without_archive` / `test_scr_b10_tail_hallucination_rejected_same_release_contract`。回引 docs/architecture.md#§5.1.2、docs/requirements.md#S-F2.2-AC4、device-round-a-evidence.md#二",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "kill-shot = 空素材释放分支改走 `_story_finish_session(...)`；再两例：`_archive_material_reject_reason` 首行 `return None`、会话腿 push story_list（观测面收紧后 runtime 等价复现）",
+        "command": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance -k b10",
+        "evidence": "turned red: test_scr_b10_empty_material_stop_releases_without_archive（fin=[] 失败 / 收紧后 :1885 1!=0）、test_scr_b10_tail_hallucination_rejected_same_release_contract（零 start_organizing 失败）；详见 delivery/taskpackages/261116-channel-resident-core/mutation-evidence/round-a-fix.md #17-#19"
+      },
+      {
+        "acceptance": "SCR-A5: 60s 无语音超时 producer——命名常量 kSessionIdleTimeoutS 值 60 + kDeviceStateListening + !s_vad_speaking 电平门 + kidpal_story_session_ctx_active() 豁免 + HandleEndVoiceSessionEvent 投递五件在世；VAD 说话沿 clock_ticks_ = 0；不接纯模型事件（SES_EVT_SESSION_TIMEOUT_60S 命中文件数保 2）。回引 docs/requirements.md#§2.1、docs/architecture.md#§5.1.1。【轮 B 重锚，2026-11-18】电平门断言极性反转：CLOCK_TICK 区 `!s_vad_speaking` **恰 0**（禁止回潮）+ 正锚 `kidpal_voice_watch_tick(` ≥1（驱动点从裸判据改为缝调用）；判据本体迁入纯逻辑缝 session_voice_watch，`clock_ticks_` 降级为诊断字段；旧钉→新钉→为什么见验收件 REVISION LOG。",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "application.cc A6 producer 判据加回 `&& !s_vad_speaking`（瞬时电平门回潮）",
+        "command": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build（执行目录 firmware/main/test/host_app）后 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
+        "evidence": "变异后 SCR-A15 与 SCR-A5 同红（co-red，双保险同事实）；还原 sha256 逐字一致后复跑回基线 321 Tests / 3 Failures。",
+        "restoredCheck": "原文件全文写回 + sha256 比对逐字一致（见 mutation-evidence/round-b-fix.md 基线表）"
+      },
+      {
+        "acceptance": "SCR-A8: 空素材空闲收尾 producer（设备 application.cc CLOCK_TICK 区，**host 不可编面 → 源锚代理**）——`kStoryEmptySessionTimeoutS` 首现到下一分号含 60、定义位次在既有无语音超时常量之后；区内 `kidpal_story_session_ctx_active()` ≥2（恰一处非否定 = 新 producer 正向记录语境门）、`!s_story_rec_entered` ≥1（有素材不命中）、`!s_vad_speaking` ≥2、`HandleEndVoiceSessionEvent()` ≥2、审计 token `story_empty_session_timeout` 在世、`OpenAudioChannel(` = 0、无 `clock_ticks_ % 10`；**交叉负锚** = 既有 60s 常量首现行仍为其定义行（新常量/注释不得写回该字面，否则 SCR-A5 假红）。载体 = `TEST_CASE(\"会话通道常驻: 空素材空闲收尾producer (SCR-A8)\")`；头注成对 `device-outcome: SCR-A8` + `host-uncompilable-path: firmware/main/application.cc`。回引 docs/requirements.md#§2.1、docs/requirements.md#§2.3、device-round-a-evidence.md#二。【轮 B 重锚，2026-11-18】素材门换源：`asr_seen` ≥1（seam 内「本会话引擎真的转写出一句」，与 front 累积器同源）+ `!s_story_rec_entered` 恰 0（旧门退役负锚）；`!s_vad_speaking` ≥2 整条退役（同一事实由 SCR-A5 全区负锚单一承载）。根因 = 轮 B 设备日志 12 条 story_vad_recording_enter 全落会话起步 1 秒内——无人说话时 VAD 也让出一记 speech 沿并把 s_story_rec_entered 置真，旧信号下 D3 在真机上结构性不可达。",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "application.cc 诊断行触发改写成 `clock_ticks_ % 10 == 0` 裸分频",
+        "command": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build（执行目录 firmware/main/test/host_app）后 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
+        "evidence": "变异后 SCR-A14 结构半 + SCR-A8 区内负锚 + diag_log DLG-A4⑤ 三处同红（同一字面三处承载的预期 co-red）；还原后回基线 321/3。",
+        "restoredCheck": "原文件全文写回 + sha256 比对逐字一致（见 mutation-evidence/round-b-fix.md 基线表）"
+      },
+      {
+        "acceptance": "SCR-A9: 有效语音判据与 60s 静默收尾（纯逻辑缝 session_voice_watch 真行为）——静默注入 120 tick：tick 1..59 返回 KVW_ACT_NONE、tick 60 恰返回 KVW_ACT_IDLE_FIRE 且 quiet_s == 60，其后 sticky（61..120 持续 FIRE）；末端 tick_s / level_run_s / asr_seen / suspect = 120 / 0 / 0 / 0。回引 docs/requirements.md#§2.1（结束通道①）、architecture.md#§5.1.1",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "session_voice_watch.c 收尾比较 `quiet_s >= cfg->idle_timeout_s` → `>`",
+        "command": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build（执行目录 firmware/main/test/host_app）后 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
+        "evidence": "变异后 SCR-A9 转红（co-red SCR-A10/A11 与 builder asr_seen 门用例）；还原后回基线 321/3。",
+        "restoredCheck": "原文件全文写回 + sha256 比对逐字一致（见 mutation-evidence/round-b-fix.md 基线表）"
+      },
+      {
+        "acceptance": "SCR-A10: VAD 电平卡死看门狗语义（真行为，kill-shot）——恒定 vad=1 共 400 tick 且零 stt：tick 100 quiet_s == 0（可信窗内采信）、tick 101 quiet_s == 1（KIDPAL_VW_VAD_TRUST_S=100 到期）、tick 1..159 零 fire、tick 160 恰 FIRE 且 suspect == 1（sticky）；首次 fire 恰在第 160 tick。回引轮 B A6 回归（M1 电平卡死）与 human 2026-11-18 指示①",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "session_voice_watch.c 删可信窗上界（`level_run_s <= cfg->vad_trust_s` 恒真）——kill-shot，等价于轮 B 缺陷形态",
+        "command": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build（执行目录 firmware/main/test/host_app）后 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
+        "evidence": "变异后 SCR-A10 转红（恒定电平 400 tick 内不再有界收尾）；还原后回基线 321/3。",
+        "restoredCheck": "原文件全文写回 + sha256 比对逐字一致（见 mutation-evidence/round-b-fix.md 基线表）"
+      },
+      {
+        "acceptance": "SCR-A11: 起音沿风暴拒绝（真行为，成对）——(a) 每 5 tick 一个 1 tick 尖峰（[1,0,0,0,0] 重复 200 tick）→ 首次 fire 恰 60；(b) 4 tick 连续暴发（[1,1,1,1,0] 重复 200 tick）→ 零 fire 且 quiet_s 峰值 ≤3。下界 KIDPAL_VW_VOICE_SUSTAIN_S=3 由两侧钉死。回引轮 B（M2 起音沿风暴）",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "session_voice_watch.c 下界 `level_run_s >= cfg->voice_sustain_s` → `>= 1`（等同回到起音沿语义）",
+        "command": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build（执行目录 firmware/main/test/host_app）后 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
+        "evidence": "变异后 SCR-A11 转红；另 `KIDPAL_VW_VOICE_SUSTAIN_S 3 → 5` 使 SCR-A11(b) 转红（co-red SCR-A13 cfg_default）；还原后回基线 321/3。",
+        "restoredCheck": "原文件全文写回 + sha256 比对逐字一致（见 mutation-evidence/round-b-fix.md 基线表）"
+      },
+      {
+        "acceptance": "SCR-A12: A7「连续讲 >90 秒不误收」承重（真行为，成对）——(a) 恒定 vad=1 共 200 tick + 每 10 tick 一次 note_asr → 零 fire 且 asr_seen == 1；(b) 恒定 vad=1 共 150 tick + 零 stt → tick 1..150 零 fire（可信窗 100 > A7 的 90 秒界，A7 不依赖云端 ASR）。回引 exitCriteria KRC-E4 A7 与 human 2026-11-18 指示①",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "session_voice_watch.c 停用 asr_fresh 路（`sustained || (0 && asr_fresh)`）",
+        "command": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build（执行目录 firmware/main/test/host_app）后 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
+        "evidence": "变异后 SCR-A12(a) 转红；另 `KIDPAL_VW_VAD_TRUST_S 100 → 30` 使 SCR-A12(b) 与 SCR-A10/A13 同红（A7 承重）；还原后回基线 321/3。",
+        "restoredCheck": "原文件全文写回 + sha256 比对逐字一致（见 mutation-evidence/round-b-fix.md 基线表）"
+      },
+      {
+        "acceptance": "SCR-A13: 缝状态卫生与跨会话零残留（真行为）——cfg_default 三阈值 = 3/25/100 且 idle_timeout_s 保持调用方注入值 60；50 tick 后 level_run_s / tick_s = 50/50；note_asr 后 asr_seen == 1 且 asr_age_s == 0；reset() 七字段全零（含 asr_seen / suspect）；reset 后首 tick quiet_s == 1。【2026-11-18 tighten】追加会话内软复位断言：reset_soft() 后 asr_seen == 1 且其余六件（quiet_s / level_run_s / asr_age_s / tick_s / diag_last_s / suspect）全 0；其后 reset() 仍七字段全清。回引 docs/requirements.md#§2.1、§2.3 与 M3 闩锁卫生复位",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "session_voice_watch.c `reset()` 删 `w->asr_seen = 0;`；另 `reset_soft()` 退化成全清（asr_seen 也清 0）",
+        "command": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build（执行目录 firmware/main/test/host_app）后 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
+        "evidence": "变异后 SCR-A13 转红（co-red SCR-A9/A11 与 builder TEST 7）；还原后回基线 321/3。",
+        "restoredCheck": "原文件全文写回 + sha256 比对逐字一致（见 mutation-evidence/round-b-fix.md 基线表）"
+      },
+      {
+        "acceptance": "SCR-A14: 低频 listening 诊断行（真行为 + 结构）——diag_due 决策表（周期每 10 秒恰一次 / changed 提前 / 抖动被 min_gap=3 封顶 / 非法入参与时钟回退 fail-closed）；结构半：CLOCK_TICK 区 token listening_diag ≥1、字段 quiet= / vad= / rec_ctx= / asr= / suspect= / run= 各 ≥1、且 clock_ticks_ % 10 恰 0。回引 human 2026-11-18 可观测性必办、architecture.md#§5.4 轮转预算",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "KIDPAL_VW_DIAG_MIN_GAP_S 3 → 0（强制验收 TU 重编）；另诊断触发改 `clock_ticks_ % 10`",
+        "command": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build（执行目录 firmware/main/test/host_app）后 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
+        "evidence": "变异后 SCR-A14 行为半与结构半分别转红（后者 co-red SCR-A8 与 DLG-A4）；还原后回基线 321/3。",
+        "restoredCheck": "原文件全文写回 + sha256 比对逐字一致（见 mutation-evidence/round-b-fix.md 基线表）"
+      },
+      {
+        "acceptance": "SCR-A15: application.cc 接线六件 + 缝登记（结构，源锚代理；application.cc 不进 host 构建）——① CLOCK_TICK 区 kidpal_voice_watch_tick( 恰 1；② stt 区（\"stt\"..\"llm\"）kidpal_voice_watch_note_asr( 恰 1；③ Listening case kidpal_voice_watch_reset( ≥1；④ CLOCK_TICK 区 !s_vad_speaking 恰 0；⑤ Initialize 区 cfg_default( + idle_timeout_s + kSessionIdleTimeoutS 三件在世；⑥ CLOCK_TICK 区 !s_story_rec_entered 恰 0（D3 素材门换源）；附 seam 头六宏字面（3/25/100/10/3/999）与 firmware/main/CMakeLists.txt 登记 session_voice_watch.c。【2026-11-18 tighten】Listening 区追加迁移条件分派三件：`kidpal_voice_watch_reset_soft(&s_voice_watch)` ≥1、`kidpal_voice_watch_reset(&s_voice_watch)` ≥1、`kDeviceStateSpeaking` ≥1——防「引导播报 TTS 造成 Listening→Speaking→Listening」时全清复位把本会话素材证据（asr_seen）清掉、致有素材的故事会话被 D3 判成空素材不归档释放。回引 plan.md 轮 B 节第 14 条与 [S8] 接线六件",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "application.cc 删 stt 分支 `kidpal_voice_watch_note_asr(`；另 A6 判据加回 `!s_vad_speaking`、Listening 入口退化无条件 `reset(&s_voice_watch)`",
+        "command": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build（执行目录 firmware/main/test/host_app）后 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
+        "evidence": "变异后 SCR-A15 逐项转红（② / ④ / ③ 的 reset_soft 与 kDeviceStateSpeaking 双缺，后者 co-red 无）；还原后回基线 321/3。",
+        "restoredCheck": "原文件全文写回 + sha256 比对逐字一致（见 mutation-evidence/round-b-fix.md 基线表）"
+      },
+      {
+        "acceptance": "SCRF-C1: 段级静音幻觉过滤 + pending_stop 不归档（真机轮 C 修复轮 · 主防线，端到端）——记录语境起会话（ctx_story）→ `listen stop` 累积空落 pending_stop（`story_stop archived=false reason=pending_stop` + `session_end_boundary action=protected`，分层保护零回退）；随后引擎上行 `stt=Okay.`：`_story_feed_from_stt` 段级过滤命中（stt 整段归一化 `okay` ∈ `_FRONT_SILENT_ASR_HALLUCINATIONS`）、返回 False、`_story_finish_session` **零调用**（`_finish_spy == []`）、累积器仍空（`build_organizing_input` 为 None）、routing 仍 `pending_stop`；注入时钟 +10.5s 由既有 `_story_timeout_sweep` 释放：`active=false` 恰一帧、零 `start_organizing`、零 `story_text`、`story_list` 零新增、STORIES_DIR 零新增（不落 MD）、seq 账本不增（零盖章）、routing 回 chat；审计 `story_feed_guard dropped=silent_asr_hallucination` 恰 1。**该路径精确兑现 human「不推 story_list」原话**（会话从未进整理回合）。附：stt 转发不受影响（过滤只作用于旁路消费、不得挪到转发前或 `continue`——SCRF-B9 语义延伸）。回引 delivery/taskpackages/261116-channel-resident-core/device-evidence/round-c/（ecs-front-journal-2120-2134.txt / engine-asr-2120-2123.txt）与 human 2026-11-18 要求①②",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "删 `_story_feed_from_stt` 的段级过滤调用（另见 #4：段级集合加入单字 `嗯` 触发 SCRF-B10 case 2 与集合不变式双红）",
+        "command": "python -m pytest -q --tb=no -rf --import-mode=importlib -m 'not live' server/acceptance/test_session_channel_resident.acceptance.py server/tests/test_archive_guard_units.py（仓根起）",
+        "evidence": "变异后 SCRF-C1 转红（co-red SCRF-C4 命中族 / pending 不即时释放 / 集合不变式）；还原后回基线 47 passed / 0 failed。见 mutation-evidence/round-c-fix.md 变异表 #3。",
+        "restoredCheck": "原文件整文件写回 + sha256 = ea09f0b5… 逐字一致（8/8）"
+      },
+      {
+        "acceptance": "SCRF-C2: 整理产物占位守卫（真机轮 C 修复轮 · 后防线，承重）——素材须过得了段级过滤与素材守卫（用 `好的。`：compact=2，不在段级集合、`<2` 拦不住）→ 整理回合 stub 返回占位 `（没有可整理的内容）` → 命中机械判据 R1–R4（本 case 走 **R4**：单行 + 原串整串括号包裹 + 剥壳后 8 字 ≤16；结构判据、措辞无关）→ 零归档（MD 零新增 / seq 账本不增 / 零 `story_saved_stamp`）、零 `story_text`、零 `kidpal_speak` 安抚（静默释放类）、`start_organizing` 恰 1（守卫**不得前移**到演出之前——S-F2.2-AC4 演出盖住延迟 + 261020 D4-1）、`story_list` 页面退出恰 1 且 `total==0` / `items==[]` / `restore` 缺省或 false（ORGANIZING 过渡态唯一机械退出载体——261021 R6 困页实证 + SAO-A1 已于 261021 包按同一理由重钉）、`active=false` 恰 1、routing 回 chat、审计 `story_finish archived=false reason=organize_placeholder` 恰 1（**与 `organize_failed`/`empty_material` 分档**，不复用同 token）。判据判别力：R1 空正文 / R2 去空白 <2 字 / R3 占位族（「没有可整理的内容」「无内容」「Nothing to organize.」等，整串相等绝不子串）/ R4 括号族（`【无】` / `(no content)` / `（本轮素材不足）`）各自拒；真实短故事（`冰淇淋 / 想吃冰淇淋。` 与 `糖葫芦 / 正文一句话。`，后者的 body compact=5 = FP-A5 阈值上界）放行；引号族（`他说了「你好」`）不被 R4 误伤；**否决「title == body → 判占位」**（SAO 三条 title==body 冻结桩会一次全红）。结构：守卫在 `archive_story` 之前（AST 位次，seq 不得先占号）、`reason_sink` 为 keyword-only（保 memory_isolation 位置参数签名）。回引 device-evidence/round-c/ecs-story-2026-11-18-s33477cee.md 与 human 2026-11-18 要求①",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "五条互助承重：#1 删 R4 括号判据块（`【无】`/`（本轮素材不足）`红）、#2 `_ORGANIZE_BODY_MIN_CHARS 2→0`（`嗯` 红）、#5 静默分支加回 `_speak_to_legs`（零安抚断言红）、#6 静默分支去掉 `_push_story_list` 页面退出帧（页面退出红）、#7 reason token 改回 `empty_material`（分档断言红）、#8 守卫移到 `archive_story` 之后（零归档/seq 断言红）",
+        "command": "python -m pytest -q --tb=no -rf --import-mode=importlib -m 'not live' server/acceptance/test_session_channel_resident.acceptance.py server/tests/test_archive_guard_units.py（仓根起）",
+        "evidence": "六条变异各自使 SCRF-C2 端到端或判别力转红（#6 另 co-red SCRF-C3 llm_unavailable）；还原后回基线 47 passed / 0 failed。见 mutation-evidence/round-c-fix.md 变异表 #1/#2/#5/#6/#7/#8 与观察项 1（#8 须同时移单行前置守卫与主体守卫才转红）。",
+        "restoredCheck": "原文件整文件写回 + sha256 = ea09f0b5… 逐字一致（8/8）"
+      },
+      {
+        "acceptance": "SCRF-C3: A5 正常路径回归（真机轮 C 修复轮 · must-stay-green）——真实素材 + 正常两行整理输出 → `story_finish archived=true`、STORIES_DIR 恰新增 1 篇且标题/正文 == 整理结果、`story_text` 恰一帧、`story_list` 推送含新篇、seq 账本 +1（盖章）、routing 回 chat；与既有 SCRF-B8 KEY 归档件同口径，证明轮 C 两层守卫互不吞没正常素材；同时钉住 reason 分档未吞丢稿类——`llm_unavailable` / `empty_reply` / `archive_valueerror` 仍走安抚 + 页面退出帧（SAO-A1 四件保绿：安抚经 `kidpal_speak` 恰一、`story_text` 零帧、`story_list` 恰一帧且 total==0/items==[]、routing 回 chat）。回引 device-evidence/round-c/ecs-story-2026-11-18-sbe0bff90.md 与 human 2026-11-18 要求③",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "静默释放分支去掉 `_push_story_list` 页面退出帧（变异 #6）——co-red 命中 SCRF-C3 的 `llm_unavailable` 安抚+退出帧断言（两档共用页面退出载体）",
+        "command": "python -m pytest -q --tb=no -rf --import-mode=importlib -m 'not live' server/acceptance/test_session_channel_resident.acceptance.py server/tests/test_archive_guard_units.py（仓根起）",
+        "evidence": "变异 #6 后 SCRF-C3 llm_unavailable case 转红（co-red）；正常归档 case 本身为 must-stay-green（变红即回归）。还原后回基线 47 passed / 0 failed。",
+        "restoredCheck": "原文件整文件写回 + sha256 = ea09f0b5… 逐字一致（8/8）"
+      },
+      {
+        "acceptance": "SCRF-C4: 素材侧过滤保守性与集合不变式（真机轮 C 修复轮 · 判据判别力）——过滤判据 = stt **整段**归一化后与 `_FRONT_SILENT_ASR_HALLUCINATIONS` 相等（绝不子串）：`Okay.` / `okay` / `OKAY！` / `ok` / `Thank you.` / `うん。` / `そう。` / `はい。` / `いいえ。` 命中（审计 `dropped=silent_asr_hallucination`）；**`嗯。` 不命中**（compact=1 <2，留给既有素材守卫 `insignificant_material`——SCRF-B10 case 2「收尾沿被消费」保绿的机械依据）；混排真话「嗯，然后我们去公园」「Okay，我知道了」「谢谢你，这个字怎么写」「让我们一起说thank you吧」照常 feed 入累积器（与既有 `_archive_material_reject_reason` 整串口径同族）；三段式（真话 → Okay. → 真话）后 `build_organizing_input` 恰含两句真话、不含 Okay；**集合不变式：`_FRONT_SILENT_ASR_HALLUCINATIONS` 每个元素归一化去空白后长度 ≥2**（独立冻结断言）；判定单源可换表（monkeypatch 模块常量后判定随动）；`pending_stop` 下被过滤**不即时释放**（routing 仍 pending_stop——防吞 1.7s 后才到的真实转写），+10s sweep 释放；收尾词判定面零影响（`_story_finish_on_phrase(stt=说完了)` 仍 True）、stt 转发帧数不受过滤影响。回引 human 2026-11-18 要求②「白名单/归一化要保守，不得误伤孩子真说的话」",
+        "sensitive": true,
+        "turnedRed": true,
+        "restored": true,
+        "mutation": "删段级过滤调用（#3）；段级集合加入单字 `嗯`（#4，同时触发集合不变式与 SCRF-B10 case 2 红）；`_ORGANIZE_BODY_MIN_CHARS 2→0`（#2，单测 R2 子测 co-red）",
+        "command": "python -m pytest -q --tb=no -rf --import-mode=importlib -m 'not live' server/acceptance/test_session_channel_resident.acceptance.py server/tests/test_archive_guard_units.py（仓根起）",
+        "evidence": "变异 #3 后 C4 命中族 / pending 不即时释放 / 集合不变式转红；变异 #4 后集合不变式与 SCRF-B10 case 2 双红（不变式判别力承重）；还原后回基线 47 passed / 0 failed。见 mutation-evidence/round-c-fix.md 变异表 #2/#3/#4。",
+        "restoredCheck": "原文件整文件写回 + sha256 = ea09f0b5… 逐字一致（8/8）"
+      }
+    ]
+  },
+  "crossEnd": {
+    "counterparts": [
+      {
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "ws_gateway"
+      },
+      {
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "pump_client_to_upstream"
+      },
+      {
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "_consume_kidpal_control"
+      },
+      {
+        "path": "firmware/main/protocols/protocol.cc",
+        "symbol": "Protocol::SendStopListening"
+      }
+    ],
+    "exempt": ""
+  },
+  "changeManifest": [
+    "firmware/main/application.cc",
+    "firmware/main/application.h",
+    "firmware/main/session_voice_watch.c",
+    "firmware/main/session_voice_watch.h",
+    "firmware/main/CMakeLists.txt",
+    "firmware/main/test/session_channel_resident.acceptance.c",
+    "firmware/main/test/boot_auto_connect.acceptance.c",
+    "firmware/main/test/voice_round_ui.acceptance.c",
+    "firmware/main/test/record_session_live.acceptance.c",
+    "firmware/main/test/record_dialogue_guide.acceptance.c",
+    "firmware/main/test/host_app/main/CMakeLists.txt",
+    "firmware/main/test/session_voice_watch.test.c",
+    "server/gateway/front/front_app.py",
+    "server/acceptance/test_session_channel_resident.acceptance.py",
+    "server/acceptance/test_m4k3_record_session_live.acceptance.py",
+    "server/tests/test_archive_guard_units.py"
+  ],
+  "impactedTestsSeed": [
+    {
+      "path": "firmware/main/test/boot_auto_connect.acceptance.c",
+      "kind": "frozen-rebaseline",
+      "note": "RC-B2（四收尾点各调 ScheduleResidentRebuild 恰 1）与 RC-A3（helper 区消费 kResidentRebuildDelayS）整条退役；**RC-A2 tooth6（全文件 ScheduleResidentRebuild() 恰 5 处，:1269-1273）预评补漏：P1 删净后计数为 0，须整条退役或重钉**；K6-A1/A3/A5 的守卫三条件与人工入口 in-flight 守卫保绿零改动；另保绿 RC-A1（:1084）、RC-A2 tooth1-5、RC-B1（:1350）、RC-B3（:1483-1540：五真拆通道区零 ScheduleResidentRebuild/零 TryStartAutoConnect + 既有 close token 在世 = SCR-A3 既有承载面）、K6-A2/A4/A6。"
+    },
+    {
+      "path": "firmware/main/test/voice_round_ui.acceptance.c",
+      "kind": "frozen-rebaseline",
+      "note": "红面（精确）= OCE-A1 tooth2 两条正锚（protocol_->CloseAudioChannel() ≥1 :2121、ScheduleResidentRebuild() ≥1 :2138）+ tooth3 三位次序（ResetDecoder < AbortSpeaking < CloseAudioChannel :2151-2160）→ 重锚为 < SendStopListening()；绿面（保绿）= local_close_settle ≥1（:2130）、src=overlay_close ≥1（:2134）、tooth1 区切、tooth4 板级 OVERLAY_CLOSE 区。**另单列 must-stay-green：VQ-E1 tooth2（SES_EVT_SESSION_TIMEOUT_60S 全 firmware/main 命中文件数恰 2，:1263-1271）——60s producer 不得接上纯模型事件**。"
+    },
+    {
+      "path": "firmware/main/test/record_session_live.acceptance.c",
+      "kind": "frozen-rebaseline",
+      "note": "**处置性质预评更正**：RSL-A5/M4K3-A3（:739-800，扫 mcp_server.cc）与 RCL-F1（:945-997，扫 protocol.cc）因 P1 两文件零改 → **文本仍绿、语义前提失真**（frozen-rebaseline 留痕即可）；有序断言（SendKidpalStoryDiscard 先）今天已在 :787-797 且保绿，**不得去改一条本来绿的齿**；真正需要新增的有序/收口断言在新件 session_channel_resident.acceptance.c。保绿面另加 RSL-A2 tooth1-3（:545-586：Listening case ctx 单点 + 时序 + HandleToggleChatEvent 区零 SendKidpalSessionCtx 负锚）与 RSL-A6 tooth4（:885-893 stt 分支）。"
+    },
+    {
+      "path": "server/acceptance/test_record_cancel_lifecycle.acceptance.py",
+      "kind": "must-stay-green",
+      "note": "FIRST_COMPLETED 不悬挂回归齿 + cancel(reason=\"ws_disconnect\") + 会话腿摘除；RCL-A3（:992）**真跑 ws_gateway、6s 限时**——P1 心跳 task 必须在既有 finally 里 cancel+gather 回收、循环体 sleep-first、绝不进 FIRST_COMPLETED 集合，否则本件悬挂或出现额外帧；本件是「心跳不得进 FIRST_COMPLETED」的唯一离线警报。"
+    },
+    {
+      "path": "server/acceptance/test_m4k1_story_cloud_link.acceptance.py",
+      "kind": "must-stay-green",
+      "note": "SAO-A1/A2/A3 + M4K1-A2 是 F-01 的 must-stay-green 主面（本件一条不许动，只跑绿留痕）；FIX-A1（:1177）与 :1235 **真跑 ws_gateway**，断言设备腿 story_list 恰一帧 + data.restore is True——心跳帧非 display 载荷、不入 _story_list_frames，sleep-first 后零偏移。"
+    },
+    {
+      "path": "server/acceptance/test_m4k3_record_session_live.acceptance.py",
+      "kind": "frozen-rebaseline",
+      "note": "**升为非条件 manifest 成员（package-split v1.2）**：test_a7_ctx_non_story_pushes_zero_frames（:508-527，home/schedule/whatever 断言不透传 + routing==chat + 零 story_list）在标记为假时预期仍绿、语义失真（docstring 前提须精确化为「非 story 取值在记录语境未置位时零行为；置位时走分态兜底」）；test_a7_push_seam_lands_in_ctx_consume_not_connect（:545-591）是源码位次齿——心跳 helper/常量须定义在 ws_gateway 之前；:717 真跑 ws_gateway。新增释放边沿姊妹齿，**不得删弱任何断言**。"
+    },
+    {
+      "path": "server/acceptance/test_record_dialogue_guide.acceptance.py",
+      "kind": "frozen-rebaseline",
+      "note": "三处经泵投 listen stop；P1 的收尾三件会在既有 case 里新跑一遍，凡钉引擎腿帧序/帧数的断言须逐条核偏移。"
+    },
+    {
+      "path": "server/acceptance/test_record_front_polish.acceptance.py",
+      "kind": "must-stay-green",
+      "note": "「accumulate 照常 feed、pending_stop 照常」既有语义零偏移。"
+    },
+    {
+      "path": "firmware/main/test/record_session_lifecycle.acceptance.c",
+      "kind": "must-stay-green",
+      "note": "1g 预评补：RSL2_IDLE_START（:578）切 Idle 分支（:713），是 SCR-A4 八件清位链的既有邻居——P1 保 Idle 链不变即绿；一旦红 = 八件被顺手删了。"
+    },
+    {
+      "path": "firmware/main/test/record_session_repair.acceptance.c",
+      "kind": "must-stay-green",
+      "note": "1g 预评补：RSR-A2 tooth2 用 MAIN_EVENT_VAD_CHANGE → MAIN_EVENT_SCHEDULE 切区（:595-597）、RSR-A3 用 case kDeviceStateIdle 切区（:655）；P1 恰在这两区加代码（VAD 沿重置 / Idle 链保持），且 VAD 块必须仍在 SCHEDULE 块之前（Run() 内不得重排）。"
+    },
+    {
+      "path": "firmware/main/test/chrome_ghost.acceptance.c",
+      "kind": "must-stay-green",
+      "note": "1g 预评补：CG-A1（:1058-1080）要求 kidpal_keybar_scene_reset( 在 application.cc 或 kidpal_render_node_voice_end 内命中且含 REMINDER 在顶豁免语义——Idle 八件链不动即绿。"
+    },
+    {
+      "path": "firmware/main/test/reminder_overlay_unify.acceptance.c",
+      "kind": "must-stay-green",
+      "note": "1g 预评补：RM-A3 tooth5（:1031-1035）要求 application.cc 的 RaiseReminderQueue( ≥1，是轮 A A8「录音态提醒排队例外」的既有离线齿。"
+    },
+    {
+      "path": "firmware/main/test/diag_log.acceptance.c",
+      "kind": "must-stay-green",
+      "note": "1g 预评补：DLG-A4⑤（:1186-1198）全文扫 application.cc——kidpal_log_sysinfo_due( / kidpal_log_time_cache_update( 在世 + clock_ticks_ % 10 恰 0；P1 新增 clock_ticks_ 消费者，巡检分频若顺手写 % 10 即红。"
+    },
+    {
+      "path": "server/acceptance/test_points_device_ui.acceptance.py",
+      "kind": "must-stay-green",
+      "note": "1g 预评补：K2D-A3（:680-760）对 points_home/points_ledger ctx 断言 routing==chat + 零 kidpal_record_context 注入帧（:707-709）+ 零 story_list（:704），并对未知值断言零 story_list（:737）——P1 恰在同一 if/elif 链上加分态兜底，标记为假时须保绿，入 seed 才能正确归因。"
+    },
+    {
+      "path": "server/acceptance/test_story_cover_nav.acceptance.py",
+      "kind": "must-stay-green",
+      "note": "1g 预评补：C8 test_c8_context_three_way 钉 story_cover = 普通问答（不 acc.start / 不推 story_list / 不注 record 信号），并真跑 pump_client_to_upstream（:215）——story_cover 属 P1 ctx 边沿的合法非 story 闭集取值，须确认零动作。"
+    },
+    {
+      "path": "firmware/main/test/record_dialogue_guide.acceptance.c",
+      "kind": "frozen-rebaseline",
+      "note": "实施期扩单（builder 首跑曝露，1g 扫描漏件）：RCL-F1 的区切 = HandleStopListeningEvent → HandleWakeWordDetectedEvent（粗粒度函数序锚）跨越 HandleEndVoiceSessionEvent；P1 让统一处理器发 SendStopListening 后跨度内计数 1→2 = 假红。最小重锚 = fn_end 收窄为 \"void Application::HandleEndVoiceSessionEvent\"（恢复原意：只量 KEY 路径那一个发送点）+ REVISION LOG 说明；断言语义零变化（tighten-only）。不放宽计数、不改 HandleStopListeningEvent 语义。"
+    },
+    {
+      "path": "server/acceptance/test_record_dialogue_guide.acceptance.py",
+      "kind": "frozen-rebaseline",
+      "note": "D1 无条件注入使 RDG-A4（:935-939「重复 ctx(story) 零 active=true 注入」）由绿转红——重锚为「第二次仍恰一帧 active=true；story_list 零新增（边缘仍守）」，按 KRC-E2 留痕（旧钉→新钉→为什么），断言不得静默改。"
+    },
+    {
+      "path": "server/acceptance/test_points_e2e_spike.acceptance.py",
+      "kind": "must-stay-green",
+      "note": "1g 扫描盲区（写轮 A 预评新发现）：K0PTS-A4（:983-997）对 _relay_display_blocks_to_device 做源文本区切并断言区内含 _consume_points_intent；D1/D2 均在该区改代码。只要 _consume_points_intent 仍在 build_display_tool_calls 之前、两函数定义名不动即绿。已记 friction scan-miss。"
+    },
+    {
+      "path": "server/acceptance/test_m4k1_story_cloud_link.acceptance.py",
+      "kind": "must-stay-green",
+      "note": "追加理由：test_a2_idempotent_convergence_with_start_recording（:910-955）在 _story_route_display_payload 返回语义 enter_edge→consumed 后须仍绿（只断 routing + 归档篇数，不断注入帧数）。"
+    },
+    {
+      "path": "server/acceptance/test_record_cancel_lifecycle.acceptance.py",
+      "kind": "must-stay-green",
+      "note": "追加理由：[SC-B] 直调 _story_guide_round（:807/:839/:886）；本轮采纳「不动该函数入口守卫」→ 零风险，作防线入 seed。"
+    },
+    {
+      "path": "firmware/main/test/record_session_live.acceptance.c",
+      "kind": "must-stay-green",
+      "note": "追加理由：RSL-A6（:832-850）直调 kidpal_story_echo_reset/count；D3 素材信号最终选 s_story_rec_entered（不碰 echo），本件为既有语义锚保绿。"
+    },
+    {
+      "path": "firmware/main/test/diag_log.acceptance.c",
+      "kind": "must-stay-green",
+      "note": "追加理由：D3 新 producer 复用 clock_ticks_；DLG-A4⑤ 的 clock_ticks_ % 10 恰 0 负锚再次相关。"
+    },
+    {
+      "path": "firmware/main/test/font_assets_runtime.acceptance.c",
+      "kind": "must-stay-green",
+      "note": "真机轮 B 修复轮新增种子：本轮 manifest 扩单把 firmware/main/CMakeLists.txt 纳入改动面，而 host_app CMakeLists 的 FAS 块把它当 FAS_DEV_CMAKE 读取（device_cmakelists_fonts_root 与 9 个 font_test_<sz>_in_cmake 键依赖其内容）——SOURCES 重排/误删的唯一离线警报。只许 additive 一行。"
+    },
+    {
+      "path": "firmware/main/test/host_infra_smoke.acceptance.c",
+      "kind": "must-stay-green",
+      "note": "真机轮 B 修复轮新增种子：包 0 boundary 注册序守卫。HOST_ACCEPTANCE_SRCS 新增 session_voice_watch.c 与验收件登记行的位置若放错（必须在 host_infra_smoke 之前），本件即红。"
+    },
+    {
+      "path": "server/tests/test_archive_guard_units.py",
+      "kind": "must-stay-green",
+      "note": "真机轮 C 修复轮：本件为**纯 additive 修改**——新增第二 AST 抽取器 `_load_output_guard`（产物占位判据核）与新 TestCase；既有 `_load_guard()` 的 wanted 集合、`ns={'re':...}` 与四条判定 case 逐字不动（本方案让 _archive_material_reject_reason 与 _FRONT_ARCHIVE_HALLUCINATIONS 零改动，抽取器无需改名）。结构锚 test_guard_sits_after_empty_check_before_downlink 三锚顺序必须保绿；`_issue_finish_downlink(session_id` 字面形态不得改写。"
+    },
+    {
+      "path": "server/tests/test_story_units.py",
+      "kind": "must-stay-green",
+      "note": "真机轮 C 修复轮新增种子（architect 建议）：story.py 三缝（StoryAccumulator / build_organizing_input / archive_story）本轮零 diff 的负锚，跑一遍即证 RDG-A3「装配层不代行滤除」未被触碰。"
+    },
+    {
+      "path": "server/acceptance/test_261022_memory_isolation.acceptance.py",
+      "kind": "must-stay-green",
+      "note": "真机轮 C 修复轮新增种子（architect 建议）：K3-E2④（:988）按位置传 corr_id 直调 `_organize_and_archive` —— 本轮新增的 `reason_sink` 必须 keyword-only（`*` 之后），位置参数序 (raw, corr_id, device_id) 逐字不变；本件跑绿即证签名未破。"
+    }
+  ],
+  "uiux": {
+    "uiuxRequired": false,
+    "uiuxLevel": 0,
+    "designRefs": [],
+    "sharedUiRefs": []
+  },
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/261115-session-channel-resident/"
+  ],
+  "riskTier": "high",
+  "riskRationale": "触固件会话生命周期核心路径（application.cc 状态机 + Idle 分支八件清位链）；触提醒必达性（S-F1.4：会话间隙 kidpal_speak 能否出音是常驻模型的承重实证）；触记录语境抑制链单点（front 漏发 active=false = 引擎永久抑制）；成批重写既有冻结验收齿；跨 firmware + server 两面原子、回滚面大。",
+  "gateProfile": [
+    "evidence-integrity",
+    "test-quality",
+    "state-machine",
+    "mcp-tool-contract"
+  ],
+  "mergeOrder": 77,
+  "dependsOn": [],
+  "launchPreconditions": [
+    {
+      "predicate": "支撑语义已冻结并 landed：docs/architecture.md §12 出现 261115-arch-review-session-channel-resident 行、契约 §四 listen/kidpal_keepalive 已落",
+      "scope": "workstream",
+      "status": "verified",
+      "evidence": "reviewedCommit 87dbf775，已合并本地 main 7e4c44d8"
+    }
+  ],
+  "decisionCoverage": [
+    {
+      "decision": "A1 · 通道生命周期与会话生命周期解耦（通道终止源闭集三条）",
+      "summary": "会话结束不再拆通道；四条收尾路径收口到统一处理器并发 listen stop。",
+      "sourceRefs": [
+        "docs/architecture.md#§6.4",
+        "docs/decisions/ADR.md#ADR-019"
+      ],
+      "landsIn": "exitCriteria:KRC-E1"
+    },
+    {
+      "decision": "A2 · 会话边界复用既有帧（kidpal_session_ctx + listen start/stop）",
+      "summary": "不新增上行帧；discard 先于 listen stop 的有序保证成立。",
+      "sourceRefs": [
+        "docs/contracts/interface-contract.md#§四-listen"
+      ],
+      "landsIn": "exitCriteria:KRC-E1"
+    },
+    {
+      "decision": "A3 · 保活 = front 周期下行 kidpal_keepalive（默认开）+ 设备 tick 自愈巡检",
+      "summary": "设备 120s 判据阈值与逻辑零改动、语义升级；死链 120–150s 内判出。",
+      "sourceRefs": [
+        "docs/architecture.md#§6.4",
+        "docs/contracts/interface-contract.md#§四-kidpal_keepalive"
+      ],
+      "landsIn": "exitCriteria:KRC-E3"
+    },
+    {
+      "decision": "A4 · 60s 无语音超时 producer 落主循环 tick + clock_ticks + VAD 沿重置",
+      "summary": "单阈值、记录语境豁免；纯模型维持验收 oracle 身份。",
+      "sourceRefs": [
+        "docs/requirements.md#§2.1",
+        "docs/architecture.md#§5.1.1"
+      ],
+      "landsIn": "exitCriteria:KRC-E4"
+    },
+    {
+      "decision": "A5 · front 每会话态由带内信号收尾（记录语境释放 + 累积取消 + ctx 边沿兜底）",
+      "summary": "front 每会话态由带内信号驱动**分层**收尾：问答不动作；记录归档优先；pending_stop 受保护交 10s sweep 释放；ctx 边沿兜底改分态；连接级 teardown 降为兜底。",
+      "sourceRefs": [
+        "docs/architecture.md#§5.1.2",
+        "docs/contracts/interface-contract.md#§四-kidpal_session_ctx"
+      ],
+      "landsIn": "exitCriteria:KRC-E1"
+    },
+    {
+      "decision": "A6 · 省电剖面维持 PERFORMANCE、RC-B6 观测口径重定",
+      "summary": "会话收尾后不再降 LOW_POWER（通道仍在世）。",
+      "sourceRefs": [
+        "docs/architecture.md#§6.4"
+      ],
+      "landsIn": "exitCriteria:KRC-E4"
+    },
+    {
+      "decision": "C7 · 引擎 24h 兜底为唯一剩余重建窗口；引擎代码与 config 零改动",
+      "summary": "铁律：engine-patch/** 与 ECS core/** 零 diff；24h 日切形态观测 = 轮 A A10（测试环境临时调小 close_connection_no_voice_time，不改生产值）。",
+      "sourceRefs": [
+        "docs/architecture.md#§6.4",
+        "docs/decisions/ADR.md#ADR-019"
+      ],
+      "landsIn": "exitCriteria:KRC-E4"
+    },
+    {
+      "decision": "C8 · 共享短上下文不变（ADR-015 持久会话）",
+      "summary": "通道常驻对记忆口径零影响；凭据 = 轮 A A5 记录会话全链回归 + 记忆口径零变化。",
+      "sourceRefs": [
+        "docs/decisions/ADR.md#ADR-015",
+        "docs/architecture.md#§8.1"
+      ],
+      "landsIn": "exitCriteria:KRC-E4"
+    }
+  ],
+  "crossPackageBehaviors": [
+    {
+      "topic": "云端结束意图（end_session 三段补链）",
+      "owner": "261117-session-end-intent-longretry",
+      "carriedBy": "261117-session-end-intent-longretry",
+      "note": "P1 只建立统一处理器与 P1 内触发源；end_session 的 prompt / 门禁 / 设备 case 0 三段补链归 P2，P1 不得提前改 mcp_server.cc 与 display_schema.py。"
+    },
+    {
+      "topic": "自动重连封顶长跑与人工意向位",
+      "owner": "261117-session-end-intent-longretry",
+      "carriedBy": "261117-session-end-intent-longretry",
+      "note": "P1 只保留既有 TryStartAutoConnect 3 次退避与守卫三条件；长跑改形归 P2。"
+    },
+    {
+      "topic": "SCR-A2 in-flight 守卫断言的重锚",
+      "owner": "261116-channel-resident-core",
+      "carriedBy": "261117-session-end-intent-longretry",
+      "note": "P1 冻结件 session_channel_resident.acceptance.c 的 SCR-A2「in-flight 守卫逐字在世」将被 P2 的 SEI-A4 重锚为「守卫在场 + 置意向位 + 审计行」；P2 须把该文件列入 impactedTestsSeed。"
+    },
+    {
+      "topic": "自愈巡检使 3 次退避事实上变成长跑重试（≈35s 一轮、无上限）",
+      "owner": "261117-session-end-intent-longretry",
+      "carriedBy": "261117-session-end-intent-longretry",
+      "note": "P1 只保留既有 TryStartAutoConnect 3 次退避与守卫三条件；但通道常驻 + 每秒巡检使离线期事实形态 = 每 ≈35s 一轮 TLS 握手、无上限。P2 的 SEI-A2/A3 封顶长跑改形时，行号锚与形态基线以 P1 合并后的 main 为准（P1 review-packet 与轮 A A3/A12 观测项均记此事实）。"
+    },
+    {
+      "topic": "mcp_server.cc DISCARD_RECORD case 的注释双源",
+      "owner": "261117-session-end-intent-longretry",
+      "carriedBy": "261117-session-end-intent-longretry",
+      "note": "mcp_server.cc:1011-1024 现注「严禁走收尾保存面（listen stop 上行会触发 front stop 归档）」。P1 后 discard 路径恰恰会发 listen stop（靠 SendKidpalStoryDiscard 先行把 routing 打回 chat 才不归档，契约 §四 2026-11-16 已把发送时机改锚到 listen stop 之前）。P1 不改该文件（守 P2 边界），P2 改 control case 0 时同批改写该注释。"
+    }
+  ],
+  "notes": "本包是 2 包列车的 P1（mergeOrder 77，serial WIP=1）。两包都改 application.cc，且在**同一批函数内改不相交行段**（HandleEndVoiceSessionEvent 与 HandleToggleChatEvent 被两包分别改不同行段：P1 = 收尾动作序，P2 = in-flight 守卫行），P2 从 P1 合并后的 main 起分支并须覆盖这两处行号锚。engine-patch/** 与 ECS core/** 零 diff；docs/contracts/** 只读消费。manifest 修正注记：验收件登记在 firmware/main/test/host_app/main/CMakeLists.txt（package-split 种子写的顶层 CMakeLists 为误，实核顶层零 acceptance 命中）。条件件口径：package-split 标「条件」的 server/acceptance/test_record_cancel_lifecycle.acceptance.py 与 test_m4k3_record_session_live.acceptance.py 已按 F-03 明列入 impactedTestsSeed（must-stay-green / frozen-rebaseline）；若实施中判定必须改其冻结断言，走 planner 扩单通道回评补 manifest，不就地自扩。真机轮 A 由 human 持板，front 部署由 agent 按 kidpal-ecs-gateway 规程执行。 起包补记（2026-11-16，Pod intake）：① 1i 新机制批判定 = 非新机制批——`kidpal_keepalive` 下行帧与 `listen` 会话边界语义均为已冻结契约条目（261115-arch-review 已 landed），无新子系统 / 新外部依赖 / 新数据迁移；② 红基线重测（本 Pod worktree，HEAD 90177303 = base ref，server/firmware 相对 214e7a2e 零 diff）：server 457 passed / 0 failed（60.65s，仓根起，命令同 redBaselineCommand）；host runner 301 Tests / 3 Failures / 0 Ignored（执行目录 firmware/main/test/host_app，3 红全为 p1_auxbar_style 存量族 ic_wifi_14 / ic_thermo_12 / ic_batt_15）；③ brief-inputs 锚点 advisory：contract §四 的四个 ref 为条目级伪锚（目标文档实为单节 `## 四、端云协议剖面`，条目在 :351-356），内容已在位、非缺章；S-F2.2-AC4 为 AC 级回引（非标题锚），均无需改 refs。 ④ manifest 预评结论（1g 回执已入 plan.md「技术方案（planner+architect 预评）」）：**撤销** `firmware/main/protocols/protocol.cc` 扩单——自愈巡检守卫短路顺序（`!auto_connect_in_flight_` 前置于 `IsAudioChannelOpened()`）使 `IsTimeout()` 的 ESP_LOGE 频率从每秒一条降到每轮一条（in-flight 3 次退避 ≈35s 遮住），故本包零改 protocol.{cc,h}；若真机轮实测仍过密，带量测回报 planner 再走扩单（届时 protocol.cc+protocol.h 两件同时入，mutable 跳变沿成员）。**新增** `server/acceptance/test_m4k3_record_session_live.acceptance.py`（package-split v1.2 已升非条件成员，原清单漏登；:508 docstring 前提精确化 + 新增释放边沿姊妹齿，断言零删弱）。 ⑤ 收口写点核对（Step 8c，对照 DEV-GOVERNANCE §6 表逐行）：设计稿母版 = none；出图 = none；spine 回填 = none（本包无 intake spine，拆包源 = delivery/review 的 PROPOSAL/package-split）；spec 挂法句 = none（docsSyncRequired=false；requirements:48 对账注记按 workstream 留根 1 由主线程路由）；docs/notes 经验记录 = none；**账本条目 = integrator 写槽（docs/debt/**）**：`docs/debt/tech/TECH-261114-overlay-close-channel-rebuild-churn.md`（候选 A = 本包 T1）与 `TECH-261012-first-keypress-no-listening.md`（心跳保活 = 本包 T5/T6）须在 docs-delta 记处置（建议 closedBy=本包 + closed 日期，或先注「已兑现，待轮 A 通过后结项」由 integrator 裁）；taskpackage 元数据回填 = planner（acceptance-author 交付内容由 planner 代落）。 ⑥ 实施期 manifest 二次扩单（builder 首跑曝露 + planner 回评，2026-11-16）：`firmware/main/test/record_dialogue_guide.acceptance.c` 纳入 changeManifest —— RCL-F1 的区切 HandleStopListeningEvent → HandleWakeWordDetectedEvent 必然跨 HandleEndVoiceSessionEvent，P1 让统一处理器发 SendStopListening 后区内计数 1→2 = 假红；处置 = fn_end 收窄为 HandleEndVoiceSessionEvent（恢复原意、tighten-only）+ REVISION LOG，断言语义零变化；不放宽计数、不改 HandleStopListeningEvent 语义。1g 扫描漏件已记 friction scan-miss。\n\n【真机轮 A 修复轮（2026-11-17 human 指示「三个问题都修」）】D1 记录语境注入去边缘化 + front 语境审计行；D2 丢弃/会话关闭终止在途回合（abort→active=false→listen stop 帧序，front 侧，不碰 mcp_server.cc/引擎）+ 会话关闭后迟到 TTS 丢弃门（front 侧）；D3 设备空素材空闲收尾 producer（application.cc，kStoryEmptySessionTimeoutS）+ front 空素材释放口径（复用 pending 10s 释放，零归档/零 story_list/零盖章）。证据与事实澄清见 device-round-a-evidence.md：三源日志证明轮 A 每个故事会话**都**进入过记录语境、语境 ASR 被抑制；human 原始推断「front 未进入记录语境」不成立，设备听到的 TTS 来自 D2 的会话结束尾音 ASR 路径。ctx 注入的**边缘依赖**仍是真实缺陷面，按要求改为每会话无条件幂等注入。边界：契约面零改动、引擎代码零改动；mcp_server.cc / display_schema.py / story_page.c / protocol.* 维持零 diff（如设计需要触碰，走 planner 扩单通道回评）。三条均补冻结验收 + 变异证据，重跑 host/server 离线验收与 final 轮。\n\n【修复轮技术决策（architect 1g 预评 a3d0206ffd866ca3a + planner 裁定）】D2 **不发 abort**（轮 A 实证 22:46:50 abort 已收仍产 TTS；引擎冻结纪律四处禁止置 client_abort，防波及 front 合法 speak 注入）——改为 discard 分支内本连接引擎腿直发 active=false，帧序先于 listen stop，由引擎既有 _kidpal_listen_closed 先清后转硬截断；human「择一并给依据」的「依据」见 plan.md 修复轮节。D3 素材信号 = `!s_story_rec_entered`（echo_count 的唯一 reset 在 mcp_server.cc:861，触发词入口缺 reset 且补洞须越界 P2）；阈值 = 60（对齐 §2.1 单一口径）。D2 迟到帧门（B9）本轮做、front 侧、令牌感知。\n【spec 面漂移（出 Pod 后由主线程直落）】D3 收窄 requirements §2.1「记录会话不适用 60s 超时」的逐字冻结（空素材记录会话由设备侧 kStoryEmptySessionTimeoutS=60 收尾=释放不归档；AC5 只覆盖有素材场景），而 taskpackage docsSyncRequired=false。review-packet 显式申报，主线程按需求面轻量注记处理（§2.1 记录会话段对账句或 §7 开放问题 7 追加），本 Pod 不改 docs/requirements.md。\n【轮 B 清单口径修正】device-round-a-evidence.md B-D3「立即可应答」与已冻结 accepted residual（pending ≤10s 抑制窗）冲突 → 轮 B 判据改为「≥10s 后普通问答可应答；或 10s 内首次话语允许被抑制、再按一次即恢复」。\n【冻结（2026-11-17，acceptance-author）】五条新断言已冻结：SCRF-B7（3 例）/ B8（4 例，含 KEY 对照齿）/ B9（4 例）/ SCR-A8（源锚代理）/ B10（2 例，设计态绿）；RDG-A4 显式重锚（旧钉=重复 ctx 零注入 → 新钉=第二次仍恰一帧 + story_list 零新增；REVISION LOG 已落）。\n【Step 8b 方向核结论】AC 回引号集对账：sourceRefs 的 S-F1.4 / §2.1 / §2.3 / S-F2.2-AC4 均在修复轮断言回引中在场；story 补充规则逐条有落点（§2.1 60s 口径 → D3 设备 producer；§2.3 按键口径零改；S-F2.2-AC4 → B8/B10）；断言方向不弱于 story（D2 强化终止语义、D3 收窄记录会话豁免——后者为 spec 漂移，交主线程/architect 走需求面轻量注记，见上条）。整改型包红基线 ↔ 根因方向逐条一致。\n【真机轮 B 修复轮（2026-11-18）】human 指示「按 B 修」（pod-events human-correction 6e888610）：把 60 秒收尾判据从瞬时 VAD 电平门改成更稳的判据 + 补可观测性；契约面与引擎零改动；真机轮 B 实测 D1/D2/A5 通过、D3 失败（故事页空素材静置 2m41s 不结束）、A6 回归失败（普通会话静置 3m13s 不关麦，producer 代码一字未动）。\n【planner 只读定位（设备日志 device-evidence/round-b/kplog-excerpt.txt，源 KPLOG000 全量 sha256 21599cbc…）】D3 真根因不是电平门：本日志 12 条 story_vad_recording_enter 全部落在故事会话起步 1 秒内（无人说话时 VAD 也让出一记 speech 沿），它把 s_story_rec_entered 置真，而该标志正是 D3「从未收到素材」判据 → 该会话对 D3 producer 永久不可达；A6 窗内零状态迁移（clock_ticks_ 未被状态迁移清零），但设备不打印 VAD 电平，M1 电平恒真 / M2 起音沿风暴无法在日志里区分。\n【技术方案】architect 1g 预评（dispatch a691226a871b7ede5，只读 advisory）推荐并采纳 B+：判据本体迁入纯逻辑 seam firmware/main/session_voice_watch.{c,h}（host 可编、注入 tick 序列做真行为断言），application.cc 只留接线；有效语音 = sustained_level（level_run_s≥3 且 ≤100）|| asr_fresh（asr_age_s<25）；阈值 KIDPAL_VW_VOICE_SUSTAIN_S=3 / ASR_FRESH_S=25 / VAD_TRUST_S=100（严格大于 A7 的 90s 界，保守档）/ DIAG_INTERVAL_S=10 / DIAG_MIN_GAP_S=3；不引入独立看门狗定时器，suspect=level_run_s>100 作审计位；clock_ticks_ 不复用为累加器（其两个归零点正是 M2 成因），MAIN_EVENT_VAD_CHANGE 区零 diff。planner 修订一条（承重）：D3 素材门由 s_story_rec_entered 换为 seam 的 asr_seen（stt 到达置位、会话边界清零）——与 front 累积器同源，设备与网关对「有没有素材」不再可能判断不一致；s_story_rec_entered 保留录音页用途但不进 producer 判据。\n【manifest 扩单（planner 扩单通道回评后补，2026-11-18）】新增 firmware/main/session_voice_watch.c / .h + firmware/main/CMakeLists.txt（SOURCES additive 一行）；application.h 保持零 diff（用 file-static）。front 与引擎零 diff，本轮退化为固件单面包。\n【验收】SCR-A5 电平门断言极性反转（必需 → 禁止回潮）+ 补 kidpal_voice_watch_tick( 正锚；SCR-A8 的 !s_vad_speaking≥2 整条退役、素材门重锚为 asr_seen；新增 SCR-A9..A15（其中 SCR-A9/A10/A11/A12/A13 为真行为断言，A10 是轮 B 缺陷的唯一离线警报、A12 是 A7 无条件承载）。\n【真机轮 C 出口】review-packet 需写复测清单：A6（纯静默 60s 关麦）/ A7（连续讲 >90s 不误收，读 asr= 列最大值标定 ASR_FRESH_S）/ D3（空素材静置 60s 释放不归档，读 rec_ctx=1 且 asr_seen=0）/ A5 回归；并采集 suspect= / quiet= / run=（M1 vs M2 归因）、home 会话 rec_ctx= 恒 0（M4 排查）、日志落盘增量对账。\n【residual 申报】保守档下 M1 电平卡死最迟 160s 收尾（不是 60–70s；纯静默仍恰 60s）；M3 根源（AfeAudioProcessor::Stop() 不复位 is_speaking_）本轮不修，登记主线程路由；M4（记录语境镜像卡死）本轮只由诊断行暴露、修复归 P2；故事会话起步噪声沿导致无端跳录音页登记 residual。\n【1i 新机制批判定（本轮追加）】非新机制批：判据改造在既有设备主循环与既有 stt 消费面上，无新子系统 / 新外部依赖 / 新数据迁移。\n【planner 白盒复核改动（2026-11-18，tighten）】builder 首版把 kidpal_voice_watch_reset 无条件落在 Listening case 尾部；复核发现记录会话语境下引导播报（TTS）会造成 Listening→Speaking→Listening，回到聆听这次全清会把 asr_seen（D3 唯一素材门）清 0 → 有素材的故事会话会在播报后静置 60 秒被判空素材、不归档释放（丢稿）。修法 = 缝新增 kidpal_voice_watch_reset_soft（清六件保留 asr_seen）+ 状态迁移监听器存 old_state + Listening case 按「旧状态 == Speaking 走软复位，否则全清」分派。验收由 acceptance-author 收紧补丁补断言（SCR-A13 行为 + SCR-A15 结构三件），红基线 320/5 → 修后 320/3。\n【已知残余（出 Pod 后主线程路由）】① 设备侧构建 depfile 时序：新头 session_voice_watch.h 首引入时验收 TU 未登记其依赖，改头不触发重编（本轮变异用强制重编绕开，建议记 review-packet residual / 构建卫生项）；② change-manifest 闸经 current/ 指针解析恒判 pre-cutoff 放行（见 gate-tooling-gap-manifest-cutoff.md，planner 已手工对账并补登 builder 单测文件）；③ AfeAudioProcessor::Stop() 不复位 is_speaking_（M3 根源）与 M4 记录语境镜像卡死本轮只诊断不修（后者归 P2 边界）；④ 需求面对账：requirements §2.1 的 60 秒口径与 architecture §5.1.1 的判据描述需主线程按需求/架构面轻量注记补「有效语音证据」定义（本轮 Pod 对 docs/** 零 diff）。\n【真机轮 C 修复轮（2026-11-18，human「现在就修」，pod-events human-correction c50b1954）】实测三源见 device-evidence/round-c/（planner 亲拉 ECS，非 human 转述）：21:22:05 空累积落 pending_stop 且分层保护正确（action=protected，零回退）；21:22:06 引擎静音幻觉 `识别文本: Okay.`；21:22:09 整理回合 ok=true 并把占位句「（没有可整理的内容）」当正文归档（id=2026-11-18-s33477cee，ECS MD 标题与正文逐字同句）。两层缺陷：① 主缺口 = **整理回合后置守卫缺席**（`_organize_and_archive` 只判 `lines` 为空，占位回复是合法非空行）；② 次缺口 = **素材侧静音幻觉放行**（`Okay.` 归一化后长度 4、不在既有 `_FRONT_ARCHIVE_HALLUCINATIONS`）。修复面仅 front + 验收：新增整理产物占位判据（机械可判：整串归一化等价占位族 / 有效字符阈值）与素材侧段级过滤（stt 整段归一化相等、绝不子串）；释放口径 = 出语境恰一帧、零归档、零 MD、零 story_text、零盖章、routing 回 chat；ORGANIZING 已进入时恰一帧 story_list 页面退出（R6 困页先例，列表内容零新增）——与 human 原话「不推 story_list」的偏差及理由见 plan.md 轮 C 节二.3。新增冻结验收 SCRF-C1..C4（pending_stop+Okay. 不归档 / 整理占位不归档 / A5 回归 / 过滤保守性）；manifest 扩单一件 `server/tests/test_organize_guard_units.py`（新建，避免改既有 test_archive_guard_units 的 wanted 集合）。契约零改动、引擎零改动、firmware 本轮零 diff；真机轮 C 复测清单由 human 持板执行（见 review-packet）。残余：引擎静音 ASR 幻觉（Okay./嗯。）为上游问题，review-packet 登记并建议主线程立 tech debt；本轮不修引擎。真机轮 C 未跑不得申报 PASS、不得合并。\n【冻结（2026-11-18，acceptance-author，dispatch a16d3a4e6743efef1）】新增两 TestCase 类 9 个方法承载 SCRF-C1/C2/C3/C4（文件 +744 行 / -0 行，既有 B1..B10 断言行零改）：`ScrfSilentAsrSegmentFilterAcceptance`（C1 端到端 + C4 命中族/集合不变式/不即时释放/收尾词面）与 `ScrfOrganizePlaceholderGuardAcceptance`（C2 端到端 + R1–R4 判别力 + C3 正常路径 + C3 丢稿类安抚）。红基线实跑 = 全量 13 failed / 490 passed / 9 deselected（13 红全设计态红、无 infra 红），既有 `-k scr_b` 28 passed。acceptance-author 申报三处**加严**偏差：① C2 story_list 按 ctx 边沿基线 +1 增量断言（ctx 进会话已推一帧 restore=true 的 story_list，绝对计数会假红）；② C1 释放帧在会话腿量（sweep 腿集口径，同 B2b/B10）；③ 集合不变式加严「守卫 compact 归一化后长度 ≥2」。三处均为收紧、planner 采纳。\n【Step 8b 方向核（轮 C，planner）】① AC 回引号集对账：sourceRefs 的 `S-F2.2-AC4` 与 `requirements §2.1` 在新增验收 coverage map 中均有落点（C2/C3 → S-F2.2-AC4 三式收尾与不写垃圾篇；C1 → §2.1 记录会话收尾）；② story 补充规则逐条有承载（§2.1 结束三通道/记录会话 → C1 + 既有 SCR-A5/A8；§2.3 按键口径零改；S-F1.4 提醒零改；S-F2.2-AC4 → C2/C3）；③ 断言方向不弱于 story 与既有 B10（C1/C2 把「空素材只释放」从短幻听扩到迟到英文幻觉与整理产物占位两层）。对不上项 = none；未触发退回。\n【轮 C 实现（2026-11-18，builder a25b51d4b21a6d53c）】`front_app.py` +219/-14：新增段级静音幻觉集合、占位集合、两个阈值、`_guard_compact` / `_is_silent_asr_hallucination` / `_organize_body_reject_reason`；`_story_feed_from_stt` 段级过滤；`_organize_and_archive(_offloop)` keyword-only `reason_sink` + `archive_story` 前占位守卫；`_story_finish_session` 两档处置 + 逐腿页面退出帧。`server/tests/test_archive_guard_units.py` +161/-0（新 `_load_output_guard` + `OrganizeOutputGuardUnits` 6 条，既有四条 case 与 `_load_guard` 逐字未动）。实跑：目标件 47 passed / 0 failed；server 全量 799 passed / 0 failed / 9 deselected。变异 8/8（见 mutation-evidence/round-c-fix.md），其中 #4「段级集合加入单字 `嗯`」同时红 SCRF-B10 case 2 与集合不变式（不变式判别力承重）、#8 须同时移单行前置守卫与主体守卫才转红（观察项 1）。R4 判序调整为 R1→R4→R2→R3（见 plan.md 轮 C 节四.9，planner 采纳）。\n【轮 C scoped 复验】verify.mjs scoped round 8（invocationId ffeeab66-d5f9-4a44-849a-40ba9faaf93b）八闸全绿，`verifier-evidence-check` exit 0（factOk true）；证据 = verifier-evidence/rounds/r8.json。"
+}

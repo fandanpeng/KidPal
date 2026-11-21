@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/tech/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 41（待拍板 2 / 待触发 33 / 已接受风险 5）；已结 29（归档索引见下）。
+**摘要**：未结 39（待拍板 2 / 待触发 31 / 已接受风险 5）；已结 31（归档索引见下）。
 
 ## 待拍板（2）
 
@@ -16,7 +16,7 @@
 | [TECH-261022-p3-record-session-state-churn](TECH-261022-p3-record-session-state-churn.md) | MAJOR | P3 记录会话状态演出族缺陷——键帽鬼影闪烁 / 成功路径鬼覆盖层吃按键 / 引导垄断与「说完了」竞态 / 记录语境幻听入素材 / 列表排序与敷衍标题（KPLOG005 真机轮实证） | 已拍板即批处理——human 2026-10-22：登记后紧接走 /triage-change 分流起包（建议拆两包：固件键帽+覆盖层族一包；front 引导节奏+素材过滤+排序标题一包） |
 | [ARQ-261029-home-temp-marker-producer](ARQ-261029-home-temp-marker-producer.md) | MAJOR | F-9 首页临时事件下划线——上游写入侧从不往 name 落 ※ 前缀，[U1] 机制真机永不触发 | P1 包（261028-m6-k2a-p1-home-16px）acceptance-author 冻结轮跨端核对（2026-10-29） |
 
-## 待触发（33）
+## 待触发（31）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -28,7 +28,6 @@
 | [TECH-261011-front-half-open-proxy](TECH-261011-front-half-open-proxy.md) | SHOULD | front 代理半开洞——引擎死而设备空闲无流量时泵不收场（设备腿挂死、设备不知情、alert legs 指向死引擎腿） | 下个动 server/gateway/front 的包；与提醒可达性问题族（决策 21 / 常驻在线批）同族，可与 TECH-261010-device-no-reconnect-on-server-close 后续小批并议 |
 | [TECH-261011-spec-v5-reconcile-note-drift](TECH-261011-spec-v5-reconcile-note-drift.md) | COULD | requirements v1.61 补充规则内 v1.57 时代 ⚠️ V5 版式对账注与 home_p1.c 实现已漂移（大字+倒计时贴纸+中文日期描述过时） | 下个需求面变更批顺带（requirement-change 档 0 勘误通道；不阻塞任何实现面在办批） |
 | [TECH-261012-edgetts-403-hotpatch](TECH-261012-edgetts-403-hotpatch.md) | MAJOR | Edge TTS 微软端全线 403（speech.platform.bing.com 2026-10 拒旧宿主）致设备语音全哑——容器热补丁切 api.msedgeservices.com 端点已恢复，耐久化（补丁进部署源）未落 | 下次动 server/deploy 引擎部署面的批顺带落耐久化；或容器重建/镜像更新时热补丁丢失即复现（可判触发） |
-| [TECH-261012-first-keypress-no-listening](TECH-261012-first-keypress-no-listening.md) | SHOULD | 重启后首次按键不跳聆听页（human 口述「每次重启都有」）+ 实测复现：按键撞 781s 空闲通道超时 → WS 重建后会话失同步、音频通道秒关弹回 idle，连按两次恢复 | 下一次动固件连接生命周期/常驻在线逻辑的批（triage 分流时按图索骥） |
 | [TECH-261012-qq-schedule-write-format-gap](TECH-261012-qq-schedule-write-format-gap.md) | MAJOR | QQ 课表录入链路缺口——家庭侧 main agent 无写课表 skill 钉 B1 格式，一个脏日期格致整份 schedule.md 解析失败、「接下来」三触发全静默停摆；连带实测刷新 marker 链（触发③）从未 live 部署 | dev 侧在途课表链路批 landing 前对账合并处理；或下次 QQ 录入复现时 |
 | [TECH-261014-autoconnect-gives-up-silently](TECH-261014-autoconnect-gives-up-silently.md) | SHOULD | 自动重连任务固定 3 次尝试后静默退出——服务端重启/断网窗口超过约 15 秒即设备离线且不自愈，须用户动作（KEY/唤醒）才重建连；后果：离线期间提醒推送（MCP 下发）全丢 | 下一次动 application.cc 连接/重连面的批顺带评估；或排期后的可靠性小包（判据 = 是否要求「持续重试到连上」的产品口径先定） |
 | [TECH-261014-engine-asr-hallucination-after-stop](TECH-261014-engine-asr-hallucination-after-stop.md) | SHOULD | 引擎在收到 listen stop 后仍处理尾音、ASR 于静音/杂音上幻听（典型 "Thank you."），LLM 顺口回复并被推成 TTS——表现为查字/播报结束后设备多播一段「不客气呀」之类无关寒暄 | 下一次动引擎部署面（server/deploy / engine-patch）的批顺带；或提醒/播报链路的可靠性小包 |
@@ -50,7 +49,6 @@
 | [TECH-261030-qqbot-ask-user-block](TECH-261030-qqbot-ask-user-block.md) | MAJOR | QQ 渠道 `ask_user` 提问送不出去——run 卡死 900 秒、后续消息全排队，家长侧只看到「不回」 | QQ 侧再现「发了没回」；或升级 openclaw-qqbot / OpenClaw 主体时 |
 | [TECH-261030-schedule-answer-skill-period-stale](TECH-261030-schedule-answer-skill-period-stale.md) | SHOULD | `kidpal-schedule-answer` skill 仍写「表列第1节…第6节」，live `schedule.md` 已有第7节——设备课表问答会漏掉周一/二/四的兴趣课（足球） | 下个动 OpenClaw skill / 课表部署面的批；或设备课表问答再现「漏第7节 / 漏足球」 |
 | [TECH-261114-kidpal-agents-md-context-regrowth](TECH-261114-kidpal-agents-md-context-regrowth.md) | SHOULD | workspace-kidpal AGENTS.md 静态纪律承载再增长至 20.7KB（每轮 prompt 9,285 tokens）——M5「首轮 ≤11,000」目标按当前增速 1~2 个功能批内破线；结构性冗余（同一规则最多重复 4 遍）留有 3~5KB 压缩空间 | 下一个要往 AGENTS.md 增回合纪律的功能批（批内预检 probe prompt_tokens）；或探针实测 prompt_tokens > 11000；或 NFR-PERF-4 延迟定阈批 |
-| [TECH-261114-overlay-close-channel-rebuild-churn](TECH-261114-overlay-close-channel-rebuild-churn.md) | SHOULD | overlay_close 即断 WS + 5s 后常驻重建属绕路——冷通道按键进聆听 1.57s（温通道 0.82s）、每次重建付全套 bootstrap burst；候选 A「close 不断通道」为 P1-⑤ 延迟优化，待现有开发任务完成后排期，建议与 TECH-261014 家族合并立包 | human 排期——2026-11-14 human 明示「还有开发任务没有完成，完成后再开始这个优化」；立包时建议与 TECH-261014 家族残余项（主循环 TLS 重连阻塞 / autoconnect 静默放弃 / session-end 通道未接线）合并一次 triage、共担一轮真机回归 |
 | [TECH-261114-vad-split-points-double-add](TECH-261114-vad-split-points-double-add.md) | SHOULD | 引擎 Silero VAD 缺省 1000ms 切句致句中停顿 >1s 分两轮——23 天基线真切句 n=2、全部命中积分句式（事由…停顿…加X分）；11-14 叠加网关阻塞时单事双记账（+6 分）。样本不足先观察，不立包 | 观察判据命中（再累计 ≥2 次真切句事件，或双记账再发生一次 → 升 MAJOR 并走 /triage-change 立包）；或 NFR-PERF-4 延迟定阈批 / 下一个引擎配置面包顺带重估 |
 | [TECH-261115-openclaw-upgrade-batch-residuals](TECH-261115-openclaw-upgrade-batch-residuals.md) | SHOULD | OpenClaw 2.0.4 升级批待办集——main 库 63 个 archived 僵尸行清理全免疫（疑缺陷）/ 重维护评估同步卡循环机制（触发源丙）仍在 / skill-collection-review cron 连续失败 | 下次 OpenClaw 升级/运维批（update-checker 报 2.0.4 可用，须过 runbook §0 版本漂移闸）；或 archived 僵尸行再次引发 slow session write；或重维护评估再撞出 30s 级冻结 |
 
@@ -64,10 +62,10 @@
 | [ARQ-260902-cert-lifecycle-deadlock](ARQ-260902-cert-lifecycle-deadlock.md) | SHOULD | 自签长期证书到期死局（S5）：OTA 未建前证书到期全部设备 wss 瘫痪+逐台重烧（监控面，human 2026-09-04 accept-as-risk 记账；决策闭环记录另见 §2 已结索引） | OTA 应答端点建立（spec §6.3 留二期）对账 / 或证书剩余有效期 <5 年 |
 | [TECH-260928-school-merge-inprogress](TECH-260928-school-merge-inprogress.md) | SHOULD | 合并「上学」项在校时段进行中语义未实现（无下一事项时 end=None 走 start-only 被过滤） | 决策 26「在校时段计为 upcoming」口径重裁 / 需求面对「纯在校日白天首页显示」重提时复议 |
 
-## 已结（29）
+## 已结（31）
 
 > 已结条目文件由渲染器自动归位 `_archive/<结项年>/`（**人不搬文件**；重开自动搬回）。薄行索引按年在归档目录，主 INDEX 只留指针——这是「翻不到未结」旧病灶的根治。
 
 | 归档年 | 条数 | 索引 |
 |---|---|---|
-| 2026 | 29 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |
+| 2026 | 31 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |

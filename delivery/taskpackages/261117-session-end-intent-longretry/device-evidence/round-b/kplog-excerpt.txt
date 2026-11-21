@@ -1,0 +1,7 @@
+=== 轮 B · 提醒必达（注入测试提醒 rmd-test-261117-224500） ===
+[2026-11-20 22:45:00] I (333943) MCP: alert_dispatch corr_id=rmd-test-261117-224500 state=1 queue=1 known=1 degrade=false
+[2026-11-20 22:45:00] I (334213) MCP: alert_render corr_id=rmd-test-261117-224500 raised=1 actions=7 tone=ogg_popup speak_leg=engine armed=1
+[2026-11-20 22:45:00] I (334213) MCP: alert_receipt corr_id=rmd-test-261117-224500 rpc_id=1807544684 ack=true dequeued=true
+=== 供给源 ===
+front 侧同一时刻：alert_poll pending=11 pushed=1 tracked=1；alert_deliver corr_id=rmd-test-261117-224500 delivered=True device_frames=1 speech=True
+采集命令：tools/diag/kidpal_logs.py --cmd tail --n 200 --out c:/tmp/rmd-check.log（2026-11-20 22:46 取回）
