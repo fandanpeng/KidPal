@@ -150,6 +150,15 @@ changes:
 - changeId = `261029-gov-review-p9-script-hygiene-cluster`。
 - 2026-10-29 **全环闭环（新通道首例）**：DRAFT（104 行，manifest 4 件全 architect | ordinary）→ R1 设计审 **GREEN**（常规流程、无条件加强；1 SHOULD + 3 NIT 转实施义务）→ **FROZEN v0.1** → architect 直接实施提交 `9534d71f`（4 实现件 + 2 记账件 + 批记录 2 件；自检 49/49 + 12/12；真实包 260928 短前缀闭合 / 261011 散文提级保持 unresolved 负例；仓外反转验证有效）→ R2 真实 diff 审 **GREEN**（scope 8 件 ⊆ manifest、含两行记账件范围修正回审；消费方零破）→ 钉点 `fed74d1c`/tree `60dbe01f` → 升级闸 **PASS (kind=gov)** → ff 合本地 main `37308a4c`。**ARQ-261025 整条结项；ARQ-261014 范围内 ①② + 追加校验结项，③④ 排队（追注在条目）**。新通道试点观察：全程零 packet-bound 制品（无 landing-summary / verdict / retro / implementation-review.json），批记账两件因闸 scope 核验须入 manifest 是唯一流程摩擦点（main-thread 记账件需 architect manifest 预留）。
 
+### P10 · 验证闸说假话簇（批一，2026-11-21 实现落地，合并收口待补）
+
+- 两条一批：`ARQ-261117-change-manifest-cutoff-projection-bypass`（MAJOR）+ `ARQ-261117-acceptance-coverage-assertion-and-flag-gaps`（SHOULD）。
+- human 2026-11-20 一句启动（既定 ARQ 波次）；changeId = `261120-gov-review-verify-gate-integrity-cluster`；纯 `.claude/scripts/**` 面，direct-implementation 通道。
+- 设计 v0.2 → R1/R2 设计审 GREEN → FROZEN v0.2 → architect 实施。OQ-1 = 甲（human 2026-11-21 裁：change-manifest 旗标面与 fail-open 跳过本批一并收口，含已授权的绿→红方向变更）；OQ-2 = (c) 行首锚定容 `#define`；OQ-3 = 符号名引用。
+- 实现 commit `f09c19c6`（3 件：两闸脚本 + taskpackage-authoring.md 行号引用）；自检 change-manifest 43/43、acceptance-coverage 28/28；真仓 V3 无参不再 pre-cutoff（53 包 / 200 份轮次证据的影响面）；反转实证 T1 三向 / T2 四向见批 PROPOSAL §10。
+- 判档 = 常规 direct-implementation + 轻条件加强（实现评审侧：reviewer 亲跑真实无参 CLI 与真仓对比，不采信作者自证；不派独立 landing-verifier）。
+- 待补：实现评审钉点、前置升级闸、ff 合本地 main、`--upsert` 后「已合 main」行。
+
 ### 保持条件锁（4 条，不排波）
 
 - `ARQ-260908-versioned-guard-repoint-execution`：human 2026-10-27 裁**现在授权清掉**。4 件待重指 = ① schedule_p2 P2-A6 wiring 齿 ② VRT live 探针（A4/A7）③ CHR-A8/A9 live 探针 ④ schedule_p2 PROMPT_CARRIER_V2 常量——重指清单原文在 `delivery/archive/changes/arch/260908-gov-review-merge-chain-hardening/PROPOSAL.md` 附录 A.3（append-only 归档，只读）；**逐件授权材料待批内 present 给 human**（A.3 为权威清单，本行只是指针），随 P5 搭载或独立轻批落。

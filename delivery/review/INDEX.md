@@ -11,6 +11,7 @@
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
+| [261120-gov-review-verify-gate-integrity-cluster](261120-gov-review-verify-gate-integrity-cluster/) | 2026-11-20 | frozen | — |
 | [261117-gov-review-g4-verify-log-green-rounds](261117-gov-review-g4-verify-log-green-rounds/) | 2026-11-17 | landed | — |
 | [261115-arch-review-session-channel-resident](261115-arch-review-session-channel-resident/) | 2026-11-15 | landed | yes |
 | [261103-arch-review-star-points-story-cover](261103-arch-review-star-points-story-cover/) | 2026-11-03 | landed | yes |
