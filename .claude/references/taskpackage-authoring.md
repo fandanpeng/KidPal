@@ -35,7 +35,7 @@ mutationEvidence 必须原样使用 acceptance 完整文本——不转述、不
 
 ## 6. coverage marker 每 id 独占一行
 
-coverage 标记按每 id 独占一行书写，严禁 `coverage: A, B, C` 单行逗号写法——闸按逐 id 紧邻匹配（`acceptance-coverage-check.mjs:48`），逗号分隔单行只命中首个 id。
+coverage 标记按每 id 独占一行书写，严禁 `coverage: A, B, C` 单行逗号写法——闸按逐 id 紧邻匹配（`acceptance-coverage-check.mjs` 的 `hasCoverageMarker`），逗号分隔单行只命中首个 id。
 
 - 出处实证：`260820-s1-m02-orphan-debt` 的 `coverage: A, B, C, D` 只命中 A（ARQ-260813 第 5 实证新子形态）。
 
