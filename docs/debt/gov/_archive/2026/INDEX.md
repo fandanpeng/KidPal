@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/gov/_archive/2026/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**2026 年已结 126 条**（薄行：证据正文在条目文件里，点 ID 即达）。
+**2026 年已结 128 条**（薄行：证据正文在条目文件里，点 ID 即达）。
 
 | ID | title | 已结日期 | 依据 |
 |---|---|---|---|
@@ -137,3 +137,5 @@
 | [ARQ-261027-draft-sandbox-assembly-scaffolding](ARQ-261027-draft-sandbox-assembly-scaffolding.md) | architect 起草期无 canonical 写权但 PROPOSAL 须承诺「改哪几行、改成什么样」+ §5 验证实跑——每批现写一次性沙盘装配脚手架（行号基线写死 + 仓外副本），结构性别扭待专项讨论 | 2026-10-27 | 261027-gov-review-draft-cost-relief |
 | [ARQ-261001-host-blind-outcome-device-gate](ARQ-261001-host-blind-outcome-device-gate.md) | 「用户可见、host 不可编」的结果面缺可机判门——建议把设备轮窗口从 deferred 升为阻断合并的硬门 | 2026-10-28 | 261028-gov-review-p8-gate-semantics-cluster |
 | [ARQ-261014-supervisor-escalate-preflight-ignored](ARQ-261014-supervisor-escalate-preflight-ignored.md) | supervisor/pre-merge 机械闸不消费 launch-card 前置申报与同款先例——all-mock 类 known-pattern 升级多连发，human 逐次人批同型包 | 2026-10-28 | 261028-gov-review-p8-gate-semantics-cluster |
+| [ARQ-261117-acceptance-coverage-assertion-and-flag-gaps](ARQ-261117-acceptance-coverage-assertion-and-flag-gaps.md) | acceptance-coverage-check 的断言识别集不认 Unity（纯 Unity 验收件假红）+ 旗标面与 mutation-check 不一致（不认 --change-id） | 2026-11-21 | 261120-gov-review-verify-gate-integrity-cluster |
+| [ARQ-261117-change-manifest-cutoff-projection-bypass](ARQ-261117-change-manifest-cutoff-projection-bypass.md) | change-manifest 闸的 pre-cutoff 判定读 current/ 投影文件的首提日 → cutoff 之后的所有包被判 pre-cutoff 静默跳过，changeManifest 对账等于没跑 | 2026-11-21 | 261120-gov-review-verify-gate-integrity-cluster |

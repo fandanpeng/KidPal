@@ -10,7 +10,7 @@
 
 | changeId | 日期 | origin.ref | 状态 | workstream |
 |---|---|---|---|---|
-| [261117-session-end-intent-longretry](261117-session-end-intent-longretry/) | 2026-11-17 | delivery/workstreams/261115-session-channel-resident/PROPOSAL.md | open | 261115-session-channel-resident |
+| [261117-session-end-intent-longretry](261117-session-end-intent-longretry/) | 2026-11-17 | delivery/workstreams/261115-session-channel-resident/PROPOSAL.md | closed | 261115-session-channel-resident |
 | [261116-channel-resident-core](261116-channel-resident-core/) | 2026-11-16 | delivery/workstreams/261115-session-channel-resident/PROPOSAL.md | closed | 261115-session-channel-resident |
 | [261104-k0-points-e2e-spike](261104-k0-points-e2e-spike/) | 2026-11-04 | delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md | closed | 261103-star-points-story-cover |
 | [261104-k0a-four-page-skeleton](261104-k0a-four-page-skeleton/) | 2026-11-04 | delivery/workstreams/261103-star-points-story-cover/PROPOSAL.md | closed | 261103-star-points-story-cover |
@@ -119,4 +119,3 @@
 | [260829-smoke-e2e](260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
-| [261117-session-end-intent-longretry](261117-session-end-intent-longretry/) | 2026-11-17 | delivery/workstreams/261115-session-channel-resident/PROPOSAL.md | closed | 261115-session-channel-resident |

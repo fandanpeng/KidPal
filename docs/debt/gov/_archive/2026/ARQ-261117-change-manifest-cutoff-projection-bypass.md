@@ -2,13 +2,13 @@
 id: ARQ-261117-change-manifest-cutoff-projection-bypass
 title: change-manifest 闸的 pre-cutoff 判定读 current/ 投影文件的首提日 → cutoff 之后的所有包被判 pre-cutoff 静默跳过，changeManifest 对账等于没跑
 domain: gov
-status: deferred
+status: closed
 severity: MAJOR
 owner: architect（评审裁量落点；改闸归 dev-loop 执行面）
 trigger: 下一个动 `.claude/scripts/change-manifest-check.mjs` 或 cutoff 谓词的治理批；或再出现一次「manifest 缺项却 verify 全绿」
 opened: 2026-11-17
-closed: ""
-closedBy: ""
+closed: 2026-11-21
+closedBy: 261120-gov-review-verify-gate-integrity-cluster
 paths: [".claude/scripts/change-manifest-check.mjs", ".claude/scripts/taskpackage-required-check.mjs"]
 source: ["delivery/taskpackages/261031-openclaw-cron-trigger-gating/pod-events.jsonl event 3ef694bb-7a50-4631-ba96-d28d2b223279", "delivery/retro/2026-11-17-loop-retro.md §二 T1"]
 ---
@@ -20,3 +20,5 @@ source: ["delivery/taskpackages/261031-openclaw-cron-trigger-gating/pod-events.j
 **建议改动**（候选，交 review、不自批）：① change-manifest-check 的 cutoff 判定改用包目录路径（与 taskpackage-required-check 同基准：从 `taskPackage.changeId` 拼 `delivery/taskpackages/<cid>`，或从解析出的路径上溯两级）；② 闸自带负向复证 case：cutoff 后包 + 缺失 manifest 条目必须红；③ 若担心与 `--follow` 的 renamed 文件语义交互，至少在报告里回显实际取到的路径与首提日，别只回显 `skipped`。
 
 **风险**：riskTier: **low**——只改 cutoff 判定的路径基准，不动 cutoff 日期、不动 manifest glob 判据、不动其它闸。但触 `.claude/scripts/**` → 按 `/gov-change` 判据恒 Track B 主路径。验证方式 = 取一个本批已被跳过的包（261031-cron 或 261104-k5）跑修复前后对比：修前 `skipped:'pre-cutoff'`，修后应进入真正对账并按 manifest 结果出 ok/red。
+
+**结项（2026-11-21，`261120-gov-review-verify-gate-integrity-cluster`）**：T1 落地，三条建议全取——① cutoff 基准改为包目录 `delivery/taskpackages/<changeId>` 首提日（changeId 取自解析结果，实测否决「路径上溯两级」：无参形态父目录即 `current/`，首提同早于 cutoff）；② 自带消费层负向夹具（无参 CLI + 临时 git 仓，cutoff 后包缺 manifest 条目必须非 0）；③ 跳过与对账两路均回显 `cutoffBasis{kind,path,firstCommitDate,cutoff}` + changeId + contextSource。范围扩大（human 2026-11-21 裁 OQ-1=甲）：旗标面一并收口——`--change-id` 支持、未知旗标 exit 2 + usage、`--help` exit 0、「显式上下文不可解析」fail-loud 非 0；`skipped:'no-taskpackage-context'` 的 N/A 语义与 `pre-cutoff` 放行一字未改。实证：修前 53 包 / 200 份轮次证据为 pre-cutoff 静默放行；修后真仓无参实跑 `261104-k5-story-cover-nav` → `ok:true / manifestSize:29 / basis 2026-11-04`，`261031-openclaw-cron-trigger-gating` → `manifestSize:9 / basis 2026-10-31`；自检 43/43（含 21 条消费层 CLI 夹具），反转恢复投影基准 → 7 红。实现 commit `f09c19c6`，评审与合并凭据见批 PROPOSAL。

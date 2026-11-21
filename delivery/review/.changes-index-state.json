@@ -155,5 +155,9 @@
   "261115-arch-review-session-channel-resident": {
     "date": "2026-11-15",
     "mergedInMain": "yes"
+  },
+  "261120-gov-review-verify-gate-integrity-cluster": {
+    "date": "2026-11-20",
+    "mergedInMain": "yes"
   }
 }
