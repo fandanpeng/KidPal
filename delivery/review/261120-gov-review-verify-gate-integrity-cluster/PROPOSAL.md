@@ -598,3 +598,34 @@ verdict: GREEN
 
 reviewedCommit: 1c19f7946e03167666f1ede478fe90e7ad7505de
 reviewedTree: 3c5476fc8564d440846f557dc435bf7949b3da43
+
+## 12. 回同步后重审与重钉（architect-reviewer）
+
+### R2 实现评审（回同步后）- 2026-11-21 - architect-reviewer
+
+verdict: GREEN
+
+背景：main 回同步 merge 已落（merge commit `39fcd94b`，父 = 前钉点 `d3b2a601` + main tip `7f5cc409`），旧钉点 `1c19f794` 被 merge commit 覆盖，按 R1 §11 预判须重钉到 `39fcd94b`。architect 经「出 scope 补理由 + reviewer 回审」通道把 §8 manifest 由 8 行扩至 10 行（证据尾 commit `0cda34f1`，实测仅动 PROPOSAL §8、`+5/−1`，§9–§11 逐字未动），本轮回审该扩行并重钉。
+
+#### 一、§8 两行扩行回审（亲核真实 diff）
+
+- `delivery/intake/INDEX.md`（manifest 第 9 行）：`git diff main...39fcd94b` 实测该件**仅 1 行变化**——`261014-single-tier-bringlist-home` 的滞留值 `⚠滞留34d` → `⚠滞留36d`，系 `changes-index.mjs` 全量重建刷新的**派生天数**，与申报「滞留天数派生值 34d→36d」逐字吻合。
+- `delivery/taskpackages/INDEX.md`（manifest 第 10 行）：实测**2 处**——`261117-session-end-intent-longretry` 状态 `open` → `closed`（该包 merge 后现推），并删除文件末尾一条与之重复的残留行（union 合并去重），与申报「状态 open→closed + 去掉 union 合并残留的重复行」逐字吻合。
+- 两行均 owner=`main-thread`（`changes-index.mjs` 全量重建/upsert 由主线程跑，非 architect 手改内容）、protection=`ordinary`（生成索引不属保护面清单：指令根/scope-map/settings/verify-gates/agent 定义/评审凭据）。文件字节由主线程生成件重建产生，architect 仅按「补理由交回审」通道记入 manifest——**非作者自扩自过**（作者未改这两件字节，只登记归位，且经本轮 reviewer 回审）。
+
+#### 二、scope 重核（main...39fcd94b）
+
+`git diff --name-only main...39fcd94b` = 13 件，剔证据尾（`delivery/review/261120.../{PROPOSAL,events}` + `delivery/review/INDEX.md`）后**非证据恰 10 件**，与 §8 新 manifest 10 行逐件对应：3 实现（`change-manifest-check.mjs` / `acceptance-coverage-check.mjs` / `taskpackage-authoring.md`）+ `delivery/intake/INDEX.md` + `delivery/taskpackages/INDEX.md` + `docs/debt/gov/INDEX.md` + `docs/debt/gov/_archive/2026/{ARQ 双件+INDEX}` + `task_plan.md`。`delivery/taskpackages/` 下**仅 `INDEX.md` 一件、无任何 `<pkg>/` 内容改动**（实现面零改）；`verify-gates.json` / `lib/current-pointer-shared.mjs` / `taskpackage-required-check.mjs` 实测**均不在 diff（零改动）**。
+
+#### 三、前置升级闸（重钉后重跑，结果见本节末）
+
+以重钉后的 reviewedCommit 重跑 `node .claude/scripts/pre-merge-escalation-gate.mjs 261120-gov-review-verify-gate-integrity-cluster --source-ref HEAD`，`main...reviewedCommit` 非证据 10 件 ⊆ manifest 10 行、`reviewedCommit..source` 仅证据尾，预期 PASS；实测结果见本 §12 末尾追加行。
+
+#### Findings
+
+- **无新增 BLOCKING / SHOULD。** §8 两行扩行（`delivery/intake/INDEX.md`、`delivery/taskpackages/INDEX.md`）内容与申报理由逐字一致、owner=`main-thread`/protection=`ordinary` 如实、经本轮 reviewer 回审，属「出 scope 补理由 + reviewer 回审」通道的合规补记，非作者自扩自过。NIT-7（实现 commit 署名行）仍悬，非本轮新增、仍交主线程/human 定夺。
+
+reviewedCommit: 39fcd94bf17d45714dddb337e670950813641fce
+reviewedTree: 60c6eacaca5003a3b6e81585c52f9e50cfb40773
+
+**前置升级闸实测（2026-11-21，重钉后自跑）**：`node .claude/scripts/pre-merge-escalation-gate.mjs 261120-gov-review-verify-gate-integrity-cluster --source-ref HEAD` → `PASS (changeId=261120-gov-review-verify-gate-integrity-cluster, kind=gov) — 无例外命中，可交给 merge-driver`，exit 0。`parseDirectImplementationProposal` 复核：`direct=true / verdict=GREEN / reviewedCommit=39fcd94b… / reviewedTree=60c6eaca… / landed=true / errors=[] / scopeRows=10`。
