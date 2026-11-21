@@ -1,0 +1,144 @@
+{
+  "workstream": "261115-session-channel-resident",
+  "source": "delivery/workstreams/261115-session-channel-resident/PROPOSAL.md",
+  "upstreamFrozen": "sha1:bc53e2b9d5cf772d",
+  "archUpstream": "docs/architecture.md §12 changeId 行 261115-arch-review-session-channel-resident + docs/decisions/ADR.md#ADR-019（2026-11-16 landed，reviewedCommit 87dbf775）",
+  "generatedBy": "main-thread（/triage-change ③ 拆包；human 2026-11-16 授权主线程直接产四件套）",
+  "generatedAt": "2026-11-16",
+  "updatedAt": "2026-11-16",
+  "_doc": [
+    "拆包输入：FROZEN workstream PROPOSAL v1.0 + FROZEN 架构/契约 PROPOSAL v1.1（R2 GREEN）+ package-split.md（architect 拆包建议，2 包）。架构 §12 与契约 §四已 landed 并合并本地 main（7e4c44d8），P1 launchPreconditions 的「支撑语义已冻结」判据已 met。",
+    "切法按 human 2026-11-16「冻结 + 按 2 包开工」：P1 261116-channel-resident-core（mergeOrder 77，riskTier high）→ 真机轮 A → P2 261117-session-end-intent-longretry（mergeOrder 78，riskTier medium，dependsOn P1）→ 真机轮 B。serial WIP=1，两包不并发。",
+    "60s 超时归 P1 而非 P2：它是让通道常驻安全的补偿控制——P1 把通道做成常驻后，今天「约 137 秒通道超时」的意外兜底消失；若 60s producer 不同批落地，净效果是「孩子走开后麦克风永久常开」。",
+    "P2 依赖 P1 的统一会话结束处理器与常驻模型守卫语义；两包都改 application.cc，且在同一批函数内改不相交行段；具体函数为 HandleEndVoiceSessionEvent 与 HandleToggleChatEvent（P1 改收尾动作序，P2 改 in-flight 守卫行）（P1 = 四条收尾路径 + HandleEndVoiceSessionEvent + CLOCK_TICK 消费区；P2 = TryStartAutoConnect task 体 + 四个人工入口守卫行），P2 从 P1 合并后的 main 起分支并重取行号锚。",
+    "验收齿重写与反转均在两包 taskpackage 的 impactedTestsSeed / exitCriteria 显式申报：P1 退役 RC-B2/RC-A3 并重写三份 C 验收件；P2 反转 test_record_dialogue_guide 的 self_push end_session 断言并重写 K6-A2 tooth5。",
+    "门 1 F-01 回修（architect PROPOSAL v1.2）：P1 的「listen stop 当刻取消残余累积」与 SAO-A2/M4K1-A2/SAO-A3 三条冻结 oracle 对撞（manual 模式 ASR 转写约 1.7s 后到，cancel 不可恢复）——改为分层收尾：pending_stop 受保护、由既有 10s sweep 的 pending 超时分支补 `_release_record_context` 释放（该分支原本不释放，常驻后会造成永久哑火）；ctx 边沿兜底改分态。accepted residual = 空 accum 结束后 ≤10s 内首次话语可能被抑制，已由真机 A5(a)/(b) 与留根 9 承载。"
+  ],
+  "decisionCoverage": [
+    {
+      "decision": "C1 · 通道生命周期与语音会话生命周期解耦；通道终止源闭集三条",
+      "summary": "会话结束不再拆通道；四条收尾路径收口到统一处理器。",
+      "sourceRefs": [
+        "delivery/workstreams/261115-session-channel-resident/PROPOSAL.md#§3.1-C1",
+        "docs/decisions/ADR.md#ADR-019"
+      ],
+      "landsIn": "package:261116-channel-resident-core"
+    },
+    {
+      "decision": "C2 · 会话边界复用既有帧（kidpal_session_ctx + listen start/stop），不新增上行帧",
+      "summary": "契约 §四 listen 帧节补入；discard 先于 listen stop 有序。",
+      "sourceRefs": [
+        "delivery/workstreams/261115-session-channel-resident/PROPOSAL.md#§3.1-C2"
+      ],
+      "landsIn": "package:261116-channel-resident-core"
+    },
+    {
+      "decision": "C3 · 保活 = front 周期 kidpal_keepalive（代码默认开、=0 回滚）+ 设备 tick 自愈巡检",
+      "summary": "120s 判据阈值与逻辑零改动、语义升级为真端到端活性。",
+      "sourceRefs": [
+        "delivery/workstreams/261115-session-channel-resident/PROPOSAL.md#§3.1-C3"
+      ],
+      "landsIn": "package:261116-channel-resident-core"
+    },
+    {
+      "decision": "C4 · 云端结束意图：模型薄意图 → front 截获 → self_push 自推 → 设备 case 0 收口",
+      "summary": "relay 恒拒；self_push 豁免扩 end_session；prompt 告别纪律。",
+      "sourceRefs": [
+        "delivery/workstreams/261115-session-channel-resident/PROPOSAL.md#§3.1-C4"
+      ],
+      "landsIn": "package:261117-session-end-intent-longretry"
+    },
+    {
+      "decision": "C5 · 60s 无语音超时 producer 落主循环 tick + clock_ticks + VAD 沿重置",
+      "summary": "单阈值、记录语境豁免；纯模型维持验收 oracle 身份。",
+      "sourceRefs": [
+        "delivery/workstreams/261115-session-channel-resident/PROPOSAL.md#§3.1-C5"
+      ],
+      "landsIn": "package:261116-channel-resident-core"
+    },
+    {
+      "decision": "C6 · 自动重连封顶长跑 + 人工意向位",
+      "summary": "3 次即止退役；离线期人工入口不丢。",
+      "sourceRefs": [
+        "delivery/workstreams/261115-session-channel-resident/PROPOSAL.md#§3.1-C6"
+      ],
+      "landsIn": "package:261117-session-end-intent-longretry"
+    },
+    {
+      "decision": "C7 · 引擎 24h 兜底为唯一剩余重建窗口；引擎零改动",
+      "summary": "决策 21 保留；日切副作用良性。",
+      "sourceRefs": [
+        "delivery/workstreams/261115-session-channel-resident/PROPOSAL.md#§3.1-C7"
+      ],
+      "landsIn": "package:261116-channel-resident-core"
+    },
+    {
+      "decision": "C8 · 共享短上下文不变（ADR-015 持久会话）",
+      "summary": "通道常驻对记忆口径零影响。",
+      "sourceRefs": [
+        "delivery/workstreams/261115-session-channel-resident/PROPOSAL.md#§3.1-C8"
+      ],
+      "landsIn": "package:261116-channel-resident-core"
+    },
+    {
+      "decision": "C9 · end_session 页面落点按 OQ3=c",
+      "summary": "三通道同落点，零特例分支。",
+      "sourceRefs": [
+        "delivery/workstreams/261115-session-channel-resident/PROPOSAL.md#§3.1-C9"
+      ],
+      "landsIn": "package:261117-session-end-intent-longretry"
+    }
+  ],
+  "crossPackageBehaviors": [
+    {
+      "topic": "统一会话结束处理器（六触发源收口）",
+      "owner": "261116-channel-resident-core",
+      "carriedBy": "261117-session-end-intent-longretry",
+      "note": "P2 的 end_session 触发源必须收口到 P1 建立的处理器，不另起收尾路径；约束随 P2 的 input-brief 下发。"
+    },
+    {
+      "topic": "云端结束意图三段补链",
+      "owner": "261117-session-end-intent-longretry",
+      "carriedBy": "261117-session-end-intent-longretry",
+      "note": "P1 不得提前改 mcp_server.cc / display_schema.py / prompt 制品。"
+    },
+    {
+      "topic": "自动重连封顶长跑与人工意向位",
+      "owner": "261117-session-end-intent-longretry",
+      "carriedBy": "261117-session-end-intent-longretry",
+      "note": "P1 保留既有 3 次退避与守卫三条件；长跑改形归 P2。"
+    },
+    {
+      "topic": "常驻模型下的守卫三条件语义与 SCR-A2 重锚",
+      "owner": "261116-channel-resident-core",
+      "carriedBy": "261117-session-end-intent-longretry",
+      "note": "P1 冻结的 session_channel_resident.acceptance.c SCR-A2「in-flight 守卫逐字在世」将被 P2 的 SEI-A4 重锚为「守卫在场 + 置意向位 + 审计行」；P2 须把该文件列入 impactedTestsSeed。"
+    }
+  ],
+  "launchPreconditions": [
+    {
+      "text": "架构+契约面已 FROZEN 并 landed：docs/architecture.md §12 出现 261115-arch-review-session-channel-resident 行、契约 §四 listen 与 kidpal_keepalive 在场",
+      "scope": "workstream",
+      "status": "verified",
+      "evidence": "reviewedCommit 87dbf775 / merged main 7e4c44d8；landing-verdict PASS"
+    },
+    {
+      "text": "门 1（拆包冻结门）GREEN + human 过目切法",
+      "scope": "workstream",
+      "status": "verified",
+      "evidence": "门 1 聚焦复检 GREEN（architect，commit e18532ab，见 review.md）；human 2026-11-16 过目四件套并批准点火"
+    },
+    {
+      "text": "拆包制品已 commit 到专用 base ref（commit-before-launch）",
+      "scope": "workstream",
+      "status": "verified",
+      "evidence": "commit 214e7a2e/9812de57 + 门 1 修正轮 f1619d61/003cb44b；base ref = 门 1 修正轮末端 commit，点火时由 launch 执行者回填当时 SHA"
+    },
+    {
+      "text": "P1 已合 main（P2 的统一处理器与常驻模型守卫语义在场）",
+      "scope": "package:261117-session-end-intent-longretry",
+      "status": "unverified",
+      "evidence": "待 P1 合并后回填"
+    }
+  ]
+}

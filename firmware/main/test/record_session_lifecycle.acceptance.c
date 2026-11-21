@@ -994,8 +994,46 @@ TEST_CASE("record session lifecycle: regression net registration guards — self
     free(cmake);
 }
 
+TEST_CASE("record session lifecycle: auto-end story page repaint (RSL2-A6)",
+          "[record_session_lifecycle][RSL2-A6][structural]")
+{
+    char *mcp;
+    const char *fn;
+    const char *fn_end;
+
+    RSL2_REQUIRE_ROOT();
+    mcp = rsl2_strip_file(RSL2_MCP_CC);
+    TEST_ASSERT_NOT_NULL_MESSAGE(mcp, "RSL2-A6 RED(infra): mcp_server.cc unreadable");
+    fn = strstr(mcp, "void KidpalStorySessionEndApply(int list_page)");
+    TEST_ASSERT_NOT_NULL_MESSAGE(fn,
+        "RSL2-A6 RED(infra): KidpalStorySessionEndApply 签名锚缺席（收尾桥被重构，"
+        "须复核锚不得改判为绿）");
+    fn_end = strstr(fn, "\n}");
+    TEST_ASSERT_NOT_NULL_MESSAGE(fn_end,
+        "RSL2-A6 RED(infra): Apply 函数体终点锚（行首 }）缺席");
+    TEST_ASSERT_NOT_NULL_MESSAGE(rsl2_find_in(fn, fn_end, "kidpal_render_node_story_on_screen("),
+        "RSL2-A6 RED: Apply 缺 story_on_screen 守卫——自动收尾后离屏/覆盖层前台仍会抢渲染"
+        "（OQ3=c 回答页驻留与 REMINDER 驻留回归风险）");
+    TEST_ASSERT_NOT_NULL_MESSAGE(rsl2_find_in(fn, fn_end, "kidpal_render_node_refresh_story("),
+        "RSL2-A6 RED: Apply 缺 refresh_story 重绘——记录会话录音态入口已让出 VOICE 层，"
+        "自动收尾后 voice_end 早退、故事页冻结在最后一帧录音（真机轮 D 实测）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        rsl2_order_in(fn, fn_end, "lv_timer_delete(g_story_rec_timer)",
+                      "kidpal_render_node_cache_story(") &&
+        rsl2_order_in(fn, fn_end, "kidpal_render_node_cache_story(",
+                      "kidpal_render_node_refresh_story("),
+        "RSL2-A6 RED: Apply 内次序漂移——冻结序 = rec timer 删除 < cache_story < "
+        "refresh_story（D4b-1 收尾即停 + RSL2-A2 镜像同步先于渲染）");
+    free(mcp);
+}
+
 /* ---------------------------------------------------------------------------
  * REVISION LOG (acceptance-author only; tighten-only discipline):
+ *   2026-11-18 增补 RSL2-A6（human 2026-11-18 指示跳过完整流程的快速修复，
+ *               主线程代落并诚实记录；来源 = 真机轮 D「空素材自动收尾后故事页
+ *               冻结」，architect 聚焦 review 定的最小修法 = Apply 内
+ *               story_on_screen 守卫 + refresh_story 重绘；序锚钉 D4b-1 与
+ *               RSL2-A2 不变量）。
  *   2026-10-28 初版冻结（TaskPackage 261028-p3-record-session-mirror-desync-fix;
  *               acceptance[] RSL2-A1~A4 + RSL2-A5 structural/live-manual 为冻结
  *               边界; 语义权威 = reviewed plan（architect /triage-change

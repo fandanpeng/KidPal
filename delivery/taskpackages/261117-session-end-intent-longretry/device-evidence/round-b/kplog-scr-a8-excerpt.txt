@@ -1,0 +1,11 @@
+=== 轮 B · SCR-A8 空素材记录会话静置自动收尾（human 持板，2026-11-21 22:31） ===
+[2026-11-21 22:31:15] I (85909993) story_page: STORY_RENDER page=2 vcount=16 lcount=16 rec=54
+[2026-11-21 22:31:16] I (85910653) Application: story_empty_session_timeout corr_id=kdp-2024573 seconds=56 quiet=60 asr=60 suspect=0 src=empty_story
+[2026-11-21 22:31:16] I (85911403) kidpal_rn: PAGE_RENDER in=3 local=3 sview=0 ssess=0 active_ok=1
+[2026-11-21 22:31:16] I (85911403) story_page: STORY_RENDER page=0 vcount=16 lcount=16 rec=55
+[2026-11-21 22:31:16] I (85911433) kidpal_rn: PAGE_RENDER out=3 local=3 sview=0 ssess=0
+=== human 目击（同一事件） ===
+1. 进入记录会话后，小伴没有说话（引导语未播报——本轮如实记录，未判为 SCR-A8 失败项，作为合并后观察项）
+2. 静置约 60 秒后自动退出
+3. 没有归档（故事列表 total 不变、无盖章）
+采集命令：tools/diag/kidpal_logs.py --cmd tail --n 400 --out c:/tmp/scrA8-check.log（2026-11-21 22:32 取回）

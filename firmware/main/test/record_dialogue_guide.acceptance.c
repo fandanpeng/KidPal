@@ -1042,7 +1042,7 @@ TEST_CASE("record guide: start_organizing settle + KEY idempotent stop path (RCL
         TEST_ASSERT_NOT_NULL_MESSAGE(fn,
             "RCL-F1 RED(infra): application.cc 无 HandleStopListeningEvent —— "
             "settle 幂等门载体缺席（既有形态被改写? 须复核锚不得改判为绿）");
-        fn_end = strstr(fn, "void Application::HandleWakeWordDetectedEvent");
+        fn_end = strstr(fn, "void Application::HandleEndVoiceSessionEvent");
         if (fn_end == NULL) {
             fn_end = app + strlen(app);
         }
@@ -1073,6 +1073,20 @@ TEST_CASE("record guide: start_organizing settle + KEY idempotent stop path (RCL
 
 /* ---------------------------------------------------------------------------
  * REVISION LOG (acceptance-author only; tighten-only discipline):
+ *   2026-11-16 重锚（TaskPackage 261116-channel-resident-core; RCL-F1 fn_end 锚收窄,
+ *               断言语义零变化、tighten-only）: application.cc 区切终点从 "void
+ *               Application::HandleWakeWordDetectedEvent" 收窄为 "void Application::
+ *               HandleEndVoiceSessionEvent"（fn_end == NULL 兜底逻辑原样保持）。
+ *               旧钉 = 粗区切跨 HandleStopListeningEvent / HandleEndVoiceSessionEvent
+ *               / HandleWakeWordDetectedEvent 三处理器, 区内 SendStopListening 计数 1;
+ *               新钉 = 区切收窄至 HandleEndVoiceSessionEvent 处理器起点前, 只量
+ *               HandleStopListeningEvent 自身那一个发送点, 期望值仍为 1。为什么 = P1
+ *               让统一会话结束处理器 HandleEndVoiceSessionEvent 新增 protocol_->
+ *               SendStopListening()（本包冻结验收 SCR-A2 / OCE-A1 要求该处理器区内恰
+ *               1）, 粗区切必然把该行计入 RCL-F1 跨度 = 假红; 收窄回到原意后与原断言
+ *               逐字等价。SendStopListening 期望值（仍 == 1）、状态门位次断言、本文件
+ *               其它测试均零改动。本条由 planner 扩单回评授权（manifest 已纳入本文件）,
+ *               非静默改验收断言。
  *   2026-10-21 additive（TaskPackage 261021-p3-record-cancel-lifecycle RCL-F1）:
  *               新增 TEST 8——start_organizing 消费沿 settle 链（mcp_server.cc case 3
  *               块内 StopListening 接线锚; plan F4 修位, 与 KSPV2_ACT_STOP_RECORD

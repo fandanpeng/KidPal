@@ -1169,6 +1169,19 @@ TEST_CASE("record_session_live: Listening 分支积分子页语境扩点 (RSL-A9
  *               既有 TEST 1-9 断言集合零变化——RSL-A1/A2 既有 needle 与二参
  *               SendKidpalSessionCtx 现形兼容（builder 轮 1 已全绿实证）; story
  *               语境映射 / 原发送时点 / 单点消费语义零回退（K0a 重锚面零触碰）。
+ *   2026-11-16  frozen-rebaseline 留痕（261116-channel-resident-core P1 impactedTestsSeed;
+ *               处置性质 = **文本仍绿、语义前提失真，零齿改动**——不删弱任何既有断言）:
+ *               P1 把 Application::CloseAudioChannel() helper 的语义从「真拆通道 + Idle
+ *               + LOW_POWER + 5s 重建」改为「投 EndVoiceSession() 事件位 → 统一
+ *               HandleEndVoiceSessionEvent → SendStopListening()」。mcp_server.cc 与
+ *               protocol.cc 本包零 diff，故 RSL-A5/M4K3-A3（扫 mcp_server.cc DISCARD case）
+ *               与 RCL-F1（扫 protocol.cc SendKidpalStoryDiscard）文本仍匹配
+ *               （p_disc < p_close 的 CloseAudioChannel 字面仍在 = helper 历史名保留），
+ *               但「CloseAudioChannel 兜底依赖真断连」的语义前提已改（现在经事件位发
+ *               listen stop、靠 discard 帧先行把 routing 打回 chat 才不归档）。真正需要
+ *               的收口/有序断言的真承载 = 新件 session_channel_resident.acceptance.c
+ *               （SCR-A1 四收尾点收口 + SCR-A2 统一处理器）。RSL-A2 tooth1-3 与 RSL-A6
+ *               tooth4 保绿零改动（本件未改任何断言）。
  * --------------------------------------------------------------------------- */
 
 /* ========================================================================== *

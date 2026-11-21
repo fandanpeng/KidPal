@@ -1,0 +1,8 @@
+261118 21:20:23[0.9.6_00000000000000][core.providers.asr.base]-INFO-识别文本: 他说你回来休息呢，结果你回到家里来干啥来？
+261118 21:20:26[0.9.6_00000000000000][core.providers.asr.base]-INFO-识别文本: 我家里来人上厕所。
+261118 21:22:06[0.9.6_00000000000000][core.providers.asr.base]-INFO-识别文本: Okay.
+261118 21:22:06[0.9.6_SiQwOpEdnonoOp][core.connection]-INFO-kidpal record-context: 抑制 LLM 派发（记录语境闭嘴回显）: Okay.
+261118 21:23:33[0.9.6_00000000000000][core.providers.asr.base]-INFO-识别文本: 今天没有上延时课，回来屁都没干。
+261118 21:23:41[0.9.6_00000000000000][core.providers.asr.base]-INFO-识别文本: 晚上到了9:30才把作业写完。
+261118 21:23:49[0.9.6_00000000000000][core.providers.asr.base]-INFO-识别文本: 说完了。
+261118 21:23:50[0.9.6_00000000000000][core.providers.asr.base]-INFO-识别文本: 嗯。

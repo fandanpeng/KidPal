@@ -396,6 +396,28 @@ set(HOST_ACCEPTANCE_SRCS
     # 缺失或未置于 smoke 之前即红）。
     "../../story_cover_nav.acceptance.c"
 
+    # 包 261116-channel-resident-core（通道常驻核心 P1）：SCR-A1..A7 冻结验收（四收尾点
+    # 收口负锚 + 统一处理器动作序 + 五真拆通道点保绿 + Idle 八件链保绿 + 60s producer +
+    # 心跳 no-op 位次 + 自愈巡检短路序）。纯树扫 application.cc（源锚代理）。
+    # **必须置于 host smoke acceptance 之前**（smoke 末位 = 最先执行, 包 0 boundary 齿注册序守卫）。
+    "../../session_channel_resident.acceptance.c"
+
+    # 包 261116-channel-resident-core 真机轮 B 修复轮（2026-11-18）：语音会话
+    # 「有效语音证据」看门缝 session_voice_watch.c = SCR-A9..A14 真行为断言的强符号源
+    # （纯逻辑：零芯片 / 零 ESP-IDF / 零 FreeRTOS / 零 LVGL -> 与设备树同源；设备侧
+    # 登记见 firmware/main/CMakeLists.txt）。builder 单元测试 session_voice_watch.test.c
+    # 补冻结断言未穷尽的防御面（NULL 入参 / cfg<=0 降级 / 年龄饱和 / diag_due 边界）。
+    # **必须置于 host smoke acceptance 之前**（smoke 末位 = 最先执行）。
+    "../../../session_voice_watch.c"
+    "../../session_voice_watch.test.c"
+
+    # 包 261117-session-end-intent-longretry（P2，workstream 261115-session-channel-
+    # resident）：SEI-A1..A4 + SEI-C1 注册序守卫冻结验收。纯树扫 application.cc /
+    # application.h / mcp_server.cc（源锚代理；运行时本体 host 不可编面，真机轮 B 承载）。
+    # **必须置于 host_infra_smoke.acceptance.c 之前**（smoke 末位 = 最先执行, 包 0
+    # boundary 齿注册序守卫; 本文件 SEI-C1 校验此序——登记行缺失或未置于 smoke 之前即红）。
+    "../../session_end_intent_longretry.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

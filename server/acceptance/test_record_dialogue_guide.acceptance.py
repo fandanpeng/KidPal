@@ -16,7 +16,8 @@ Scope of record（taskpackage acceptance RDG-A1..A7）:
   RDG-A4 Package B 等价信号注入引擎腿（进/出语境）+ engine-patch 认领/chat 第三守卫/
         stop-truncation 豁免重绑/引导注入不尾随（验收种子 1 host 半）。
   RDG-A5 display_schema 自推通路分叉（start_organizing 网关决定类 relay 拒转 +
-        front 自推放行；end_session/start_recording 既有语义零偏移）。
+        front 自推放行；end_session 2026-11-19 由「即便自推仍拒」反转为「self_push
+        放行」（截获转发类，契约 §1.4）；start_recording 既有语义零偏移）。
   RDG-A6 卡壳计时 sweep（stuck-due 引导轮不归档；2 轮无回应自动收尾 → 三式收尾
         统一下发 start_organizing、重复幂等；pending-stop 10s 挂起窗口保留）。
   RDG-A7 S-F1.4-AC6 host 半：引导/整理 speak 注入 = kidpal_speak 内部指令同型、
@@ -92,10 +93,13 @@ front_app.py 面离线装载（fastapi 缺席本地 stub，M4K1/SC 先例），e
         self_push=False（relay/引擎侧路径）：control/start_organizing 一律拒绝
         （伪造/注入的网关决定类不得经 display 流透传）；其余既有行为一字不动
         （end_session 拒转、start_recording/stop_speaking 可透传、story floor 等）。
-        self_push=True（front 自推专用通路）：网关决定类中 **start_organizing**
-        放行（front 机械下发单源；end_session 即便自推仍拒绝——会话结束决定不因
-        通路放行）；其余 floor 照跑。
-    FORWARDABLE_CONTROL_ACTIONS 不含 start_organizing（决定类与可透传类不相交）。
+        self_push=True（front 自推专用通路）：网关决定类中 **start_organizing 与
+        end_session** 放行（front 机械下发单源，二者同型「截获转发类」；2026-11-19
+        反转——end_session 由「即便自推仍拒」改为放行，见契约 §1.4 变更记录 +
+        261117-session-end-intent-longretry）；start_recording/stop_speaking 与其余
+        floor 照跑，add_points/redeem_points 仍恒拒。
+    FORWARDABLE_CONTROL_ACTIONS 不含 start_organizing / end_session（决定类与可透传类
+    不相交）。
 
   C) server/gateway/front/front_app.py（接线面；离线可装载纪律不变）:
 
@@ -104,8 +108,10 @@ front_app.py 面离线装载（fastapi 缺席本地 stub，M4K1/SC 先例），e
       信号 wire 字面（两侧同名冻结）: type == "kidpal_record_context"，布尔字段
       active（true=进入记录语境、false=退出）。经**引擎腿**下发（上行泵的 upstream
       参数 / sweep 的 _alert_legs 引擎腿），ADR-003 kidpal_speak 同型内部消息。
-      进语境 = session_ctx(story) 与 control/start_recording 两收敛入口（幂等——
-      已在记录语境重复触发不重复注入）；出语境 = 三式收尾（收尾词归档 / 自动收尾
+      进语境 = session_ctx(story) 与 control/start_recording 两收敛入口（261116-
+      channel-resident-core 真机轮 A 修复轮 D1 重锚：**每会话无条件**注入
+      active=true——重复触发亦发帧，幂等由引擎认领缝幂等置位承载；设备侧
+      story_list 推送仍守 ctx_push_edge）；出语境 = 三式收尾（收尾词归档 / 自动收尾
       start_organizing 下发同拍）/ 取消（cancel）/ 断连。
       引导回合注入不尾随 auto-listen（种子 1 host 半）：引导 kidpal_speak 注入
       **不清**记录语境标志、不触发任何聆听形态/会话路由变化（真机半 = 引导播完
@@ -255,6 +261,42 @@ REVISION LOG
              同款罐头忠实整理输出）；三条断言（归档恰一篇 + 出语境 active=false
              在世 + 注入不尾随）一字未动。授权同上（pod-events da35cae4 波及面
              裁定）——波及面内最小兼容修订。
+  2026-11-17 RDG-A4 重复 ctx(story) 断言显式重锚（frozen-rebaseline；261116-channel-
+             resident-core 真机轮 A 修复轮 D1，按该包 exitCriteria KRC-E2 口径留痕）。
+             旧钉：第二次 ctx(story)（routing 已 accumulate）**零** active=true 注入
+             （「进语境收敛入口幂等」= 不重复注入）。
+             新钉：第二次 ctx(story) 仍**恰一帧** active=true；story_list 仍零新增
+             （`_push_story_list` 继续守 ctx_push_edge，「重复发送安全」语义不变）。
+             为什么：human 2026-11-17「三个问题都修」+ device-round-a-evidence.md §三
+             ——轮 A 三源日志证明引擎侧每会话都进过记录语境、语境 ASR 被抑制，但 front
+             的进语境注入带 `ctx_push_edge` 条件：一旦累积态泄漏（上一会话残留 / 重复
+             ctx / 引擎腿重建后 routing 已 accumulate），front 不注入 → 引擎不抑制。
+             修复决策 = 每会话无条件幂等注入（幂等语义从「不重复发帧」改为「重复发帧
+             亦安全且必要」——引擎认领缝 active=true 幂等置位）。
+             授权：planner 修复轮技术方案（plan.md「真机轮 A 修复轮」D1 节）明列本件
+             RDG-A4（旧行 :935-939）「由绿转红 → 重锚为第二次仍恰一帧」；taskpackage
+             `impactedTestsSeed` 同条登记。断言语义方向 = 只改「预期帧数 0 -> 1」+
+             新增 story_list 零新增守卫，未放宽任何其余断言。
+  2026-11-17 同条引用的 `up2, _` 显式改名为 `up2, dev2`（新守卫取设备腿帧所需；
+             无独立语义变化，与上条同批落盘）。
+  2026-11-19 RDG-A5 end_session 自推判据**冻结齿反转**（frozen-inversion；
+             261117-session-end-intent-longretry，按该包 exitCriteria KSE-E2 口径
+             显式申报，非静默改齿）。
+             旧钉：`validate_display({view:control, data:{action:end_session}},
+             self_push=True)[0]` 为 **False**（「会话结束决定不因通路放行」）。
+             新钉：为 **True**（end_session 属契约 §1.4①「截获转发类」——front 截获
+             引擎 display 流中的模型薄意图后机械自推单源恰一帧下发，与 start_organizing
+             同型；self_push 豁免口由 {start_organizing} 扩为 {start_organizing,
+             end_session}）。
+             为什么：契约 §1.4 变更记录（2026-11-16 架构批 FROZEN landed，reviewedCommit
+             87dbf775）已把 end_session 归入截获转发类 + §1.6 新增告别回合纪律；若 self_push
+             仍拒，云端结束意图三段补链的「front 自推」段永远下发不出去（
+             TECH-261014-session-end-channels-unwired 实现侧实测断链②）。本包兑现实现与
+             prompt 承载，不改契约。
+             保绿面（不得顺手翻）：relay 缺省路径的 `end_session` assertFalse 保持原样
+             （test_rdg_a5_start_organizing_gateway_decision_rejected_on_relay 承载；
+             防伪造/注入破口）；add_points/redeem_points self_push 恒拒由
+             261117-session-end-intent-longretry 新冻结件 SEI-B1 承载。
 """
 
 from __future__ import annotations
@@ -932,11 +974,20 @@ class RdgRecordContextWiringAcceptance(unittest.TestCase):
                     "引擎侧抑制 LLM 无信号载体 = 抑制不发生）。")
                 self.assertNotIn("kidpal_session_ctx", _forwarded_frame_types(up.sent),
                                  "RDG-A4 RED: session_ctx 被透传（既有拦截语义回退）。")
-                # 幂等：重复触发不重复注入（进语境收敛入口幂等）。
-                up2, _ = _device_to_engine(front, sid, [_CTX])
+                # 每会话无条件注入（261116-channel-resident-core D1 真机轮 A 修复轮，
+                # human 2026-11-17「三个问题都修」）：重复 ctx(story) 仍恰一帧
+                # active=true——注入不再依赖 ctx_push_edge（泄漏累积态 / 引擎腿重建时
+                # 语境失同步即 D1 暴露面）；story_list 仍守边缘（重复 ctx 零新增）。
+                up2, dev2 = _device_to_engine(front, sid, [_CTX])
                 self.assertEqual(
-                    len([f for f in _record_ctx_frames(up2.sent) if f.get("active")]), 0,
-                    "RDG-A4 RED: 已在记录语境重复 ctx 重复注入 enter —— 收敛入口非幂等。")
+                    len([f for f in _record_ctx_frames(up2.sent) if f.get("active")]), 1,
+                    "RDG-A4 RED: 已在记录语境重复 ctx(story) 未再注入 active=true —— "
+                    "「每会话无条件注入」被回退成边缘注入（device-round-a-evidence §三："
+                    "累积态泄漏 / 引擎腿重建时语境失同步 = 抑制不发生）。")
+                self.assertEqual(
+                    _story_list_frames(dev2.sent_text), [],
+                    "RDG-A4 RED: 重复 ctx(story) 推了 story_list —— 边缘推送仍须守 "
+                    "ctx_push_edge（契约 §四「重复发送安全」破）。")
                 # control/start_recording 收敛入口（引擎侧）同样注入。
                 sid2 = "sess-rdg-a4b"
                 up3, _ = _engine_to_device(front, sid2, [{
@@ -1249,8 +1300,9 @@ class RdgDisplaySchemaForkAcceptance(unittest.TestCase):
             "RDG-A5 RED: relay 把 control/start_organizing 透传给设备 —— 决定类只能走 "
             "front 机械下发单源（契约 §1.4）。")
 
-    # coverage: RDG-A5 -- 自推通路分叉：self_push 放行 start_organizing；front 自推缝
-    #                   真跑恰一帧；end_session 即便自推仍拒
+    # coverage: RDG-A5 -- 自推通路分叉：self_push 放行 start_organizing 与 end_session
+    #                   （截获转发类，2026-11-19 反转）；front 自推缝真跑恰一帧；
+    #                   end_session relay 缺省恒拒（must-stay-green，另一 case 承载）
     def test_rdg_a5_self_push_fork_admits_front_start_organizing(self):
         ds = _display_schema()
         payload = {"view": "control", "data": {"action": START_ORGANIZING_ACTION}}
@@ -1264,12 +1316,13 @@ class RdgDisplaySchemaForkAcceptance(unittest.TestCase):
             f"RDG-A5 RED: 自推通路仍拒 start_organizing ({reason}) —— front 机械下发"
             "被自拒（结构性风险 1：start_organizing 入网关决定类后自推通路不分叉 = "
             "收尾永远下发不出去）。")
-        ok_end, _ = ds.validate_display(
+        ok_end, reason_end = ds.validate_display(
             {"view": "control", "data": {"action": "end_session"}}, self_push=True)
-        self.assertFalse(
+        self.assertTrue(
             ok_end,
-            "RDG-A5 RED: end_session 借 self_push 放行 —— 自推豁免只许 start_organizing"
-            "（会话结束决定不因通路放行）。")
+            f"RDG-A5 RED: end_session 借 self_push 仍被拒（{reason_end}）—— 自推豁免须"
+            "同时放行 start_organizing 与 end_session（二者同为截获转发类，契约 §1.4；"
+            "2026-11-19 反转：会话结束决定由 front 机械自推单源下发）。")
         # front 自推缝真跑：恰一帧下发给设备腿。
         with tempfile.TemporaryDirectory(prefix="rdg_a5_push_") as tmp:
             with _front_with_stories(tmp) as front:

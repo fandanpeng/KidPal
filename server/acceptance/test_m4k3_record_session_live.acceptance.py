@@ -506,8 +506,15 @@ class M4K3CtxConditionalPushAcceptance(unittest.TestCase):
                     "条件推送未实现（0 帧）。")
 
     def test_a7_ctx_non_story_pushes_zero_frames(self):
-        """coverage: M4K3-A7 守卫 — ctx(home/schedule/未知) 不切累积态且零帧
-        （闭集预留取值现版本无行为, K1 冻结语义保持; 防实现过宽）。"""
+        """coverage: M4K3-A7 守卫 — ctx(home/schedule/未知) 不切累积态且零帧。
+
+        语义前提精确化（2026-11-16 261116-channel-resident-core P1 frozen-rebaseline）:
+        本齿钉的是「**记录语境未置位时**非 story 取值零行为」——闭集预留取值在会话尚未
+        进入记录语境（_record_ctx_seen 标记假）时现版本无行为、零 story_list（K1 闭集
+        语义保持；防实现过宽）。**置位时**（记录语境曾由 ctx(story) 建立）则走 T8 分态
+        兜底（accumulate → cancel(session_end_stale)+释放；pending_stop → 保护不动作；
+        chat+标记真 → 只释放）——该半由释放边沿姊妹齿
+        test_a7_ctx_release_edge_after_record_context_seen 承载，与本齿互补不互替。"""
         with tempfile.TemporaryDirectory(prefix="m4k3_a7c_") as tmp:
             with _front_with_stories(tmp) as front:
                 _seed(Path(tmp), 1)
@@ -525,6 +532,54 @@ class M4K3CtxConditionalPushAcceptance(unittest.TestCase):
                         len(_story_list_frames(dev.sent_text)), 0,
                         f"M4K3-A7 RED: source_page={value} 产生 story_list 下行 —— "
                         "非 story 取值零行为被破（过宽实现: 无累积态切换不推送）。")
+
+    def test_a7_ctx_release_edge_after_record_context_seen(self):
+        """coverage: SCRF-B4-姊妹（261116-channel-resident-core P1 frozen-rebaseline
+        补强, additive, 既有断言零改动）— 记录语境**曾置位**（ctx(story) 沿）后收到非
+        story ctx → ctx 边沿兜底分态：accumulate → cancel(reason="session_end_stale") +
+        释放。此即 test_a7_ctx_non_story_pushes_zero_frames「置位时走分态兜底」半的兑现；
+        未置位零行为归原齿，两齿互补不互替。"""
+        with tempfile.TemporaryDirectory(prefix="m4k3_a7e_") as tmp:
+            with _front_with_stories(tmp) as front:
+                _seed(Path(tmp), 1)
+                sid = "sess-a7-edge"
+                acc = front._get_story_acc()
+                released = []
+                orig_release = getattr(front, "_release_record_context", None)
+
+                async def _spy_release(session_id, legs):
+                    released.append(session_id)
+                    if callable(orig_release):
+                        return await orig_release(session_id, legs)
+
+                if callable(orig_release):
+                    front._release_record_context = _spy_release
+                try:
+                    # 同一 device websocket 顺序处理 ctx(story) -> ctx(home)
+                    # （_record_ctx_seen 按 device ws 建键：同对象身份 ≙ 同连接）。
+                    up, dev = _device_to_engine(
+                        front, sid, [_ctx_msg("story"), _ctx_msg("home")])
+                finally:
+                    if callable(orig_release):
+                        front._release_record_context = orig_release
+                self.assertEqual(
+                    acc.routing(sid), "chat",
+                    "M4K3-A7 姊妹 RED: 记录语境置位后非 story ctx 未分态兜底 —— "
+                    "accumulate 分支未 cancel+释放（引擎对该连接永久抑制 = 常驻后哑火; "
+                    "SCRF-B4 / plan T8）。")
+                self.assertNotIn(
+                    sid, acc.active_sessions(),
+                    "M4K3-A7 姊妹 RED: 非 story ctx 后会话未 pop —— accumulate 分态兜底"
+                    "未 cancel（丢弃语义未落）。")
+                self.assertIn(
+                    sid, released,
+                    "M4K3-A7 姊妹 RED: 非 story ctx 未调 _release_record_context —— "
+                    "记录语境释放单源未接（T8 分态兜底；缺 = 释放缺口）。")
+                # ctx(story) 沿推 1 帧 story_list；ctx(home) 零新增。
+                self.assertEqual(
+                    len(_story_list_frames(dev.sent_text)), 1,
+                    "M4K3-A7 姊妹 RED: story_list 帧数 != 1 —— ctx(home) 过宽推送或 "
+                    "ctx(story) 首沿漏推。")
 
     def test_a7_plain_chat_session_pushes_zero_frames(self):
         """coverage: M4K3-A7 守卫 — 省略 ctx = 普通会话（向后兼容）泵级零 story_list

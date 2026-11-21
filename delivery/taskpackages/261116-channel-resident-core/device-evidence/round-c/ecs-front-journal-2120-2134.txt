@@ -1,0 +1,10 @@
+-- Logs begin at Sat 2026-10-24 06:50:49 CST, end at Wed 2026-11-18 21:33:34 CST. --
+2026-11-18T21:20:41+0800 iZ2vca04vpdbx8x9ohy0y2Z uvicorn[2346527]: 2026-11-18 21:20:41,232 kidpal-front story_record_ctx_enter corr_id=sess-88902e0471544d549136a7c19217bf22 src=ctx_story edge=true injected=true
+2026-11-18T21:22:05+0800 iZ2vca04vpdbx8x9ohy0y2Z uvicorn[2346527]: 2026-11-18 21:22:05,557 kidpal-front story_stop corr_id=sess-88902e0471544d549136a7c19217bf22 archived=false reason=pending_stop
+2026-11-18T21:22:05+0800 iZ2vca04vpdbx8x9ohy0y2Z uvicorn[2346527]: 2026-11-18 21:22:05,558 kidpal-front session_end_boundary corr_id=sess-88902e0471544d549136a7c19217bf22 src=listen_stop routing=pending_stop action=protected
+2026-11-18T21:22:09+0800 iZ2vca04vpdbx8x9ohy0y2Z uvicorn[2346527]: 2026-11-18 21:22:09,447 kidpal-front story_organize_round corr_id=sess-88902e0471544d549136a7c19217bf22 ok=true id=2026-11-18-s33477cee
+2026-11-18T21:22:09+0800 iZ2vca04vpdbx8x9ohy0y2Z uvicorn[2346527]: 2026-11-18 21:22:09,455 kidpal-front story_finish corr_id=sess-88902e0471544d549136a7c19217bf22 archived=true id=2026-11-18-s33477cee
+2026-11-18T21:23:27+0800 iZ2vca04vpdbx8x9ohy0y2Z uvicorn[2346527]: 2026-11-18 21:23:27,150 kidpal-front story_record_ctx_enter corr_id=sess-88902e0471544d549136a7c19217bf22 src=ctx_story edge=true injected=true
+2026-11-18T21:23:49+0800 iZ2vca04vpdbx8x9ohy0y2Z uvicorn[2346527]: 2026-11-18 21:23:49,433 kidpal-front session_end_boundary corr_id=sess-88902e0471544d549136a7c19217bf22 src=listen_stop routing=chat action=release_only
+2026-11-18T21:23:52+0800 iZ2vca04vpdbx8x9ohy0y2Z uvicorn[2346527]: 2026-11-18 21:23:52,353 kidpal-front story_organize_round corr_id=sess-88902e0471544d549136a7c19217bf22 ok=true id=2026-11-18-sbe0bff90
+2026-11-18T21:23:52+0800 iZ2vca04vpdbx8x9ohy0y2Z uvicorn[2346527]: 2026-11-18 21:23:52,355 kidpal-front story_finish corr_id=sess-88902e0471544d549136a7c19217bf22 archived=true id=2026-11-18-sbe0bff90

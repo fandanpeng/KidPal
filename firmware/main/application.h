@@ -123,10 +123,12 @@ public:
      * TaskPackage 260924-m4-k2-p3-star-notebook-ui 发送原语四件套之二）。id 闭集
      * 纪律由调用方（mcp_server 确认路径）承接: 只发 story_list items 下发过的 id。 */
     void SendKidpalStoryDelete(const char* id);
-    /* K3 (260924-m4-k3-record-session-live) [S5]: 录音态丢弃（BOOT 任一手势）断连面
-     * ——直接关音频通道即达 front 断开钩子 acc.cancel（弹缓冲不落盘, 不发 listen
-     * stop）。语义单点直连 protocol, 不经 toggle 状态机（STOP 收尾保存面走
-     * StopListening, 两路径不混——notes (e)）。 */
+    /* K3 (260924-m4-k3-record-session-live) [S5]: 录音态丢弃面（BOOT 任一手势）。
+     * 261116-channel-resident-core P1 重锚: 本函数为**历史名、语义 = 会话收尾**——
+     * 通道常驻后不再拆通道，只投 MAIN_EVENT_END_VOICE_SESSION 事件位，由主循环统一
+     * 收口处理器发 listen stop（跨任务安全：协议接收任务不得直调该处理器）。
+     * 丢弃面契约 §四 顺序约束 = 调用方先 SendKidpalStoryDiscard() 上行、本调用投的
+     * 事件位在下一拍才发 listen stop（帧先行, 丢弃素材不复活成归档）。 */
     void CloseAudioChannel();
     void SetAecMode(AecMode mode);
     AecMode GetAecMode() const { return aec_mode_; }
@@ -166,6 +168,14 @@ private:
     // 标志互斥替代 Connecting 状态互斥（自动建连全程状态恒 Idle）。置位仅主循环 handler
     // 判定后、task 所有退出路径必清（泄漏 = 人工按键永久 no-op + 自动建连永久失效）。
     bool auto_connect_in_flight_ = false;
+    // 261117-session-end-intent-longretry（P2）: 网络断退出请求位——断网事件在函数体
+    // 最顶端（三态门之外）置位，令长跑自动建连 task 退出空转重试；网络恢复建连成功
+    // （HandleNetworkConnectedEvent）清位。只增不设时效（arch §6.4）。
+    bool network_exit_requested_ = false;
+    // 人工意向位（P2）: 离线期长跑 in-flight 时五个手工入口各置位（直接存 MAIN_EVENT_*
+    // 位, 最后写者胜、不做 OR 累积）；连上成功后先清 in-flight 再经 Schedule 补投该事件位
+    // （孩子那一次动作不丢——arch §6.4）。
+    EventBits_t pending_manual_intent_ = 0;
 
 
     // Event handlers
@@ -174,7 +184,9 @@ private:
     void HandleStartListeningEvent();
     void HandleStopListeningEvent();
     /* 261024-vq-overlay-close-end-session: 覆盖层关层统一收尾（三态门 + 播报态
-     * ResetDecoder/abort + CloseAudioChannel + Idle + LOW_POWER + 常驻重建）。 */
+     * ResetDecoder/abort + 发 listen stop + Idle）。261116-channel-resident-core P1:
+     * 会话结束不拆通道、不降省电档、不排常驻重建——本处理器是全部会话结束触发源的
+     * 唯一收口点（四条本地关 + 主循环 60s 空闲超时 producer）。 */
     void HandleEndVoiceSessionEvent();
     void HandleNetworkConnectedEvent();
     void HandleNetworkDisconnectedEvent();
@@ -183,16 +195,12 @@ private:
 
     // Activation task (runs in background)
     void ActivationTask();
-    // K6 (M3-K6): 自动建连「判 + 起」入口——由两个触发点（激活完成 / 网络重连 Idle）
-    // 在 main-loop handler 内同步调用（TOCTOU 判设闭合）；内部预检 url/token、守卫
-    // 三条件、置 in-flight 标志、xTaskCreate "AutoConnect" 后台 task（task 内 3 次
-    // 退避重试 + 每次重试前重查三条件 + 所有退出路径必清标志）。
+    // K6 (M3-K6): 自动建连「判 + 起」入口——由触发点（激活完成 / 网络重连 Idle /
+    // 261116 P1 起主循环 CLOCK_TICK 自愈巡检）在 main-loop handler 内同步调用
+    // （TOCTOU 判设闭合）；内部预检 url/token、守卫三条件、置 in-flight 标志、
+    // xTaskCreate "AutoConnect" 后台 task（task 内 3 次退避重试 + 每次重试前重查
+    // 三条件 + 所有退出路径必清标志）。
     void TryStartAutoConnect();
-
-    /* 261010 [S9] 常驻重建排程（B 路径, 决策 29「永不休眠」）: 会话收尾类本地关后延迟
-     * kResidentRebuildDelayS 秒经 Schedule 回主循环排入 TryStartAutoConnect（复用守卫
-     * 三条件与退避——重建只经既有 AutoConnect task）。 */
-    void ScheduleResidentRebuild();
 
     // Helper methods
     void CheckAssetsVersion();

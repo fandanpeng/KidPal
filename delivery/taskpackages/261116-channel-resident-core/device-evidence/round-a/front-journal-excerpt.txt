@@ -1,0 +1,64 @@
+# front journal excerpt — 261116 P1 round A (2026-11-17 22:46:00–22:53:30 CST)
+# source: ECS journalctl -u kidpal-front (pulled 2026-11-17)
+2026-11-17 22:46:00,000 kidpal-front alert_poll corr_id=batch pending=11 rejected=0 pushed=0 acked=0 tracked=0
+2026-11-17 22:46:41,691 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:46:49,322 kidpal-front story_discard corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c consumed=true cancelled=True payload_session_id=c1fa8409-704e-4bf9-8bfc-e6762f7980bd
+2026-11-17 22:46:49,453 kidpal-front session_end_boundary corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c src=listen_stop routing=chat action=release_only
+2026-11-17 22:47:00,000 kidpal-front alert_poll corr_id=batch pending=11 rejected=0 pushed=0 acked=0 tracked=0
+2026-11-17 22:47:12,111 kidpal-front story_discard corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c consumed=true cancelled=True payload_session_id=c1fa8409-704e-4bf9-8bfc-e6762f7980bd
+2026-11-17 22:47:12,204 kidpal-front session_end_boundary corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c src=listen_stop routing=chat action=release_only
+2026-11-17 22:47:20,757 kidpal-gateway.story story_fetch ok corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c id=2026-11-17-sae28111c bytes=57
+2026-11-17 22:47:25,369 kidpal-gateway.story story_fetch ok corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c id=2026-10-28-s6db51543 bytes=142
+2026-11-17 22:47:30,370 kidpal-gateway.story story_fetch ok corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c id=2026-10-27-s4195dc45 bytes=88
+2026-11-17 22:47:35,386 kidpal-gateway.story story_fetch ok corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c id=2026-10-24-sc16cfba5 bytes=125
+2026-11-17 22:48:00,002 kidpal-front alert_poll corr_id=batch pending=11 rejected=0 pushed=0 acked=0 tracked=0
+2026-11-17 22:48:01,025 kidpal-front story_discard corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c consumed=true cancelled=False payload_session_id=c1fa8409-704e-4bf9-8bfc-e6762f7980bd
+2026-11-17 22:48:01,047 kidpal-front session_end_boundary corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c src=listen_stop routing=chat action=release_only
+2026-11-17 22:48:21,730 kidpal-front story_discard corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c consumed=true cancelled=False payload_session_id=c1fa8409-704e-4bf9-8bfc-e6762f7980bd
+2026-11-17 22:48:22,019 kidpal-front session_end_boundary corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c src=listen_stop routing=chat action=release_only
+2026-11-17 22:48:33,940 kidpal-gateway.story story_fetch ok corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c id=2026-11-17-sae28111c bytes=57
+2026-11-17 22:48:38,511 kidpal-gateway.story story_fetch ok corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c id=2026-10-28-s6db51543 bytes=142
+2026-11-17 22:48:43,502 kidpal-gateway.story story_fetch ok corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c id=2026-10-27-s4195dc45 bytes=88
+2026-11-17 22:48:48,502 kidpal-gateway.story story_fetch ok corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c id=2026-10-24-sc16cfba5 bytes=125
+2026-11-17 22:49:00,001 kidpal-front alert_poll corr_id=batch pending=11 rejected=0 pushed=0 acked=0 tracked=0
+2026-11-17 22:49:58,991 kidpal-front story_discard corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c consumed=true cancelled=True payload_session_id=c1fa8409-704e-4bf9-8bfc-e6762f7980bd
+2026-11-17 22:49:59,052 kidpal-front session_end_boundary corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c src=listen_stop routing=chat action=release_only
+2026-11-17 22:50:00,000 kidpal-front alert_poll corr_id=batch pending=11 rejected=0 pushed=0 acked=0 tracked=0
+2026-11-17 22:51:00,000 kidpal-front alert_poll corr_id=batch pending=11 rejected=0 pushed=0 acked=0 tracked=0
+2026-11-17 22:51:13,714 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:51:17,715 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:51:21,716 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:51:25,717 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:51:29,717 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:51:33,717 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:51:37,718 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:51:41,719 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:51:45,718 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:51:49,719 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:51:53,719 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:51:57,719 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:52:00,000 kidpal-front alert_poll corr_id=batch pending=11 rejected=0 pushed=0 acked=0 tracked=0
+2026-11-17 22:52:01,719 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:52:05,720 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:52:09,720 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:52:13,720 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:52:17,719 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:52:21,720 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:52:25,721 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:52:29,721 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:52:33,721 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:52:37,722 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:52:41,722 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:52:45,722 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:52:49,723 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:52:53,723 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:52:57,724 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:53:00,000 kidpal-front alert_poll corr_id=batch pending=11 rejected=0 pushed=0 acked=0 tracked=0
+2026-11-17 22:53:01,725 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:53:05,726 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:53:09,726 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:53:13,727 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:53:17,727 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:53:21,728 kidpal-front story_guide_round corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c skipped=no_session
+2026-11-17 22:53:24,041 kidpal-front story_discard corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c consumed=true cancelled=False payload_session_id=c1fa8409-704e-4bf9-8bfc-e6762f7980bd
+2026-11-17 22:53:24,080 kidpal-front session_end_boundary corr_id=sess-6eee9480c45748e8bdaa8d8b28cf944c src=listen_stop routing=chat action=release_only
