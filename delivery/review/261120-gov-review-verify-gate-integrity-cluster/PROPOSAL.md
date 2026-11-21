@@ -352,7 +352,9 @@ human 2026-11-21 裁定 OQ-1 = 甲后，change-manifest 侧由「若批准则重
 
 ## 8. 轻量 landing-manifest
 
-**manifest 不变：仍为 8 件**（3 件 architect + 5 件 main-thread，全 ordinary，零保护面）。OQ-1 甲案的旗标面收口落在**已在册**的 `.claude/scripts/change-manifest-check.mjs` 内，OQ-2 / OQ-3 的裁定落在**已在册**的 `.claude/scripts/acceptance-coverage-check.mjs` 与 `.claude/references/taskpackage-authoring.md` 内，**未新增任何文件**；`.claude/verify-gates.json`（保护面）与 `lib/current-pointer-shared.mjs`、`taskpackage-required-check.mjs` 仍零改动（§5、§6 V6 钉）。仅第 1 / 3 行的理由文本按裁定更新。
+**manifest = 10 件**（3 件 architect + 7 件 main-thread，全 ordinary，零保护面）。原设计期预计 scope 为 8 件：OQ-1 甲案的旗标面收口落在**已在册**的 `.claude/scripts/change-manifest-check.mjs` 内，OQ-2 / OQ-3 的裁定落在**已在册**的 `.claude/scripts/acceptance-coverage-check.mjs` 与 `.claude/references/taskpackage-authoring.md` 内，设计修订**未新增任何落点**；`.claude/verify-gates.json`（保护面）与 `lib/current-pointer-shared.mjs`、`taskpackage-required-check.mjs` 仍零改动（§5、§6 V6 钉）。
+
+**第 9 / 10 行（2 件）为收口期追加，事实根据如下**：main 前进 **40 个提交**（`git rev-list --count d3b2a601..7f5cc409` = 40），主线程已把 `main` 合并进 `gov/kidpal`（merge commit `39fcd94b`，父 = `d3b2a601` + `7f5cc409`）；合并后按 merge 纪律重跑 `changes-index.mjs` 全量重建，两份**生成件**的内容随之归位，实际 diff 落入本批 `main...HEAD` 范围而不在原 8 行内。该 2 件属**回同步 merge 触发的生成件归位，非设计新增落点、非作者改动**（owner 均标 main-thread；`git log --oneline main...HEAD -- <该件>` 显示改动均由 merge commit `39fcd94b` 引入）。按「出 scope 补理由、reviewer 回审」通道补入本 manifest，不属作者自扩自过。逐件实际内容（供 reviewer 对照 diff 核）：`delivery/intake/INDEX.md` = 滞留天数派生值刷新（`261014-single-tier-bringlist-home` 行 `⚠滞留34d` → `⚠滞留36d`，+1/−1）；`delivery/taskpackages/INDEX.md` = `261117-session-end-intent-longretry` 状态由 main 现推为 `closed`（+1/−1）**加** union 合并残留的末尾重复行去重（−1）。同次重建产物 `delivery/review/INDEX.md` 属 `isEvidenceTailPath` 豁免面（`governance-gate-shared.mjs:121-126`），不入 manifest。
 
 ```landing-manifest
 .claude/scripts/change-manifest-check.mjs | architect | ordinary | T1：cutoff 基准改包目录首提日、三形态取 changeId、skipped 去黑箱回显、旗标面收口（--change-id / 未知旗标 fail-loud / --help / 显式上下文不可解析 fail-loud，human 2026-11-21 授权的方向变更）、消费层夹具自检
@@ -363,6 +365,8 @@ docs/debt/gov/ARQ-261117-acceptance-coverage-assertion-and-flag-gaps.md | main-t
 docs/debt/gov/INDEX.md | main-thread | ordinary | 生成件：debt-render.mjs 重跑（状态变更投影，勿手改）
 docs/debt/gov/_archive/2026/ | main-thread | ordinary | 生成件：条目结项时渲染器自动归位两件 + 重生成该年 INDEX（未结项则本行不动）
 delivery/workstreams/gov-debt-reduction/task_plan.md | main-thread | ordinary | 批记账：本波（验证闸说假话簇 批一）追注与收口记录
+delivery/intake/INDEX.md | main-thread | ordinary | 生成件归位：main 回同步 merge（39fcd94b）后 changes-index 全量重建刷新滞留天数派生值（34d→36d），非设计新增落点
+delivery/taskpackages/INDEX.md | main-thread | ordinary | 生成件归位：同次重建把 261117-session-end-intent-longretry 状态现推为 closed + 去掉 union 合并残留的重复行，非设计新增落点
 ```
 
 ## 9. 设计评审记录（architect-reviewer）
