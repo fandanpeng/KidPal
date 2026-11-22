@@ -2,13 +2,13 @@
 id: ARQ-261117-acceptance-coverage-assertion-and-flag-gaps
 title: acceptance-coverage-check 的断言识别集不认 Unity（纯 Unity 验收件假红）+ 旗标面与 mutation-check 不一致（不认 --change-id）
 domain: gov
-status: deferred
+status: closed
 severity: SHOULD
 owner: architect（评审裁量落点；改闸归 dev-loop 执行面）
 trigger: 下一个动 `.claude/scripts/acceptance-coverage-check.mjs` 或机检旗标面的治理批
 opened: 2026-11-17
-closed: ""
-closedBy: ""
+closed: 2026-11-21
+closedBy: 261120-gov-review-verify-gate-integrity-cluster
 paths: [".claude/scripts/acceptance-coverage-check.mjs", ".claude/scripts/mutation-check.mjs"]
 source: ["delivery/taskpackages/261104-k4-reward-goal-config/pod-retro.md 踩坑 2", "delivery/taskpackages/261104-k5-story-cover-nav/pod-retro.md 踩坑 4", "delivery/retro/2026-11-17-loop-retro.md §二 T4"]
 ---
@@ -22,3 +22,5 @@ source: ["delivery/taskpackages/261104-k4-reward-goal-config/pod-retro.md 踩坑
 **建议改动**（候选，交 review、不自批）：① `hasRealAssertion` 增加 Unity 形态（`TEST_ASSERT_[A-Z_]+\s*\(`、`TEST_FAIL_MESSAGE` 等），并补相应 self-check 正负例；② `acceptance-coverage-check.mjs` 支持 `--change-id <changeId>`，与 `mutation-check.mjs` 统一调用形状（保留位置参数兼容）；③ 两个闸的报错在收到未知旗标时 fail-loud 提示支持的旗标集，而不是把 `--change-id` 当路径静默解析失败。
 
 **风险**：riskTier: **low**——①是对既有正则的加宽（只增识别面，需补负例防 prose 误报）；②③是 CLI 兼容与报错文本。触 `.claude/scripts/**` → Track B 主路径。验证 = 用 261104-k4 的纯 Unity 验收件跑修复前后对比，并在 self-check 加 Unity 正例与注释 / 字符串负例。
+
+**结项（2026-11-21，`261120-gov-review-verify-gate-integrity-cluster`）**：T2 落地，三条建议全取——① `hasRealAssertion` 增 Unity 形态（`TEST_ASSERT_*` / `TEST_FAIL*`），按 reviewer 裁定取「行首锚定 + 容纳 `#define` 行」变体：对当日 4800 处调用形态零漏判，注释 / 字符串内带括号字样仍判红（不新开 prose fail-open 面）；② `acceptance-coverage-check.mjs` 支持 `--change-id`（优先级高于位置参数，保留位置参数兼容）；③ 未知旗标 exit 2 + usage、`--help` exit 0，不再把旗标当路径静默解析。牵连面：`taskpackage-authoring.md` 对 `hasCoverageMarker` 的行号引用改符号名。实证：修前处于假红态的 5 个跟踪文件经无参 CLI 复跑 5/5 转绿，154 件已识别语料零翻红；自检 28/28（纯函数 14 + CLI 14），反转移除 Unity 识别 → 9 红。实现 commit `f09c19c6`，评审与合并凭据见批 PROPOSAL。

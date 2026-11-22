@@ -7,10 +7,11 @@
 > 列：changeId | 日期 | 状态 | 已合main。review 状态机：draft→frozen→landed(终态)。
 > 2026-10-15 前历史批见 delivery/archive/changes/arch/INDEX.md（261015-gov-review-changes-taxonomy T6 第 4 条归档指针）。
 
-## review (33)
+## review (34)
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
+| [261120-gov-review-verify-gate-integrity-cluster](261120-gov-review-verify-gate-integrity-cluster/) | 2026-11-20 | landed | yes |
 | [261117-gov-review-g4-verify-log-green-rounds](261117-gov-review-g4-verify-log-green-rounds/) | 2026-11-17 | landed | — |
 | [261115-arch-review-session-channel-resident](261115-arch-review-session-channel-resident/) | 2026-11-15 | landed | yes |
 | [261103-arch-review-star-points-story-cover](261103-arch-review-star-points-story-cover/) | 2026-11-03 | landed | yes |
